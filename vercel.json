@@ -1,8 +1,5 @@
 {
   "rewrites": [
     { "source": "/(.*)", "destination": "/" }
-  ],
-  "env": {
-    "DAILY_API_KEY": "@daily-api-key"
-  }
+  ]
 }
