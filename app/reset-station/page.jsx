@@ -169,14 +169,14 @@ export default function ResetStationPage() {
               </button>
             </div>
 
-            <div className="relative aspect-video bg-black">
+            <div className="relative w-full bg-black" style={{ paddingTop: '56.25%' }}>
               {selectedVideo.youtubeId ? (
                 <iframe
-                  src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}?autoplay=1`}
+                  src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}`}
                   title={selectedVideo.title}
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                   allowFullScreen
-                  className="w-full h-full"
+                  className="absolute inset-0 w-full h-full"
                 />
               ) : (
                 <div className={`w-full h-full flex items-center justify-center ${darkMode ? 'bg-slate-900' : 'bg-slate-100'}`}>
