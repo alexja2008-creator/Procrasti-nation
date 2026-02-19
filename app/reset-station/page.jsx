@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Zap, Play, CheckCircle2, Clock, Heart, Wind, Brain, Sparkles, Volume2, X, Moon, Sun } from 'lucide-react';
+import { Zap, Play, CheckCircle2, Clock, Heart, Wind, Brain, Sparkles, X } from 'lucide-react';
 import { useTheme } from '../providers';
-import storage from '../../lib/storage';
+import Navigation from '../../components/Navigation';
 
 export default function ResetStationPage() {
-  const { darkMode, setDarkMode } = useTheme();
+  const { darkMode } = useTheme();
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [completedSessions, setCompletedSessions] = useState(new Set());
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -30,43 +29,23 @@ export default function ResetStationPage() {
   };
 
   const videos = [
-    { id: 1, title: '5-Minute Box Breathing', category: 'breathwork', duration: '5 min', description: 'A simple 4-4-4-4 breathing pattern used by Navy SEALs to reduce stress and increase focus.', thumbnail: '🫁', videoUrl: 'https://example.com/video1' },
-    { id: 2, title: 'Quick Body Scan Meditation', category: 'meditation', duration: '7 min', description: 'Release tension from head to toe with this guided body awareness practice.', thumbnail: '🧘', videoUrl: 'https://example.com/video2' },
-    { id: 3, title: 'Dealing with Overwhelm', category: 'stress', duration: '8 min', description: 'Practical strategies for when everything feels like too much.', thumbnail: '💆', videoUrl: 'https://example.com/video3' },
-    { id: 4, title: 'The Power of the Pause', category: 'focus', duration: '6 min', description: 'Learn to create intentional breaks that actually recharge you.', thumbnail: '⏸️', videoUrl: 'https://example.com/video4' },
-    { id: 5, title: 'Progressive Muscle Relaxation', category: 'stress', duration: '10 min', description: 'Systematically release physical tension for mental clarity.', thumbnail: '💪', videoUrl: 'https://example.com/video5' },
-    { id: 6, title: '4-7-8 Breathing for Sleep', category: 'breathwork', duration: '5 min', description: 'A powerful technique to calm your nervous system quickly.', thumbnail: '😴', videoUrl: 'https://example.com/video6' },
-    { id: 7, title: 'Mindful Minute', category: 'meditation', duration: '5 min', description: 'A quick reset when you only have a moment.', thumbnail: '🕐', videoUrl: 'https://example.com/video7' },
-    { id: 8, title: 'Returning to Your Why', category: 'focus', duration: '7 min', description: 'Reconnect with your purpose and motivation.', thumbnail: '🎯', videoUrl: 'https://example.com/video8' }
+    { id: 1, title: '5-Minute Box Breathing', category: 'breathwork', duration: '5 min', description: 'A simple 4-4-4-4 breathing pattern used by Navy SEALs to reduce stress and increase focus.', thumbnail: '🫁', youtubeId: 'aPYmZOhJF5Q' },
+    { id: 2, title: 'Quick Body Scan Meditation', category: 'meditation', duration: '7 min', description: 'Release tension from head to toe with this guided body awareness practice.', thumbnail: '🧘', youtubeId: '1saZqSr2zGM' },
+    { id: 3, title: 'Dealing with Overwhelm', category: 'stress', duration: '8 min', description: 'Practical strategies for when everything feels like too much.', thumbnail: '💆', youtubeId: '8uZNGWPpdms' },
+    { id: 4, title: 'The Power of the Pause', category: 'focus', duration: '6 min', description: 'Learn to create intentional breaks that actually recharge you.', thumbnail: '⏸️', youtubeId: 'Ejq4FRMyATs' },
+    { id: 5, title: 'Progressive Muscle Relaxation', category: 'stress', duration: '10 min', description: 'Systematically release physical tension for mental clarity.', thumbnail: '💪', youtubeId: '1nZEdqcGVzo' },
+    { id: 6, title: '4-7-8 Breathing for Sleep', category: 'breathwork', duration: '5 min', description: 'A powerful technique to calm your nervous system quickly.', thumbnail: '😴', youtubeId: 'kpSkoXRrZnE' },
+    { id: 7, title: 'Mindful Minute', category: 'meditation', duration: '5 min', description: 'A quick reset when you only have a moment.', thumbnail: '🕐', youtubeId: '9mopikvt114' },
+    { id: 8, title: 'Returning to Your Why', category: 'focus', duration: '7 min', description: 'Reconnect with your purpose and motivation.', thumbnail: '🎯', youtubeId: 'tF7YLGpOoz8' }
   ];
 
   const filteredVideos = selectedCategory ? videos.filter(v => v.category === selectedCategory) : videos;
 
-  const markComplete = async (videoId) => {
+  const markComplete = (videoId) => {
     const newCompleted = new Set(completedSessions);
     newCompleted.add(videoId);
     setCompletedSessions(newCompleted);
-    
-    try {
-      await storage.set('completed-resets', JSON.stringify(Array.from(newCompleted)));
-    } catch (err) {
-      console.error('Error saving:', err);
-    }
   };
-
-  useEffect(() => {
-    const loadCompleted = async () => {
-      try {
-        const result = await storage.get('completed-resets');
-        if (result) {
-          setCompletedSessions(new Set(JSON.parse(result.value)));
-        }
-      } catch (err) {
-        console.log('No saved sessions');
-      }
-    };
-    loadCompleted();
-  }, []);
 
   const getCategoryForVideo = (categoryId) => {
     return categories.find(c => c.id === categoryId) || categories[0];
@@ -74,51 +53,24 @@ export default function ResetStationPage() {
 
   return (
     <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
-      <nav className={`border-b sticky top-0 z-40 transition-colors ${
-        darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
-      }`}>
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <span className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>ProcrastiNation</span>
-            </Link>
-            <div className="flex items-center space-x-4">
-              <Link href="/planner" className={`font-medium transition-colors ${
-                darkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
-              }`}>Planner</Link>
-              <Link href="/dashboard" className={`font-medium transition-colors ${
-                darkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
-              }`}>Dashboard</Link>
-              <button
-                onClick={() => setDarkMode(!darkMode)}
-                className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-slate-700' : 'hover:bg-slate-100'}`}
-              >
-                {darkMode ? <Sun className="w-5 h-5 text-slate-300" /> : <Moon className="w-5 h-5 text-slate-600" />}
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Navigation />
 
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="text-center mb-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="text-center mb-8 sm:mb-12">
           <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium mb-6 ${
             darkMode ? 'bg-teal-900/30 text-teal-400' : 'bg-teal-50 text-teal-700'
           }`}>
             <Zap className="w-4 h-4" />
             <span>Quick Reset</span>
           </div>
-          <h1 className={`text-5xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Reset Station</h1>
-          <p className={`text-xl mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>Take a break. Recenter. Return stronger.</p>
+          <h1 className={`text-4xl sm:text-5xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Reset Station</h1>
+          <p className={`text-lg sm:text-xl mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>Take a break. Recenter. Return stronger.</p>
           <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
             {completedSessions.size} session{completedSessions.size !== 1 ? 's' : ''} completed
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-12">
           {categories.map(category => {
             const Icon = category.icon;
             const styles = getCategoryStyles(category.color);
@@ -158,7 +110,7 @@ export default function ResetStationPage() {
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredVideos.map(video => {
             const isCompleted = completedSessions.has(video.id);
             const category = getCategoryForVideo(video.category);
@@ -217,14 +169,24 @@ export default function ResetStationPage() {
               </button>
             </div>
 
-            <div className={`relative aspect-video flex items-center justify-center ${darkMode ? 'bg-slate-900' : 'bg-slate-100'}`}>
-              <div className="text-center">
-                <Volume2 className={`w-24 h-24 mx-auto mb-4 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`} />
-                <p className={`text-lg mb-2 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Video Player</p>
-                <p className={`text-sm max-w-md mx-auto px-4 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                  Embed your wellness videos here using YouTube, Vimeo, or your own hosting.
-                </p>
-              </div>
+            <div className="relative aspect-video bg-black">
+              {selectedVideo.youtubeId ? (
+                <iframe
+                  src={`https://www.youtube.com/embed/${selectedVideo.youtubeId}?autoplay=1`}
+                  title={selectedVideo.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                />
+              ) : (
+                <div className={`w-full h-full flex items-center justify-center ${darkMode ? 'bg-slate-900' : 'bg-slate-100'}`}>
+                  <div className="text-center">
+                    <div className="text-6xl mb-4">{selectedVideo.thumbnail}</div>
+                    <p className={`text-lg mb-1 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Video coming soon</p>
+                    <p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Check back after videos are added</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className={`p-6 border-t ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>

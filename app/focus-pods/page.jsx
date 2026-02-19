@@ -214,16 +214,16 @@ export default function FocusPodsPage() {
     <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <Navigation />
 
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="text-center mb-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="text-center mb-8 sm:mb-12">
           <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium mb-6 ${
             darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-50 text-blue-700'
           }`}>
             <Users className="w-4 h-4" />
             <span>Virtual Co-Working</span>
           </div>
-          <h1 className={`text-5xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Focus Pods</h1>
-          <p className={`text-xl ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+          <h1 className={`text-4xl sm:text-5xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Focus Pods</h1>
+          <p className={`text-lg sm:text-xl ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
             Work alongside others. Stay accountable. Get things done.
           </p>
         </div>

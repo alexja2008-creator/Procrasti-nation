@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Brain, Calendar, Clock, CheckCircle2, Sparkles, Zap, Target, Trophy, ArrowLeft } from 'lucide-react';
+import { Brain, Calendar, Clock, CheckCircle2, Sparkles, Zap, Target, Trophy, ArrowLeft, Trash2 } from 'lucide-react';
 import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
@@ -251,6 +251,18 @@ function PlannerContent() {
 
   const handleDragEnd = () => setDraggedStep(null);
 
+  const deleteTask = async () => {
+    if (!currentTaskId) return;
+    if (!confirm('Delete this task? This cannot be undone.')) return;
+    await supabase.from('tasks').delete().eq('id', currentTaskId);
+    setPlan(null);
+    setTask('');
+    setDeadline('');
+    setCurrentTaskId(null);
+    setCompletedSteps(new Set());
+    setTaskStartTime(null);
+  };
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !loading && task && deadline) generatePlan();
   };
@@ -261,17 +273,17 @@ function PlannerContent() {
     <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <Navigation />
 
-      <div className="max-w-4xl mx-auto px-6 py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8 sm:mb-12">
           <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium mb-6 ${
             darkMode ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-700'
           }`}>
             <Brain className="w-4 h-4" />
             <span>AI-Powered Planning</span>
           </div>
-          <h1 className={`text-5xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>AI Adherence Planner</h1>
-          <p className={`text-xl ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+          <h1 className={`text-4xl sm:text-5xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>AI Adherence Planner</h1>
+          <p className={`text-lg sm:text-xl ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
             Break any task into bite-sized, achievable steps
           </p>
           {!user && (
@@ -542,14 +554,28 @@ function PlannerContent() {
               })}
             </div>
 
-            <button
-              onClick={() => { setPlan(null); setTask(''); setDeadline(''); setCurrentTaskId(null); }}
-              className={`w-full px-6 py-3 rounded-xl font-semibold transition ${
-                darkMode ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-900'
-              }`}
-            >
-              Plan Another Task
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => { setPlan(null); setTask(''); setDeadline(''); setCurrentTaskId(null); }}
+                className={`flex-1 px-6 py-3 rounded-xl font-semibold transition ${
+                  darkMode ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-900'
+                }`}
+              >
+                Plan Another Task
+              </button>
+              {currentTaskId && (
+                <button
+                  onClick={deleteTask}
+                  className={`flex items-center space-x-2 px-5 py-3 rounded-xl font-semibold transition ${
+                    darkMode ? 'bg-rose-900/30 hover:bg-rose-900/50 text-rose-400' : 'bg-rose-100 hover:bg-rose-200 text-rose-600'
+                  }`}
+                  title="Delete this task"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

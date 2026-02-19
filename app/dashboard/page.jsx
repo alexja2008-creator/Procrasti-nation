@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart3, Flame, Zap, CheckCircle2, Clock, TrendingUp, Calendar, Archive, ChevronRight, X, PlayCircle } from 'lucide-react';
+import { BarChart3, Flame, Zap, CheckCircle2, Clock, TrendingUp, Calendar, Archive, ChevronRight, X, PlayCircle, Trash2 } from 'lucide-react';
 import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
@@ -59,6 +59,12 @@ export default function DashboardPage() {
     return `${Math.round(hours / 24)} days`;
   };
 
+  const deleteTask = async (taskId) => {
+    if (!confirm('Delete this task? This cannot be undone.')) return;
+    await supabase.from('tasks').delete().eq('id', taskId);
+    setTasks(tasks.filter(t => t.id !== taskId));
+  };
+
   const clearAllData = async () => {
     if (!confirm('Are you sure you want to clear all your data? This cannot be undone.')) return;
     await Promise.all([
@@ -74,16 +80,16 @@ export default function DashboardPage() {
     <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <Navigation />
 
-      <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="mb-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="mb-8 sm:mb-12">
           <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium mb-6 ${
             darkMode ? 'bg-violet-900/30 text-violet-400' : 'bg-violet-50 text-violet-700'
           }`}>
             <BarChart3 className="w-4 h-4" />
             <span>Analytics</span>
           </div>
-          <h1 className={`text-5xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Your Dashboard</h1>
-          <p className={`text-xl ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>Track your progress and celebrate your wins</p>
+          <h1 className={`text-4xl sm:text-5xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Your Dashboard</h1>
+          <p className={`text-lg sm:text-xl ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>Track your progress and celebrate your wins</p>
         </div>
 
         {!user ? (
@@ -99,7 +105,7 @@ export default function DashboardPage() {
         ) : (
           <>
             {/* Stats Cards */}
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
               <div className={`rounded-2xl p-6 border transition-colors ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <div className="flex items-center justify-between mb-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${darkMode ? 'bg-orange-900/30' : 'bg-orange-100'}`}>
@@ -225,17 +231,26 @@ export default function DashboardPage() {
                     return (
                       <div key={task.id} className={`rounded-xl p-4 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-100'}`}>
                         <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h4 className={`font-bold mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{task.title}</h4>
+                          <div className="flex-1 min-w-0">
+                            <h4 className={`font-bold mb-1 truncate ${darkMode ? 'text-white' : 'text-slate-900'}`}>{task.title}</h4>
                             <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{done} of {total} steps complete</p>
                           </div>
-                          <Link
-                            href={`/planner?task=${task.id}`}
-                            className="ml-4 flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors flex-shrink-0"
-                          >
-                            <PlayCircle className="w-4 h-4" />
-                            <span>Continue</span>
-                          </Link>
+                          <div className="ml-4 flex items-center space-x-2 flex-shrink-0">
+                            <Link
+                              href={`/planner?task=${task.id}`}
+                              className="flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"
+                            >
+                              <PlayCircle className="w-4 h-4" />
+                              <span>Continue</span>
+                            </Link>
+                            <button
+                              onClick={() => deleteTask(task.id)}
+                              className={`p-1.5 rounded-lg transition-colors ${darkMode ? 'text-slate-500 hover:text-rose-400 hover:bg-rose-900/30' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'}`}
+                              title="Delete task"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                         <div className={`w-full rounded-full h-2 overflow-hidden ${darkMode ? 'bg-slate-600' : 'bg-slate-200'}`}>
                           <div className="bg-blue-500 h-2 rounded-full transition-all duration-500" style={{ width: `${(done / total) * 100}%` }} />
