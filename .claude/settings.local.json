@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "WebFetch(domain:www.youtube.com)",
+      "WebFetch(domain:jg-therapies.co.uk)",
+      "WebFetch(domain:suninme.org)",
+      "WebFetch(domain:www.werspecial.com)",
+      "WebFetch(domain:www.sandrarodriguezphd.com)"
+    ]
+  }
+}
