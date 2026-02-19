@@ -1,0 +1,4 @@
+cd /Users/alexanderson/Downloads/procrastination-app
+git init
+git add .
+git commit -m "Initial commit - full Next.js rebuild with Supabase auth, Whereby focus pods, and AI planner"
