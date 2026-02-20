@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import { BarChart3, Flame, Zap, CheckCircle2, Clock, TrendingUp, Calendar, Archive, ChevronRight, X, PlayCircle, Trash2 } from 'lucide-react';
 import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
@@ -10,6 +11,7 @@ import Link from 'next/link';
 export default function DashboardPage() {
   const { darkMode } = useTheme();
   const { user } = useAuth();
+  const pathname = usePathname();
   const [tasks, setTasks] = useState([]);
   const [streakData, setStreakData] = useState({ current_streak: 0, highest_streak: 0 });
   const [quickestCompletion, setQuickestCompletion] = useState(null);
@@ -18,16 +20,17 @@ export default function DashboardPage() {
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState('');
 
+  // Re-fetch whenever the user arrives at /dashboard (covers in-app nav on mobile)
   useEffect(() => {
     if (user) loadDashboardData();
     else setLoadingData(false);
-  }, [user]);
+  }, [user, pathname]);
 
-  // Re-fetch when the user navigates back to this tab (e.g. after creating a task in the planner)
+  // Re-fetch when the page becomes visible again (covers app-switching on mobile)
   useEffect(() => {
-    const onFocus = () => { if (user) loadDashboardData(); };
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
+    const onVisible = () => { if (user && document.visibilityState === 'visible') loadDashboardData(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, [user]);
 
   const loadDashboardData = async () => {
