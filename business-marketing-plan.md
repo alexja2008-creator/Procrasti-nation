@@ -139,22 +139,43 @@ Channels:
 
 ## 5. Pricing Strategy
 
+### Model: Option C — 14-Day Pro Trial Hybrid
+
+Every signup automatically gets a **14-day full Pro trial** (no credit card required). After the trial:
+- If they upgrade → $7.99/mo or $72/yr
+- If they don't → they drop to the **limited free tier** (5 AI plans/month) rather than a hard cutoff
+
+**Why this model:**
+- Free trial → paid conversion benchmarks at **15–30%** vs 2–5% for freemium cold-start
+- Students especially respond well: they've experienced real value before being asked to pay
+- No credit card friction on signup = higher top-of-funnel volume
+- Limited free fallback (5 tasks/month) keeps them in the ecosystem for re-engagement rather than churning completely
+- Psychology: "I had it, I lost it" is a stronger upgrade trigger than "I never had it"
+
 | Tier | Price | Key Limits |
 |------|-------|------------|
-| Free | $0/mo | 5 AI plans/month, public Focus Pods, basic metrics |
+| Free (post-trial) | $0/mo | 5 AI plans/month, public Focus Pods, basic metrics |
 | Pro Monthly | $7.99/mo | Unlimited plans, private pods, nudges, streak freeze, templates |
 | Pro Annual | $72/yr ($6/mo) | Same as Pro — 25% discount, early adopter lock-in |
 
-**Pricing rationale (from market research):**
+**Implementation (shipped):**
+- `trial_ends_at` stored in Supabase `user_metadata` on signup (set to +14 days)
+- `trialStatus` computed in AuthContext: `'trial'` | `'free'` | `'pro'`
+- Trial/free badge shown in nav bar with days remaining
+- Free-tier users hit a paywall (UpgradeModal) after 5 tasks/month
+- Upgrade modal shows full Pro feature list + pricing + "Continue on Free" escape
+
+**Pricing rationale:**
 - Market norm for individual productivity apps: $3–8/mo
 - $7.99/mo sits squarely in the sweet spot — clears the "is this worth it?" hurdle faster than $12
 - Well below Notion ($8/mo) with a tighter, more focused value prop — easy comparison win
-- Annual plan at $72/yr ($6/mo) is a clean, easy-to-parse number — better psychology than $63.99
+- Annual plan at $72/yr ($6/mo) — clean number, better psychology than $63.99
 - 25% discount vs monthly is meaningful enough to drive annual commitment
 - Leaves room to raise to $9.99–$12/mo after Tier 1 features (nudges, Weekly Report) are live
 - Consider framing annual as "Charter Membership" for first 100 users
 
 **CTA language:**
+- Signup: "14-day free trial, no credit card"
 - Free tier: "Claim Your Citizenship"
 - Pro tier: "Join the Nation"
 - Annual tier: "Charter Membership"

@@ -22,7 +22,12 @@ export default function AuthModal({ onClose }) {
     setLoading(true);
 
     if (mode === 'signup') {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { trial_ends_at: trialEndsAt } },
+      });
       if (error) {
         setError(error.message);
       } else if (data.session) {
@@ -74,7 +79,7 @@ export default function AuthModal({ onClose }) {
         <p className={`text-sm mb-6 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
           {mode === 'login'
             ? 'Sign in to access your tasks and streaks'
-            : 'Sign up to save your progress across devices'}
+            : 'Sign up free — includes a 14-day Pro trial, no credit card required'}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">

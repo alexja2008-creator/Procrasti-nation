@@ -7,10 +7,12 @@ import { Brain, Calendar, Clock, CheckCircle2, Sparkles, Zap, Target, Trophy, Ar
 import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
+import UpgradeModal from '../../components/UpgradeModal';
 
 function PlannerContent() {
   const { darkMode } = useTheme();
-  const { user } = useAuth();
+  const { user, trialStatus } = useAuth();
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const searchParams = useSearchParams();
   const taskIdParam = searchParams.get('task');
   const [task, setTask] = useState('');
@@ -129,6 +131,23 @@ function PlannerContent() {
 
   const generatePlan = async () => {
     if (!task || !deadline) return;
+
+    // Free tier: max 5 AI plans per calendar month
+    if (user && trialStatus === 'free') {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      const { count } = await supabase
+        .from('tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('start_time', startOfMonth.toISOString());
+      if (count >= 5) {
+        setShowUpgradeModal(true);
+        return;
+      }
+    }
+
     setLoading(true);
     setError('');
 
@@ -272,6 +291,7 @@ function PlannerContent() {
   return (
     <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <Navigation />
+      {showUpgradeModal && <UpgradeModal reason="limit" onClose={() => setShowUpgradeModal(false)} />}
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Header */}

@@ -8,11 +8,13 @@ import { supabase } from '../lib/supabase';
 import Navigation from '../components/Navigation';
 import AuthModal from '../components/AuthModal';
 import Logo from '../components/Logo';
+import UpgradeModal from '../components/UpgradeModal';
 
 export default function LandingPage() {
   const { darkMode } = useTheme();
-  const { user } = useAuth();
+  const { user, trialStatus } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Inline planner state (logged-in hero)
   const [task, setTask] = useState('');
@@ -35,6 +37,23 @@ export default function LandingPage() {
 
   const generatePlan = async () => {
     if (!task || !deadline) return;
+
+    // Free tier: max 5 AI plans per calendar month
+    if (user && trialStatus === 'free') {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      const { count } = await supabase
+        .from('tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('start_time', startOfMonth.toISOString());
+      if (count >= 5) {
+        setShowUpgradeModal(true);
+        return;
+      }
+    }
+
     setPlanLoading(true);
     setPlanError('');
     try {
@@ -112,6 +131,7 @@ export default function LandingPage() {
     <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <Navigation />
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+      {showUpgradeModal && <UpgradeModal reason="limit" onClose={() => setShowUpgradeModal(false)} />}
 
       {/* Hero Section */}
       {user ? (
@@ -353,7 +373,7 @@ export default function LandingPage() {
             </div>
 
             <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              Free to join • No credit card required
+              Free to join • 14-day Pro trial included • No credit card required
             </p>
           </div>
         </div>
@@ -537,7 +557,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Every nation needs a rallying cry.</h2>
-            <p className="text-xl text-slate-400">Ours is: start. Pick the plan that gets you moving.</p>
+            <p className="text-xl text-slate-400">Start free. Get 14 days of Pro — no credit card required.</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -548,7 +568,7 @@ export default function LandingPage() {
                   <span className="text-5xl font-bold text-white">$0</span>
                   <span className="text-slate-400 ml-2">/month</span>
                 </div>
-                <p className="text-slate-400">Perfect for getting started</p>
+                <p className="text-slate-400">After your 14-day trial</p>
               </div>
               
               <ul className="space-y-4 mb-8">
@@ -582,7 +602,7 @@ export default function LandingPage() {
             <div className="bg-gradient-to-br from-emerald-600 to-teal-600 rounded-2xl p-8 relative transform md:scale-105 shadow-2xl">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <span className="bg-yellow-400 text-slate-900 px-4 py-1 rounded-full text-sm font-bold">
-                  MOST POPULAR
+                  14-DAY FREE TRIAL
                 </span>
               </div>
               
@@ -592,7 +612,7 @@ export default function LandingPage() {
                   <span className="text-5xl font-bold text-white">$7.99</span>
                   <span className="text-emerald-100 ml-2">/month</span>
                 </div>
-                <p className="text-emerald-100">For serious productivity — or <span className="font-bold">$72/yr</span></p>
+                <p className="text-emerald-100">14-day trial free, then $7.99/mo — or <span className="font-bold">$72/yr</span></p>
               </div>
               
               <ul className="space-y-4 mb-8">

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Moon, Sun, Menu, X, LogOut } from 'lucide-react';
+import { Moon, Sun, Menu, X, LogOut, Zap } from 'lucide-react';
 import { useTheme, useAuth } from '../app/providers';
 import { useState } from 'react';
 import AuthModal from './AuthModal';
@@ -10,7 +10,7 @@ import Logo from './Logo';
 
 export default function Navigation() {
   const { darkMode, setDarkMode } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user, signOut, trialStatus, trialDaysLeft } = useAuth();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -63,6 +63,19 @@ export default function Navigation() {
 
               {user ? (
                 <div className="flex items-center space-x-2">
+                  {/* Trial badge */}
+                  {trialStatus === 'trial' && (
+                    <Link href="/#pricing" className="hidden lg:flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors">
+                      <Zap className="w-3 h-3" />
+                      <span>Pro Trial · {trialDaysLeft}d left</span>
+                    </Link>
+                  )}
+                  {trialStatus === 'free' && (
+                    <Link href="/#pricing" className="hidden lg:flex items-center space-x-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors">
+                      <Zap className="w-3 h-3" />
+                      <span>Upgrade to Pro</span>
+                    </Link>
+                  )}
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                     darkMode ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-700'
                   }`} title={user.email}>
@@ -135,6 +148,20 @@ export default function Navigation() {
                   <div className={`px-4 py-2 text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                     Signed in as {user.email}
                   </div>
+                  {trialStatus === 'trial' && (
+                    <Link href="/#pricing" onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center space-x-2 mx-4 my-1 bg-emerald-600 text-white text-sm font-bold px-4 py-2 rounded-lg">
+                      <Zap className="w-4 h-4" />
+                      <span>Pro Trial — {trialDaysLeft} days left</span>
+                    </Link>
+                  )}
+                  {trialStatus === 'free' && (
+                    <Link href="/#pricing" onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center space-x-2 mx-4 my-1 bg-amber-500 text-white text-sm font-bold px-4 py-2 rounded-lg">
+                      <Zap className="w-4 h-4" />
+                      <span>Upgrade to Pro</span>
+                    </Link>
+                  )}
                   <button
                     onClick={() => { signOut(); setMobileMenuOpen(false); }}
                     className={`w-full text-left flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors ${
