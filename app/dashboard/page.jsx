@@ -23,6 +23,13 @@ export default function DashboardPage() {
     else setLoadingData(false);
   }, [user]);
 
+  // Re-fetch when the user navigates back to this tab (e.g. after creating a task in the planner)
+  useEffect(() => {
+    const onFocus = () => { if (user) loadDashboardData(); };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [user]);
+
   const loadDashboardData = async () => {
     setLoadingData(true);
     setLoadError('');
