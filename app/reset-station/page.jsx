@@ -11,6 +11,13 @@ export default function ResetStationPage() {
   const [completedSessions, setCompletedSessions] = useState(new Set());
   const [selectedCategory, setSelectedCategory] = useState(null);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('completed-resets');
+      if (saved) setCompletedSessions(new Set(JSON.parse(saved)));
+    } catch {}
+  }, []);
+
   const categories = [
     { id: 'breathwork', name: 'Breathwork', icon: Wind, color: 'blue', description: 'Breathing exercises to calm your mind' },
     { id: 'meditation', name: 'Guided Meditation', icon: Brain, color: 'violet', description: 'Center yourself and find clarity' },
@@ -45,6 +52,9 @@ export default function ResetStationPage() {
     const newCompleted = new Set(completedSessions);
     newCompleted.add(videoId);
     setCompletedSessions(newCompleted);
+    try {
+      localStorage.setItem('completed-resets', JSON.stringify([...newCompleted]));
+    } catch {}
   };
 
   const getCategoryForVideo = (categoryId) => {

@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const [showArchive, setShowArchive] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [loadingData, setLoadingData] = useState(true);
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     if (user) loadDashboardData();
@@ -24,16 +25,28 @@ export default function DashboardPage() {
 
   const loadDashboardData = async () => {
     setLoadingData(true);
+    setLoadError('');
 
     const [tasksRes, streakRes] = await Promise.all([
       supabase.from('tasks').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       supabase.from('streaks').select('*').eq('user_id', user.id).single(),
     ]);
 
+    if (tasksRes.error) {
+      setLoadError('Failed to load your tasks. Please refresh to try again.');
+      setLoadingData(false);
+      return;
+    }
+
     const loadedTasks = tasksRes.data || [];
     setTasks(loadedTasks);
 
-    if (streakRes.data) setStreakData(streakRes.data);
+    // streaks row may simply not exist yet (PGRST116 = no rows), only flag real errors
+    if (streakRes.error && streakRes.error.code !== 'PGRST116') {
+      setLoadError('Failed to load your streak data. Please refresh to try again.');
+    } else if (streakRes.data) {
+      setStreakData(streakRes.data);
+    }
 
     const completedWithTime = loadedTasks.filter(t => t.status === 'completed' && t.completed_at && t.start_time);
     if (completedWithTime.length > 0) {
@@ -104,6 +117,12 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
+            {loadError && (
+              <div className="mb-6 p-4 rounded-xl bg-rose-100 border border-rose-300 text-rose-700 flex items-center justify-between">
+                <p>{loadError}</p>
+                <button onClick={() => setLoadError('')}><X className="w-4 h-4" /></button>
+              </div>
+            )}
             {/* Stats Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
               <div className={`rounded-2xl p-6 border transition-colors ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
