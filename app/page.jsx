@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Check, Brain, Zap, Users, BarChart3, Sparkles, CheckCircle2, Clock, Calendar } from 'lucide-react';
 import { useTheme, useAuth } from './providers';
+import { supabase } from '../lib/supabase';
 import Navigation from '../components/Navigation';
 import AuthModal from '../components/AuthModal';
 import Logo from '../components/Logo';
@@ -20,6 +21,7 @@ export default function LandingPage() {
   const [planLoading, setPlanLoading] = useState(false);
   const [planError, setPlanError] = useState('');
   const [completedSteps, setCompletedSteps] = useState(new Set());
+  const [currentTaskId, setCurrentTaskId] = useState(null);
 
   const handleCTA = (e) => {
     if (!user) {
@@ -42,16 +44,44 @@ export default function LandingPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to generate plan');
       setPlan(data.plan);
       setCompletedSteps(new Set());
+      setCurrentTaskId(null);
+
+      // Save to Supabase so it appears in the dashboard
+      if (user) {
+        const { data: saved } = await supabase.from('tasks').insert({
+          user_id: user.id,
+          title: data.plan.taskTitle,
+          description: data.plan.analysis,
+          status: 'in_progress',
+          steps: data.plan.steps,
+          completed_steps: 0,
+          total_steps: data.plan.steps.length,
+          start_time: new Date().toISOString(),
+        }).select().single();
+        if (saved) setCurrentTaskId(saved.id);
+      }
     } catch (err) {
       setPlanError(err.message);
     }
     setPlanLoading(false);
   };
 
-  const toggleStep = (stepId) => {
+  const toggleStep = async (stepId) => {
     const next = new Set(completedSteps);
     next.has(stepId) ? next.delete(stepId) : next.add(stepId);
     setCompletedSteps(next);
+
+    // Persist step completion to Supabase
+    if (user && currentTaskId && plan) {
+      const updatedSteps = plan.steps.map(s => ({ ...s, completed: next.has(s.id) }));
+      const isFullyComplete = next.size === plan.steps.length;
+      await supabase.from('tasks').update({
+        steps: updatedSteps,
+        completed_steps: next.size,
+        status: isFullyComplete ? 'completed' : 'in_progress',
+        completed_at: isFullyComplete ? new Date().toISOString() : null,
+      }).eq('id', currentTaskId);
+    }
   };
 
   return (
@@ -189,7 +219,7 @@ export default function LandingPage() {
 
                 <div className="flex space-x-3">
                   <button
-                    onClick={() => { setPlan(null); setTask(''); setDeadline(''); setCompletedSteps(new Set()); }}
+                    onClick={() => { setPlan(null); setTask(''); setDeadline(''); setCompletedSteps(new Set()); setCurrentTaskId(null); }}
                     className={`flex-1 px-4 py-3 rounded-xl font-semibold transition ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-900'}`}
                   >
                     New Task
