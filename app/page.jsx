@@ -22,6 +22,9 @@ export default function LandingPage() {
   const [planError, setPlanError] = useState('');
   const [completedSteps, setCompletedSteps] = useState(new Set());
   const [currentTaskId, setCurrentTaskId] = useState(null);
+  const [clarificationNeeded, setClarificationNeeded] = useState(false);
+  const [clarificationQuestions, setClarificationQuestions] = useState([]);
+  const [clarificationAnswers, setClarificationAnswers] = useState({});
 
   const handleCTA = (e) => {
     if (!user) {
@@ -35,16 +38,37 @@ export default function LandingPage() {
     setPlanLoading(true);
     setPlanError('');
     try {
+      // Step 1: check if clarification is needed (only on first call)
+      if (!clarificationNeeded) {
+        const clarRes = await fetch('/api/generate-plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ task, deadline, checkClarification: true }),
+        });
+        const clarData = await clarRes.json();
+        if (!clarRes.ok) throw new Error(clarData.error || 'Failed to check clarification');
+        if (clarData.needsClarification) {
+          setClarificationQuestions(clarData.questions);
+          setClarificationNeeded(true);
+          setPlanLoading(false);
+          return;
+        }
+      }
+
+      // Step 2: generate the full plan (with any clarification answers)
       const res = await fetch('/api/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task, deadline, checkClarification: false }),
+        body: JSON.stringify({ task, deadline, clarificationAnswers, clarificationQuestions, checkClarification: false }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to generate plan');
       setPlan(data.plan);
       setCompletedSteps(new Set());
       setCurrentTaskId(null);
+      setClarificationNeeded(false);
+      setClarificationQuestions([]);
+      setClarificationAnswers({});
 
       // Save to Supabase so it appears in the dashboard
       if (user) {
@@ -110,6 +134,62 @@ export default function LandingPage() {
 
           <div className={`rounded-2xl p-8 border transition-colors ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
             {!plan ? (
+              clarificationNeeded ? (
+                /* Clarification questions */
+                <>
+                  {planError && (
+                    <div className="mb-4 p-3 rounded-lg bg-rose-100 border border-rose-300 text-rose-700 text-sm">{planError}</div>
+                  )}
+                  <div className="mb-6">
+                    <h2 className={`text-xl font-bold mb-1 flex items-center space-x-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                      <Brain className={`w-5 h-5 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                      <span>Just a few quick questions...</span>
+                    </h2>
+                    <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Help me create a better plan for you!</p>
+                  </div>
+                  <div className="space-y-4">
+                    {clarificationQuestions.map((question, index) => (
+                      <div key={index}>
+                        <label className={`block font-semibold mb-2 text-sm ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{question}</label>
+                        <input
+                          type="text"
+                          value={clarificationAnswers[index] || ''}
+                          onChange={(e) => setClarificationAnswers({ ...clarificationAnswers, [index]: e.target.value })}
+                          onKeyDown={(e) => e.key === 'Enter' && !planLoading && generatePlan()}
+                          placeholder="Your answer..."
+                          className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none transition-colors ${
+                            darkMode
+                              ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500'
+                              : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
+                          }`}
+                          disabled={planLoading}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex space-x-3 mt-6">
+                    <button
+                      onClick={() => { setClarificationNeeded(false); setClarificationQuestions([]); setClarificationAnswers({}); }}
+                      disabled={planLoading}
+                      className={`flex-1 px-4 py-3 rounded-xl font-semibold transition ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-900'}`}
+                    >
+                      ← Back
+                    </button>
+                    <button
+                      onClick={generatePlan}
+                      disabled={planLoading}
+                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 text-white px-4 py-3 rounded-xl font-bold transition flex items-center justify-center space-x-2"
+                    >
+                      {planLoading ? (
+                        <><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" /><span>Generating...</span></>
+                      ) : (
+                        <><Zap className="w-5 h-5" /><span>Generate My Plan</span></>
+                      )}
+                    </button>
+                  </div>
+                </>
+              ) : (
+              /* Task input form */
               <>
                 {planError && (
                   <div className="mb-4 p-3 rounded-lg bg-rose-100 border border-rose-300 text-rose-700 text-sm">{planError}</div>
@@ -160,6 +240,7 @@ export default function LandingPage() {
                   </button>
                 </div>
               </>
+              )
             ) : (
               <>
                 <div className="mb-6">
