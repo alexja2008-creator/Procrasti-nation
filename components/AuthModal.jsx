@@ -25,10 +25,8 @@ export default function AuthModal({ onClose }) {
       if (error) {
         setError(error.message);
       } else if (data.session) {
-        // Email confirmation is off — user is logged in immediately
         onClose();
       } else {
-        // Email confirmation is on — ask them to check inbox
         setMessage('Check your email for a confirmation link!');
       }
     } else {
@@ -47,7 +45,7 @@ export default function AuthModal({ onClose }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
         onClick={onClose}
       />
 
@@ -57,8 +55,8 @@ export default function AuthModal({ onClose }) {
       }`}>
         <button
           onClick={onClose}
-          className={`absolute top-4 right-4 p-1 rounded-lg transition-colors ${
-            darkMode ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'
+          className={`absolute top-4 right-4 p-1.5 rounded-lg transition-colors ${
+            darkMode ? 'hover:bg-slate-700 text-slate-400 hover:text-slate-200' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-700'
           }`}
         >
           <X className="w-5 h-5" />
@@ -83,7 +81,7 @@ export default function AuthModal({ onClose }) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+            <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
               Email
             </label>
             <input
@@ -92,16 +90,16 @@ export default function AuthModal({ onClose }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className={`w-full px-4 py-2.5 rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+              className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none transition-colors ${
                 darkMode
-                  ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
-                  : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                  ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500'
+                  : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
               }`}
             />
           </div>
 
           <div>
-            <label className={`block text-sm font-medium mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+            <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
               Password
             </label>
             <input
@@ -111,27 +109,27 @@ export default function AuthModal({ onClose }) {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               minLength={6}
-              className={`w-full px-4 py-2.5 rounded-lg border text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
+              className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none transition-colors ${
                 darkMode
-                  ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
-                  : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
+                  ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500'
+                  : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
               }`}
             />
             {mode === 'signup' && (
-              <p className={`text-xs mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p className={`text-xs mt-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                 Minimum 6 characters
               </p>
             )}
           </div>
 
           {error && (
-            <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">
+            <p className={`text-sm px-3 py-2 rounded-lg ${darkMode ? 'text-red-400 bg-red-900/20' : 'text-red-600 bg-red-50'}`}>
               {error}
             </p>
           )}
 
           {message && (
-            <p className="text-sm text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-lg">
+            <p className={`text-sm px-3 py-2 rounded-lg ${darkMode ? 'text-emerald-400 bg-emerald-900/20' : 'text-emerald-600 bg-emerald-50'}`}>
               {message}
             </p>
           )}
@@ -139,7 +137,7 @@ export default function AuthModal({ onClose }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white py-2.5 rounded-lg font-semibold transition-colors"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-xl font-bold transition-colors"
           >
             {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </button>
@@ -149,7 +147,7 @@ export default function AuthModal({ onClose }) {
           {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
           <button
             onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); setMessage(''); }}
-            className="text-emerald-600 hover:text-emerald-700 font-medium"
+            className="text-emerald-600 hover:text-emerald-500 font-semibold transition-colors"
           >
             {mode === 'login' ? 'Sign up' : 'Sign in'}
           </button>

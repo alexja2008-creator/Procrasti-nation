@@ -233,7 +233,7 @@ export default function LandingPage() {
               <Link
                 href="/planner"
                 onClick={handleCTA}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all transform hover:scale-105 flex items-center space-x-2 shadow-lg shadow-emerald-600/30"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 flex items-center space-x-2 shadow-lg shadow-emerald-600/30"
               >
                 <span>Get Started Free</span>
                 <ArrowRight className="w-5 h-5" />
@@ -247,22 +247,29 @@ export default function LandingPage() {
         </div>
       )}
 
-      {/* Social Proof */}
+      {/* Value props bar */}
       <div className={`py-12 border-y transition-colors ${
         darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
       }`}>
-        <div className="max-w-7xl mx-auto px-6">
-          <p className={`text-center text-sm font-medium mb-8 ${
-            darkMode ? 'text-slate-400' : 'text-slate-500'
-          }`}>TRUSTED BY STUDENTS AND PROFESSIONALS</p>
-          <div className={`flex flex-col md:flex-row justify-center items-center space-y-4 md:space-y-0 md:space-x-12 ${
-            darkMode ? 'text-slate-500' : 'text-slate-400'
-          }`}>
-            <div className="text-2xl font-bold">10K+ Users</div>
-            <div className={`hidden md:block w-px h-8 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
-            <div className="text-2xl font-bold">50K+ Tasks Completed</div>
-            <div className={`hidden md:block w-px h-8 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`}></div>
-            <div className="text-2xl font-bold">4.9★ Rating</div>
+        <div className="max-w-5xl mx-auto px-6">
+          <div className={`flex flex-col md:flex-row justify-center items-center space-y-6 md:space-y-0 md:space-x-16`}>
+            <div className="flex flex-col items-center text-center">
+              <Brain className={`w-7 h-7 mb-2 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
+              <span className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>AI-generated micro-steps</span>
+              <span className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Any task, broken down instantly</span>
+            </div>
+            <div className={`hidden md:block w-px h-12 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
+            <div className="flex flex-col items-center text-center">
+              <Zap className={`w-7 h-7 mb-2 ${darkMode ? 'text-teal-400' : 'text-teal-600'}`} />
+              <span className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Built to beat procrastination</span>
+              <span className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Low activation energy, every step</span>
+            </div>
+            <div className={`hidden md:block w-px h-12 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
+            <div className="flex flex-col items-center text-center">
+              <Users className={`w-7 h-7 mb-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+              <span className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Accountability built in</span>
+              <span className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Streaks, pods, and progress tracking</span>
+            </div>
           </div>
         </div>
       </div>
@@ -454,7 +461,7 @@ export default function LandingPage() {
               <Link
                 href="/planner"
                 onClick={handleCTA}
-                className="block w-full bg-slate-700 hover:bg-slate-600 text-white px-6 py-4 rounded-lg font-semibold transition-all text-center"
+                className="block w-full bg-slate-700 hover:bg-slate-600 text-white px-6 py-4 rounded-xl font-semibold transition-all text-center"
               >
                 Get Started Free
               </Link>
@@ -502,7 +509,7 @@ export default function LandingPage() {
               <Link
                 href="/planner"
                 onClick={handleCTA}
-                className="block w-full bg-white hover:bg-slate-100 text-emerald-600 px-6 py-4 rounded-lg font-bold transition-all transform hover:scale-105 shadow-lg text-center"
+                className="block w-full bg-white hover:bg-slate-100 text-emerald-600 px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg text-center"
               >
                 Get Started Free
               </Link>
@@ -523,7 +530,7 @@ export default function LandingPage() {
           <Link
             href="/planner"
             onClick={handleCTA}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-5 rounded-lg font-bold text-xl transition-all transform hover:scale-105 shadow-lg shadow-emerald-600/30 inline-flex items-center space-x-2"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-5 rounded-xl font-bold text-xl transition-all transform hover:scale-105 shadow-lg shadow-emerald-600/30 inline-flex items-center space-x-2"
           >
             <span>Get Started Free</span>
             <ArrowRight className="w-6 h-6" />
@@ -543,7 +550,7 @@ export default function LandingPage() {
               </div>
               <span className="text-xl font-bold text-white">ProcrastiNation</span>
             </div>
-            <p className="text-slate-400 text-sm">© 2024 ProcrastiNation. Stop waiting. Start doing.</p>
+            <p className="text-slate-400 text-sm">© 2026 ProcrastiNation. Stop waiting. Start doing.</p>
           </div>
         </div>
       </footer>

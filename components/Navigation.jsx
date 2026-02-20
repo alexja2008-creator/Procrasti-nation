@@ -64,12 +64,11 @@ export default function Navigation() {
               </button>
 
               {user ? (
-                <div className="flex items-center space-x-3">
-                  <div className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg ${
-                    darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    <User className="w-4 h-4" />
-                    <span className="text-sm font-medium truncate max-w-[140px]">{user.email}</span>
+                <div className="flex items-center space-x-2">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                    darkMode ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-700'
+                  }`} title={user.email}>
+                    {user.email[0].toUpperCase()}
                   </div>
                   <button
                     onClick={signOut}
@@ -84,7 +83,7 @@ export default function Navigation() {
               ) : (
                 <button
                   onClick={() => setShowAuthModal(true)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-lg font-semibold transition-all transform hover:scale-105"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all transform hover:scale-105"
                 >
                   Sign In
                 </button>
