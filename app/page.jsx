@@ -589,7 +589,7 @@ export default function LandingPage() {
               <div className="mb-8">
                 <h3 className="text-2xl font-bold text-white mb-2">Pro</h3>
                 <div className="flex items-baseline mb-4">
-                  <span className="text-5xl font-bold text-white">$12</span>
+                  <span className="text-5xl font-bold text-white">$7.99</span>
                   <span className="text-emerald-100 ml-2">/month</span>
                 </div>
                 <p className="text-emerald-100">For serious productivity</p>
