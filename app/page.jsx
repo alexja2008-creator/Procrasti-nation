@@ -213,21 +213,21 @@ export default function LandingPage() {
               darkMode ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-700'
             }`}>
               <Sparkles className="w-4 h-4" />
-              <span>Your AI-powered productivity companion</span>
+              <span>For citizens of the procrastination nation</span>
             </div>
 
             <h1 className={`text-6xl md:text-7xl font-bold mb-6 tracking-tight ${
               darkMode ? 'text-white' : 'text-slate-900'
             }`}>
-              Stop waiting.
+              A nation of doers
               <br />
-              <span className={darkMode ? 'text-emerald-400' : 'text-emerald-600'}>Start doing.</span>
+              <span className={darkMode ? 'text-emerald-400' : 'text-emerald-600'}>starts here.</span>
             </h1>
 
-            <p className={`text-xl mb-10 leading-relaxed max-w-2xl mx-auto ${
+            <p className={`text-xl mb-10 leading-relaxed max-w-3xl mx-auto ${
               darkMode ? 'text-slate-300' : 'text-slate-600'
             }`}>
-              The intelligent productivity tool that breaks down your biggest tasks into achievable steps—so you can finally get started.
+              We've all been citizens of procrastination. Time to change your status. AI breaks down your biggest tasks so the only thing left to do is start.
             </p>
 
             <div className="flex justify-center mb-6">
@@ -236,13 +236,13 @@ export default function LandingPage() {
                 onClick={handleCTA}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105 flex items-center space-x-2 shadow-lg shadow-emerald-600/30"
               >
-                <span>Get Started Free</span>
+                <span>Join the Nation</span>
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </div>
 
             <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              Free to use • No credit card required
+              Free to join • No credit card required
             </p>
           </div>
         </div>
@@ -256,19 +256,19 @@ export default function LandingPage() {
           <div className={`flex flex-col md:flex-row justify-center items-center space-y-6 md:space-y-0 md:space-x-16`}>
             <div className="flex flex-col items-center text-center">
               <Brain className={`w-7 h-7 mb-2 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
-              <span className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>AI-generated micro-steps</span>
-              <span className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Any task, broken down instantly</span>
+              <span className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Declare independence from overwhelm</span>
+              <span className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Any task, broken into steps instantly</span>
             </div>
             <div className={`hidden md:block w-px h-12 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
             <div className="flex flex-col items-center text-center">
               <Zap className={`w-7 h-7 mb-2 ${darkMode ? 'text-teal-400' : 'text-teal-600'}`} />
-              <span className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Built to beat procrastination</span>
+              <span className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Rally your focus</span>
               <span className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Low activation energy, every step</span>
             </div>
             <div className={`hidden md:block w-px h-12 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
             <div className="flex flex-col items-center text-center">
               <Users className={`w-7 h-7 mb-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-              <span className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Accountability built in</span>
+              <span className={`text-base font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Hold the line</span>
               <span className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Streaks, pods, and progress tracking</span>
             </div>
           </div>
@@ -280,9 +280,9 @@ export default function LandingPage() {
         <div className="text-center mb-16">
           <h2 className={`text-4xl md:text-5xl font-bold mb-4 ${
             darkMode ? 'text-white' : 'text-slate-900'
-          }`}>Everything you need to stay productive</h2>
+          }`}>Your arsenal against inaction</h2>
           <p className={`text-xl ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-            Four powerful tools working together to help you accomplish more.
+            Four tools built for people who've tried everything else.
           </p>
         </div>
 
@@ -425,8 +425,8 @@ export default function LandingPage() {
       <div id="pricing" className="bg-slate-900 py-24">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Simple, transparent pricing</h2>
-            <p className="text-xl text-slate-400">Start free, upgrade when you're ready.</p>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Every nation needs a rallying cry.</h2>
+            <p className="text-xl text-slate-400">Ours is: start. Pick the plan that gets you moving.</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -464,7 +464,7 @@ export default function LandingPage() {
                 onClick={handleCTA}
                 className="block w-full bg-slate-700 hover:bg-slate-600 text-white px-6 py-4 rounded-xl font-semibold transition-all text-center"
               >
-                Get Started Free
+                Claim Your Citizenship
               </Link>
             </div>
 
@@ -512,7 +512,7 @@ export default function LandingPage() {
                 onClick={handleCTA}
                 className="block w-full bg-white hover:bg-slate-100 text-emerald-600 px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg text-center"
               >
-                Get Started Free
+                Join the Nation
               </Link>
             </div>
           </div>
@@ -523,17 +523,17 @@ export default function LandingPage() {
       <div className={`py-24 transition-colors ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className={`text-4xl md:text-5xl font-bold mb-6 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-            Ready to stop procrastinating?
+            Your nation is waiting.
           </h2>
           <p className={`text-xl mb-10 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-            Join thousands of students and professionals who are finally getting things done.
+            Thousands of former procrastinators have already changed their status. One step at a time. Together.
           </p>
           <Link
             href="/planner"
             onClick={handleCTA}
             className="bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-5 rounded-xl font-bold text-xl transition-all transform hover:scale-105 shadow-lg shadow-emerald-600/30 inline-flex items-center space-x-2"
           >
-            <span>Get Started Free</span>
+            <span>Join the Nation</span>
             <ArrowRight className="w-6 h-6" />
           </Link>
         </div>
@@ -548,7 +548,7 @@ export default function LandingPage() {
             <div className="mb-4 md:mb-0">
               <Logo size="md" />
             </div>
-            <p className="text-slate-400 text-sm">© 2026 ProcrastiNation. Stop waiting. Start doing.</p>
+            <p className="text-slate-400 text-sm">© 2026 ProcrastiNation. The nation where things get done.</p>
           </div>
         </div>
       </footer>
