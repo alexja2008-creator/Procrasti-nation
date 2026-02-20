@@ -22,12 +22,20 @@ export async function POST(request) {
     });
 
     if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Whereby error: ${err}`);
+      let errMsg = `Whereby error: ${response.status}`;
+      try {
+        const errData = await response.json();
+        errMsg = errData.error?.message || errData.message || errMsg;
+      } catch {
+        errMsg = await response.text() || errMsg;
+      }
+      throw new Error(errMsg);
     }
 
     const data = await response.json();
-    return NextResponse.json({ roomUrl: data.roomUrl, hostRoomUrl: data.hostRoomUrl });
+    const roomUrl = data.roomUrl;
+    if (!roomUrl) throw new Error('Whereby did not return a room URL');
+    return NextResponse.json({ roomUrl, hostRoomUrl: data.hostRoomUrl || roomUrl });
   } catch (err) {
     console.error('Error creating Whereby room:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });

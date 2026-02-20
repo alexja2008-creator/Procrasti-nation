@@ -58,7 +58,12 @@ Respond ONLY with valid JSON in this exact format, no preamble or markdown:
       const data = await response.json();
       const text = data.content.map(item => item.text || '').join('\n');
       const clean = text.replace(/```json|```/g, '').trim();
-      const result = JSON.parse(clean);
+      let result;
+      try {
+        result = JSON.parse(clean);
+      } catch {
+        return NextResponse.json({ error: 'Failed to parse AI response. Please try again.' }, { status: 500 });
+      }
 
       return NextResponse.json(result);
     }
@@ -128,7 +133,12 @@ Respond ONLY with valid JSON in this exact format, no preamble or markdown:
     const data = await response.json();
     const text = data.content.map(item => item.text || '').join('\n');
     const clean = text.replace(/```json|```/g, '').trim();
-    const plan = JSON.parse(clean);
+    let plan;
+    try {
+      plan = JSON.parse(clean);
+    } catch {
+      return NextResponse.json({ error: 'Failed to parse AI response. Please try again.' }, { status: 500 });
+    }
 
     return NextResponse.json({ plan });
   } catch (error) {
