@@ -6,6 +6,7 @@ import { ArrowRight, Check, Brain, Zap, Users, BarChart3, Sparkles, CheckCircle2
 import { useTheme, useAuth } from './providers';
 import Navigation from '../components/Navigation';
 import AuthModal from '../components/AuthModal';
+import Logo from '../components/Logo';
 
 export default function LandingPage() {
   const { darkMode } = useTheme();
@@ -544,11 +545,8 @@ export default function LandingPage() {
       }`}>
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">ProcrastiNation</span>
+            <div className="mb-4 md:mb-0">
+              <Logo size="md" />
             </div>
             <p className="text-slate-400 text-sm">© 2026 ProcrastiNation. Stop waiting. Start doing.</p>
           </div>

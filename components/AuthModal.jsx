@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../app/providers';
-import { X, Sparkles } from 'lucide-react';
+import { X } from 'lucide-react';
+import Logo from './Logo';
 
 export default function AuthModal({ onClose }) {
   const { darkMode } = useTheme();
@@ -63,11 +64,8 @@ export default function AuthModal({ onClose }) {
         </button>
 
         {/* Logo */}
-        <div className="flex items-center space-x-2 mb-6">
-          <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <span className="text-xl font-bold">ProcrastiNation</span>
+        <div className="mb-6">
+          <Logo size="md" />
         </div>
 
         <h2 className="text-2xl font-bold mb-1">

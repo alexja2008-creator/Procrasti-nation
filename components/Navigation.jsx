@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sparkles, Moon, Sun, Menu, X, LogOut, User } from 'lucide-react';
+import { Moon, Sun, Menu, X, LogOut } from 'lucide-react';
 import { useTheme, useAuth } from '../app/providers';
 import { useState } from 'react';
 import AuthModal from './AuthModal';
+import Logo from './Logo';
 
 export default function Navigation() {
   const { darkMode, setDarkMode } = useTheme();
@@ -31,11 +32,8 @@ export default function Navigation() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-lg flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-white" />
-              </div>
-              <span className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>ProcrastiNation</span>
+            <Link href="/">
+              <Logo size="md" darkText={!darkMode} />
             </Link>
 
             {/* Desktop Navigation */}
