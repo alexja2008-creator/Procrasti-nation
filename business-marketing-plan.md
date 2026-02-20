@@ -143,13 +143,14 @@ Channels:
 |------|-------|------------|
 | Free | $0/mo | 5 AI plans/month, public Focus Pods, basic metrics |
 | Pro Monthly | $7.99/mo | Unlimited plans, private pods, nudges, streak freeze, templates |
-| Pro Annual | $63.99/yr ($5.33/mo) | Same as Pro — ~33% discount, early adopter lock-in |
+| Pro Annual | $72/yr ($6/mo) | Same as Pro — 25% discount, early adopter lock-in |
 
 **Pricing rationale (from market research):**
 - Market norm for individual productivity apps: $3–8/mo
 - $7.99/mo sits squarely in the sweet spot — clears the "is this worth it?" hurdle faster than $12
 - Well below Notion ($8/mo) with a tighter, more focused value prop — easy comparison win
-- Annual plan at $63.99/yr (~$5.33/mo) locks in retention through the critical first year
+- Annual plan at $72/yr ($6/mo) is a clean, easy-to-parse number — better psychology than $63.99
+- 25% discount vs monthly is meaningful enough to drive annual commitment
 - Leaves room to raise to $9.99–$12/mo after Tier 1 features (nudges, Weekly Report) are live
 - Consider framing annual as "Charter Membership" for first 100 users
 

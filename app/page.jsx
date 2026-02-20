@@ -592,7 +592,7 @@ export default function LandingPage() {
                   <span className="text-5xl font-bold text-white">$7.99</span>
                   <span className="text-emerald-100 ml-2">/month</span>
                 </div>
-                <p className="text-emerald-100">For serious productivity</p>
+                <p className="text-emerald-100">For serious productivity — or <span className="font-bold">$72/yr</span></p>
               </div>
               
               <ul className="space-y-4 mb-8">
