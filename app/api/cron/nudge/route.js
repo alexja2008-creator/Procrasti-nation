@@ -74,7 +74,7 @@ export async function GET(request) {
 
       try {
         await resend.emails.send({
-          from: 'ProcrastiNation <nudge@procrastination.nation>',
+          from: 'ProcrastiNation <nudge@procrastination.work>',
           to: email,
           subject,
           html,
