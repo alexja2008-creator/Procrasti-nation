@@ -23,13 +23,13 @@ export async function GET(request) {
 
   try {
     // Find all in-progress tasks that:
-    // 1. Have not been updated in 24+ hours
+    // 1. Were created 24+ hours ago (created_at is immutable — not affected by the updated_at trigger)
     // 2. Haven't had a nudge sent in the last 24 hours (or never nudged)
     const { data: staleTasks, error } = await supabaseAdmin
       .from('tasks')
       .select('id, user_id, title, steps, completed_steps, total_steps, last_nudge_sent')
       .eq('status', 'in_progress')
-      .lt('updated_at', twentyFourHoursAgo)
+      .lt('created_at', twentyFourHoursAgo)
       .or(`last_nudge_sent.is.null,last_nudge_sent.lt.${twentyFourHoursAgo}`);
 
     if (error) {
