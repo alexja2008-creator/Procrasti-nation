@@ -3,6 +3,16 @@
 -- Run these in: Supabase Dashboard → SQL Editor
 -- ============================================================
 
+-- 0. Add due_date and priority columns to tasks table
+--    due_date: optional deadline set by the user at task creation
+--    priority: 1=Low, 2=Medium, 3=High (nullable — unset tasks sort last)
+
+ALTER TABLE tasks
+ADD COLUMN IF NOT EXISTS due_date TIMESTAMPTZ DEFAULT NULL;
+
+ALTER TABLE tasks
+ADD COLUMN IF NOT EXISTS priority SMALLINT DEFAULT NULL CHECK (priority IN (1, 2, 3));
+
 -- 1. Add last_nudge_sent column to tasks table
 --    Tracks when the last re-engagement nudge was sent per task
 --    so we don't send duplicate emails within 24 hours.

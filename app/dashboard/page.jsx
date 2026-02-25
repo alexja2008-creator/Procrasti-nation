@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
-import { BarChart3, Flame, Zap, CheckCircle2, Clock, TrendingUp, Calendar, Archive, ChevronRight, X, PlayCircle, Trash2 } from 'lucide-react';
+import { BarChart3, Flame, Zap, CheckCircle2, Clock, TrendingUp, Calendar, Archive, ChevronRight, X, PlayCircle, Trash2, ArrowUpDown } from 'lucide-react';
 import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
@@ -19,6 +19,7 @@ export default function DashboardPage() {
   const [selectedTask, setSelectedTask] = useState(null);
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState('');
+  const [inProgressSort, setInProgressSort] = useState('priority'); // 'priority' | 'due_date'
 
   // Re-fetch whenever the user arrives at /dashboard (covers in-app nav on mobile)
   useEffect(() => {
@@ -71,8 +72,30 @@ export default function DashboardPage() {
   };
 
   const completedTasks = tasks.filter(t => t.status === 'completed');
-  const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
+  const rawInProgressTasks = tasks.filter(t => t.status === 'in_progress');
   const totalTasks = tasks.length;
+
+  const priorityLabel = (p) => {
+    if (p === 3) return { label: 'High', color: darkMode ? 'bg-rose-900/40 text-rose-400' : 'bg-rose-100 text-rose-600' };
+    if (p === 2) return { label: 'Med', color: darkMode ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-100 text-amber-600' };
+    if (p === 1) return { label: 'Low', color: darkMode ? 'bg-emerald-900/40 text-emerald-400' : 'bg-emerald-100 text-emerald-600' };
+    return null;
+  };
+
+  const inProgressTasks = [...rawInProgressTasks].sort((a, b) => {
+    if (inProgressSort === 'priority') {
+      // Higher priority number = more urgent, nulls last
+      const pa = a.priority ?? 0;
+      const pb = b.priority ?? 0;
+      return pb - pa;
+    } else {
+      // Earliest due date first, nulls last
+      if (!a.due_date && !b.due_date) return 0;
+      if (!a.due_date) return 1;
+      if (!b.due_date) return -1;
+      return new Date(a.due_date) - new Date(b.due_date);
+    }
+  });
   const completionRate = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
 
   const formatTime = (hours) => {
@@ -249,20 +272,62 @@ export default function DashboardPage() {
 
             {inProgressTasks.length > 0 && (
               <div className={`rounded-2xl p-6 border mb-8 transition-colors ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-                <h3 className={`text-xl font-bold mb-6 flex items-center space-x-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                  <Clock className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-                  <span>Tasks In Progress</span>
-                </h3>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className={`text-xl font-bold flex items-center space-x-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                    <Clock className={`w-5 h-5 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                    <span>Tasks In Progress</span>
+                  </h3>
+                  <div className={`flex items-center space-x-1 rounded-lg p-1 ${darkMode ? 'bg-slate-700' : 'bg-slate-100'}`}>
+                    <ArrowUpDown className={`w-3.5 h-3.5 ml-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+                    <button
+                      onClick={() => setInProgressSort('priority')}
+                      className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+                        inProgressSort === 'priority'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : darkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Priority
+                    </button>
+                    <button
+                      onClick={() => setInProgressSort('due_date')}
+                      className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+                        inProgressSort === 'due_date'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : darkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      Due Date
+                    </button>
+                  </div>
+                </div>
                 <div className="space-y-3">
                   {inProgressTasks.map(task => {
                     const done = task.completed_steps || 0;
                     const total = task.total_steps || 1;
+                    const pri = priorityLabel(task.priority);
+                    const dueDateStr = task.due_date
+                      ? new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                      : null;
                     return (
                       <div key={task.id} className={`rounded-xl p-4 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-100'}`}>
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1 min-w-0">
                             <h4 className={`font-bold mb-1 truncate ${darkMode ? 'text-white' : 'text-slate-900'}`}>{task.title}</h4>
-                            <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{done} of {total} steps complete</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{done} of {total} steps complete</p>
+                              {pri && (
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${pri.color}`}>
+                                  {pri.label}
+                                </span>
+                              )}
+                              {dueDateStr && (
+                                <span className={`flex items-center gap-1 text-xs font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                                  <Calendar className="w-3 h-3" />
+                                  {dueDateStr}
+                                </span>
+                              )}
+                            </div>
                           </div>
                           <div className="ml-4 flex items-center space-x-2 flex-shrink-0">
                             <Link

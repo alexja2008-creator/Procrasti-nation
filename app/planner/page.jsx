@@ -17,6 +17,8 @@ function PlannerContent() {
   const taskIdParam = searchParams.get('task');
   const [task, setTask] = useState('');
   const [deadline, setDeadline] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [priority, setPriority] = useState('');
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -193,6 +195,8 @@ function PlannerContent() {
           completed_steps: 0,
           total_steps: planData.plan.steps.length,
           start_time: new Date().toISOString(),
+          due_date: dueDate ? new Date(dueDate).toISOString() : null,
+          priority: priority ? parseInt(priority) : null,
         }).select().single();
         if (data) setCurrentTaskId(data.id);
       }
@@ -462,6 +466,44 @@ function PlannerContent() {
                     }`}
                     disabled={loading}
                   />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={`block font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Due date <span className={`font-normal text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>(optional)</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      className={`w-full px-4 py-4 rounded-lg border-2 focus:outline-none text-lg transition-colors ${
+                        darkMode
+                          ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white'
+                          : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900'
+                      }`}
+                      disabled={loading}
+                    />
+                  </div>
+                  <div>
+                    <label className={`block font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                      Priority <span className={`font-normal text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>(optional)</span>
+                    </label>
+                    <select
+                      value={priority}
+                      onChange={(e) => setPriority(e.target.value)}
+                      className={`w-full px-4 py-4 rounded-lg border-2 focus:outline-none text-lg transition-colors ${
+                        darkMode
+                          ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white'
+                          : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900'
+                      }`}
+                      disabled={loading}
+                    >
+                      <option value="">— No priority —</option>
+                      <option value="3">🔴 High</option>
+                      <option value="2">🟡 Medium</option>
+                      <option value="1">🟢 Low</option>
+                    </select>
+                  </div>
                 </div>
                 <button
                   onClick={generatePlan}
