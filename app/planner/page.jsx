@@ -616,6 +616,56 @@ function PlannerContent() {
               })}
             </div>
 
+            {dueDate && (
+              <div className={`rounded-2xl p-5 border transition-colors ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                <p className={`text-sm font-semibold mb-3 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>📅 Add to your calendar</p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <a
+                    href={(() => {
+                      const title = encodeURIComponent(`ProcrastiNation Task Due: ${plan.taskTitle}`);
+                      const date = dueDate.replace(/-/g, '');
+                      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${date}/${date}&details=Task+created+in+ProcrastiNation`;
+                    })()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl font-semibold transition bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>Add to Google Calendar</span>
+                  </a>
+                  <button
+                    onClick={() => {
+                      const title = `ProcrastiNation Task Due: ${plan.taskTitle}`;
+                      const date = dueDate.replace(/-/g, '');
+                      const ics = [
+                        'BEGIN:VCALENDAR',
+                        'VERSION:2.0',
+                        'BEGIN:VEVENT',
+                        `SUMMARY:${title}`,
+                        `DTSTART;VALUE=DATE:${date}`,
+                        `DTEND;VALUE=DATE:${date}`,
+                        'END:VEVENT',
+                        'END:VCALENDAR',
+                      ].join('\r\n');
+                      const blob = new Blob([ics], { type: 'text/calendar' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = 'procrasti-nation-task.ics';
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className={`flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-xl font-semibold transition ${
+                      darkMode ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
+                    }`}
+                  >
+                    <Calendar className="w-4 h-4" />
+                    <span>Add to Apple / Outlook</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="flex space-x-3">
               <button
                 onClick={() => { setPlan(null); setTask(''); setDeadline(''); setCurrentTaskId(null); }}
