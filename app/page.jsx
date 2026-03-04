@@ -679,7 +679,7 @@ export default function LandingPage() {
             <div className="mb-4 md:mb-0">
               <Logo size="md" />
             </div>
-            <p className="text-slate-400 text-sm">© 2026 ProcrastiNation. The nation where things get done.</p>
+            <p className="text-slate-400 text-sm">© 2026 ProcrastiNation. Building the nation one step at a time.</p>
           </div>
         </div>
       </footer>

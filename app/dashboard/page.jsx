@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { BarChart3, Flame, Zap, CheckCircle2, Clock, TrendingUp, Calendar, Archive, ChevronRight, X, PlayCircle, Trash2, ArrowUpDown } from 'lucide-react';
+import { BarChart3, Flame, Zap, CheckCircle2, Clock, TrendingUp, Calendar, Archive, ChevronRight, X, PlayCircle, Trash2, ArrowUpDown, Plus, GripVertical, FolderOpen } from 'lucide-react';
 import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
@@ -20,6 +20,72 @@ export default function DashboardPage() {
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [inProgressSort, setInProgressSort] = useState('priority'); // 'priority' | 'due_date'
+  const [boards, setBoards] = useState([]); // [{ id, name, taskIds[] }]
+  const [newBoardName, setNewBoardName] = useState('');
+  const [showBoardInput, setShowBoardInput] = useState(false);
+  const [draggingTaskId, setDraggingTaskId] = useState(null);
+  const [draggingOverBoard, setDraggingOverBoard] = useState(null);
+  const dragSourceBoard = useRef(null);
+
+  const BOARD_SUGGESTIONS = ['Personal', 'Work', 'School', 'Health', 'Finance', 'Side Project'];
+
+  // Load boards from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('task-boards');
+    if (saved) setBoards(JSON.parse(saved));
+  }, []);
+
+  const saveBoards = (updated) => {
+    setBoards(updated);
+    localStorage.setItem('task-boards', JSON.stringify(updated));
+  };
+
+  const addBoard = (name) => {
+    if (!name.trim()) return;
+    const newBoard = { id: Date.now().toString(), name: name.trim(), taskIds: [] };
+    saveBoards([...boards, newBoard]);
+    setNewBoardName('');
+    setShowBoardInput(false);
+  };
+
+  const deleteBoard = (boardId) => {
+    saveBoards(boards.filter(b => b.id !== boardId));
+  };
+
+  const handleDragStartTask = (taskId, sourceBoardId) => {
+    setDraggingTaskId(taskId);
+    dragSourceBoard.current = sourceBoardId; // null = "unassigned"
+  };
+
+  const handleDropOnBoard = (targetBoardId) => {
+    if (!draggingTaskId) return;
+    const updated = boards.map(b => {
+      // Remove from all boards first
+      return { ...b, taskIds: b.taskIds.filter(id => id !== draggingTaskId) };
+    }).map(b => {
+      // Add to target board
+      if (b.id === targetBoardId && !b.taskIds.includes(draggingTaskId)) {
+        return { ...b, taskIds: [...b.taskIds, draggingTaskId] };
+      }
+      return b;
+    });
+    saveBoards(updated);
+    setDraggingTaskId(null);
+    setDraggingOverBoard(null);
+    dragSourceBoard.current = null;
+  };
+
+  const handleDropOnUnassigned = () => {
+    if (!draggingTaskId) return;
+    // Remove from all boards
+    const updated = boards.map(b => ({ ...b, taskIds: b.taskIds.filter(id => id !== draggingTaskId) }));
+    saveBoards(updated);
+    setDraggingTaskId(null);
+    setDraggingOverBoard(null);
+    dragSourceBoard.current = null;
+  };
+
+  const getTaskBoard = (taskId) => boards.find(b => b.taskIds.includes(taskId));
 
   // Re-fetch whenever the user arrives at /dashboard (covers in-app nav on mobile)
   useEffect(() => {
@@ -353,6 +419,147 @@ export default function DashboardPage() {
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* Category Boards */}
+            {inProgressTasks.length > 0 && (
+              <div className={`rounded-2xl p-6 border mb-8 transition-colors ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className={`text-xl font-bold flex items-center space-x-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                    <FolderOpen className={`w-5 h-5 ${darkMode ? 'text-violet-400' : 'text-violet-600'}`} />
+                    <span>My Boards</span>
+                  </h3>
+                  <button
+                    onClick={() => setShowBoardInput(true)}
+                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-lg text-sm font-semibold transition ${darkMode ? 'bg-violet-900/40 text-violet-300 hover:bg-violet-900/60' : 'bg-violet-100 text-violet-700 hover:bg-violet-200'}`}
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>New Board</span>
+                  </button>
+                </div>
+
+                {/* New board input */}
+                {showBoardInput && (
+                  <div className={`rounded-xl p-4 mb-4 border ${darkMode ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-200'}`}>
+                    <p className={`text-sm font-semibold mb-3 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>Name your board or pick a suggestion:</p>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {BOARD_SUGGESTIONS.filter(s => !boards.find(b => b.name === s)).map(s => (
+                        <button
+                          key={s}
+                          onClick={() => addBoard(s)}
+                          className={`px-3 py-1 rounded-full text-sm font-medium transition ${darkMode ? 'bg-slate-600 hover:bg-violet-700 text-slate-200' : 'bg-slate-200 hover:bg-violet-100 text-slate-700'}`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={newBoardName}
+                        onChange={(e) => setNewBoardName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addBoard(newBoardName)}
+                        placeholder="Custom name..."
+                        className={`flex-1 px-3 py-2 rounded-lg border text-sm focus:outline-none transition-colors ${darkMode ? 'bg-slate-900 border-slate-600 focus:border-violet-400 text-white placeholder-slate-500' : 'bg-white border-slate-200 focus:border-violet-500 text-slate-900 placeholder-slate-400'}`}
+                        autoFocus
+                      />
+                      <button onClick={() => addBoard(newBoardName)} className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold transition">Add</button>
+                      <button onClick={() => { setShowBoardInput(false); setNewBoardName(''); }} className={`px-3 py-2 rounded-lg text-sm font-semibold transition ${darkMode ? 'bg-slate-600 hover:bg-slate-500 text-slate-300' : 'bg-slate-200 hover:bg-slate-300 text-slate-600'}`}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+
+                {boards.length === 0 && !showBoardInput ? (
+                  <div className={`text-center py-8 rounded-xl border-2 border-dashed ${darkMode ? 'border-slate-600 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
+                    <FolderOpen className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                    <p className="text-sm">Create boards to organise your tasks by category</p>
+                    <p className="text-xs mt-1">e.g. Work, School, Personal</p>
+                  </div>
+                ) : (
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Unassigned tasks drop zone */}
+                    {inProgressTasks.some(t => !getTaskBoard(t.id)) && (
+                      <div
+                        onDragOver={(e) => { e.preventDefault(); setDraggingOverBoard('unassigned'); }}
+                        onDragLeave={() => setDraggingOverBoard(null)}
+                        onDrop={handleDropOnUnassigned}
+                        className={`rounded-xl p-4 border-2 border-dashed transition-colors min-h-[120px] ${
+                          draggingOverBoard === 'unassigned'
+                            ? darkMode ? 'border-slate-400 bg-slate-700/70' : 'border-slate-400 bg-slate-100'
+                            : darkMode ? 'border-slate-600' : 'border-slate-200'
+                        }`}
+                      >
+                        <p className={`text-xs font-semibold uppercase tracking-wide mb-3 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Unassigned</p>
+                        <div className="space-y-2">
+                          {inProgressTasks.filter(t => !getTaskBoard(t.id)).map(task => (
+                            <div
+                              key={task.id}
+                              draggable
+                              onDragStart={() => handleDragStartTask(task.id, null)}
+                              onDragEnd={() => { setDraggingTaskId(null); setDraggingOverBoard(null); }}
+                              className={`flex items-center space-x-2 px-3 py-2 rounded-lg cursor-grab active:cursor-grabbing transition ${
+                                draggingTaskId === task.id ? 'opacity-40' : ''
+                              } ${darkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-100 hover:bg-slate-200'}`}
+                            >
+                              <GripVertical className={`w-3.5 h-3.5 flex-shrink-0 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
+                              <span className={`text-sm font-medium truncate ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{task.title}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* User boards */}
+                    {boards.map(board => {
+                      const boardTasks = inProgressTasks.filter(t => board.taskIds.includes(t.id));
+                      return (
+                        <div
+                          key={board.id}
+                          onDragOver={(e) => { e.preventDefault(); setDraggingOverBoard(board.id); }}
+                          onDragLeave={() => setDraggingOverBoard(null)}
+                          onDrop={() => handleDropOnBoard(board.id)}
+                          className={`rounded-xl p-4 border-2 transition-colors min-h-[120px] ${
+                            draggingOverBoard === board.id
+                              ? darkMode ? 'border-violet-500 bg-violet-900/20' : 'border-violet-400 bg-violet-50'
+                              : darkMode ? 'border-slate-600 bg-slate-700/30' : 'border-slate-200 bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <p className={`text-xs font-semibold uppercase tracking-wide ${darkMode ? 'text-violet-400' : 'text-violet-600'}`}>{board.name}</p>
+                            <button
+                              onClick={() => deleteBoard(board.id)}
+                              className={`p-0.5 rounded transition-colors ${darkMode ? 'text-slate-600 hover:text-rose-400' : 'text-slate-300 hover:text-rose-500'}`}
+                              title="Delete board"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          {boardTasks.length === 0 ? (
+                            <p className={`text-xs italic ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>Drop tasks here</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {boardTasks.map(task => (
+                                <div
+                                  key={task.id}
+                                  draggable
+                                  onDragStart={() => handleDragStartTask(task.id, board.id)}
+                                  onDragEnd={() => { setDraggingTaskId(null); setDraggingOverBoard(null); }}
+                                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg cursor-grab active:cursor-grabbing transition ${
+                                    draggingTaskId === task.id ? 'opacity-40' : ''
+                                  } ${darkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-white hover:bg-slate-100'}`}
+                                >
+                                  <GripVertical className={`w-3.5 h-3.5 flex-shrink-0 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`} />
+                                  <span className={`text-sm font-medium truncate ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{task.title}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
