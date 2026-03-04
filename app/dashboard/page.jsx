@@ -26,6 +26,7 @@ export default function DashboardPage() {
   const [draggingTaskId, setDraggingTaskId] = useState(null);
   const [draggingOverBoard, setDraggingOverBoard] = useState(null);
   const dragSourceBoard = useRef(null);
+  const [boardTaskModal, setBoardTaskModal] = useState(null); // task object
 
   const BOARD_SUGGESTIONS = ['Personal', 'Work', 'School', 'Health', 'Finance', 'Side Project'];
 
@@ -498,6 +499,7 @@ export default function DashboardPage() {
                               draggable
                               onDragStart={() => handleDragStartTask(task.id, null)}
                               onDragEnd={() => { setDraggingTaskId(null); setDraggingOverBoard(null); }}
+                              onClick={() => !draggingTaskId && setBoardTaskModal(task)}
                               className={`flex items-center space-x-2 px-3 py-2 rounded-lg cursor-grab active:cursor-grabbing transition ${
                                 draggingTaskId === task.id ? 'opacity-40' : ''
                               } ${darkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-slate-100 hover:bg-slate-200'}`}
@@ -545,6 +547,7 @@ export default function DashboardPage() {
                                   draggable
                                   onDragStart={() => handleDragStartTask(task.id, board.id)}
                                   onDragEnd={() => { setDraggingTaskId(null); setDraggingOverBoard(null); }}
+                                  onClick={() => !draggingTaskId && setBoardTaskModal(task)}
                                   className={`flex items-center space-x-2 px-3 py-2 rounded-lg cursor-grab active:cursor-grabbing transition ${
                                     draggingTaskId === task.id ? 'opacity-40' : ''
                                   } ${darkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-white hover:bg-slate-100'}`}
@@ -585,6 +588,56 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+
+      {/* Board task detail modal */}
+      {boardTaskModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setBoardTaskModal(null)}>
+          <div
+            className={`rounded-2xl p-6 max-w-md w-full border shadow-2xl ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <h3 className={`text-lg font-bold pr-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{boardTaskModal.title}</h3>
+              <button onClick={() => setBoardTaskModal(null)} className={`p-1 rounded-lg flex-shrink-0 ${darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-700'}`}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {boardTaskModal.description && (
+              <p className={`text-sm mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{boardTaskModal.description}</p>
+            )}
+            <div className="flex items-center gap-3 mb-5 flex-wrap">
+              <span className={`text-sm px-3 py-1 rounded-full font-medium ${darkMode ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-100 text-blue-700'}`}>
+                {boardTaskModal.completed_steps || 0} / {boardTaskModal.total_steps || 0} steps
+              </span>
+              {boardTaskModal.due_date && (
+                <span className={`flex items-center gap-1 text-sm px-3 py-1 rounded-full font-medium ${darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                  <Calendar className="w-3.5 h-3.5" />
+                  Due {new Date(boardTaskModal.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                </span>
+              )}
+              {priorityLabel(boardTaskModal.priority) && (
+                <span className={`text-sm px-3 py-1 rounded-full font-medium ${priorityLabel(boardTaskModal.priority).color}`}>
+                  {priorityLabel(boardTaskModal.priority).label} priority
+                </span>
+              )}
+            </div>
+            <div className={`w-full rounded-full h-2 overflow-hidden mb-5 ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
+              <div
+                className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${boardTaskModal.total_steps ? ((boardTaskModal.completed_steps || 0) / boardTaskModal.total_steps) * 100 : 0}%` }}
+              />
+            </div>
+            <Link
+              href={`/planner?task=${boardTaskModal.id}`}
+              onClick={() => setBoardTaskModal(null)}
+              className="w-full flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-xl font-bold transition"
+            >
+              <PlayCircle className="w-5 h-5" />
+              <span>Continue Task</span>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {showArchive && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
