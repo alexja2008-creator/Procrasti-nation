@@ -1,6 +1,7 @@
 import './globals.css';
 import { ThemeProvider, AuthProvider } from './providers';
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export const metadata = {
   title: 'ProcrastiNation - Stop Waiting, Start Doing',
@@ -22,6 +23,7 @@ export default function RootLayout({ children }) {
           </AuthProvider>
         </ThemeProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
