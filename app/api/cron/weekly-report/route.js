@@ -131,7 +131,7 @@ export async function GET(request) {
         });
 
         await resend.emails.send({
-          from: 'ProcrastiNation <report@procrastination.nation>',
+          from: 'ProcrastiNation <report@procrasti-nation.work>',
           to: user.email,
           subject,
           html,
