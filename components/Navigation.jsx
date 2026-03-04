@@ -17,6 +17,7 @@ export default function Navigation() {
 
   const navLinks = [
     { href: '/planner', label: 'Planner' },
+    { href: '/syllabus', label: 'Syllabus' },
     { href: '/focus-pods', label: 'Focus Pods' },
     { href: '/reset-station', label: 'Reset Station' },
     { href: '/dashboard', label: 'Dashboard' },
