@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Brain, Calendar, Clock, CheckCircle2, Sparkles, Zap, Target, Trophy, ArrowLeft, Trash2 } from 'lucide-react';
-import { useTheme, useAuth } from '../providers';
+import { useTheme, useAuth, useProfile } from '../providers';
 import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
 import UpgradeModal from '../../components/UpgradeModal';
@@ -12,6 +12,7 @@ import UpgradeModal from '../../components/UpgradeModal';
 function PlannerContent() {
   const { darkMode } = useTheme();
   const { user, trialStatus } = useAuth();
+  const { userProfile } = useProfile();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const searchParams = useSearchParams();
   const taskIdParam = searchParams.get('task');
@@ -158,7 +159,7 @@ function PlannerContent() {
         const clarificationRes = await fetch('/api/generate-plan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ task, deadline, checkClarification: true }),
+          body: JSON.stringify({ task, deadline, checkClarification: true, userProfile }),
         });
         const clarificationData = await clarificationRes.json();
         if (!clarificationRes.ok) throw new Error(clarificationData.error || 'Failed to check clarification');
@@ -173,7 +174,7 @@ function PlannerContent() {
       const planRes = await fetch('/api/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task, deadline, clarificationAnswers, clarificationQuestions, checkClarification: false }),
+        body: JSON.stringify({ task, deadline, clarificationAnswers, clarificationQuestions, checkClarification: false, userProfile }),
       });
       const planData = await planRes.json();
       if (!planRes.ok) throw new Error(planData.error || 'Failed to generate plan');

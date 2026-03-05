@@ -1,5 +1,6 @@
 import './globals.css';
-import { ThemeProvider, AuthProvider } from './providers';
+import { ThemeProvider, AuthProvider, ProfileProvider } from './providers';
+import OnboardingGate from '../components/OnboardingGate';
 import { Analytics } from '@vercel/analytics/next';
 
 export const metadata = {
@@ -18,7 +19,10 @@ export default function RootLayout({ children }) {
       <body>
         <ThemeProvider>
           <AuthProvider>
-            {children}
+            <ProfileProvider>
+              <OnboardingGate />
+              {children}
+            </ProfileProvider>
           </AuthProvider>
         </ThemeProvider>
         <Analytics />

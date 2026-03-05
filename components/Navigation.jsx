@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Moon, Sun, Menu, X, LogOut, Zap } from 'lucide-react';
-import { useTheme, useAuth } from '../app/providers';
+import { useTheme, useAuth, useProfile } from '../app/providers';
 import { useState } from 'react';
 import AuthModal from './AuthModal';
 import Logo from './Logo';
@@ -11,9 +11,14 @@ import Logo from './Logo';
 export default function Navigation() {
   const { darkMode, setDarkMode } = useTheme();
   const { user, signOut, trialStatus, trialDaysLeft } = useAuth();
+  const { userProfile, setShowOnboarding } = useProfile();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const profileLabel = userProfile
+    ? `${{ student: 'Student', professional: 'Professional', freelancer: 'Freelancer', other: 'Explorer' }[userProfile.userType] ?? 'Explorer'} · ${{ often: 'Focus mode', sometimes: 'Balanced', rarely: 'Flow mode' }[userProfile.adhdLevel] ?? 'Focus mode'}`
+    : null;
 
   const navLinks = [
     { href: '/planner', label: 'Planner' },
@@ -52,6 +57,20 @@ export default function Navigation() {
                   {link.label}
                 </Link>
               ))}
+
+              {profileLabel && (
+                <button
+                  onClick={() => setShowOnboarding(true)}
+                  title="Edit your profile"
+                  className={`hidden lg:flex items-center text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
+                    darkMode
+                      ? 'border-slate-600 text-slate-300 hover:bg-slate-700'
+                      : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {profileLabel}
+                </button>
+              )}
 
               <button
                 onClick={() => setDarkMode(!darkMode)}
@@ -143,6 +162,17 @@ export default function Navigation() {
                   {link.label}
                 </Link>
               ))}
+
+              {profileLabel && (
+                <button
+                  onClick={() => { setShowOnboarding(true); setMobileMenuOpen(false); }}
+                  className={`w-full text-left px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
+                    darkMode ? 'text-slate-400 hover:bg-slate-700' : 'text-slate-500 hover:bg-slate-100'
+                  }`}
+                >
+                  {profileLabel} — Edit profile
+                </button>
+              )}
 
               {user ? (
                 <>

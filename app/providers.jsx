@@ -117,3 +117,39 @@ export function useTheme() {
 export function useAuth() {
   return useContext(AuthContext);
 }
+
+const ProfileContext = createContext({
+  userProfile: null,
+  setUserProfile: () => {},
+  showOnboarding: false,
+  setShowOnboarding: () => {},
+});
+
+export function ProfileProvider({ children }) {
+  const [userProfile, setUserProfileState] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('user-profile');
+    if (saved) {
+      setUserProfileState(JSON.parse(saved));
+    } else {
+      setShowOnboarding(true);
+    }
+  }, []);
+
+  const setUserProfile = (profile) => {
+    localStorage.setItem('user-profile', JSON.stringify(profile));
+    setUserProfileState(profile);
+  };
+
+  return (
+    <ProfileContext.Provider value={{ userProfile, setUserProfile, showOnboarding, setShowOnboarding }}>
+      {children}
+    </ProfileContext.Provider>
+  );
+}
+
+export function useProfile() {
+  return useContext(ProfileContext);
+}
