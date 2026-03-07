@@ -15,9 +15,12 @@ function PlannerContent() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const searchParams = useSearchParams();
   const taskIdParam = searchParams.get('task');
-  const [task, setTask] = useState('');
+  const prefillParam = searchParams.get('prefill');
+  const prefillDueDate = searchParams.get('dueDate');
+  const prefillTaskId = searchParams.get('taskId'); // skeleton task to replace
+  const [task, setTask] = useState(prefillParam || '');
   const [deadline, setDeadline] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  const [dueDate, setDueDate] = useState(prefillDueDate || '');
   const [priority, setPriority] = useState('');
   const [plan, setPlan] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -186,6 +189,13 @@ function PlannerContent() {
       setTaskStartTime(Date.now());
 
       if (user) {
+        // If we're replacing a skeleton task imported from a syllabus, delete it first
+        // so we don't leave a 0-step ghost in the dashboard
+        if (prefillTaskId) {
+          await supabase.from('tasks').delete().eq('id', prefillTaskId).eq('user_id', user.id);
+          // Also update localStorage boards: swap skeleton id → new task id (done after insert)
+        }
+
         const { data } = await supabase.from('tasks').insert({
           user_id: user.id,
           title: planData.plan.taskTitle,
@@ -198,7 +208,21 @@ function PlannerContent() {
           due_date: dueDate ? new Date(dueDate).toISOString() : null,
           priority: priority ? parseInt(priority) : null,
         }).select().single();
-        if (data) setCurrentTaskId(data.id);
+
+        if (data) {
+          setCurrentTaskId(data.id);
+          // Swap skeleton taskId → real taskId in localStorage boards
+          if (prefillTaskId) {
+            try {
+              const boards = JSON.parse(localStorage.getItem('task-boards') || '[]');
+              const updated = boards.map(b => ({
+                ...b,
+                taskIds: b.taskIds.map(id => id === prefillTaskId ? data.id : id),
+              }));
+              localStorage.setItem('task-boards', JSON.stringify(updated));
+            } catch {}
+          }
+        }
       }
     } catch (err) {
       setError(err.message || 'Failed to generate plan. Please try again.');

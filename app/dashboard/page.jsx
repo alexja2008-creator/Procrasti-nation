@@ -627,14 +627,25 @@ export default function DashboardPage() {
                 style={{ width: `${boardTaskModal.total_steps ? ((boardTaskModal.completed_steps || 0) / boardTaskModal.total_steps) * 100 : 0}%` }}
               />
             </div>
-            <Link
-              href={`/planner?task=${boardTaskModal.id}`}
-              onClick={() => setBoardTaskModal(null)}
-              className="w-full flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-xl font-bold transition"
-            >
-              <PlayCircle className="w-5 h-5" />
-              <span>Continue Task</span>
-            </Link>
+            {boardTaskModal.total_steps === 0 ? (
+              <Link
+                href={`/planner?prefill=${encodeURIComponent(boardTaskModal.title)}${boardTaskModal.due_date ? `&dueDate=${boardTaskModal.due_date.split('T')[0]}` : ''}&taskId=${boardTaskModal.id}`}
+                onClick={() => setBoardTaskModal(null)}
+                className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-bold transition"
+              >
+                <Zap className="w-5 h-5" />
+                <span>Generate Plan</span>
+              </Link>
+            ) : (
+              <Link
+                href={`/planner?task=${boardTaskModal.id}`}
+                onClick={() => setBoardTaskModal(null)}
+                className="w-full flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-xl font-bold transition"
+              >
+                <PlayCircle className="w-5 h-5" />
+                <span>Continue Task</span>
+              </Link>
+            )}
           </div>
         </div>
       )}
