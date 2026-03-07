@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [loadingData, setLoadingData] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [inProgressSort, setInProgressSort] = useState('priority'); // 'priority' | 'due_date'
+  const [showAllInProgress, setShowAllInProgress] = useState(false);
   const [boards, setBoards] = useState([]); // [{ id, name, taskIds[] }]
   const [newBoardName, setNewBoardName] = useState('');
   const [showBoardInput, setShowBoardInput] = useState(false);
@@ -149,12 +150,43 @@ export default function DashboardPage() {
     return null;
   };
 
+  // Score each task for relevance — used to pick the top 5 to show by default.
+  // Higher score = more relevant / urgent.
+  const scoreTask = (t) => {
+    let score = 0;
+
+    // Priority: High=3→60pts, Med=2→30pts, Low=1→10pts
+    if (t.priority === 3) score += 60;
+    else if (t.priority === 2) score += 30;
+    else if (t.priority === 1) score += 10;
+
+    // Due date urgency: overdue=50, due within 1d=40, 3d=30, 7d=20, 14d=10
+    if (t.due_date) {
+      const daysUntilDue = (new Date(t.due_date) - Date.now()) / (1000 * 60 * 60 * 24);
+      if (daysUntilDue < 0)       score += 50;
+      else if (daysUntilDue <= 1) score += 40;
+      else if (daysUntilDue <= 3) score += 30;
+      else if (daysUntilDue <= 7) score += 20;
+      else if (daysUntilDue <= 14) score += 10;
+    }
+
+    // Recent step activity: tasks with progress rank above untouched ones
+    const done = t.completed_steps || 0;
+    const total = t.total_steps || 0;
+    if (total > 0 && done > 0) {
+      // Up to 20pts based on % complete (more done = more momentum, keep going)
+      score += Math.round((done / total) * 20);
+    }
+
+    return score;
+  };
+
   const inProgressTasks = [...rawInProgressTasks].sort((a, b) => {
     if (inProgressSort === 'priority') {
-      // Higher priority number = more urgent, nulls last
-      const pa = a.priority ?? 0;
-      const pb = b.priority ?? 0;
-      return pb - pa;
+      // Primary: relevance score; secondary: priority number for ties
+      const scoreDiff = scoreTask(b) - scoreTask(a);
+      if (scoreDiff !== 0) return scoreDiff;
+      return (b.priority ?? 0) - (a.priority ?? 0);
     } else {
       // Earliest due date first, nulls last
       if (!a.due_date && !b.due_date) return 0;
@@ -163,6 +195,10 @@ export default function DashboardPage() {
       return new Date(a.due_date) - new Date(b.due_date);
     }
   });
+
+  const IN_PROGRESS_CAP = 5;
+  const visibleInProgressTasks = showAllInProgress ? inProgressTasks : inProgressTasks.slice(0, IN_PROGRESS_CAP);
+  const hiddenCount = inProgressTasks.length - IN_PROGRESS_CAP;
   const completionRate = totalTasks > 0 ? Math.round((completedTasks.length / totalTasks) * 100) : 0;
 
   const formatTime = (hours) => {
@@ -369,20 +405,25 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="space-y-3">
-                  {inProgressTasks.map(task => {
+                  {visibleInProgressTasks.map(task => {
                     const done = task.completed_steps || 0;
                     const total = task.total_steps || 1;
                     const pri = priorityLabel(task.priority);
                     const dueDateStr = task.due_date
                       ? new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
                       : null;
+                    const isSkeleton = task.total_steps === 0;
                     return (
                       <div key={task.id} className={`rounded-xl p-4 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-100'}`}>
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1 min-w-0">
                             <h4 className={`font-bold mb-1 truncate ${darkMode ? 'text-white' : 'text-slate-900'}`}>{task.title}</h4>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{done} of {total} steps complete</p>
+                              {isSkeleton ? (
+                                <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>No plan yet</p>
+                              ) : (
+                                <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{done} of {total} steps complete</p>
+                              )}
                               {pri && (
                                 <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${pri.color}`}>
                                   {pri.label}
@@ -397,13 +438,23 @@ export default function DashboardPage() {
                             </div>
                           </div>
                           <div className="ml-4 flex items-center space-x-2 flex-shrink-0">
-                            <Link
-                              href={`/planner?task=${task.id}`}
-                              className="flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"
-                            >
-                              <PlayCircle className="w-4 h-4" />
-                              <span>Continue</span>
-                            </Link>
+                            {isSkeleton ? (
+                              <Link
+                                href={`/planner?prefill=${encodeURIComponent(task.title)}&taskId=${task.id}`}
+                                className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"
+                              >
+                                <Zap className="w-4 h-4" />
+                                <span>Generate</span>
+                              </Link>
+                            ) : (
+                              <Link
+                                href={`/planner?task=${task.id}`}
+                                className="flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"
+                              >
+                                <PlayCircle className="w-4 h-4" />
+                                <span>Continue</span>
+                              </Link>
+                            )}
                             <button
                               onClick={() => deleteTask(task.id)}
                               className={`p-1.5 rounded-lg transition-colors ${darkMode ? 'text-slate-500 hover:text-rose-400 hover:bg-rose-900/30' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'}`}
@@ -414,12 +465,28 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <div className={`w-full rounded-full h-2 overflow-hidden ${darkMode ? 'bg-slate-600' : 'bg-slate-200'}`}>
-                          <div className="bg-blue-500 h-2 rounded-full transition-all duration-500" style={{ width: `${(done / total) * 100}%` }} />
+                          <div className="bg-blue-500 h-2 rounded-full transition-all duration-500" style={{ width: `${isSkeleton ? 0 : (done / total) * 100}%` }} />
                         </div>
                       </div>
                     );
                   })}
                 </div>
+
+                {/* Load more / Show less */}
+                {inProgressTasks.length > IN_PROGRESS_CAP && (
+                  <button
+                    onClick={() => setShowAllInProgress(prev => !prev)}
+                    className={`mt-4 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                      darkMode
+                        ? 'bg-slate-700/60 hover:bg-slate-700 text-slate-300'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
+                    }`}
+                  >
+                    {showAllInProgress
+                      ? 'Show less'
+                      : `Load ${hiddenCount} more task${hiddenCount !== 1 ? 's' : ''}`}
+                  </button>
+                )}
               </div>
             )}
 
