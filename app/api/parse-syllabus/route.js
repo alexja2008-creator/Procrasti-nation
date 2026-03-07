@@ -39,7 +39,7 @@ export async function POST(request) {
 
     if (fileName.endsWith('.pdf') || mimeType === 'application/pdf') {
       const { extractText } = await import('unpdf');
-      const pdfData = await extractText(buffer, { mergePages: true });
+      const pdfData = await extractText(new Uint8Array(arrayBuffer), { mergePages: true });
       const text = pdfData.text;
       if (!text || text.trim().length < 20) {
         return NextResponse.json(
