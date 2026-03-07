@@ -20,6 +20,8 @@ function PlannerContent() {
   const prefillTaskId = searchParams.get('taskId'); // skeleton task to replace
   const [task, setTask] = useState(prefillParam || '');
   const [deadline, setDeadline] = useState('');
+  // Pre-fill the date picker if a due date was passed, but leave the deadline
+  // text field blank so the user still goes through the full planner flow
   const [dueDate, setDueDate] = useState(prefillDueDate || '');
   const [priority, setPriority] = useState('');
   const [plan, setPlan] = useState(null);
@@ -48,7 +50,11 @@ function PlannerContent() {
   useEffect(() => {
     if (user) {
       loadStreakData();
-      loadTask();
+      // Skip loadTask when we're in prefill mode — we want a blank form
+      // pre-populated with the syllabus task title so the user can add context
+      if (!prefillParam) {
+        loadTask();
+      }
     }
   }, [user, taskIdParam]);
 

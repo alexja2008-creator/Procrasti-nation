@@ -629,7 +629,7 @@ export default function DashboardPage() {
             </div>
             {boardTaskModal.total_steps === 0 ? (
               <Link
-                href={`/planner?prefill=${encodeURIComponent(boardTaskModal.title)}${boardTaskModal.due_date ? `&dueDate=${boardTaskModal.due_date.split('T')[0]}` : ''}&taskId=${boardTaskModal.id}`}
+                href={`/planner?prefill=${encodeURIComponent(boardTaskModal.title)}&taskId=${boardTaskModal.id}`}
                 onClick={() => setBoardTaskModal(null)}
                 className="w-full flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-bold transition"
               >
