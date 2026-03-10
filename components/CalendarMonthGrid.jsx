@@ -4,7 +4,7 @@ import { TASK_COLORS, EventChip } from './CalendarWeekGrid';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export default function CalendarMonthGrid({ events, month, year, darkMode, onEventClick }) {
+export default function CalendarMonthGrid({ events, month, year, darkMode, onEventClick, onDayClick }) {
   const today = new Date().toISOString().split('T')[0];
 
   const firstDay = new Date(year, month, 1);
@@ -61,13 +61,18 @@ export default function CalendarMonthGrid({ events, month, year, darkMode, onEve
               } ${isToday ? (darkMode ? 'bg-emerald-900/20' : 'bg-emerald-50') : ''}`}
             >
               {/* Date number */}
-              <div className={`text-xs font-bold mb-1 w-6 h-6 flex items-center justify-center rounded-full ${
-                isToday
-                  ? 'bg-emerald-500 text-white'
-                  : darkMode ? 'text-slate-300' : 'text-slate-700'
-              }`}>
+              <button
+                onClick={() => onDayClick && onDayClick(day)}
+                className={`text-xs font-bold mb-1 w-6 h-6 flex items-center justify-center rounded-full transition-colors ${
+                  isToday
+                    ? 'bg-emerald-500 text-white'
+                    : darkMode
+                      ? 'text-slate-300 hover:bg-slate-600'
+                      : 'text-slate-700 hover:bg-slate-200'
+                }`}
+              >
                 {day.getDate()}
-              </div>
+              </button>
 
               {/* Events (max 3) */}
               {dayEvents.slice(0, 3).map(event => (

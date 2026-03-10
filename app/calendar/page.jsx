@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
 import CalendarWeekGrid, { getWeekStart, hashTaskId, TASK_COLORS } from '../../components/CalendarWeekGrid';
 import CalendarMonthGrid from '../../components/CalendarMonthGrid';
+import CalendarDayGrid from '../../components/CalendarDayGrid';
 import CalendarEventPopover from '../../components/CalendarEventPopover';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
@@ -172,6 +173,11 @@ export default function CalendarPage() {
 
   // ── Event interaction ───────────────────────────────────────────────────────
 
+  const handleDayClick = (date) => {
+    setCurrentDate(date);
+    setView('day');
+  };
+
   const handleEventClick = (event, domEvent) => {
     domEvent.stopPropagation();
     setSelectedEvent(event);
@@ -194,13 +200,23 @@ export default function CalendarPage() {
 
   const weekStart = getWeekStart(currentDate);
 
-  const handlePrev = () => setCurrentDate(d => view === 'week' ? shiftWeek(d, -1) : shiftMonth(d, -1));
-  const handleNext = () => setCurrentDate(d => view === 'week' ? shiftWeek(d, +1) : shiftMonth(d, +1));
+  const handlePrev = () => setCurrentDate(d => {
+    if (view === 'day') { const n = new Date(d); n.setDate(n.getDate() - 1); return n; }
+    if (view === 'week') return shiftWeek(d, -1);
+    return shiftMonth(d, -1);
+  });
+  const handleNext = () => setCurrentDate(d => {
+    if (view === 'day') { const n = new Date(d); n.setDate(n.getDate() + 1); return n; }
+    if (view === 'week') return shiftWeek(d, +1);
+    return shiftMonth(d, +1);
+  });
   const handleToday = () => setCurrentDate(new Date());
 
-  const periodLabel = view === 'week'
-    ? formatWeekRange(weekStart)
-    : formatMonthYear(currentDate);
+  const periodLabel = view === 'day'
+    ? currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+    : view === 'week'
+      ? formatWeekRange(weekStart)
+      : formatMonthYear(currentDate);
 
   // ── Signed-out state ────────────────────────────────────────────────────────
 
@@ -242,7 +258,7 @@ export default function CalendarPage() {
 
           {/* View toggle */}
           <div className={`flex rounded-xl overflow-hidden border ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
-            {['week', 'month'].map(v => (
+            {['day', 'week', 'month'].map(v => (
               <button
                 key={v}
                 onClick={() => setView(v)}
@@ -305,12 +321,20 @@ export default function CalendarPage() {
             <div className="flex items-center justify-center py-32">
               <Loader2 className={`w-8 h-8 animate-spin ${darkMode ? 'text-emerald-400' : 'text-emerald-500'}`} />
             </div>
+          ) : view === 'day' ? (
+            <CalendarDayGrid
+              events={events}
+              date={currentDate}
+              darkMode={darkMode}
+              onEventClick={handleEventClick}
+            />
           ) : view === 'week' ? (
             <CalendarWeekGrid
               events={events}
               weekStart={weekStart}
               darkMode={darkMode}
               onEventClick={handleEventClick}
+              onDayClick={handleDayClick}
             />
           ) : (
             <CalendarMonthGrid
@@ -319,6 +343,7 @@ export default function CalendarPage() {
               year={currentDate.getFullYear()}
               darkMode={darkMode}
               onEventClick={handleEventClick}
+              onDayClick={handleDayClick}
             />
           )}
         </div>

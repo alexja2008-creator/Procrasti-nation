@@ -46,7 +46,7 @@ export function EventChip({ event, compact = false, darkMode, onClick }) {
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const todayISO = () => new Date().toISOString().split('T')[0];
 
-export default function CalendarWeekGrid({ events, weekStart, darkMode, onEventClick }) {
+export default function CalendarWeekGrid({ events, weekStart, darkMode, onEventClick, onDayClick }) {
   const today = todayISO();
 
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -74,13 +74,18 @@ export default function CalendarWeekGrid({ events, weekStart, darkMode, onEventC
               }`}>
                 {WEEKDAYS[i]}
               </div>
-              <div className={`text-lg font-bold w-9 h-9 mx-auto flex items-center justify-center rounded-full ${
-                isToday
-                  ? 'bg-emerald-500 text-white'
-                  : darkMode ? 'text-white' : 'text-slate-900'
-              }`}>
+              <button
+                onClick={() => onDayClick && onDayClick(day)}
+                className={`text-lg font-bold w-9 h-9 mx-auto flex items-center justify-center rounded-full transition-colors ${
+                  isToday
+                    ? 'bg-emerald-500 text-white'
+                    : darkMode
+                      ? 'text-white hover:bg-slate-700'
+                      : 'text-slate-900 hover:bg-slate-100'
+                }`}
+              >
                 {day.getDate()}
-              </div>
+              </button>
             </div>
           );
         })}
