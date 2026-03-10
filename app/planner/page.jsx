@@ -291,7 +291,7 @@ function PlannerContent() {
               else if (recurrence.type === 'monthly') nextDue.setMonth(nextDue.getMonth() + 1);
               nextDueDate = nextDue.toISOString();
             }
-            await supabase.from('tasks').insert({
+            const { data: spawnedTask } = await supabase.from('tasks').insert({
               user_id: user.id,
               title: currentTask.title,
               description: currentTask.description,
@@ -303,7 +303,25 @@ function PlannerContent() {
               due_date: nextDueDate,
               priority: currentTask.priority,
               recurrence: recurrence,
-            });
+            }).select('id').single();
+
+            // Re-assign spawned task to the same board as the completed task
+            if (spawnedTask) {
+              try {
+                const boards = JSON.parse(localStorage.getItem('task-boards') || '[]');
+                const parentBoard = boards.find(b => b.taskIds.includes(currentTaskId));
+                if (parentBoard) {
+                  const updatedBoards = boards.map(b =>
+                    b.id === parentBoard.id
+                      ? { ...b, taskIds: [...b.taskIds, spawnedTask.id] }
+                      : b
+                  );
+                  localStorage.setItem('task-boards', JSON.stringify(updatedBoards));
+                }
+              } catch (boardErr) {
+                console.error('[recurrence board sync]', boardErr);
+              }
+            }
           }
         } catch (err) {
           console.error('[recurrence spawn]', err);
