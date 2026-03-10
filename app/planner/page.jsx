@@ -993,15 +993,24 @@ function PlannerContent() {
               )}
             </div>
 
-            {dueDate && (
+            {plan && (
               <div className={`rounded-2xl p-5 border transition-colors ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <p className={`text-sm font-semibold mb-3 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>📅 Add to your calendar</p>
+                {!dueDate && (
+                  <p className={`text-xs mb-3 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                    No due date set — the event will open without a date so you can place it manually.
+                  </p>
+                )}
                 <div className="flex flex-col sm:flex-row gap-3">
                   <a
                     href={(() => {
-                      const title = encodeURIComponent(`ProcrastiNation Task Due: ${plan.taskTitle}`);
-                      const date = dueDate.replace(/-/g, '');
-                      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${date}/${date}&details=Task+created+in+ProcrastiNation`;
+                      const title = encodeURIComponent(`ProcrastiNation: ${plan.taskTitle}`);
+                      const details = encodeURIComponent(deadline ? `Due: ${deadline}` : 'Task created in ProcrastiNation');
+                      if (dueDate) {
+                        const date = dueDate.replace(/-/g, '');
+                        return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${date}/${date}&details=${details}`;
+                      }
+                      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}`;
                     })()}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -1012,13 +1021,16 @@ function PlannerContent() {
                   </a>
                   <button
                     onClick={() => {
-                      const title = `ProcrastiNation Task Due: ${plan.taskTitle}`;
-                      const date = dueDate.replace(/-/g, '');
+                      const title = `ProcrastiNation: ${plan.taskTitle}`;
+                      const date = dueDate
+                        ? dueDate.replace(/-/g, '')
+                        : new Date().toISOString().split('T')[0].replace(/-/g, '');
                       const ics = [
                         'BEGIN:VCALENDAR',
                         'VERSION:2.0',
                         'BEGIN:VEVENT',
                         `SUMMARY:${title}`,
+                        deadline ? `DESCRIPTION:Due: ${deadline}` : 'DESCRIPTION:Task created in ProcrastiNation',
                         `DTSTART;VALUE=DATE:${date}`,
                         `DTEND;VALUE=DATE:${date}`,
                         'END:VEVENT',
