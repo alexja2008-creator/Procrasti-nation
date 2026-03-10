@@ -88,6 +88,7 @@ function PlannerContent() {
         steps: data.steps || [],
       });
       setDeadline('');
+      setDueDate(data.due_date ? new Date(data.due_date).toISOString().split('T')[0] : '');
       setCompletedSteps(completedSet);
       setCurrentTaskId(data.id);
       setTaskStartTime(new Date(data.start_time).getTime());
