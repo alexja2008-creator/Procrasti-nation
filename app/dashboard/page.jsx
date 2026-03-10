@@ -435,6 +435,13 @@ export default function DashboardPage() {
                                   {dueDateStr}
                                 </span>
                               )}
+                              {task.recurrence && (
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                  darkMode ? 'bg-violet-900/40 text-violet-400' : 'bg-violet-100 text-violet-600'
+                                }`}>
+                                  {task.recurrence.type === 'daily' ? '🔁 Daily' : task.recurrence.type === 'weekly' ? '📅 Weekly' : '🗓️ Monthly'}
+                                </span>
+                              )}
                             </div>
                           </div>
                           <div className="ml-4 flex items-center space-x-2 flex-shrink-0">
@@ -685,6 +692,13 @@ export default function DashboardPage() {
               {priorityLabel(boardTaskModal.priority) && (
                 <span className={`text-sm px-3 py-1 rounded-full font-medium ${priorityLabel(boardTaskModal.priority).color}`}>
                   {priorityLabel(boardTaskModal.priority).label} priority
+                </span>
+              )}
+              {boardTaskModal.recurrence && (
+                <span className={`text-sm px-3 py-1 rounded-full font-medium ${
+                  darkMode ? 'bg-violet-900/40 text-violet-400' : 'bg-violet-100 text-violet-600'
+                }`}>
+                  {boardTaskModal.recurrence.type === 'daily' ? '🔁 Daily' : boardTaskModal.recurrence.type === 'weekly' ? '📅 Weekly' : '🗓️ Monthly'}
                 </span>
               )}
             </div>

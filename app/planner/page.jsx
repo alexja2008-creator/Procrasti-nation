@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Brain, Calendar, Clock, CheckCircle2, Sparkles, Zap, Target, Trophy, ArrowLeft, Trash2 } from 'lucide-react';
+import { Brain, Calendar, Clock, CheckCircle2, Sparkles, Zap, Target, Trophy, ArrowLeft, Trash2, Pencil, Plus } from 'lucide-react';
 import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
@@ -40,6 +40,12 @@ function PlannerContent() {
   const [clarificationNeeded, setClarificationNeeded] = useState(false);
   const [clarificationQuestions, setClarificationQuestions] = useState([]);
   const [clarificationAnswers, setClarificationAnswers] = useState({});
+  const [editingStepId, setEditingStepId] = useState(null);
+  const [editDraft, setEditDraft] = useState({});
+  const [isAddingStep, setIsAddingStep] = useState(false);
+  const [newStepDraft, setNewStepDraft] = useState({ title: '', description: '', estimatedTime: '', when: '' });
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [recurrence, setRecurrence] = useState(null); // null | { type: 'daily'|'weekly'|'monthly', startDate: ISO }
 
   const encouragements = [
     "Great job!", "Keep up the good work!", "You're on a roll!",
@@ -85,6 +91,7 @@ function PlannerContent() {
       setCompletedSteps(completedSet);
       setCurrentTaskId(data.id);
       setTaskStartTime(new Date(data.start_time).getTime());
+      setRecurrence(data.recurrence || null);
     }
   };
 
@@ -213,6 +220,7 @@ function PlannerContent() {
           start_time: new Date().toISOString(),
           due_date: dueDate ? new Date(dueDate).toISOString() : null,
           priority: priority ? parseInt(priority) : null,
+          recurrence: recurrence || null,
         }).select().single();
 
         if (data) {
@@ -257,6 +265,50 @@ function PlannerContent() {
         status: isFullyComplete ? 'completed' : 'in_progress',
         completed_at: isFullyComplete ? new Date().toISOString() : null,
       }).eq('id', currentTaskId);
+
+      // Auto-spawn next occurrence when task fully completes and has recurrence set
+      if (isFullyComplete && recurrence) {
+        try {
+          const resetSteps = updatedSteps.map(s => ({ ...s, completed: false }));
+          const now = new Date();
+          const nextStartDate = new Date(now);
+          if (recurrence.type === 'daily') nextStartDate.setDate(nextStartDate.getDate() + 1);
+          else if (recurrence.type === 'weekly') nextStartDate.setDate(nextStartDate.getDate() + 7);
+          else if (recurrence.type === 'monthly') nextStartDate.setMonth(nextStartDate.getMonth() + 1);
+
+          const { data: currentTask } = await supabase
+            .from('tasks')
+            .select('title, description, due_date, priority')
+            .eq('id', currentTaskId)
+            .single();
+
+          if (currentTask) {
+            let nextDueDate = null;
+            if (currentTask.due_date) {
+              const nextDue = new Date(currentTask.due_date);
+              if (recurrence.type === 'daily') nextDue.setDate(nextDue.getDate() + 1);
+              else if (recurrence.type === 'weekly') nextDue.setDate(nextDue.getDate() + 7);
+              else if (recurrence.type === 'monthly') nextDue.setMonth(nextDue.getMonth() + 1);
+              nextDueDate = nextDue.toISOString();
+            }
+            await supabase.from('tasks').insert({
+              user_id: user.id,
+              title: currentTask.title,
+              description: currentTask.description,
+              status: 'in_progress',
+              steps: resetSteps,
+              completed_steps: 0,
+              total_steps: resetSteps.length,
+              start_time: nextStartDate.toISOString(),
+              due_date: nextDueDate,
+              priority: currentTask.priority,
+              recurrence: recurrence,
+            });
+          }
+        } catch (err) {
+          console.error('[recurrence spawn]', err);
+        }
+      }
     }
 
     if (isFullyComplete) {
@@ -303,6 +355,61 @@ function PlannerContent() {
   };
 
   const handleDragEnd = () => setDraggedStep(null);
+
+  const startEditStep = (step) => {
+    setEditingStepId(step.id);
+    setEditDraft({ title: step.title, description: step.description, estimatedTime: step.estimatedTime, when: step.when });
+  };
+
+  const cancelEditStep = () => {
+    setEditingStepId(null);
+    setEditDraft({});
+  };
+
+  const saveEditStep = async (stepId) => {
+    if (!editDraft.title.trim()) return;
+    setIsSavingEdit(true);
+    const updatedSteps = plan.steps.map(s => s.id === stepId ? { ...s, ...editDraft } : s);
+    setPlan({ ...plan, steps: updatedSteps });
+    if (user && currentTaskId) {
+      await supabase.from('tasks').update({ steps: updatedSteps }).eq('id', currentTaskId);
+    }
+    setEditingStepId(null);
+    setEditDraft({});
+    setIsSavingEdit(false);
+  };
+
+  const deleteStep = async (stepId) => {
+    if (completedSteps.has(stepId)) return;
+    if (plan.steps.length <= 1) return;
+    const updatedSteps = plan.steps.filter(s => s.id !== stepId);
+    setPlan({ ...plan, steps: updatedSteps });
+    if (user && currentTaskId) {
+      await supabase.from('tasks').update({ steps: updatedSteps, total_steps: updatedSteps.length }).eq('id', currentTaskId);
+    }
+  };
+
+  const saveNewStep = async () => {
+    if (!newStepDraft.title.trim()) return;
+    setIsSavingEdit(true);
+    const maxId = plan.steps.reduce((m, s) => Math.max(m, s.id), 0);
+    const newStep = {
+      id: maxId + 1,
+      title: newStepDraft.title.trim(),
+      description: newStepDraft.description.trim(),
+      estimatedTime: newStepDraft.estimatedTime.trim() || '15 min',
+      when: newStepDraft.when.trim() || 'Anytime',
+      completed: false,
+    };
+    const updatedSteps = [...plan.steps, newStep];
+    setPlan({ ...plan, steps: updatedSteps });
+    if (user && currentTaskId) {
+      await supabase.from('tasks').update({ steps: updatedSteps, total_steps: updatedSteps.length }).eq('id', currentTaskId);
+    }
+    setNewStepDraft({ title: '', description: '', estimatedTime: '', when: '' });
+    setIsAddingStep(false);
+    setIsSavingEdit(false);
+  };
 
   const deleteTask = async () => {
     if (!currentTaskId) return;
@@ -385,7 +492,7 @@ function PlannerContent() {
                   onClick={() => {
                     setPlan(null); setTask(''); setDeadline('');
                     setShowFinalCelebration(false); setCompletedSteps(new Set());
-                    setTaskStartTime(null); setCurrentTaskId(null);
+                    setTaskStartTime(null); setCurrentTaskId(null); setRecurrence(null);
                   }}
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-xl font-bold text-xl transition-all transform hover:scale-105"
                 >
@@ -535,6 +642,33 @@ function PlannerContent() {
                     </select>
                   </div>
                 </div>
+                <div>
+                  <label className={`block font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Repeat <span className={`font-normal text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>(optional)</span>
+                  </label>
+                  <div className="flex gap-2 flex-wrap">
+                    {[
+                      { value: null, label: 'No repeat' },
+                      { value: 'daily', label: '🔁 Daily' },
+                      { value: 'weekly', label: '📅 Weekly' },
+                      { value: 'monthly', label: '🗓️ Monthly' },
+                    ].map(opt => (
+                      <button
+                        key={String(opt.value)}
+                        type="button"
+                        onClick={() => setRecurrence(opt.value ? { type: opt.value, startDate: new Date().toISOString() } : null)}
+                        disabled={loading}
+                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition border-2 ${
+                          (opt.value === null && recurrence === null) || (recurrence?.type === opt.value)
+                            ? darkMode ? 'border-emerald-500 bg-emerald-900/30 text-emerald-400' : 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                            : darkMode ? 'border-slate-600 bg-slate-700/50 text-slate-400 hover:border-slate-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 <button
                   onClick={generatePlan}
                   disabled={loading || !task || !deadline}
@@ -585,6 +719,36 @@ function PlannerContent() {
                   <span>Due: {deadline}</span>
                 </div>
               </div>
+              <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+                <p className={`text-sm font-semibold mb-2 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Repeat this plan</p>
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { value: null, label: 'No repeat' },
+                    { value: 'daily', label: '🔁 Daily' },
+                    { value: 'weekly', label: '📅 Weekly' },
+                    { value: 'monthly', label: '🗓️ Monthly' },
+                  ].map(opt => (
+                    <button
+                      key={String(opt.value)}
+                      type="button"
+                      onClick={async () => {
+                        const newRecurrence = opt.value ? { type: opt.value, startDate: new Date().toISOString() } : null;
+                        setRecurrence(newRecurrence);
+                        if (user && currentTaskId) {
+                          await supabase.from('tasks').update({ recurrence: newRecurrence }).eq('id', currentTaskId);
+                        }
+                      }}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition border-2 ${
+                        (opt.value === null && recurrence === null) || (recurrence?.type === opt.value)
+                          ? darkMode ? 'border-emerald-500 bg-emerald-900/30 text-emerald-400' : 'border-emerald-500 bg-emerald-50 text-emerald-700'
+                          : darkMode ? 'border-slate-600 bg-slate-700/50 text-slate-400 hover:border-slate-500' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Steps */}
@@ -593,57 +757,221 @@ function PlannerContent() {
               {plan.steps.map((step, index) => {
                 const isCompleted = completedSteps.has(step.id);
                 const isDragging = draggedStep === index;
+                const isEditing = editingStepId === step.id;
                 return (
                   <div
                     key={step.id}
-                    draggable={!isCompleted}
-                    onDragStart={(e) => handleDragStart(e, index)}
+                    draggable={!isCompleted && !isEditing}
+                    onDragStart={(e) => !isEditing && handleDragStart(e, index)}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, index)}
                     onDragEnd={handleDragEnd}
                     className={`rounded-2xl p-6 border-2 transition-all duration-300 ${
                       isCompleted
                         ? darkMode ? 'bg-slate-800/50 border-emerald-700 opacity-60' : 'bg-slate-50 border-emerald-300 opacity-60'
-                        : darkMode ? 'bg-slate-800 border-slate-700 hover:border-emerald-600 cursor-move' : 'bg-white border-slate-200 hover:border-emerald-400 cursor-move'
+                        : isEditing
+                          ? darkMode ? 'bg-slate-800 border-emerald-500 ring-2 ring-emerald-500/30' : 'bg-white border-emerald-400 ring-2 ring-emerald-400/20'
+                          : darkMode ? 'bg-slate-800 border-slate-700 hover:border-emerald-600 cursor-move' : 'bg-white border-slate-200 hover:border-emerald-400 cursor-move'
                     } ${isDragging ? 'opacity-50 scale-95' : ''}`}
                   >
-                    <div className="flex items-start space-x-4">
-                      <div className="flex-shrink-0">
-                        {isCompleted ? (
-                          <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold">{index + 1}</div>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className={`text-xl font-bold mb-2 ${isCompleted ? 'line-through' : ''} ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                          {step.title}
-                        </h3>
-                        <p className={`mb-3 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{step.description}</p>
-                        <div className="flex items-center justify-between flex-wrap gap-2">
-                          <div className="flex items-center space-x-3">
-                            <span className={`text-sm px-3 py-1 rounded-full ${darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                              ⏱️ {step.estimatedTime}
-                            </span>
-                            <span className={`text-sm px-3 py-1 rounded-full ${darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                              📅 {step.when}
-                            </span>
-                          </div>
-                          {!isCompleted && (
-                            <button
-                              onClick={() => markComplete(step.id)}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold transition transform hover:scale-105 flex items-center space-x-2"
-                            >
-                              <CheckCircle2 className="w-4 h-4" />
-                              <span>Complete</span>
-                            </button>
-                          )}
+                    {isEditing ? (
+                      <div className="space-y-3">
+                        <input
+                          autoFocus
+                          type="text"
+                          value={editDraft.title}
+                          onChange={(e) => setEditDraft({ ...editDraft, title: e.target.value })}
+                          placeholder="Step title"
+                          className={`w-full px-3 py-2 rounded-lg border-2 font-bold text-lg focus:outline-none transition-colors ${
+                            darkMode ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white' : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900'
+                          }`}
+                        />
+                        <textarea
+                          value={editDraft.description}
+                          onChange={(e) => setEditDraft({ ...editDraft, description: e.target.value })}
+                          placeholder="What to do in this step..."
+                          rows={2}
+                          className={`w-full px-3 py-2 rounded-lg border-2 focus:outline-none resize-none transition-colors ${
+                            darkMode ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500' : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
+                          }`}
+                        />
+                        <div className="grid grid-cols-2 gap-3">
+                          <input
+                            type="text"
+                            value={editDraft.estimatedTime}
+                            onChange={(e) => setEditDraft({ ...editDraft, estimatedTime: e.target.value })}
+                            placeholder="Est. time (e.g. 20 min)"
+                            className={`w-full px-3 py-2 rounded-lg border-2 text-sm focus:outline-none transition-colors ${
+                              darkMode ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500' : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
+                            }`}
+                          />
+                          <input
+                            type="text"
+                            value={editDraft.when}
+                            onChange={(e) => setEditDraft({ ...editDraft, when: e.target.value })}
+                            placeholder="When (e.g. Today, Tomorrow)"
+                            className={`w-full px-3 py-2 rounded-lg border-2 text-sm focus:outline-none transition-colors ${
+                              darkMode ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500' : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
+                            }`}
+                          />
+                        </div>
+                        <div className="flex justify-end space-x-2 pt-1">
+                          <button
+                            onClick={cancelEditStep}
+                            disabled={isSavingEdit}
+                            className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                              darkMode ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-900'
+                            }`}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={() => saveEditStep(step.id)}
+                            disabled={isSavingEdit || !editDraft.title.trim()}
+                            className="px-4 py-2 rounded-lg text-sm font-bold bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 text-white transition"
+                          >
+                            {isSavingEdit ? 'Saving...' : 'Save'}
+                          </button>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="flex items-start space-x-4">
+                        <div className="flex-shrink-0">
+                          {isCompleted ? (
+                            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold">{index + 1}</div>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className={`text-xl font-bold mb-2 ${isCompleted ? 'line-through' : ''} ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                            {step.title}
+                          </h3>
+                          <p className={`mb-3 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{step.description}</p>
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <div className="flex items-center space-x-3">
+                              <span className={`text-sm px-3 py-1 rounded-full ${darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                                ⏱️ {step.estimatedTime}
+                              </span>
+                              <span className={`text-sm px-3 py-1 rounded-full ${darkMode ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                                📅 {step.when}
+                              </span>
+                            </div>
+                            {!isCompleted && (
+                              <div className="flex items-center space-x-2">
+                                <button
+                                  onClick={() => startEditStep(step)}
+                                  className={`p-2 rounded-lg transition-colors ${
+                                    darkMode ? 'text-slate-500 hover:text-slate-200 hover:bg-slate-700' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                                  }`}
+                                  title="Edit step"
+                                >
+                                  <Pencil className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => deleteStep(step.id)}
+                                  disabled={plan.steps.length <= 1}
+                                  className={`p-2 rounded-lg transition-colors ${
+                                    plan.steps.length <= 1
+                                      ? 'opacity-30 cursor-not-allowed text-slate-400'
+                                      : darkMode ? 'text-slate-500 hover:text-rose-400 hover:bg-rose-900/30' : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                                  }`}
+                                  title="Delete step"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => markComplete(step.id)}
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold transition transform hover:scale-105 flex items-center space-x-2"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" />
+                                  <span>Complete</span>
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
+              {isAddingStep ? (
+                <div className={`rounded-2xl p-6 border-2 transition-colors ${
+                  darkMode ? 'bg-slate-800 border-emerald-500 ring-2 ring-emerald-500/30' : 'bg-white border-emerald-400 ring-2 ring-emerald-400/20'
+                }`}>
+                  <p className={`text-sm font-semibold mb-3 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>New Step</p>
+                  <div className="space-y-3">
+                    <input
+                      autoFocus
+                      type="text"
+                      value={newStepDraft.title}
+                      onChange={(e) => setNewStepDraft({ ...newStepDraft, title: e.target.value })}
+                      placeholder="Step title (required)"
+                      className={`w-full px-3 py-2 rounded-lg border-2 font-bold text-lg focus:outline-none transition-colors ${
+                        darkMode ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500' : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
+                      }`}
+                    />
+                    <textarea
+                      value={newStepDraft.description}
+                      onChange={(e) => setNewStepDraft({ ...newStepDraft, description: e.target.value })}
+                      placeholder="What to do..."
+                      rows={2}
+                      className={`w-full px-3 py-2 rounded-lg border-2 focus:outline-none resize-none transition-colors ${
+                        darkMode ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500' : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
+                      }`}
+                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="text"
+                        value={newStepDraft.estimatedTime}
+                        onChange={(e) => setNewStepDraft({ ...newStepDraft, estimatedTime: e.target.value })}
+                        placeholder="Est. time (e.g. 20 min)"
+                        className={`w-full px-3 py-2 rounded-lg border-2 text-sm focus:outline-none transition-colors ${
+                          darkMode ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500' : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
+                        }`}
+                      />
+                      <input
+                        type="text"
+                        value={newStepDraft.when}
+                        onChange={(e) => setNewStepDraft({ ...newStepDraft, when: e.target.value })}
+                        placeholder="When (e.g. Today)"
+                        className={`w-full px-3 py-2 rounded-lg border-2 text-sm focus:outline-none transition-colors ${
+                          darkMode ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500' : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
+                        }`}
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-2 pt-1">
+                      <button
+                        onClick={() => { setIsAddingStep(false); setNewStepDraft({ title: '', description: '', estimatedTime: '', when: '' }); }}
+                        disabled={isSavingEdit}
+                        className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                          darkMode ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-900'
+                        }`}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={saveNewStep}
+                        disabled={isSavingEdit || !newStepDraft.title.trim()}
+                        className="px-4 py-2 rounded-lg text-sm font-bold bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 text-white transition"
+                      >
+                        {isSavingEdit ? 'Adding...' : 'Add Step'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setIsAddingStep(true)}
+                  className={`w-full py-3 rounded-2xl border-2 border-dashed font-semibold text-sm transition flex items-center justify-center space-x-2 ${
+                    darkMode ? 'border-slate-600 text-slate-500 hover:border-emerald-600 hover:text-emerald-400' : 'border-slate-300 text-slate-400 hover:border-emerald-400 hover:text-emerald-600'
+                  }`}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add a step</span>
+                </button>
+              )}
             </div>
 
             {dueDate && (
@@ -698,7 +1026,7 @@ function PlannerContent() {
 
             <div className="flex space-x-3">
               <button
-                onClick={() => { setPlan(null); setTask(''); setDeadline(''); setCurrentTaskId(null); }}
+                onClick={() => { setPlan(null); setTask(''); setDeadline(''); setCurrentTaskId(null); setRecurrence(null); setIsAddingStep(false); setEditingStepId(null); }}
                 className={`flex-1 px-6 py-3 rounded-xl font-semibold transition ${
                   darkMode ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-900'
                 }`}
