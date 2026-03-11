@@ -210,7 +210,7 @@ function PlannerContent() {
           // Also update localStorage boards: swap skeleton id → new task id (done after insert)
         }
 
-        const { data } = await supabase.from('tasks').insert({
+        const { data, error: insertError } = await supabase.from('tasks').insert({
           user_id: user.id,
           title: planData.plan.taskTitle,
           description: planData.plan.analysis,
@@ -223,6 +223,13 @@ function PlannerContent() {
           priority: priority ? parseInt(priority) : null,
           recurrence: recurrence || null,
         }).select().single();
+
+        if (insertError) {
+          console.error('Task insert failed:', insertError);
+          setError('Your plan was generated but could not be saved. Please sign out and back in, then try again.');
+          setLoading(false);
+          return;
+        }
 
         if (data) {
           setCurrentTaskId(data.id);
