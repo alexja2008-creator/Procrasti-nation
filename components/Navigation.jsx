@@ -1,27 +1,54 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Moon, Sun, Menu, X, LogOut, Zap } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Moon, Sun, Menu, X, LogOut, Zap, HelpCircle } from 'lucide-react';
 import { useTheme, useAuth } from '../app/providers';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AuthModal from './AuthModal';
+import TutorialOverlay, { initTutorial, getTutorialStep } from './TutorialModal';
 import Logo from './Logo';
 
 export default function Navigation() {
   const { darkMode, setDarkMode } = useTheme();
   const { user, signOut, trialStatus, trialDaysLeft } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
+  // Show the tutorial overlay if one is already in progress (survives page
+  // transitions because localStorage persists while React state resets).
+  const [showTutorial, setShowTutorial] = useState(
+    () => getTutorialStep() !== null
+  );
+
+  // Also re-check on user change — covers the case where the user signs out
+  // mid-tutorial (clear) or a page refresh where localStorage still has a step.
+  useEffect(() => {
+    if (!user) {
+      setShowTutorial(false);
+    } else if (getTutorialStep() !== null) {
+      setShowTutorial(true);
+    }
+  }, [user]);
+
+  // Called by AuthModal when signup succeeds — kick off the tutorial immediately
+  const handleAuthClose = (reason) => {
+    setShowAuthModal(false);
+    if (reason === 'signup') {
+      initTutorial();
+      setShowTutorial(true);
+    }
+  };
+
   const navLinks = [
     { href: '/planner', label: 'Planner' },
+    { href: '/dashboard', label: 'Dashboard' },
     { href: '/calendar', label: 'Calendar' },
     { href: '/syllabus', label: 'Syllabus' },
     { href: '/focus-pods', label: 'Focus Pods' },
     { href: '/reset-station', label: 'Reset Station' },
-    { href: '/dashboard', label: 'Dashboard' },
   ];
 
   const isActive = (href) => pathname === href;
@@ -62,6 +89,18 @@ export default function Navigation() {
               >
                 {darkMode ? <Sun className="w-5 h-5 text-slate-300" /> : <Moon className="w-5 h-5 text-slate-600" />}
               </button>
+
+              <Link
+                href="/faq"
+                className={`p-2 rounded-lg transition-colors ${
+                  isActive('/faq')
+                    ? darkMode ? 'text-emerald-400' : 'text-emerald-600'
+                    : darkMode ? 'text-slate-400 hover:text-slate-200 hover:bg-slate-700' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
+                }`}
+                title="Help & FAQ"
+              >
+                <HelpCircle className="w-5 h-5" />
+              </Link>
 
               {user ? (
                 <div className="flex items-center space-x-2">
@@ -187,7 +226,14 @@ export default function Navigation() {
         </div>
       </nav>
 
-      {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
+      {showAuthModal && <AuthModal onClose={handleAuthClose} />}
+      {showTutorial && user && (
+        <TutorialOverlay
+          user={user}
+          router={router}
+          onComplete={() => setShowTutorial(false)}
+        />
+      )}
     </>
   );
 }

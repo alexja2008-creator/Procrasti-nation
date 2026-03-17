@@ -26,12 +26,12 @@ export default function AuthModal({ onClose }) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { trial_ends_at: trialEndsAt } },
+        options: { data: { trial_ends_at: trialEndsAt, onboarding_seen: false } },
       });
       if (error) {
         setError(error.message);
       } else if (data.session) {
-        onClose();
+        onClose('signup');
       } else {
         setMessage('Check your email for a confirmation link!');
       }
