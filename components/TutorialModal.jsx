@@ -6,19 +6,112 @@ import { usePathname } from 'next/navigation';
 import { supabase } from '../lib/supabase';
 import { X, ArrowRight } from 'lucide-react';
 
+// ── Quiz questions ────────────────────────────────────────────────────────────
+const QUIZ_QUESTIONS = [
+  {
+    question: 'When you procrastinate, what\'s usually going on?',
+    options: [
+      { label: 'I dread the task itself', type: 'avoider' },
+      { label: 'I want it to be perfect before I start', type: 'perfectionist' },
+      { label: 'It just feels like too much', type: 'overwhelmed' },
+      { label: 'It\'s boring and I\'d rather do anything else', type: 'boredom' },
+    ],
+  },
+  {
+    question: 'You have a big assignment due Friday. It\'s Wednesday. What do you do?',
+    options: [
+      { label: 'Find other "urgent" things to do instead', type: 'avoider' },
+      { label: 'Research endlessly before writing a word', type: 'perfectionist' },
+      { label: 'Stare at it and feel paralyzed', type: 'overwhelmed' },
+      { label: 'Do the fun parts and skip the rest', type: 'boredom' },
+    ],
+  },
+  {
+    question: 'You finally sit down to work. What derails you first?',
+    options: [
+      { label: 'Anxiety about whether I can actually do it', type: 'avoider' },
+      { label: 'Tweaking the first sentence for 20 minutes', type: 'perfectionist' },
+      { label: 'Realizing how many parts there are and shutting down', type: 'overwhelmed' },
+      { label: 'Checking my phone because the task is dry', type: 'boredom' },
+    ],
+  },
+  {
+    question: 'A friend asks how your big project is going. What do you say?',
+    options: [
+      { label: 'I haven\'t looked at it yet, honestly', type: 'avoider' },
+      { label: 'I\'ve been planning it — I want to get the approach right', type: 'perfectionist' },
+      { label: 'I don\'t even know where to start', type: 'overwhelmed' },
+      { label: 'I\'ve been doing other stuff — I\'ll get to it', type: 'boredom' },
+    ],
+  },
+  {
+    question: 'What would help you most right now?',
+    options: [
+      { label: 'Just getting started, no matter how small', type: 'avoider' },
+      { label: 'Permission to do it imperfectly', type: 'perfectionist' },
+      { label: 'Someone to break it into tiny pieces', type: 'overwhelmed' },
+      { label: 'Making boring tasks more engaging', type: 'boredom' },
+    ],
+  },
+];
+
+const TYPE_LABELS = {
+  avoider: { label: 'The Avoider', emoji: '🙈', tagline: 'You dodge tasks that feel threatening. ProcrastiNation will help you take the smallest possible first step.' },
+  perfectionist: { label: 'The Perfectionist', emoji: '✨', tagline: 'You wait for the perfect moment or plan. ProcrastiNation will give you permission to start messy.' },
+  overwhelmed: { label: 'The Overwhelmed', emoji: '🌊', tagline: 'Everything feels too big. ProcrastiNation will break it down until each step feels manageable.' },
+  boredom: { label: 'The Boredom-Prone', emoji: '😴', tagline: 'Boring tasks get pushed aside. ProcrastiNation will add variety and momentum to keep you moving.' },
+};
+
+function classifyQuizAnswers(answers) {
+  const tally = { avoider: 0, perfectionist: 0, overwhelmed: 0, boredom: 0 };
+  answers.forEach((type) => { tally[type] = (tally[type] || 0) + 1; });
+  // Tie-break order: overwhelmed > perfectionist > avoider > boredom
+  const priority = ['overwhelmed', 'perfectionist', 'avoider', 'boredom'];
+  let winner = priority[0];
+  for (const t of priority) {
+    if (tally[t] > tally[winner]) winner = t;
+  }
+  return winner;
+}
+
+// ── Tutorial steps (quiz steps 0-6, then feature tour 7-13) ──────────────────
 const STEPS = [
   {
-    // 0 — Welcome (shown immediately on signup, any page)
+    // 0 — Welcome + quiz intro
     page: null,
     icon: '🎉',
     title: 'Welcome to ProcrastiNation!',
-    body: "You've just joined a community that turns procrastination into productivity. Let's take a 2-minute tour so you know exactly how to use every tool.",
+    body: "You've just joined a community that turns procrastination into productivity. Before we tour the app, let's figure out your procrastination style — it takes 30 seconds and helps the AI tailor plans just for you.",
     pill: null,
     pillCta: null,
-    ctaLabel: "Let's go — show me the Planner →",
+    ctaLabel: "Let's find my style →",
+    isQuiz: false,
+  },
+  // 1-5: Quiz questions (rendered dynamically via isQuiz flag)
+  ...QUIZ_QUESTIONS.map((q, i) => ({
+    page: null,
+    icon: `${i + 1}/5`,
+    title: q.question,
+    body: null,
+    pill: null,
+    pillCta: null,
+    ctaLabel: null,
+    isQuiz: true,
+    quizIndex: i,
+  })),
+  {
+    // 6 — Quiz result
+    page: null,
+    icon: null, // set dynamically
+    title: null, // set dynamically
+    body: null, // set dynamically
+    pill: null,
+    pillCta: null,
+    ctaLabel: 'Got it — show me the Planner →',
+    isQuizResult: true,
   },
   {
-    // 1 — Planner
+    // 7 — Planner
     page: '/planner',
     icon: '🧠',
     title: 'The AI Planner',
@@ -28,7 +121,7 @@ const STEPS = [
     ctaLabel: 'Got it — take me to the Dashboard →',
   },
   {
-    // 2 — Dashboard
+    // 8 — Dashboard
     page: '/dashboard',
     icon: '📊',
     title: 'Your Dashboard',
@@ -38,7 +131,7 @@ const STEPS = [
     ctaLabel: 'Nice — now show me the Calendar →',
   },
   {
-    // 3 — Calendar
+    // 9 — Calendar
     page: '/calendar',
     icon: '📅',
     title: 'The Calendar',
@@ -48,7 +141,7 @@ const STEPS = [
     ctaLabel: 'Got it — back to Dashboard to clean up →',
   },
   {
-    // 4 — Cleanup (back on /dashboard — different step, needs fresh modal)
+    // 10 — Cleanup (back on /dashboard — different step, needs fresh modal)
     page: '/dashboard',
     icon: '🗑️',
     title: 'Keeping Things Clean',
@@ -58,27 +151,27 @@ const STEPS = [
     ctaLabel: 'Done — show me Focus Pods →',
   },
   {
-    // 5 — Focus Pods
+    // 11 — Focus Pods
     page: '/focus-pods',
     icon: '👥',
     title: 'Focus Pods',
     body: "Struggling to stay focused? Join a Focus Pod — virtual co-working rooms where you work alongside other citizens. Just knowing someone else is working too is surprisingly powerful.",
     pill: '👆 Have a look around Focus Pods. Click Continue when ready.',
     pillCta: 'Continue →',
-    ctaLabel: 'Cool — show me the Reset Station →',
+    ctaLabel: 'Cool — show me Recovery Mode →',
   },
   {
-    // 6 — Reset Station
+    // 12 — Recovery Mode
     page: '/reset-station',
     icon: '🧘',
-    title: 'Reset Station',
-    body: "Feeling overwhelmed or stuck? The Reset Station has short breathwork and meditation videos to help you recenter and come back stronger.",
-    pill: '👆 Explore the Reset Station. Click Continue when ready.',
+    title: 'Recovery Mode',
+    body: "Feeling overwhelmed or stuck? Recovery Mode has short breathwork and meditation videos to help you recover and come back stronger.",
+    pill: '👆 Explore Recovery Mode. Click Continue when ready.',
     pillCta: 'Continue →',
     ctaLabel: "All done — let's start planning →",
   },
   {
-    // 7 — Final
+    // 13 — Final
     page: '/planner',
     icon: '🏁',
     title: 'Citizenship granted.',
@@ -124,9 +217,6 @@ export default function TutorialOverlay({ user, router, onComplete }) {
   const { darkMode } = useTheme();
   const pathname = usePathname();
 
-  // Initialise step synchronously from localStorage so the very first render
-  // already has the correct value — avoids the null→step flash that caused the
-  // visibility effect to misfire after Navigation remounts on page transitions.
   const [step, setStepState] = useState(() => {
     const saved = getTutorialStep();
     return saved !== null && saved < STEPS.length ? saved : null;
@@ -139,6 +229,10 @@ export default function TutorialOverlay({ user, router, onComplete }) {
     () => typeof window !== 'undefined' && !!localStorage.getItem(LS_TASK)
   );
 
+  // Quiz state
+  const [quizAnswers, setQuizAnswers] = useState([]);
+  const [quizResult, setQuizResult] = useState(null);
+
   // Sync setter — writes to localStorage immediately
   const setStep = useCallback((s) => {
     saveStep(s);
@@ -149,8 +243,9 @@ export default function TutorialOverlay({ user, router, onComplete }) {
   useEffect(() => {
     if (step === null) return;
     const current = STEPS[step];
-    // Step 0: always show the welcome modal regardless of page
-    if (step === 0) {
+
+    // Steps 0-6 (quiz flow): always show modal regardless of page
+    if (current.page === null) {
       setShowModal(true);
       setShowPill(false);
       return;
@@ -159,19 +254,14 @@ export default function TutorialOverlay({ user, router, onComplete }) {
     if (pathname === current.page) {
       const alreadyShown = localStorage.getItem(lsModalKey(step));
       if (!alreadyShown) {
-        // First arrival on this step's page — show full modal and mark it shown
         localStorage.setItem(lsModalKey(step), '1');
         setShowModal(true);
         setShowPill(false);
       } else if (current.pill) {
-        // Modal already seen — show the exploration pill
         setShowModal(false);
         setShowPill(true);
       }
-      // Steps without a pill (e.g. the final step) keep whatever visibility
-      // state they already have — avoids StrictMode double-fire undoing the modal.
     } else {
-      // User is on a different page — hide everything silently
       setShowModal(false);
       setShowPill(false);
     }
@@ -196,7 +286,6 @@ export default function TutorialOverlay({ user, router, onComplete }) {
       { id: 3, title: 'Block time in your calendar', description: 'Schedule focused work sessions for each of your top 3 tasks.', estimatedTime: '10 min', when: 'Day after tomorrow', completed: false },
     ];
 
-    // Pre-compute step_dates so calendar populates immediately without AI resolution
     const stepDates = {
       '1': toDateStr(today),
       '2': toDateStr(tomorrow),
@@ -238,26 +327,49 @@ export default function TutorialOverlay({ user, router, onComplete }) {
     onComplete?.();
   }, [onComplete]);
 
-  // Navigate to next step's page — pre-clear the modal-shown flag for the
-  // incoming step so its intro modal always fires fresh on arrival
   const goToNextStep = useCallback((nextStep) => {
-    // Pre-clear the shown flag for the step we're about to land on
-    // (handles the dashboard step 2 → step 4 same-page revisit)
     localStorage.removeItem(lsModalKey(nextStep));
-    setStep(nextStep);           // writes to localStorage synchronously
+    setStep(nextStep);
     setShowModal(false);
     setShowPill(false);
-    router.push(STEPS[nextStep].page);
+    if (STEPS[nextStep].page) {
+      router.push(STEPS[nextStep].page);
+    }
   }, [setStep, router]);
+
+  // Handle quiz answer selection
+  const handleQuizAnswer = useCallback((type) => {
+    const newAnswers = [...quizAnswers, type];
+    setQuizAnswers(newAnswers);
+
+    if (newAnswers.length >= QUIZ_QUESTIONS.length) {
+      // All questions answered — classify and move to result step
+      const result = classifyQuizAnswers(newAnswers);
+      setQuizResult(result);
+      // Store in user_metadata
+      supabase.auth.updateUser({ data: { procrastination_type: result } });
+      setStep(6); // result step
+    } else {
+      // Move to next question
+      setStep(step + 1);
+    }
+  }, [quizAnswers, step, setStep]);
 
   // Modal primary CTA
   const handleModalCta = useCallback(async () => {
     if (step === null) return;
     const current = STEPS[step];
 
+    // Welcome step (0): advance to first quiz question
     if (step === 0) {
+      setStep(1);
+      return;
+    }
+
+    // Quiz result step (6): create example task and start the feature tour
+    if (current.isQuizResult) {
       await createExampleTask();
-      goToNextStep(1);
+      goToNextStep(7);
       return;
     }
 
@@ -268,7 +380,7 @@ export default function TutorialOverlay({ user, router, onComplete }) {
     }
 
     goToNextStep(step + 1);
-  }, [step, createExampleTask, goToNextStep, finish, router]);
+  }, [step, createExampleTask, goToNextStep, finish, router, setStep]);
 
   // "Explore first" — dismiss modal, show pill instead
   const handleExploreFirst = useCallback(() => {
@@ -281,13 +393,13 @@ export default function TutorialOverlay({ user, router, onComplete }) {
   const handlePillContinue = useCallback(() => {
     if (step === null) return;
 
-    if (step === 4) {
+    if (step === 10) {
       // Cleanup step — show celebration before advancing
       setShowNiceJob(true);
       setShowPill(false);
       setTimeout(() => {
         setShowNiceJob(false);
-        goToNextStep(5);
+        goToNextStep(11);
       }, 2000);
       return;
     }
@@ -297,6 +409,9 @@ export default function TutorialOverlay({ user, router, onComplete }) {
 
   if (step === null) return null;
   const current = STEPS[step];
+
+  // Compute dynamic quiz result content
+  const resultInfo = quizResult ? TYPE_LABELS[quizResult] : null;
 
   return (
     <>
@@ -316,44 +431,71 @@ export default function TutorialOverlay({ user, router, onComplete }) {
                   }`} />
                 ))}
               </div>
-              <div className="text-4xl mb-3 text-center">{current.icon}</div>
-              <h2 className="text-2xl font-bold text-white text-center">{current.title}</h2>
+              <div className="text-4xl mb-3 text-center">
+                {current.isQuizResult && resultInfo ? resultInfo.emoji : current.icon}
+              </div>
+              <h2 className="text-2xl font-bold text-white text-center">
+                {current.isQuizResult && resultInfo
+                  ? `You're ${resultInfo.label}!`
+                  : current.title}
+              </h2>
             </div>
 
             {/* Body */}
             <div className="px-8 py-6">
-              <p className={`text-base leading-relaxed mb-6 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-                {current.body}
-              </p>
-
-              {current.pill ? (
-                <>
-                  {/* Primary: dismiss modal and let the user explore */}
-                  <button
-                    onClick={handleExploreFirst}
-                    disabled={creating}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-[1.02] shadow-lg shadow-emerald-600/20"
-                  >
-                    {creating ? 'Setting up your sample task...' : 'Explore this page ↓'}
-                  </button>
-                  {/* Secondary: skip straight to the next step */}
-                  <button
-                    onClick={handleModalCta}
-                    className={`mt-3 w-full text-sm text-center transition-colors ${
-                      darkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    {current.ctaLabel}
-                  </button>
-                </>
+              {/* Quiz question — show answer buttons */}
+              {current.isQuiz ? (
+                <div className="space-y-3">
+                  {QUIZ_QUESTIONS[current.quizIndex].options.map((opt, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleQuizAnswer(opt.type)}
+                      className={`w-full text-left px-5 py-4 rounded-xl border-2 font-medium transition-all hover:scale-[1.02] ${
+                        darkMode
+                          ? 'border-slate-600 hover:border-emerald-500 hover:bg-emerald-900/20 text-slate-200'
+                          : 'border-slate-200 hover:border-emerald-500 hover:bg-emerald-50 text-slate-700'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               ) : (
-                <button
-                  onClick={handleModalCta}
-                  disabled={creating}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-[1.02] shadow-lg shadow-emerald-600/20"
-                >
-                  {creating ? 'Setting up your sample task...' : current.ctaLabel}
-                </button>
+                <>
+                  <p className={`text-base leading-relaxed mb-6 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+                    {current.isQuizResult && resultInfo
+                      ? resultInfo.tagline
+                      : current.body}
+                  </p>
+
+                  {current.pill ? (
+                    <>
+                      <button
+                        onClick={handleExploreFirst}
+                        disabled={creating}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-[1.02] shadow-lg shadow-emerald-600/20"
+                      >
+                        {creating ? 'Setting up your sample task...' : 'Explore this page ↓'}
+                      </button>
+                      <button
+                        onClick={handleModalCta}
+                        className={`mt-3 w-full text-sm text-center transition-colors ${
+                          darkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                      >
+                        {current.ctaLabel}
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={handleModalCta}
+                      disabled={creating}
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-[1.02] shadow-lg shadow-emerald-600/20"
+                    >
+                      {creating ? 'Setting up your sample task...' : current.ctaLabel}
+                    </button>
+                  )}
+                </>
               )}
 
               <button

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
-import { buildNudgeEmail } from '../../../../lib/emails';
+import { buildNudgeEmail, buildCommitmentNudgeEmail } from '../../../../lib/emails';
 
 // Use service role key so we can query all users' tasks (bypasses RLS)
 const supabaseAdmin = createClient(
@@ -93,8 +93,59 @@ export async function GET(request) {
       }
     }
 
-    console.log(`[nudge] Sent ${sent} nudges, ${errors} errors, from ${staleTasks.length} stale tasks`);
-    return NextResponse.json({ sent, errors, total: staleTasks.length });
+    // ── Commitment nudges ──
+    // Find tasks where start_commitment has passed + 1 hour and no steps completed
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000).toISOString();
+    const { data: missedCommitments } = await supabaseAdmin
+      .from('tasks')
+      .select('id, user_id, title, completed_steps, start_commitment, last_nudge_sent')
+      .eq('status', 'in_progress')
+      .not('start_commitment', 'is', null)
+      .lt('start_commitment', oneHourAgo)
+      .eq('completed_steps', 0)
+      .or(`last_nudge_sent.is.null,last_nudge_sent.lt.${twentyFourHoursAgo}`);
+
+    let commitmentSent = 0;
+    if (missedCommitments && missedCommitments.length > 0) {
+      for (const task of missedCommitments) {
+        const email = userEmailMap[task.user_id];
+        if (!email) {
+          // Fetch email if not already in the map
+          const { data: { user: u } } = await supabaseAdmin.auth.admin.getUserById(task.user_id);
+          if (u?.email) userEmailMap[task.user_id] = u.email;
+          else continue;
+        }
+        const toEmail = userEmailMap[task.user_id];
+
+        const commitTime = new Date(task.start_commitment).toLocaleString('en-US', {
+          month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+        });
+
+        const { subject, html } = buildCommitmentNudgeEmail({
+          taskTitle: task.title,
+          commitmentTime: commitTime,
+          taskId: task.id,
+          userEmail: toEmail,
+        });
+
+        try {
+          await resend.emails.send({
+            from: 'ProcrastiNation <nudge@procrasti-nation.work>',
+            to: toEmail,
+            subject,
+            html,
+          });
+          await supabaseAdmin.from('tasks').update({ last_nudge_sent: now.toISOString() }).eq('id', task.id);
+          commitmentSent++;
+        } catch (sendError) {
+          console.error(`[nudge] Commitment nudge failed for ${toEmail}:`, sendError);
+          errors++;
+        }
+      }
+    }
+
+    console.log(`[nudge] Sent ${sent} stale nudges + ${commitmentSent} commitment nudges, ${errors} errors`);
+    return NextResponse.json({ sent, commitmentSent, errors, total: staleTasks.length });
 
   } catch (err) {
     console.error('[nudge] Unexpected error:', err);

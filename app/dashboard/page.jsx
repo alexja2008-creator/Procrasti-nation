@@ -7,6 +7,7 @@ import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
 import Link from 'next/link';
+import StaleTaskPrompt from '../../components/StaleTaskPrompt';
 
 export default function DashboardPage() {
   const { darkMode } = useTheme();
@@ -373,6 +374,12 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {inProgressTasks.length === 0 && !loadingData && (
+              <div className="mb-8">
+                <StaleTaskPrompt tasks={tasks} darkMode={darkMode} />
+              </div>
+            )}
+
             {inProgressTasks.length > 0 && (
               <div className={`rounded-2xl p-6 border mb-8 transition-colors ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <div className="flex items-center justify-between mb-6">
@@ -442,6 +449,30 @@ export default function DashboardPage() {
                                   {task.recurrence.type === 'daily' ? '🔁 Daily' : task.recurrence.type === 'weekly' ? '📅 Weekly' : '🗓️ Monthly'}
                                 </span>
                               )}
+                              {task.start_commitment && (() => {
+                                const commitTime = new Date(task.start_commitment);
+                                const now = new Date();
+                                const started = (task.completed_steps || 0) > 0;
+                                if (started) return null;
+                                if (commitTime > now) {
+                                  const hoursLeft = Math.round((commitTime - now) / (1000 * 60 * 60));
+                                  const label = hoursLeft >= 24 ? `${Math.round(hoursLeft / 24)}d` : `${hoursLeft}h`;
+                                  return (
+                                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                      darkMode ? 'bg-amber-900/40 text-amber-400' : 'bg-amber-100 text-amber-600'
+                                    }`}>
+                                      Starting in {label}
+                                    </span>
+                                  );
+                                }
+                                return (
+                                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                    darkMode ? 'bg-rose-900/40 text-rose-400' : 'bg-rose-100 text-rose-600'
+                                  }`}>
+                                    Overdue start
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </div>
                           <div className="ml-4 flex items-center space-x-2 flex-shrink-0">

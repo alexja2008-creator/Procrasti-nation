@@ -11,7 +11,7 @@ import Logo from './Logo';
 
 export default function Navigation() {
   const { darkMode, setDarkMode } = useTheme();
-  const { user, signOut, trialStatus, trialDaysLeft } = useAuth();
+  const { user, signOut, trialStatus, trialDaysLeft, profile } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -48,7 +48,7 @@ export default function Navigation() {
     { href: '/calendar', label: 'Calendar' },
     { href: '/syllabus', label: 'Syllabus' },
     { href: '/focus-pods', label: 'Focus Pods' },
-    { href: '/reset-station', label: 'Reset Station' },
+    { href: '/reset-station', label: 'Recovery Mode' },
   ];
 
   const isActive = (href) => pathname === href;
@@ -117,11 +117,15 @@ export default function Navigation() {
                       <span>Upgrade to Pro</span>
                     </Link>
                   )}
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    darkMode ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-700'
-                  }`} title={user.email}>
-                    {user.email[0].toUpperCase()}
-                  </div>
+                  <Link
+                    href="/profile"
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
+                      darkMode ? 'bg-emerald-700 text-white hover:bg-emerald-600' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                    }`}
+                    title={profile?.username || user.email}
+                  >
+                    {(profile?.username || user.email)[0].toUpperCase()}
+                  </Link>
                   <button
                     onClick={signOut}
                     className={`flex items-center space-x-1 p-2 rounded-lg transition-colors ${

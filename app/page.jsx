@@ -451,7 +451,7 @@ export default function LandingPage() {
             </ul>
           </Link>
 
-          {/* Reset Station */}
+          {/* Recovery Mode */}
           <Link href="/reset-station" className={`p-8 rounded-2xl border hover:shadow-xl transition-all group ${
             darkMode 
               ? 'bg-slate-800 border-slate-700 hover:border-emerald-700' 
@@ -463,7 +463,7 @@ export default function LandingPage() {
               <Zap className={`w-6 h-6 ${darkMode ? 'text-teal-400' : 'text-teal-600'}`} />
             </div>
             <h3 className={`text-2xl font-bold mb-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-              Reset Station
+              Recovery Mode
             </h3>
             <p className={`text-lg leading-relaxed mb-4 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
               Feeling stuck? Take a quick 3-5 minute guided reset to recenter and get back on track.
@@ -582,7 +582,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-center text-slate-300">
                   <Check className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" />
-                  Access to Reset Station
+                  Access to Recovery Mode
                 </li>
                 <li className="flex items-center text-slate-300">
                   <Check className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" />

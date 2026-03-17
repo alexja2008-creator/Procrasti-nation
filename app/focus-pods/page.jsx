@@ -5,6 +5,7 @@ import { Users, Clock, Plus, LogOut, Target, Coffee, BookOpen, Briefcase, Gradua
 import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
+import StaleTaskPrompt from '../../components/StaleTaskPrompt';
 
 export default function FocusPodsPage() {
   const { darkMode } = useTheme();
@@ -13,6 +14,7 @@ export default function FocusPodsPage() {
   const [currentPod, setCurrentPod] = useState(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [userTasks, setUserTasks] = useState([]);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
 
@@ -51,6 +53,17 @@ export default function FocusPodsPage() {
     const interval = setInterval(loadPods, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Fetch user tasks for stale task surfacing in empty pod state
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('tasks')
+      .select('id, title, created_at, completed_steps, total_steps, status')
+      .eq('user_id', user.id)
+      .eq('status', 'in_progress')
+      .then(({ data }) => setUserTasks(data || []));
+  }, [user]);
 
   const loadPods = async () => {
     // Clean up expired pods
@@ -405,7 +418,12 @@ export default function FocusPodsPage() {
                 <div className={`text-center py-16 rounded-2xl border ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
                   <Users className={`w-16 h-16 mx-auto mb-4 ${darkMode ? 'text-slate-600' : 'text-slate-300'}`} />
                   <p className={`text-xl mb-2 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>No active pods right now</p>
-                  <p className={darkMode ? 'text-slate-500' : 'text-slate-500'}>Be the first to create one!</p>
+                  <p className={`mb-4 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Create one and start a co-working session, or check back later.</p>
+                  {user && userTasks.length > 0 && (
+                    <div className="max-w-md mx-auto mt-6">
+                      <StaleTaskPrompt tasks={userTasks} darkMode={darkMode} compact />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -17,6 +17,7 @@ const AuthContext = createContext({
   loading: true,
   trialStatus: 'free',
   trialDaysLeft: 0,
+  profile: null,
   signOut: async () => {},
 });
 
@@ -77,6 +78,17 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [trialStatus, setTrialStatus] = useState('free');
   const [trialDaysLeft, setTrialDaysLeft] = useState(0);
+  const [profile, setProfile] = useState(null);
+
+  const fetchProfile = async (userId) => {
+    if (!userId) { setProfile(null); return; }
+    const { data } = await supabase
+      .from('profiles')
+      .select('username, display_name')
+      .eq('user_id', userId)
+      .maybeSingle();
+    setProfile(data || null);
+  };
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -85,6 +97,7 @@ export function AuthProvider({ children }) {
       const { trialStatus: ts, trialDaysLeft: td } = computeTrialStatus(u);
       setTrialStatus(ts);
       setTrialDaysLeft(td);
+      fetchProfile(u?.id);
       setLoading(false);
     });
 
@@ -94,6 +107,7 @@ export function AuthProvider({ children }) {
       const { trialStatus: ts, trialDaysLeft: td } = computeTrialStatus(u);
       setTrialStatus(ts);
       setTrialDaysLeft(td);
+      fetchProfile(u?.id);
     });
 
     return () => subscription.unsubscribe();
@@ -104,7 +118,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, trialStatus, trialDaysLeft, signOut }}>
+    <AuthContext.Provider value={{ user, loading, trialStatus, trialDaysLeft, profile, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -61,7 +61,7 @@
 ---
 
 ### Q5 — Willingness to Pay Signal
-**"If ProcrastiNation added [feature], would that make it worth paying $12/month for?"**
+**"If ProcrastiNation added [feature], would that make it worth paying $8/month for?"**
 
 *Type: Multiple choice — pick up to 2*
 

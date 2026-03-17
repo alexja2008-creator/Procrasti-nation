@@ -41,3 +41,40 @@ CREATE TRIGGER update_tasks_updated_at
   BEFORE UPDATE ON tasks
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+
+-- 3. Add start_commitment column to tasks table
+--    Stores the user's commitment to START a task (not the due date).
+--    Used by the commitment device feature — prompts at task creation,
+--    shows countdown on dashboard, triggers nudge if missed.
+
+ALTER TABLE tasks
+ADD COLUMN IF NOT EXISTS start_commitment TIMESTAMPTZ DEFAULT NULL;
+
+-- 4. Profiles table for usernames + public display
+--    Needed for the social/friends feature and user profile pages.
+--    RLS: anyone can read profiles, users can only insert/update their own.
+
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE UNIQUE NOT NULL,
+  username TEXT UNIQUE NOT NULL,
+  display_name TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Profiles are publicly readable"
+  ON profiles FOR SELECT
+  USING (true);
+
+CREATE POLICY "Users can insert their own profile"
+  ON profiles FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update their own profile"
+  ON profiles FOR UPDATE
+  USING (user_id = auth.uid());
+
+-- Case-insensitive unique index for username lookups
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_username_lower_idx ON profiles (LOWER(username));

@@ -11,6 +11,7 @@ export default function AuthModal({ onClose }) {
   const [mode, setMode] = useState('login'); // 'login' | 'signup'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,6 +23,26 @@ export default function AuthModal({ onClose }) {
     setLoading(true);
 
     if (mode === 'signup') {
+      // Validate username
+      const trimmedUsername = username.trim().toLowerCase();
+      if (!/^[a-z0-9_]{3,20}$/.test(trimmedUsername)) {
+        setError('Username must be 3-20 characters: letters, numbers, and underscores only.');
+        setLoading(false);
+        return;
+      }
+
+      // Check username availability
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', trimmedUsername)
+        .maybeSingle();
+      if (existing) {
+        setError('That username is taken. Try another one.');
+        setLoading(false);
+        return;
+      }
+
       const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -31,6 +52,12 @@ export default function AuthModal({ onClose }) {
       if (error) {
         setError(error.message);
       } else if (data.session) {
+        // Create profile row with chosen username
+        await supabase.from('profiles').insert({
+          user_id: data.user.id,
+          username: trimmedUsername,
+          display_name: trimmedUsername,
+        });
         onClose('signup');
       } else {
         setMessage('Check your email for a confirmation link!');
@@ -83,6 +110,31 @@ export default function AuthModal({ onClose }) {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'signup' && (
+            <div>
+              <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                Username
+              </label>
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                placeholder="your_username"
+                minLength={3}
+                maxLength={20}
+                className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none transition-colors ${
+                  darkMode
+                    ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500'
+                    : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
+                }`}
+              />
+              <p className={`text-xs mt-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                3-20 characters: letters, numbers, underscores
+              </p>
+            </div>
+          )}
+
           <div>
             <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
               Email

@@ -13,7 +13,7 @@ const FAQ_CATEGORIES = [
     items: [
       {
         q: 'What is ProcrastiNation?',
-        a: 'ProcrastiNation is an AI-powered productivity app built for people who struggle with getting started. You describe a task in plain language and the AI breaks it into bite-sized, actionable steps — each with a time estimate and a suggested day to complete it. It also includes tools for accountability (Focus Pods), recovery (Reset Station), and tracking your momentum (streaks and Dashboard).',
+        a: 'ProcrastiNation is an AI-powered productivity app built for people who struggle with getting started. You describe a task in plain language and the AI breaks it into bite-sized, actionable steps — each with a time estimate and a suggested day to complete it. It also includes tools for accountability (Focus Pods), recovery (Recovery Mode), and tracking your momentum (streaks and Dashboard).',
       },
       {
         q: 'How do I create my first task?',
@@ -114,17 +114,17 @@ const FAQ_CATEGORIES = [
     ],
   },
   {
-    id: 'reset-station',
-    title: 'Reset Station',
+    id: 'recovery-mode',
+    title: 'Recovery Mode',
     icon: '🧘',
     items: [
       {
-        q: 'What is the Reset Station?',
-        a: "The Reset Station is a curated library of short breathwork, meditation, and mental reset videos designed to help you recover from overwhelm or a productivity slump. When you're too anxious or distracted to work, a 5-minute reset can make a real difference.",
+        q: 'What is Recovery Mode?',
+        a: "Recovery Mode is a curated library of short breathwork, meditation, and mental reset videos designed to help you recover from overwhelm or a productivity slump. When you're too anxious or distracted to work, a 5-minute recovery session can make a real difference.",
       },
       {
         q: 'How do I mark a video as completed?',
-        a: 'After watching a video, click the "Mark as Completed" button. Completed resets are tracked in your Dashboard so you can see how often you use recovery tools alongside your productivity habits.',
+        a: 'After watching a video, click the "Mark as Completed" button. Completed sessions are tracked in your Dashboard so you can see how often you use recovery tools alongside your productivity habits.',
       },
     ],
   },

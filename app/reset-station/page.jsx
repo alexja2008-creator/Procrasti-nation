@@ -73,8 +73,8 @@ export default function ResetStationPage() {
             <Zap className="w-4 h-4" />
             <span>Quick Reset</span>
           </div>
-          <h1 className={`text-4xl sm:text-5xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Reset Station</h1>
-          <p className={`text-lg sm:text-xl mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>Take a break. Recenter. Return stronger.</p>
+          <h1 className={`text-4xl sm:text-5xl font-bold mb-4 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Recovery Mode</h1>
+          <p className={`text-lg sm:text-xl mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>Take a break. Recover. Return stronger.</p>
           <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
             {completedSessions.size} session{completedSessions.size !== 1 ? 's' : ''} completed
           </p>

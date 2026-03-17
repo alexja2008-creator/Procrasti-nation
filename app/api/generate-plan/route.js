@@ -2,10 +2,10 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const { task, deadline, clarificationAnswers, clarificationQuestions, checkClarification } = await request.json();
+    const { task, deadline, clarificationAnswers, clarificationQuestions, checkClarification, procrastinationType } = await request.json();
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
-    
+
     if (!apiKey) {
       return NextResponse.json(
         { error: 'API key not configured. Please add ANTHROPIC_API_KEY to your environment variables.' },
@@ -91,7 +91,13 @@ Generate a realistic, actionable plan with the appropriate number of micro-steps
 - Be easy to start (low activation energy)
 - Include estimated time
 - Number of steps should match task complexity (simpler tasks = fewer steps, complex tasks = more steps)
-
+${procrastinationType ? `
+The user has been identified as a "${procrastinationType}" procrastinator. Tailor your step descriptions accordingly:
+- If "avoider": Use encouraging, low-pressure language. Emphasize "just get started" and small first actions. Make the first step trivially easy.
+- If "perfectionist": Explicitly say "rough draft is fine" or "don't aim for perfect." Remind them done > perfect.
+- If "overwhelmed": Break steps into the smallest possible pieces. Reassure them each step is very manageable on its own.
+- If "boredom": Make steps sound interesting or varied. Suggest timeboxing (e.g. "spend just 15 focused minutes") to keep things moving.
+` : ''}
 Respond ONLY with valid JSON in this exact format, no preamble or markdown:
 {
   "taskTitle": "brief rewrite of the task",

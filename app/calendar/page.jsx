@@ -9,6 +9,7 @@ import CalendarWeekGrid, { getWeekStart, hashTaskId, TASK_COLORS } from '../../c
 import CalendarMonthGrid from '../../components/CalendarMonthGrid';
 import CalendarDayGrid from '../../components/CalendarDayGrid';
 import CalendarEventPopover from '../../components/CalendarEventPopover';
+import StaleTaskPrompt from '../../components/StaleTaskPrompt';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
@@ -350,27 +351,15 @@ export default function CalendarPage() {
 
         {/* Empty state — no tasks at all */}
         {!loadingTasks && tasks.length === 0 && (
-          <div className="text-center mt-20">
-            <CalendarDays className={`w-14 h-14 mx-auto mb-5 ${darkMode ? 'text-slate-600' : 'text-slate-300'}`} />
-            <h3 className={`text-xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-              No tasks yet
-            </h3>
-            <p className={`mb-6 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-              Create your first task in the Planner and your steps will appear here.
-            </p>
-            <a
-              href="/planner"
-              className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition"
-            >
-              Go to Planner
-            </a>
+          <div className="mt-12">
+            <StaleTaskPrompt tasks={[]} darkMode={darkMode} />
           </div>
         )}
 
         {/* Empty state — tasks exist but no events resolved yet (and not currently resolving) */}
         {!loadingTasks && tasks.length > 0 && events.length === 0 && resolvingTaskIds.size === 0 && (
           <div className={`text-center mt-8 text-sm ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-            No steps are scheduled in this period.
+            No steps scheduled this period. Try navigating to a different week, or check the <a href="/planner" className={darkMode ? 'text-emerald-400 hover:underline' : 'text-emerald-600 hover:underline'}>Planner</a> for tasks that need step dates.
           </div>
         )}
 

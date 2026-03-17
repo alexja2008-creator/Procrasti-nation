@@ -46,6 +46,8 @@ function PlannerContent() {
   const [newStepDraft, setNewStepDraft] = useState({ title: '', description: '', estimatedTime: '', when: '' });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [recurrence, setRecurrence] = useState(null); // null | { type: 'daily'|'weekly'|'monthly', startDate: ISO }
+  const [showCommitmentPrompt, setShowCommitmentPrompt] = useState(false);
+  const [startCommitment, setStartCommitment] = useState('');
 
   const encouragements = [
     "Great job!", "Keep up the good work!", "You're on a roll!",
@@ -203,7 +205,7 @@ function PlannerContent() {
         const clarificationRes = await fetch('/api/generate-plan', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ task, deadline, checkClarification: true }),
+          body: JSON.stringify({ task, deadline, checkClarification: true, procrastinationType: user?.user_metadata?.procrastination_type || null }),
         });
         const clarificationData = await clarificationRes.json();
         if (!clarificationRes.ok) throw new Error(clarificationData.error || 'Failed to check clarification');
@@ -218,7 +220,7 @@ function PlannerContent() {
       const planRes = await fetch('/api/generate-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task, deadline, clarificationAnswers, clarificationQuestions, checkClarification: false }),
+        body: JSON.stringify({ task, deadline, clarificationAnswers, clarificationQuestions, checkClarification: false, procrastinationType: user?.user_metadata?.procrastination_type || null }),
       });
       const planData = await planRes.json();
       if (!planRes.ok) throw new Error(planData.error || 'Failed to generate plan');
@@ -268,6 +270,7 @@ function PlannerContent() {
 
         if (data) {
           setCurrentTaskId(data.id);
+          setShowCommitmentPrompt(true);
           // Swap skeleton taskId → real taskId in localStorage boards
           if (prefillTaskId) {
             try {
@@ -1040,6 +1043,46 @@ function PlannerContent() {
                 </button>
               )}
             </div>
+
+            {/* Commitment device — "When will you START this?" */}
+            {showCommitmentPrompt && plan && currentTaskId && (
+              <div className={`rounded-2xl p-6 border transition-colors ${
+                darkMode ? 'bg-emerald-900/20 border-emerald-800' : 'bg-emerald-50 border-emerald-200'
+              }`}>
+                <h3 className={`text-lg font-bold mb-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                  When will you start this?
+                </h3>
+                <p className={`text-sm mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  Making a commitment helps you follow through. Pick a date and time.
+                </p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <input
+                    type="datetime-local"
+                    value={startCommitment}
+                    onChange={(e) => setStartCommitment(e.target.value)}
+                    min={new Date().toISOString().slice(0, 16)}
+                    className={`px-4 py-3 rounded-lg border-2 focus:outline-none transition-colors ${
+                      darkMode
+                        ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white'
+                        : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900'
+                    }`}
+                  />
+                  <button
+                    onClick={async () => {
+                      if (startCommitment && currentTaskId) {
+                        await supabase.from('tasks').update({
+                          start_commitment: new Date(startCommitment).toISOString()
+                        }).eq('id', currentTaskId);
+                      }
+                      setShowCommitmentPrompt(false);
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-colors"
+                  >
+                    {startCommitment ? 'I commit' : 'Skip for now'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {plan && (
               <div className={`rounded-2xl p-5 border transition-colors ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
