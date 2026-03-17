@@ -81,14 +81,42 @@ function PlannerContent() {
       const completedSet = new Set(
         (data.steps || []).filter(s => s.completed).map(s => s.id)
       );
+      // Compute total estimated time from individual step estimates
+      const steps = data.steps || [];
+      let totalMinutes = 0;
+      steps.forEach(s => {
+        const match = (s.estimatedTime || '').match(/(\d+)/g);
+        if (match) {
+          // Handle ranges like "60-90 min" by averaging
+          const nums = match.map(Number);
+          totalMinutes += nums.reduce((a, b) => a + b, 0) / nums.length;
+        }
+      });
+      let computedEstimate = '';
+      if (totalMinutes > 0) {
+        if (totalMinutes >= 60) {
+          const hours = Math.round(totalMinutes / 60);
+          computedEstimate = `${hours} hour${hours !== 1 ? 's' : ''}`;
+        } else {
+          computedEstimate = `${Math.round(totalMinutes)} min`;
+        }
+      }
+      // Format stored due_date as a readable deadline string
+      const storedDueDate = data.due_date ? new Date(data.due_date).toISOString().split('T')[0] : '';
+      let readableDeadline = '';
+      if (data.due_date) {
+        readableDeadline = new Date(data.due_date).toLocaleDateString('en-US', {
+          weekday: 'long', month: 'short', day: 'numeric',
+        });
+      }
       setPlan({
         taskTitle: data.title,
         analysis: data.description,
-        totalEstimatedTime: '',
-        steps: data.steps || [],
+        totalEstimatedTime: computedEstimate,
+        steps,
       });
-      setDeadline('');
-      setDueDate(data.due_date ? new Date(data.due_date).toISOString().split('T')[0] : '');
+      setDeadline(readableDeadline);
+      setDueDate(storedDueDate);
       setCompletedSteps(completedSet);
       setCurrentTaskId(data.id);
       setTaskStartTime(new Date(data.start_time).getTime());
@@ -202,6 +230,13 @@ function PlannerContent() {
       setClarificationAnswers({});
       setTaskStartTime(Date.now());
 
+      // Auto-fill due date from AI-resolved date when user only typed natural language
+      let effectiveDueDate = dueDate;
+      if (!effectiveDueDate && planData.plan.resolvedDueDate) {
+        effectiveDueDate = planData.plan.resolvedDueDate;
+        setDueDate(effectiveDueDate);
+      }
+
       if (user) {
         // If we're replacing a skeleton task imported from a syllabus, delete it first
         // so we don't leave a 0-step ghost in the dashboard
@@ -219,7 +254,7 @@ function PlannerContent() {
           completed_steps: 0,
           total_steps: planData.plan.steps.length,
           start_time: new Date().toISOString(),
-          due_date: dueDate ? new Date(dueDate).toISOString() : null,
+          due_date: effectiveDueDate ? new Date(effectiveDueDate).toISOString() : null,
           priority: priority ? parseInt(priority) : null,
           recurrence: recurrence || null,
         }).select().single();
@@ -735,16 +770,22 @@ function PlannerContent() {
                 <span>{plan.taskTitle}</span>
               </h2>
               <p className={`mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{plan.analysis}</p>
-              <div className={`flex items-center space-x-4 text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                <div className="flex items-center space-x-2">
-                  <Clock className={`w-4 h-4 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                  <span>Est. {plan.totalEstimatedTime}</span>
+              {(plan.totalEstimatedTime || deadline || dueDate) && (
+                <div className={`flex items-center space-x-4 text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  {plan.totalEstimatedTime && (
+                    <div className="flex items-center space-x-2">
+                      <Clock className={`w-4 h-4 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                      <span>Est. {plan.totalEstimatedTime}</span>
+                    </div>
+                  )}
+                  {(deadline || dueDate) && (
+                    <div className="flex items-center space-x-2">
+                      <Calendar className={`w-4 h-4 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                      <span>Due: {deadline || new Date(dueDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className={`w-4 h-4 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                  <span>Due: {deadline}</span>
-                </div>
-              </div>
+              )}
               <div className={`mt-4 pt-4 border-t ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
                 <p className={`text-sm font-semibold mb-2 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Repeat this plan</p>
                 <div className="flex gap-2 flex-wrap">

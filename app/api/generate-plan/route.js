@@ -97,6 +97,7 @@ Respond ONLY with valid JSON in this exact format, no preamble or markdown:
   "taskTitle": "brief rewrite of the task",
   "analysis": "one sentence about the approach",
   "totalEstimatedTime": "X hours",
+  "resolvedDueDate": "YYYY-MM-DD or null if no clear deadline",
   "steps": [
     {
       "id": 1,
