@@ -88,12 +88,12 @@ export default function Navigation() {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-6">
+            <div className="hidden lg:flex items-center space-x-4">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`font-medium transition-colors relative ${
+                  className={`text-sm font-medium transition-colors relative whitespace-nowrap ${
                     isActive(link.href)
                       ? darkMode ? 'text-emerald-400' : 'text-emerald-600'
                       : darkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
@@ -101,7 +101,7 @@ export default function Navigation() {
                 >
                   {link.label}
                   {link.href === '/friends' && unreadNudges > 0 && (
-                    <span className="absolute -top-1.5 -right-3 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    <span className="absolute -top-1.5 -right-2.5 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                       {unreadNudges > 9 ? '9+' : unreadNudges}
                     </span>
                   )}
@@ -133,13 +133,13 @@ export default function Navigation() {
                 <div className="flex items-center space-x-2">
                   {/* Trial badge */}
                   {trialStatus === 'trial' && (
-                    <Link href="/#pricing" className="hidden lg:flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors">
+                    <Link href="/#pricing" className="hidden xl:flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors">
                       <Zap className="w-3 h-3" />
                       <span>Pro Trial · {trialDaysLeft}d left</span>
                     </Link>
                   )}
                   {trialStatus === 'free' && (
-                    <Link href="/#pricing" className="hidden lg:flex items-center space-x-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors">
+                    <Link href="/#pricing" className="hidden xl:flex items-center space-x-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors">
                       <Zap className="w-3 h-3" />
                       <span>Upgrade to Pro</span>
                     </Link>
@@ -174,7 +174,7 @@ export default function Navigation() {
             </div>
 
             {/* Mobile Menu Button */}
-            <div className="flex md:hidden items-center space-x-2">
+            <div className="flex lg:hidden items-center space-x-2">
               <button
                 onClick={() => setDarkMode(!darkMode)}
                 className={`p-2 rounded-lg transition-colors ${
@@ -199,7 +199,7 @@ export default function Navigation() {
 
           {/* Mobile Menu */}
           {mobileMenuOpen && (
-            <div className="md:hidden pt-4 pb-2 space-y-2">
+            <div className="lg:hidden pt-4 pb-2 space-y-2">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
