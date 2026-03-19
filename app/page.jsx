@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import Navigation from '../components/Navigation';
 import AuthModal from '../components/AuthModal';
 import Logo from '../components/Logo';
+import FriendNudgeInbox from '../components/FriendNudgeInbox';
 
 export default function LandingPage() {
   const { darkMode } = useTheme();
@@ -160,6 +161,9 @@ export default function LandingPage() {
             </div>
           )}
 
+          {/* Friend nudge inbox */}
+          <FriendNudgeInbox darkMode={darkMode} />
+
           {/* Quick-access nav cards */}
           <div className="grid grid-cols-2 gap-4">
             <Link href="/planner" className={`rounded-2xl p-6 border transition-all group hover:shadow-lg ${
@@ -189,6 +193,13 @@ export default function LandingPage() {
               <Zap className={`w-8 h-8 mb-3 transition-transform group-hover:scale-110 ${darkMode ? 'text-teal-400' : 'text-teal-600'}`} />
               <h3 className={`font-bold text-lg mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Recovery Mode</h3>
               <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Reset and refocus</p>
+            </Link>
+            <Link href="/friends" className={`rounded-2xl p-6 border transition-all group hover:shadow-lg ${
+              darkMode ? 'bg-slate-800 border-slate-700 hover:border-pink-600' : 'bg-white border-slate-200 hover:border-pink-400'
+            }`}>
+              <Users className={`w-8 h-8 mb-3 transition-transform group-hover:scale-110 ${darkMode ? 'text-pink-400' : 'text-pink-600'}`} />
+              <h3 className={`font-bold text-lg mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Friends</h3>
+              <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Nudge or praise your people</p>
             </Link>
           </div>
         </div>

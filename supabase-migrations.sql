@@ -78,3 +78,78 @@ CREATE POLICY "Users can update their own profile"
 
 -- Case-insensitive unique index for username lookups
 CREATE UNIQUE INDEX IF NOT EXISTS profiles_username_lower_idx ON profiles (LOWER(username));
+
+-- 5. Add nudge_email_enabled to profiles
+--    Controls whether friends can trigger email nudges to this user.
+
+ALTER TABLE profiles
+ADD COLUMN IF NOT EXISTS nudge_email_enabled BOOLEAN DEFAULT true;
+
+-- 6. Friendships table — bidirectional friend relationships
+--    requester sends, addressee accepts/rejects. LEAST/GREATEST index
+--    prevents duplicate inverse pairs (A→B and B→A).
+
+CREATE TABLE IF NOT EXISTS friendships (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  requester UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  addressee UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'rejected')),
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(requester, addressee)
+);
+
+-- Prevent duplicate inverse pairs
+CREATE UNIQUE INDEX IF NOT EXISTS unique_friendship_pair
+  ON friendships (LEAST(requester, addressee), GREATEST(requester, addressee));
+
+ALTER TABLE friendships ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users see own friendships"
+  ON friendships FOR SELECT
+  USING (auth.uid() = requester OR auth.uid() = addressee);
+
+CREATE POLICY "Users can send friend requests"
+  ON friendships FOR INSERT
+  WITH CHECK (auth.uid() = requester AND status = 'pending');
+
+CREATE POLICY "Participants can update friendships"
+  ON friendships FOR UPDATE
+  USING (auth.uid() = requester OR auth.uid() = addressee);
+
+CREATE POLICY "Participants can delete friendships"
+  ON friendships FOR DELETE
+  USING (auth.uid() = requester OR auth.uid() = addressee);
+
+-- 7. Friend nudges table — nudge ("get moving") and praise ("nice work")
+--    Rate limited to 3 per sender→receiver pair per 24h (enforced app-side).
+
+CREATE TABLE IF NOT EXISTS friend_nudges (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  receiver_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('nudge', 'praise')),
+  message TEXT,
+  read BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_friend_nudges_receiver
+  ON friend_nudges(receiver_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_friend_nudges_rate_limit
+  ON friend_nudges(sender_id, receiver_id, created_at);
+
+ALTER TABLE friend_nudges ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users see own nudges"
+  ON friend_nudges FOR SELECT
+  USING (auth.uid() = sender_id OR auth.uid() = receiver_id);
+
+CREATE POLICY "Users can send nudges"
+  ON friend_nudges FOR INSERT
+  WITH CHECK (auth.uid() = sender_id);
+
+CREATE POLICY "Receiver can mark nudges read"
+  ON friend_nudges FOR UPDATE
+  USING (auth.uid() = receiver_id);

@@ -2,9 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Moon, Sun, Menu, X, LogOut, Zap, HelpCircle } from 'lucide-react';
+import { Moon, Sun, Menu, X, LogOut, Zap, HelpCircle, Users } from 'lucide-react';
 import { useTheme, useAuth } from '../app/providers';
 import { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import AuthModal from './AuthModal';
 import TutorialOverlay, { initTutorial, getTutorialStep } from './TutorialModal';
 import Logo from './Logo';
@@ -16,6 +17,26 @@ export default function Navigation() {
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [unreadNudges, setUnreadNudges] = useState(0);
+
+  // Fetch unread nudge count for badge
+  useEffect(() => {
+    if (!user) { setUnreadNudges(0); return; }
+    async function fetchUnread() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const res = await fetch('/api/friends/unread', {
+          headers: { 'Authorization': `Bearer ${session.access_token}` },
+        });
+        if (res.ok) {
+          const { unread } = await res.json();
+          setUnreadNudges(unread || 0);
+        }
+      } catch {}
+    }
+    fetchUnread();
+  }, [user]);
 
   // Show the tutorial overlay if one is already in progress (survives page
   // transitions because localStorage persists while React state resets).
@@ -49,6 +70,7 @@ export default function Navigation() {
     { href: '/syllabus', label: 'Syllabus' },
     { href: '/focus-pods', label: 'Focus Pods' },
     { href: '/reset-station', label: 'Recovery Mode' },
+    { href: '/friends', label: 'Friends' },
   ];
 
   const isActive = (href) => pathname === href;
@@ -71,13 +93,18 @@ export default function Navigation() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`font-medium transition-colors ${
+                  className={`font-medium transition-colors relative ${
                     isActive(link.href)
                       ? darkMode ? 'text-emerald-400' : 'text-emerald-600'
                       : darkMode ? 'text-slate-300 hover:text-white' : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {link.label}
+                  {link.href === '/friends' && unreadNudges > 0 && (
+                    <span className="absolute -top-1.5 -right-3 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                      {unreadNudges > 9 ? '9+' : unreadNudges}
+                    </span>
+                  )}
                 </Link>
               ))}
 
