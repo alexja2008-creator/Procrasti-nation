@@ -1,32 +1,67 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowRight, Check, Brain, Zap, Users, BarChart3, Sparkles, CheckCircle2, Clock, Calendar } from 'lucide-react';
+import { ArrowRight, Check, Brain, Zap, Users, BarChart3, Sparkles, Clock, Calendar, Flame, Target, TrendingUp } from 'lucide-react';
 import { useTheme, useAuth } from './providers';
 import { supabase } from '../lib/supabase';
 import Navigation from '../components/Navigation';
 import AuthModal from '../components/AuthModal';
 import Logo from '../components/Logo';
-import UpgradeModal from '../components/UpgradeModal';
 
 export default function LandingPage() {
   const { darkMode } = useTheme();
   const { user, trialStatus } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  // Inline planner state (logged-in hero)
-  const [task, setTask] = useState('');
-  const [deadline, setDeadline] = useState('');
-  const [plan, setPlan] = useState(null);
-  const [planLoading, setPlanLoading] = useState(false);
-  const [planError, setPlanError] = useState('');
-  const [completedSteps, setCompletedSteps] = useState(new Set());
-  const [currentTaskId, setCurrentTaskId] = useState(null);
-  const [clarificationNeeded, setClarificationNeeded] = useState(false);
-  const [clarificationQuestions, setClarificationQuestions] = useState([]);
-  const [clarificationAnswers, setClarificationAnswers] = useState({});
+  // Command center state (logged-in hero)
+  const [streak, setStreak] = useState(0);
+  const [activeTasks, setActiveTasks] = useState(0);
+  const [completedTasks, setCompletedTasks] = useState(0);
+  const [nextCommitment, setNextCommitment] = useState(null);
+  const [staleTasks, setStaleTasks] = useState([]);
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  const TYPE_ENCOURAGEMENTS = {
+    avoider: "You don't have to do it all — just the next step.",
+    perfectionist: "Done beats perfect. Always.",
+    overwhelmed: "One small step is all it takes to start.",
+    boredom: "Mix it up today. Variety keeps momentum alive.",
+  };
+
+  useEffect(() => {
+    if (user) loadCommandCenterData();
+  }, [user]);
+
+  const loadCommandCenterData = async () => {
+    setLoadingStats(true);
+    try {
+      // Fetch all in parallel
+      const [streakRes, activeRes, completedRes, commitmentRes] = await Promise.all([
+        supabase.from('streaks').select('current_streak').eq('user_id', user.id).maybeSingle(),
+        supabase.from('tasks').select('id, title, completed_steps, total_steps, created_at, start_commitment', { count: 'exact' }).eq('user_id', user.id).eq('status', 'in_progress'),
+        supabase.from('tasks').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('status', 'completed'),
+        supabase.from('tasks').select('title, start_commitment').eq('user_id', user.id).eq('status', 'in_progress').not('start_commitment', 'is', null).gt('start_commitment', new Date().toISOString()).order('start_commitment', { ascending: true }).limit(1),
+      ]);
+
+      setStreak(streakRes.data?.current_streak || 0);
+      setActiveTasks(activeRes.count || 0);
+      setCompletedTasks(completedRes.count || 0);
+      if (commitmentRes.data?.[0]) {
+        setNextCommitment(commitmentRes.data[0]);
+      }
+
+      // Find stale tasks (in_progress, 24h+ old, 0 completed steps)
+      const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const stale = (activeRes.data || []).filter(t =>
+        (t.completed_steps || 0) === 0 && t.created_at < oneDayAgo
+      );
+      setStaleTasks(stale.slice(0, 3));
+    } catch (err) {
+      console.error('Failed to load command center:', err);
+    }
+    setLoadingStats(false);
+  };
 
   const handleCTA = (e) => {
     if (!user) {
@@ -35,305 +70,126 @@ export default function LandingPage() {
     }
   };
 
-  const generatePlan = async () => {
-    if (!task || !deadline) return;
-
-    // Free tier: max 5 AI plans per calendar month
-    if (user && trialStatus === 'free') {
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
-      const { count } = await supabase
-        .from('tasks')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .gte('start_time', startOfMonth.toISOString());
-      if (count >= 5) {
-        setShowUpgradeModal(true);
-        return;
-      }
-    }
-
-    setPlanLoading(true);
-    setPlanError('');
-    try {
-      // Step 1: check if clarification is needed (only on first call)
-      if (!clarificationNeeded) {
-        const clarRes = await fetch('/api/generate-plan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ task, deadline, checkClarification: true }),
-        });
-        const clarData = await clarRes.json();
-        if (!clarRes.ok) throw new Error(clarData.error || 'Failed to check clarification');
-        if (clarData.needsClarification) {
-          setClarificationQuestions(clarData.questions);
-          setClarificationNeeded(true);
-          setPlanLoading(false);
-          return;
-        }
-      }
-
-      // Step 2: generate the full plan (with any clarification answers)
-      const res = await fetch('/api/generate-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task, deadline, clarificationAnswers, clarificationQuestions, checkClarification: false }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to generate plan');
-      setPlan(data.plan);
-      setCompletedSteps(new Set());
-      setCurrentTaskId(null);
-      setClarificationNeeded(false);
-      setClarificationQuestions([]);
-      setClarificationAnswers({});
-
-      // Save to Supabase so it appears in the dashboard
-      if (user) {
-        const { data: saved } = await supabase.from('tasks').insert({
-          user_id: user.id,
-          title: data.plan.taskTitle,
-          description: data.plan.analysis,
-          status: 'in_progress',
-          steps: data.plan.steps,
-          completed_steps: 0,
-          total_steps: data.plan.steps.length,
-          start_time: new Date().toISOString(),
-        }).select().single();
-        if (saved) setCurrentTaskId(saved.id);
-      }
-    } catch (err) {
-      setPlanError(err.message);
-    }
-    setPlanLoading(false);
-  };
-
-  const toggleStep = async (stepId) => {
-    const next = new Set(completedSteps);
-    next.has(stepId) ? next.delete(stepId) : next.add(stepId);
-    setCompletedSteps(next);
-
-    // Persist step completion to Supabase
-    if (user && currentTaskId && plan) {
-      const updatedSteps = plan.steps.map(s => ({ ...s, completed: next.has(s.id) }));
-      const isFullyComplete = next.size === plan.steps.length;
-      await supabase.from('tasks').update({
-        steps: updatedSteps,
-        completed_steps: next.size,
-        status: isFullyComplete ? 'completed' : 'in_progress',
-        completed_at: isFullyComplete ? new Date().toISOString() : null,
-      }).eq('id', currentTaskId);
-    }
-  };
-
   return (
     <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <Navigation />
       {showAuthModal && <AuthModal onClose={() => setShowAuthModal(false)} />}
-      {showUpgradeModal && <UpgradeModal reason="limit" onClose={() => setShowUpgradeModal(false)} />}
 
       {/* Hero Section */}
       {user ? (
-        /* Logged-in: inline AI planner */
+        /* Logged-in: personalized command center */
         <div className="max-w-4xl mx-auto px-6 pt-16 pb-20">
-          <div className="text-center mb-8">
-            <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium mb-6 ${
-              darkMode ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-700'
-            }`}>
-              <Brain className="w-4 h-4" />
-              <span>AI-Powered Planning</span>
-            </div>
+          {/* Greeting */}
+          <div className="text-center mb-10">
             <h1 className={`text-4xl md:text-5xl font-bold mb-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-              Welcome back. What are we tackling today?
+              Welcome back{user.user_metadata?.username ? `, ${user.user_metadata.username}` : ''}.
             </h1>
             <p className={`text-lg ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-              Drop in a task and a deadline — AI will break it down for you instantly.
+              {TYPE_ENCOURAGEMENTS[user.user_metadata?.procrastination_type] || "Let's make today count."}
             </p>
           </div>
 
-          <div className={`rounded-2xl p-8 border transition-colors ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-            {!plan ? (
-              clarificationNeeded ? (
-                /* Clarification questions */
-                <>
-                  {planError && (
-                    <div className="mb-4 p-3 rounded-lg bg-rose-100 border border-rose-300 text-rose-700 text-sm">{planError}</div>
-                  )}
-                  <div className="mb-6">
-                    <h2 className={`text-xl font-bold mb-1 flex items-center space-x-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-                      <Brain className={`w-5 h-5 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                      <span>Just a few quick questions...</span>
-                    </h2>
-                    <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>Help me create a better plan for you!</p>
-                  </div>
-                  <div className="space-y-4">
-                    {clarificationQuestions.map((question, index) => (
-                      <div key={index}>
-                        <label className={`block font-semibold mb-2 text-sm ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>{question}</label>
-                        <input
-                          type="text"
-                          value={clarificationAnswers[index] || ''}
-                          onChange={(e) => setClarificationAnswers({ ...clarificationAnswers, [index]: e.target.value })}
-                          onKeyDown={(e) => e.key === 'Enter' && !planLoading && generatePlan()}
-                          placeholder="Your answer..."
-                          className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none transition-colors ${
-                            darkMode
-                              ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500'
-                              : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
-                          }`}
-                          disabled={planLoading}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex space-x-3 mt-6">
-                    <button
-                      onClick={() => { setClarificationNeeded(false); setClarificationQuestions([]); setClarificationAnswers({}); }}
-                      disabled={planLoading}
-                      className={`flex-1 px-4 py-3 rounded-xl font-semibold transition ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-900'}`}
-                    >
-                      ← Back
-                    </button>
-                    <button
-                      onClick={generatePlan}
-                      disabled={planLoading}
-                      className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 text-white px-4 py-3 rounded-xl font-bold transition flex items-center justify-center space-x-2"
-                    >
-                      {planLoading ? (
-                        <><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" /><span>Generating...</span></>
-                      ) : (
-                        <><Zap className="w-5 h-5" /><span>Generate My Plan</span></>
-                      )}
-                    </button>
-                  </div>
-                </>
-              ) : (
-              /* Task input form */
-              <>
-                {planError && (
-                  <div className="mb-4 p-3 rounded-lg bg-rose-100 border border-rose-300 text-rose-700 text-sm">{planError}</div>
-                )}
-                <div className="space-y-4">
-                  <div>
-                    <label className={`block font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>What do you need to do?</label>
-                    <input
-                      type="text"
-                      value={task}
-                      onChange={(e) => setTask(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && !planLoading && task && deadline && generatePlan()}
-                      placeholder="e.g., Write essay for history class, Finish presentation for Business 101"
-                      className={`w-full px-4 py-4 rounded-lg border-2 focus:outline-none text-lg transition-colors ${
-                        darkMode
-                          ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500'
-                          : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
-                      }`}
-                      disabled={planLoading}
-                    />
-                  </div>
-                  <div>
-                    <label className={`block font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>When's it due?</label>
-                    <input
-                      type="text"
-                      value={deadline}
-                      onChange={(e) => setDeadline(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && !planLoading && task && deadline && generatePlan()}
-                      placeholder="e.g., Next Tuesday, Friday at 5pm, December 20th"
-                      className={`w-full px-4 py-4 rounded-lg border-2 focus:outline-none text-lg transition-colors ${
-                        darkMode
-                          ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500'
-                          : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
-                      }`}
-                      disabled={planLoading}
-                    />
-                  </div>
-                  <button
-                    onClick={generatePlan}
-                    disabled={planLoading || !task || !deadline}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white px-8 py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-[1.02] flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/20"
-                  >
-                    {planLoading ? (
-                      <><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" /><span>AI is thinking...</span></>
-                    ) : (
-                      <><Zap className="w-5 h-5" /><span>Generate My Plan</span></>
-                    )}
-                  </button>
-                </div>
-              </>
-              )
-            ) : (
-              <>
-                <div className="mb-6">
-                  <h2 className={`text-2xl font-bold mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>{plan.taskTitle}</h2>
-                  <p className={`text-sm mb-3 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{plan.analysis}</p>
-                  <div className={`flex items-center space-x-4 text-sm ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                    <span className="flex items-center space-x-1"><Clock className="w-4 h-4" /><span>{plan.totalEstimatedTime}</span></span>
-                    <span className="flex items-center space-x-1"><Calendar className="w-4 h-4" /><span>Due: {deadline}</span></span>
-                  </div>
-                  {/* Progress bar */}
-                  <div className={`w-full rounded-full h-2 mt-4 overflow-hidden ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                    <div
-                      className="bg-gradient-to-r from-emerald-500 to-teal-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${(completedSteps.size / plan.steps.length) * 100}%` }}
-                    />
-                  </div>
-                  <p className={`text-xs mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>{completedSteps.size} of {plan.steps.length} steps done</p>
-                </div>
+          {/* Stats Row */}
+          {!loadingStats && (
+            <div className="grid grid-cols-3 gap-4 mb-8">
+              <div className={`rounded-2xl p-5 border text-center transition-colors ${
+                darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+              }`}>
+                <Flame className={`w-7 h-7 mx-auto mb-2 ${streak > 0 ? 'text-orange-500' : darkMode ? 'text-slate-600' : 'text-slate-300'}`} />
+                <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{streak}</p>
+                <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Day streak</p>
+              </div>
+              <div className={`rounded-2xl p-5 border text-center transition-colors ${
+                darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+              }`}>
+                <Target className={`w-7 h-7 mx-auto mb-2 ${activeTasks > 0 ? darkMode ? 'text-emerald-400' : 'text-emerald-600' : darkMode ? 'text-slate-600' : 'text-slate-300'}`} />
+                <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{activeTasks}</p>
+                <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Active tasks</p>
+              </div>
+              <div className={`rounded-2xl p-5 border text-center transition-colors ${
+                darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'
+              }`}>
+                <TrendingUp className={`w-7 h-7 mx-auto mb-2 ${completedTasks > 0 ? darkMode ? 'text-teal-400' : 'text-teal-600' : darkMode ? 'text-slate-600' : 'text-slate-300'}`} />
+                <p className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{completedTasks}</p>
+                <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Completed</p>
+              </div>
+            </div>
+          )}
 
-                <div className="space-y-3 mb-6">
-                  {plan.steps.map((step, index) => {
-                    const done = completedSteps.has(step.id);
-                    return (
-                      <div
-                        key={step.id}
-                        className={`rounded-xl p-4 border-2 transition-all ${
-                          done
-                            ? darkMode ? 'bg-slate-800/50 border-emerald-700 opacity-60' : 'bg-slate-50 border-emerald-300 opacity-60'
-                            : darkMode ? 'bg-slate-700/50 border-slate-600' : 'bg-slate-50 border-slate-200'
-                        }`}
-                      >
-                        <div className="flex items-start space-x-3">
-                          <div className="flex-shrink-0 mt-0.5">
-                            {done
-                              ? <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-                              : <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">{index + 1}</div>
-                            }
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`font-semibold ${done ? 'line-through' : ''} ${darkMode ? 'text-white' : 'text-slate-900'}`}>{step.title}</p>
-                            <p className={`text-sm mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{step.description}</p>
-                            <span className={`text-xs mt-1 inline-block ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>⏱ {step.estimatedTime}</span>
-                          </div>
-                          {!done && (
-                            <button
-                              onClick={() => toggleStep(step.id)}
-                              className="flex-shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition"
-                            >
-                              Done
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+          {/* Upcoming commitment */}
+          {nextCommitment && (
+            <div className={`rounded-2xl p-4 border mb-8 flex items-center space-x-3 ${
+              darkMode ? 'bg-amber-900/20 border-amber-800' : 'bg-amber-50 border-amber-200'
+            }`}>
+              <Clock className={`w-5 h-5 flex-shrink-0 ${darkMode ? 'text-amber-400' : 'text-amber-600'}`} />
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-semibold truncate ${darkMode ? 'text-amber-300' : 'text-amber-800'}`}>
+                  Up next: {nextCommitment.title}
+                </p>
+                <p className={`text-xs ${darkMode ? 'text-amber-400/70' : 'text-amber-600'}`}>
+                  Starting {new Date(nextCommitment.start_commitment).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at {new Date(nextCommitment.start_commitment).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                </p>
+              </div>
+              <Link href="/planner" className={`text-xs font-bold px-3 py-1.5 rounded-lg transition flex-shrink-0 ${
+                darkMode ? 'bg-amber-800/50 text-amber-300 hover:bg-amber-800' : 'bg-amber-200 text-amber-800 hover:bg-amber-300'
+              }`}>
+                View
+              </Link>
+            </div>
+          )}
 
-                <div className="flex space-x-3">
-                  <button
-                    onClick={() => { setPlan(null); setTask(''); setDeadline(''); setCompletedSteps(new Set()); setCurrentTaskId(null); }}
-                    className={`flex-1 px-4 py-3 rounded-xl font-semibold transition ${darkMode ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-slate-200 hover:bg-slate-300 text-slate-900'}`}
-                  >
-                    New Task
-                  </button>
-                  <Link
-                    href="/planner"
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-xl font-semibold transition text-center"
-                  >
-                    Open Full Planner
-                  </Link>
-                </div>
-              </>
-            )}
+          {/* Stale tasks nudge */}
+          {staleTasks.length > 0 && (
+            <div className={`rounded-2xl p-4 border mb-8 ${
+              darkMode ? 'bg-rose-900/15 border-rose-800/50' : 'bg-rose-50 border-rose-200'
+            }`}>
+              <p className={`text-sm font-semibold mb-2 ${darkMode ? 'text-rose-300' : 'text-rose-700'}`}>
+                {staleTasks.length} task{staleTasks.length > 1 ? 's' : ''} collecting dust:
+              </p>
+              <ul className="space-y-1">
+                {staleTasks.map(t => (
+                  <li key={t.id}>
+                    <Link href={`/planner?task=${t.id}`} className={`text-sm underline-offset-2 hover:underline ${
+                      darkMode ? 'text-rose-400' : 'text-rose-600'
+                    }`}>
+                      {t.title}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Quick-access nav cards */}
+          <div className="grid grid-cols-2 gap-4">
+            <Link href="/planner" className={`rounded-2xl p-6 border transition-all group hover:shadow-lg ${
+              darkMode ? 'bg-slate-800 border-slate-700 hover:border-emerald-600' : 'bg-white border-slate-200 hover:border-emerald-400'
+            }`}>
+              <Brain className={`w-8 h-8 mb-3 transition-transform group-hover:scale-110 ${darkMode ? 'text-emerald-400' : 'text-emerald-600'}`} />
+              <h3 className={`font-bold text-lg mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Plan a Task</h3>
+              <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>AI breaks it down into steps</p>
+            </Link>
+            <Link href="/dashboard" className={`rounded-2xl p-6 border transition-all group hover:shadow-lg ${
+              darkMode ? 'bg-slate-800 border-slate-700 hover:border-violet-600' : 'bg-white border-slate-200 hover:border-violet-400'
+            }`}>
+              <BarChart3 className={`w-8 h-8 mb-3 transition-transform group-hover:scale-110 ${darkMode ? 'text-violet-400' : 'text-violet-600'}`} />
+              <h3 className={`font-bold text-lg mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Dashboard</h3>
+              <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Track progress and boards</p>
+            </Link>
+            <Link href="/calendar" className={`rounded-2xl p-6 border transition-all group hover:shadow-lg ${
+              darkMode ? 'bg-slate-800 border-slate-700 hover:border-blue-600' : 'bg-white border-slate-200 hover:border-blue-400'
+            }`}>
+              <Calendar className={`w-8 h-8 mb-3 transition-transform group-hover:scale-110 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+              <h3 className={`font-bold text-lg mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Calendar</h3>
+              <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>See your schedule at a glance</p>
+            </Link>
+            <Link href="/reset-station" className={`rounded-2xl p-6 border transition-all group hover:shadow-lg ${
+              darkMode ? 'bg-slate-800 border-slate-700 hover:border-teal-600' : 'bg-white border-slate-200 hover:border-teal-400'
+            }`}>
+              <Zap className={`w-8 h-8 mb-3 transition-transform group-hover:scale-110 ${darkMode ? 'text-teal-400' : 'text-teal-600'}`} />
+              <h3 className={`font-bold text-lg mb-1 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Recovery Mode</h3>
+              <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Reset and refocus</p>
+            </Link>
           </div>
         </div>
       ) : (
