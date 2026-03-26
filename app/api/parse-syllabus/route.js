@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server';
+import { requireAuth } from '../../../lib/authMiddleware';
 
 // Must use Node.js runtime — pdf-parse and mammoth are Node-only libraries
 export const runtime = 'nodejs';
 
 export async function POST(request) {
   try {
+    const { error: authError } = await requireAuth(request);
+    if (authError) {
+      return NextResponse.json({ error: authError }, { status: 401 });
+    }
+
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
