@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
+import { requireAuth } from '../../../lib/authMiddleware';
 
 export async function POST(request) {
   const { podName, endTime } = await request.json();
+
+  const { error: authError } = await requireAuth(request);
+  if (authError) {
+    return NextResponse.json({ error: authError }, { status: 401 });
+  }
 
   const apiKey = process.env.WHEREBY_API_KEY;
   if (!apiKey) {

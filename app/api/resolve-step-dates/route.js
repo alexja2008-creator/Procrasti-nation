@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
+import { requireAuth } from '../../../lib/authMiddleware';
 
 export async function POST(request) {
   try {
     const { steps, deadline, dueDate, today } = await request.json();
+
+    const { error: authError } = await requireAuth(request);
+    if (authError) {
+      return NextResponse.json({ error: authError }, { status: 401 });
+    }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {

@@ -89,9 +89,10 @@ export default function FocusPodsPage() {
     const endTime = new Date(Date.now() + parseInt(duration) * 60 * 1000);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/create-room', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
         body: JSON.stringify({ podName, endTime }),
       });
 

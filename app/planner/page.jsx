@@ -201,10 +201,13 @@ function PlannerContent() {
     setError('');
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const authHeader = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` };
+
       if (!clarificationNeeded) {
         const clarificationRes = await fetch('/api/generate-plan', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeader,
           body: JSON.stringify({ task, deadline, checkClarification: true, procrastinationType: user?.user_metadata?.procrastination_type || null }),
         });
         const clarificationData = await clarificationRes.json();
@@ -219,7 +222,7 @@ function PlannerContent() {
 
       const planRes = await fetch('/api/generate-plan', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeader,
         body: JSON.stringify({ task, deadline, clarificationAnswers, clarificationQuestions, checkClarification: false, procrastinationType: user?.user_metadata?.procrastination_type || null }),
       });
       const planData = await planRes.json();

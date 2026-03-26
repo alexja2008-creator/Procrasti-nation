@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { requireAuth } from '../../../lib/authMiddleware';
 
 export async function POST(request) {
   try {
     const { task, deadline, clarificationAnswers, clarificationQuestions, checkClarification, procrastinationType } = await request.json();
+
+    const { user, token, error: authError } = await requireAuth(request);
+    if (authError) {
+      return NextResponse.json({ error: authError }, { status: 401 });
+    }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
 
@@ -66,6 +73,29 @@ Respond ONLY with valid JSON in this exact format, no preamble or markdown:
       }
 
       return NextResponse.json(result);
+    }
+
+    // Enforce monthly plan limit for free (non-trial) users
+    const trialEndsAt = user.user_metadata?.trial_ends_at;
+    const isProOrTrial = trialEndsAt && new Date(trialEndsAt) > new Date();
+    if (!isProOrTrial) {
+      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+      const userSupabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        { global: { headers: { Authorization: `Bearer ${token}` } } }
+      );
+      const { count } = await userSupabase
+        .from('tasks')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', startOfMonth);
+      if (count >= 5) {
+        return NextResponse.json(
+          { error: 'Monthly plan limit reached. Upgrade to Pro for unlimited plans.' },
+          { status: 429 }
+        );
+      }
     }
 
     // Build task context with clarifications if provided

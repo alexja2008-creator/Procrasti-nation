@@ -76,8 +76,10 @@ export default function SyllabusPage() {
       const formData = new FormData();
       formData.append('file', file);
 
+      const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/parse-syllabus', {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${session?.access_token}` },
         body: formData,
       });
 

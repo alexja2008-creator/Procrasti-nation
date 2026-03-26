@@ -95,6 +95,7 @@ export default function CalendarPage() {
 
   async function resolveAllStepDates() {
     const today = new Date().toISOString().split('T')[0];
+    const { data: { session } } = await supabase.auth.getSession();
 
     for (const task of tasks) {
       const existingDates = task.step_dates || {};
@@ -108,7 +109,7 @@ export default function CalendarPage() {
       try {
         const res = await fetch('/api/resolve-step-dates', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
           body: JSON.stringify({
             steps: stepsNeedingDates.map(s => ({ id: s.id, title: s.title, when: s.when })),
             dueDate: task.due_date
