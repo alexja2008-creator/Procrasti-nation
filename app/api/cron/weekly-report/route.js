@@ -9,6 +9,7 @@ const supabaseAdmin = createClient(
 );
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const ANTHROPIC_TIMEOUT_MS = 30_000;
 
 async function generatePepTalk(completedCount, inProgressCount, streak) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -30,6 +31,8 @@ Write a 2-sentence motivational note for a user who ${context}.
 Respond with only the text, no quotes or preamble.`;
 
   try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), ANTHROPIC_TIMEOUT_MS);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -42,7 +45,9 @@ Respond with only the text, no quotes or preamble.`;
         max_tokens: 100,
         messages: [{ role: 'user', content: prompt }],
       }),
+      signal: ac.signal,
     });
+    clearTimeout(timer);
 
     if (!response.ok) return null;
     const data = await response.json();
@@ -69,7 +74,7 @@ export async function GET(request) {
       .limit(1000);
 
     if (userIdError) {
-      return NextResponse.json({ error: userIdError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
     const uniqueUserIds = [...new Set(activeUserIds.map(r => r.user_id))];
@@ -77,50 +82,75 @@ export async function GET(request) {
       return NextResponse.json({ sent: 0, message: 'No active users' });
     }
 
+    // Two shared pep talk variants to avoid N+1 Anthropic calls (trade-off: less personalised,
+    // but prevents cron timeout at scale — each per-user call would cost up to 30s)
+    const [pepTalkActive, pepTalkInactive] = await Promise.all([
+      generatePepTalk(3, 0, 5),  // representative active user — completed tasks this week
+      generatePepTalk(0, 2, 0),  // representative inactive user — nothing completed
+    ]);
+
+    // Batch all 3 DB queries across all users upfront to avoid N+1 sequential calls
+    const [
+      { data: allCompletedTasks },
+      { data: allInProgressTasks },
+      { data: allStreaks },
+      userResults,
+    ] = await Promise.all([
+      supabaseAdmin
+        .from('tasks')
+        .select('user_id, title')
+        .in('user_id', uniqueUserIds)
+        .eq('status', 'completed')
+        .gte('completed_at', sevenDaysAgo),
+      supabaseAdmin
+        .from('tasks')
+        .select('user_id, title, created_at')
+        .in('user_id', uniqueUserIds)
+        .eq('status', 'in_progress'),
+      supabaseAdmin
+        .from('streaks')
+        .select('user_id, current_streak')
+        .in('user_id', uniqueUserIds),
+      Promise.all(uniqueUserIds.map(id => supabaseAdmin.auth.admin.getUserById(id))),
+    ]);
+
+    // Build lookup maps keyed by user_id
+    const completedByUser = {};
+    for (const row of (allCompletedTasks || [])) {
+      (completedByUser[row.user_id] ||= []).push(row.title);
+    }
+
+    const inProgressByUser = {};
+    for (const row of (allInProgressTasks || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))) {
+      const arr = (inProgressByUser[row.user_id] ||= []);
+      if (arr.length < 5) arr.push(row.title);
+    }
+
+    const streakByUser = {};
+    for (const row of (allStreaks || [])) {
+      streakByUser[row.user_id] = row.current_streak;
+    }
+
+    const userById = {};
+    for (const result of userResults) {
+      const u = result.data?.user;
+      if (u?.id) userById[u.id] = u;
+    }
+
     let sent = 0;
     let errors = 0;
 
     for (const userId of uniqueUserIds) {
       try {
-        // Get user email
-        const { data: { user }, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
-        if (userError || !user?.email) continue;
+        const user = userById[userId];
+        if (!user?.email) continue;
 
-        // Tasks completed in the last 7 days
-        const { data: completedTasks } = await supabaseAdmin
-          .from('tasks')
-          .select('title')
-          .eq('user_id', userId)
-          .eq('status', 'completed')
-          .gte('completed_at', sevenDaysAgo);
+        const completedTitles = completedByUser[userId] || [];
+        const inProgressTitles = inProgressByUser[userId] || [];
+        const completedThisWeek = completedTitles.length;
+        const currentStreak = streakByUser[userId] || 0;
 
-        // In-progress tasks
-        const { data: inProgressTasks } = await supabaseAdmin
-          .from('tasks')
-          .select('title')
-          .eq('user_id', userId)
-          .eq('status', 'in_progress')
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        // Current streak
-        const { data: streakData } = await supabaseAdmin
-          .from('streaks')
-          .select('current_streak')
-          .eq('user_id', userId)
-          .single();
-
-        const completedThisWeek = completedTasks?.length || 0;
-        const currentStreak = streakData?.current_streak || 0;
-        const completedTitles = (completedTasks || []).map(t => t.title);
-        const inProgressTitles = (inProgressTasks || []).map(t => t.title);
-
-        // Generate AI pep talk (best-effort — don't block if it fails)
-        const pepTalk = await generatePepTalk(
-          completedThisWeek,
-          inProgressTitles.length,
-          currentStreak
-        );
+        const pepTalk = completedThisWeek > 0 ? pepTalkActive : pepTalkInactive;
 
         const { subject, html } = buildWeeklyReportEmail({
           completedThisWeek,
@@ -149,6 +179,6 @@ export async function GET(request) {
 
   } catch (err) {
     console.error('[weekly-report] Unexpected error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

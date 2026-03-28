@@ -2,30 +2,47 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireAuth } from '../../../lib/authMiddleware';
 
+const ANTHROPIC_TIMEOUT_MS = 30_000;
+
 export async function POST(request) {
   try {
-    const { task, deadline, clarificationAnswers, clarificationQuestions, checkClarification, procrastinationType } = await request.json();
-
     const { user, token, error: authError } = await requireAuth(request);
     if (authError) {
       return NextResponse.json({ error: authError }, { status: 401 });
     }
 
+    const { task, deadline, clarificationAnswers, clarificationQuestions, checkClarification, procrastinationType } = await request.json();
+
+    if (!task || typeof task !== 'string' || task.trim().length === 0) {
+      return NextResponse.json({ error: 'task is required' }, { status: 400 });
+    }
+    if (task.length > 2000) {
+      return NextResponse.json({ error: 'task is too long' }, { status: 400 });
+    }
+    if (deadline && deadline.length > 200) {
+      return NextResponse.json({ error: 'deadline is too long' }, { status: 400 });
+    }
+    if (procrastinationType && procrastinationType.length > 50) {
+      return NextResponse.json({ error: 'invalid procrastinationType' }, { status: 400 });
+    }
+
+    const sanitizeForXml = (s) => String(s ?? '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
     const apiKey = process.env.ANTHROPIC_API_KEY;
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'API key not configured. Please add ANTHROPIC_API_KEY to your environment variables.' },
+        { error: 'API key not configured' },
         { status: 500 }
       );
     }
 
-    // If we're checking for clarification needs
+    // Clarification checks are free — they do not count against the monthly plan cap
     if (checkClarification) {
       const clarificationPrompt = `You are an AI productivity assistant. A user wants help breaking down a task.
 
-Task: ${task}
-Deadline: ${deadline}
+<task>${sanitizeForXml(task)}</task>
+<deadline>${sanitizeForXml(deadline)}</deadline>
 
 Analyze if this task description is specific enough to create a detailed plan. If the task is vague or missing key information, ask 2-3 clarifying questions. If it's specific enough, respond with "SUFFICIENT".
 
@@ -40,6 +57,8 @@ Respond ONLY with valid JSON in this exact format, no preamble or markdown:
   "questions": ["question 1", "question 2", "question 3"] or []
 }`;
 
+      const ac1 = new AbortController();
+      const timer1 = setTimeout(() => ac1.abort(), ANTHROPIC_TIMEOUT_MS);
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
@@ -52,12 +71,13 @@ Respond ONLY with valid JSON in this exact format, no preamble or markdown:
           max_tokens: 500,
           messages: [{ role: 'user', content: clarificationPrompt }],
         }),
+        signal: ac1.signal,
       });
+      clearTimeout(timer1);
 
       if (!response.ok) {
-        const errorData = await response.json();
         return NextResponse.json(
-          { error: errorData.error?.message || 'Failed to check clarification' },
+          { error: 'AI request failed. Please try again.' },
           { status: response.status }
         );
       }
@@ -99,6 +119,12 @@ Respond ONLY with valid JSON in this exact format, no preamble or markdown:
     }
 
     // Build task context with clarifications if provided
+    if (clarificationAnswers && (
+      Object.keys(clarificationAnswers).length > 10 ||
+      Object.values(clarificationAnswers).some(v => typeof v !== 'string' || v.length > 500)
+    )) {
+      return NextResponse.json({ error: 'Invalid clarification answers' }, { status: 400 });
+    }
     let taskContext = task;
     if (clarificationAnswers && Object.keys(clarificationAnswers).length > 0 && clarificationQuestions) {
       taskContext += '\n\nAdditional details:\n';
@@ -112,8 +138,8 @@ Respond ONLY with valid JSON in this exact format, no preamble or markdown:
     // Generate the plan
     const planPrompt = `You are an AI productivity assistant helping students and professionals break down tasks into micro-steps.
 
-Task: ${taskContext}
-Deadline: ${deadline}
+<task>${sanitizeForXml(taskContext)}</task>
+<deadline>${sanitizeForXml(deadline)}</deadline>
 
 Generate a realistic, actionable plan with the appropriate number of micro-steps (typically 3-8 depending on complexity) that will help complete this task on time. Each step should:
 - Be small and specific (15-45 minutes of work)
@@ -122,7 +148,7 @@ Generate a realistic, actionable plan with the appropriate number of micro-steps
 - Include estimated time
 - Number of steps should match task complexity (simpler tasks = fewer steps, complex tasks = more steps)
 ${procrastinationType ? `
-The user has been identified as a "${procrastinationType}" procrastinator. Tailor your step descriptions accordingly:
+The user has been identified as a <procrastination_type>${sanitizeForXml(procrastinationType)}</procrastination_type> procrastinator. Tailor your step descriptions accordingly:
 - If "avoider": Use encouraging, low-pressure language. Emphasize "just get started" and small first actions. Make the first step trivially easy.
 - If "perfectionist": Explicitly say "rough draft is fine" or "don't aim for perfect." Remind them done > perfect.
 - If "overwhelmed": Break steps into the smallest possible pieces. Reassure them each step is very manageable on its own.
@@ -145,6 +171,8 @@ Respond ONLY with valid JSON in this exact format, no preamble or markdown:
   ]
 }`;
 
+    const ac2 = new AbortController();
+    const timer2 = setTimeout(() => ac2.abort(), ANTHROPIC_TIMEOUT_MS);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -157,12 +185,13 @@ Respond ONLY with valid JSON in this exact format, no preamble or markdown:
         max_tokens: 1000,
         messages: [{ role: 'user', content: planPrompt }],
       }),
+      signal: ac2.signal,
     });
+    clearTimeout(timer2);
 
     if (!response.ok) {
-      const errorData = await response.json();
       return NextResponse.json(
-        { error: errorData.error?.message || 'Failed to generate plan' },
+        { error: 'AI request failed. Please try again.' },
         { status: response.status }
       );
     }
@@ -181,7 +210,7 @@ Respond ONLY with valid JSON in this exact format, no preamble or markdown:
   } catch (error) {
     console.error('Error in generate-plan API:', error);
     return NextResponse.json(
-      { error: error.message || 'An unexpected error occurred' },
+      { error: 'An unexpected error occurred' },
       { status: 500 }
     );
   }

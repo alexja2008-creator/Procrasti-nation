@@ -4,6 +4,8 @@ import { requireAuth } from '../../../lib/authMiddleware';
 // Must use Node.js runtime — pdf-parse and mammoth are Node-only libraries
 export const runtime = 'nodejs';
 
+const ANTHROPIC_TIMEOUT_MS = 60_000;
+
 export async function POST(request) {
   try {
     const { error: authError } = await requireAuth(request);
@@ -14,7 +16,7 @@ export async function POST(request) {
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
       return NextResponse.json(
-        { error: 'API key not configured. Please add ANTHROPIC_API_KEY to your environment variables.' },
+        { error: 'API key not configured' },
         { status: 500 }
       );
     }
@@ -94,6 +96,8 @@ export async function POST(request) {
     }
 
     // Call Claude
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), ANTHROPIC_TIMEOUT_MS);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -106,12 +110,13 @@ export async function POST(request) {
         max_tokens: 2000,
         messages: claudeMessages,
       }),
+      signal: ac.signal,
     });
+    clearTimeout(timer);
 
     if (!response.ok) {
-      const errorData = await response.json();
       return NextResponse.json(
-        { error: errorData.error?.message || 'AI analysis failed. Please try again.' },
+        { error: 'AI analysis failed. Please try again.' },
         { status: response.status }
       );
     }
@@ -142,19 +147,22 @@ export async function POST(request) {
   } catch (error) {
     console.error('[parse-syllabus] Unexpected error:', error);
     return NextResponse.json(
-      { error: error.message || 'An unexpected error occurred.' },
+      { error: 'An unexpected error occurred.' },
       { status: 500 }
     );
   }
 }
 
+function sanitizeForXml(s) {
+  return String(s ?? '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 function buildTextPrompt(syllabusText) {
   return `You are an academic assistant. The following is the text content of a course syllabus. Extract the course information and all assignments, tests, papers, projects, quizzes, and homework items that have due dates or scheduled dates.
 
-Syllabus text:
----
-${syllabusText.slice(0, 15000)}
----
+<syllabus>
+${sanitizeForXml(syllabusText.slice(0, 15000))}
+</syllabus>
 
 Respond ONLY with valid JSON in this exact format, no preamble or markdown:
 {

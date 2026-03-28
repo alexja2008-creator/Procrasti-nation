@@ -34,7 +34,7 @@ export async function GET(request) {
 
     if (error) {
       console.error('[nudge] DB query error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'Database error' }, { status: 500 });
     }
 
     if (!staleTasks || staleTasks.length === 0) {
@@ -149,6 +149,6 @@ export async function GET(request) {
 
   } catch (err) {
     console.error('[nudge] Unexpected error:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

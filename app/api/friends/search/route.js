@@ -1,42 +1,38 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { requireAuth } from '../../../../lib/authMiddleware';
 
 export async function GET(request) {
   try {
+    const { user, token, error: authError } = await requireAuth(request);
+    if (authError) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const query = (searchParams.get('q') || '').toLowerCase().trim();
+    const sanitizedQuery = query.replace(/[%_\\]/g, '\\$&');
 
     if (query.length < 2) {
       return NextResponse.json({ results: [] });
     }
 
-    // Get the current user from the auth header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-    }
+    const userDb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      { global: { headers: { Authorization: `Bearer ${token}` } } }
+    );
 
     // Search profiles by username prefix, exclude self
-    const { data: profiles, error: searchError } = await supabaseAdmin
+    const { data: profiles, error: searchError } = await userDb
       .from('profiles')
       .select('user_id, username, display_name')
-      .ilike('username', `${query}%`)
+      .ilike('username', `${sanitizedQuery}%`)
       .neq('user_id', user.id)
       .limit(10);
 
     if (searchError) {
-      return NextResponse.json({ error: searchError.message }, { status: 500 });
+      return NextResponse.json({ error: 'Search failed' }, { status: 500 });
     }
 
     if (!profiles || profiles.length === 0) {
@@ -45,7 +41,7 @@ export async function GET(request) {
 
     // Check friendship status for each result
     const userIds = profiles.map(p => p.user_id);
-    const { data: friendships } = await supabaseAdmin
+    const { data: friendships } = await userDb
       .from('friendships')
       .select('requester, addressee, status')
       .or(

@@ -1,13 +1,31 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '../../../lib/authMiddleware';
 
+const ANTHROPIC_TIMEOUT_MS = 30_000;
+
 export async function POST(request) {
   try {
-    const { steps, deadline, dueDate, today } = await request.json();
-
     const { error: authError } = await requireAuth(request);
     if (authError) {
       return NextResponse.json({ error: authError }, { status: 401 });
+    }
+
+    const { steps, deadline, dueDate, today } = await request.json();
+
+    if (!Array.isArray(steps) || steps.length === 0 || steps.length > 20) {
+      return NextResponse.json({ error: 'steps must be between 1 and 20 items' }, { status: 400 });
+    }
+    if (!steps.every(s => s && typeof s.title === 'string' && typeof s.when === 'string')) {
+      return NextResponse.json({ error: 'each step must have a title and when string' }, { status: 400 });
+    }
+    if (steps.some(s => s.title.length > 200 || s.when.length > 100)) {
+      return NextResponse.json({ error: 'step fields exceed maximum length' }, { status: 400 });
+    }
+    if (today && String(today).length > 50) {
+      return NextResponse.json({ error: 'invalid today value' }, { status: 400 });
+    }
+    if (deadline && String(deadline).length > 200) {
+      return NextResponse.json({ error: 'deadline is too long' }, { status: 400 });
     }
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -15,14 +33,17 @@ export async function POST(request) {
       return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
     }
 
+    const sanitizeForXml = (s) => String(s ?? '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
     const prompt = `You are a scheduling assistant. Given a list of task steps with relative timing descriptions, resolve each step's "when" field into a concrete calendar date.
 
-Today's date: ${today}
-${dueDate ? `Due date (structured): ${dueDate}` : ''}
-${deadline ? `Deadline (as described by user): ${deadline}` : ''}
+Today's date: <today>${sanitizeForXml(today)}</today>
+${dueDate ? `Due date (structured): <due_date>${sanitizeForXml(dueDate)}</due_date>` : ''}
+${deadline ? `Deadline (as described by user): <deadline>${sanitizeForXml(deadline)}</deadline>` : ''}
 
-Steps:
-${steps.map((s, i) => `${i + 1}. "${s.title}" — when: "${s.when}"`).join('\n')}
+<steps>
+${steps.map((s, i) => `${i + 1}. <title>${sanitizeForXml(s.title)}</title> — when: <when>${sanitizeForXml(s.when)}</when>`).join('\n')}
+</steps>
 
 Rules:
 - Interpret each "when" string relative to the due date (if provided) or today
@@ -43,6 +64,8 @@ Respond ONLY with valid JSON, no preamble or markdown:
   "dates": ["YYYY-MM-DD", "YYYY-MM-DD", ...]
 }`;
 
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), ANTHROPIC_TIMEOUT_MS);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -55,11 +78,12 @@ Respond ONLY with valid JSON, no preamble or markdown:
         max_tokens: 256,
         messages: [{ role: 'user', content: prompt }],
       }),
+      signal: ac.signal,
     });
+    clearTimeout(timer);
 
     if (!response.ok) {
-      const err = await response.json();
-      return NextResponse.json({ error: err.error?.message || 'AI request failed' }, { status: response.status });
+      return NextResponse.json({ error: 'AI request failed. Please try again.' }, { status: response.status });
     }
 
     const data = await response.json();
@@ -75,6 +99,6 @@ Respond ONLY with valid JSON, no preamble or markdown:
 
     return NextResponse.json(result);
   } catch (error) {
-    return NextResponse.json({ error: error.message || 'Unexpected error' }, { status: 500 });
+    return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }
