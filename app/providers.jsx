@@ -84,10 +84,14 @@ export function AuthProvider({ children }) {
     if (!userId) { setProfile(null); return; }
     const { data } = await supabase
       .from('profiles')
-      .select('username, display_name')
+      .select('username, display_name, stripe_subscription_status')
       .eq('user_id', userId)
       .maybeSingle();
     setProfile(data || null);
+    if (data?.stripe_subscription_status === 'active') {
+      setTrialStatus('pro');
+      setTrialDaysLeft(0);
+    }
   };
 
   useEffect(() => {

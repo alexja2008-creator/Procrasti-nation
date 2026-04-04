@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
-import { User, Calendar, Trophy, Flame, Shield, Lock, Check, Pencil } from 'lucide-react';
+import { User, Calendar, Trophy, Flame, Shield, Lock, Check, Pencil, CreditCard } from 'lucide-react';
 
 const TYPE_LABELS = {
   avoider: { label: 'Avoider', color: 'amber', description: 'You tend to avoid starting tasks due to anxiety about the task itself.' },
@@ -22,7 +22,8 @@ function maskEmail(email) {
 
 export default function ProfilePage() {
   const { darkMode } = useTheme();
-  const { user, profile } = useAuth();
+  const { user, profile, trialStatus } = useAuth();
+  const [portalLoading, setPortalLoading] = useState(false);
   const [stats, setStats] = useState({ completed: 0, currentStreak: 0, highestStreak: 0 });
   const [editingName, setEditingName] = useState(false);
   const [displayName, setDisplayName] = useState('');
@@ -164,6 +165,23 @@ export default function ProfilePage() {
       setUsernameError('');
     }
     setSavingUsername(false);
+  };
+
+  const handleBillingPortal = async () => {
+    setPortalLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const { url, error } = await res.json();
+      if (error) throw new Error(error);
+      window.location.href = url;
+    } catch (err) {
+      console.error('Portal error:', err);
+      setPortalLoading(false);
+    }
   };
 
   const handleChangePassword = async (e) => {
@@ -344,6 +362,28 @@ export default function ProfilePage() {
             <p className={`text-sm font-semibold mb-1 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Your Procrastination Type</p>
             <p className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>{typeInfo.label}</p>
             <p className={`text-sm mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{typeInfo.description}</p>
+          </div>
+        )}
+
+        {/* Billing — only shown to pro subscribers */}
+        {trialStatus === 'pro' && (
+          <div className={`rounded-2xl p-6 border mb-6 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className={`w-5 h-5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+                <div>
+                  <h3 className={`text-lg font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>Pro Subscription</h3>
+                  <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>Manage billing, invoices, or cancel anytime.</p>
+                </div>
+              </div>
+              <button
+                onClick={handleBillingPortal}
+                disabled={portalLoading}
+                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors whitespace-nowrap"
+              >
+                {portalLoading ? '...' : 'Manage billing'}
+              </button>
+            </div>
           </div>
         )}
 

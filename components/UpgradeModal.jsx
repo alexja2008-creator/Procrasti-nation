@@ -1,8 +1,9 @@
 'use client';
 
-import { X, Zap, Check, Lock } from 'lucide-react';
+import { useState } from 'react';
+import { X, Zap, Check } from 'lucide-react';
 import { useTheme } from '../app/providers';
-import Link from 'next/link';
+import { supabase } from '../lib/supabase';
 
 const PRO_FEATURES = [
   'Unlimited AI-planned tasks',
@@ -16,6 +17,29 @@ const PRO_FEATURES = [
 
 export default function UpgradeModal({ onClose, reason = 'limit' }) {
   const { darkMode } = useTheme();
+  const [plan, setPlan] = useState('monthly');
+  const [loading, setLoading] = useState(false);
+
+  const handleCheckout = async () => {
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ plan }),
+      });
+      const { url, error } = await res.json();
+      if (error) throw new Error(error);
+      window.location.href = url;
+    } catch (err) {
+      console.error('Checkout error:', err);
+      setLoading(false);
+    }
+  };
 
   const headlines = {
     limit: {
@@ -76,26 +100,56 @@ export default function UpgradeModal({ onClose, reason = 'limit' }) {
             ))}
           </ul>
 
+          {/* Plan toggle */}
+          <div className={`flex rounded-xl p-1 mb-4 ${darkMode ? 'bg-slate-700' : 'bg-slate-100'}`}>
+            <button
+              onClick={() => setPlan('monthly')}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+                plan === 'monthly'
+                  ? 'bg-emerald-600 text-white shadow'
+                  : darkMode ? 'text-slate-400' : 'text-slate-500'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setPlan('yearly')}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+                plan === 'yearly'
+                  ? 'bg-emerald-600 text-white shadow'
+                  : darkMode ? 'text-slate-400' : 'text-slate-500'
+              }`}
+            >
+              Yearly <span className="text-xs font-normal opacity-80">save 25%</span>
+            </button>
+          </div>
+
           {/* Pricing callout */}
           <div className={`rounded-xl p-4 mb-6 ${darkMode ? 'bg-slate-700' : 'bg-slate-50'}`}>
             <div className="flex items-baseline space-x-2">
-              <span className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>$7.99</span>
-              <span className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>/month</span>
-              <span className={`text-sm font-medium text-emerald-500`}>or $72/yr (save 25%)</span>
+              <span className={`text-3xl font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+                {plan === 'yearly' ? '$72' : '$7.99'}
+              </span>
+              <span className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                {plan === 'yearly' ? '/year' : '/month'}
+              </span>
+              {plan === 'yearly' && (
+                <span className="text-sm font-medium text-emerald-500">($6/mo)</span>
+              )}
             </div>
             <p className={`text-xs mt-1 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
               Less than two coffees a month. Cancel any time.
             </p>
           </div>
 
-          {/* CTA — for now links to pricing section; swap for Stripe link later */}
-          <a
-            href="/#pricing"
-            onClick={onClose}
-            className="block w-full bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-[1.02] shadow-lg shadow-emerald-600/20 text-center"
+          {/* CTA */}
+          <button
+            onClick={handleCheckout}
+            disabled={loading}
+            className="block w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-[1.02] shadow-lg shadow-emerald-600/20 text-center"
           >
-            Join the Nation — $7.99/mo
-          </a>
+            {loading ? 'Redirecting to Stripe…' : plan === 'yearly' ? 'Join the Nation — $72/yr' : 'Join the Nation — $7.99/mo'}
+          </button>
 
           <button
             onClick={onClose}
