@@ -243,18 +243,17 @@ export default function DashboardPage() {
 
   const onTimeRate = measurableSteps > 0 ? Math.round((onTimeSteps / measurableSteps) * 100) : null;
 
+  // Cap insight background at amber — no red messaging regardless of score
   const adherenceColor = onTimeRate === null || onTimeRate >= 80
     ? { bar: 'bg-emerald-500', text: darkMode ? 'text-emerald-400' : 'text-emerald-600', bg: darkMode ? 'bg-emerald-900/30' : 'bg-emerald-50' }
-    : onTimeRate >= 50
-    ? { bar: 'bg-amber-500', text: darkMode ? 'text-amber-400' : 'text-amber-600', bg: darkMode ? 'bg-amber-900/30' : 'bg-amber-50' }
-    : { bar: 'bg-rose-500', text: darkMode ? 'text-rose-400' : 'text-rose-600', bg: darkMode ? 'bg-rose-900/30' : 'bg-rose-50' };
+    : { bar: 'bg-amber-500', text: darkMode ? 'text-amber-400' : 'text-amber-600', bg: darkMode ? 'bg-amber-900/30' : 'bg-amber-50' };
 
   const adherenceInsight = () => {
     if (onTimeRate === null) return 'Complete scheduled steps to see your on-time rate.';
-    if (overdueSteps === 0 && onTimeRate === 100) return 'Perfect — every scheduled step completed on time.';
-    if (onTimeRate >= 80) return `Strong follow-through. ${overdueSteps > 0 ? `${overdueSteps} overdue step${overdueSteps !== 1 ? 's' : ''} still need attention.` : 'Keep it up.'}`;
-    if (onTimeRate >= 50) return `You're completing most steps on time, but ${overdueSteps + lateSteps} slipped past their date. Review your step schedule in the Calendar.`;
-    return `More than half your measured steps are running late. Try breaking steps into smaller chunks or adjusting due dates to be more realistic.`;
+    if (overdueSteps === 0 && onTimeRate === 100) return 'Every scheduled step completed on time — great discipline.';
+    if (onTimeRate >= 80) return `Solid follow-through. ${overdueSteps > 0 ? `${overdueSteps} step${overdueSteps !== 1 ? 's' : ''} still need attention when you\'re ready.` : 'Keep the momentum going.'}`;
+    if (onTimeRate >= 50) return `You're getting most things done — ${lateSteps > 0 ? `${lateSteps} finished after the scheduled date (still counts!)` : ''}${overdueSteps > 0 ? `${lateSteps > 0 ? ', and ' : ''}${overdueSteps} step${overdueSteps !== 1 ? 's' : ''} waiting for you` : ''}. Adjust dates in the Calendar if the schedule feels unrealistic.`;
+    return `Progress is progress, regardless of timing. If dates keep slipping, try adjusting the schedule in the Calendar to match your real pace — that's good planning, not giving up.`;
   };
 
   const deleteTask = async (taskId) => {
@@ -381,18 +380,18 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                {/* Overdue steps */}
+                {/* Needs attention */}
                 <div className={`rounded-xl p-4 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
-                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Overdue Steps</p>
-                  <p className={`text-2xl font-bold ${overdueSteps > 0 ? (darkMode ? 'text-rose-400' : 'text-rose-600') : darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Needs Attention</p>
+                  <p className={`text-2xl font-bold ${overdueSteps > 0 ? (darkMode ? 'text-amber-400' : 'text-amber-600') : darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                     {overdueSteps}
                   </p>
                   <p className={`text-xs mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                    {overdueSteps > 0 ? 'past due, not completed' : 'none outstanding'}
+                    {overdueSteps > 0 ? 'scheduled steps not yet done' : 'all caught up'}
                   </p>
                 </div>
 
-                {/* On-time bar */}
+                {/* Breakdown */}
                 <div className={`rounded-xl p-4 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
                   <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Breakdown</p>
                   <div className="space-y-1.5 mt-2">
@@ -402,11 +401,11 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
-                      <span className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{lateSteps} completed late</span>
+                      <span className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{lateSteps} still got done</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
-                      <span className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{overdueSteps} overdue</span>
+                      <div className="w-2 h-2 rounded-full bg-slate-400 flex-shrink-0" />
+                      <span className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{overdueSteps} not yet done</span>
                     </div>
                   </div>
                 </div>
