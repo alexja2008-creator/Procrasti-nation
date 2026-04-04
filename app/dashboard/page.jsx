@@ -223,9 +223,11 @@ export default function DashboardPage() {
 
   // Component 2: historical engagement rate across ALL tasks (completed + open).
   // Denominator grows when tasks complete, so finishing work always lowers or holds the score.
-  // Recurring auto-spawned tasks are part of the denominator but diluted by completed history.
+  // Completed tasks count as engaged regardless of first_interaction_at — a finished task
+  // was by definition acted on. This also handles the cold-start case where historical
+  // tasks predate the first_interaction_at column and have null.
   const allRealTasks = tasks.filter(t => t.total_steps > 0);
-  const engagedTasks = allRealTasks.filter(t => t.first_interaction_at);
+  const engagedTasks = allRealTasks.filter(t => t.first_interaction_at || t.status === 'completed');
   const unengagedRate = allRealTasks.length > 0
     ? (allRealTasks.length - engagedTasks.length) / allRealTasks.length
     : 0;
