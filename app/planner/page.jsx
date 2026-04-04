@@ -49,6 +49,7 @@ function PlannerContent() {
   const [recurrence, setRecurrence] = useState(null); // null | { type: 'daily'|'weekly'|'monthly', startDate: ISO }
   const [showCommitmentPrompt, setShowCommitmentPrompt] = useState(false);
   const [startCommitment, setStartCommitment] = useState('');
+  const [taskFirstInteraction, setTaskFirstInteraction] = useState(null);
 
   const encouragements = [
     "Great job!", "Keep up the good work!", "You're on a roll!",
@@ -124,6 +125,7 @@ function PlannerContent() {
       setCurrentTaskId(data.id);
       setTaskStartTime(new Date(data.start_time).getTime());
       setRecurrence(data.recurrence || null);
+      setTaskFirstInteraction(data.first_interaction_at || null);
     }
   };
 
@@ -274,6 +276,7 @@ function PlannerContent() {
 
         if (data) {
           setCurrentTaskId(data.id);
+          setTaskFirstInteraction(null);
           setShowCommitmentPrompt(true);
           // Swap skeleton taskId → real taskId in localStorage boards
           if (prefillTaskId) {
@@ -309,12 +312,15 @@ function PlannerContent() {
         completed: newCompleted.has(s.id),
       }));
 
+      const now = new Date().toISOString();
       await supabase.from('tasks').update({
         steps: updatedSteps,
         completed_steps: newCompleted.size,
         status: isFullyComplete ? 'completed' : 'in_progress',
-        completed_at: isFullyComplete ? new Date().toISOString() : null,
+        completed_at: isFullyComplete ? now : null,
+        ...(!taskFirstInteraction ? { first_interaction_at: now } : {}),
       }).eq('id', currentTaskId);
+      if (!taskFirstInteraction) setTaskFirstInteraction(now);
 
       // Auto-spawn next occurrence when task fully completes and has recurrence set
       if (isFullyComplete && recurrence) {
@@ -440,7 +446,12 @@ function PlannerContent() {
     const updatedSteps = plan.steps.map(s => s.id === stepId ? { ...s, ...editDraft } : s);
     setPlan({ ...plan, steps: updatedSteps });
     if (user && currentTaskId) {
-      await supabase.from('tasks').update({ steps: updatedSteps }).eq('id', currentTaskId);
+      const interactionTs = !taskFirstInteraction ? new Date().toISOString() : undefined;
+      await supabase.from('tasks').update({
+        steps: updatedSteps,
+        ...(interactionTs ? { first_interaction_at: interactionTs } : {}),
+      }).eq('id', currentTaskId);
+      if (interactionTs) setTaskFirstInteraction(interactionTs);
     }
     setEditingStepId(null);
     setEditDraft({});

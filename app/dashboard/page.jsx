@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { BarChart3, Flame, Zap, CheckCircle2, Clock, TrendingUp, Calendar, Archive, ChevronRight, X, PlayCircle, Trash2, ArrowUpDown, Plus, GripVertical, FolderOpen } from 'lucide-react';
+import { BarChart3, Flame, Zap, CheckCircle2, Clock, TrendingUp, Calendar, Archive, ChevronRight, X, PlayCircle, Trash2, ArrowUpDown, Plus, GripVertical, FolderOpen, Activity } from 'lucide-react';
 import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
@@ -209,6 +209,44 @@ export default function DashboardPage() {
     return `${Math.round(hours / 24)} days`;
   };
 
+  // Friction detection metrics
+  const tasksWithInteraction = tasks.filter(t => t.first_interaction_at && t.created_at);
+  const frictionDelays = tasksWithInteraction.map(t =>
+    (new Date(t.first_interaction_at) - new Date(t.created_at)) / (1000 * 60 * 60)
+  );
+  const avgFrictionHours = frictionDelays.length > 0
+    ? frictionDelays.reduce((s, d) => s + d, 0) / frictionDelays.length
+    : null;
+
+  const realInProgress = rawInProgressTasks.filter(t => t.total_steps > 0);
+  const untouchedTasks = realInProgress.filter(t =>
+    !t.first_interaction_at &&
+    (Date.now() - new Date(t.created_at).getTime()) > 24 * 60 * 60 * 1000
+  );
+
+  // Friction score: 0 = low friction (great), 100 = high friction (concerning)
+  let frictionScore = 0;
+  if (avgFrictionHours !== null) frictionScore += Math.min((avgFrictionHours / 48) * 50, 50);
+  if (realInProgress.length > 0) frictionScore += (untouchedTasks.length / realInProgress.length) * 50;
+  frictionScore = Math.round(Math.min(frictionScore, 100));
+
+  const frictionLabel = frictionScore <= 20 ? 'Low' : frictionScore <= 50 ? 'Moderate' : frictionScore <= 75 ? 'High' : 'Very High';
+  const frictionColor = frictionScore <= 20
+    ? { bar: 'bg-emerald-500', text: darkMode ? 'text-emerald-400' : 'text-emerald-600', bg: darkMode ? 'bg-emerald-900/30' : 'bg-emerald-50' }
+    : frictionScore <= 50
+    ? { bar: 'bg-amber-500', text: darkMode ? 'text-amber-400' : 'text-amber-600', bg: darkMode ? 'bg-amber-900/30' : 'bg-amber-50' }
+    : { bar: 'bg-rose-500', text: darkMode ? 'text-rose-400' : 'text-rose-600', bg: darkMode ? 'bg-rose-900/30' : 'bg-rose-50' };
+
+  const frictionInsight = () => {
+    const hasData = tasksWithInteraction.length > 0 || untouchedTasks.length > 0;
+    if (!hasData) return 'Complete or interact with a task to see your friction patterns.';
+    if (frictionScore <= 20) return 'You start tasks quickly — great momentum and low procrastination.';
+    if (frictionScore <= 40) return 'Solid engagement. A small delay before starting is normal.';
+    if (frictionScore <= 60) return 'You tend to wait before diving in. Try committing to just the first step immediately after planning.';
+    if (frictionScore <= 80) return `${untouchedTasks.length} task${untouchedTasks.length !== 1 ? 's' : ''} sitting untouched for 24h+. Pick one and do just step 1 today.`;
+    return 'High friction detected. Break tasks into smaller first steps and use the commitment prompt to lock in a start time.';
+  };
+
   const deleteTask = async (taskId) => {
     if (!confirm('Delete this task? This cannot be undone.')) return;
     await supabase.from('tasks').delete().eq('id', taskId);
@@ -306,6 +344,67 @@ export default function DashboardPage() {
                 </div>
                 <h3 className={`font-semibold ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>Quickest Task</h3>
                 <p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>fastest completion</p>
+              </div>
+            </div>
+
+            {/* Friction Insights */}
+            <div className={`rounded-2xl p-6 border mb-8 transition-colors ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+              <div className="flex items-center space-x-2 mb-6">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${frictionColor.bg}`}>
+                  <Activity className={`w-5 h-5 ${frictionColor.text}`} />
+                </div>
+                <div>
+                  <h3 className={`text-xl font-bold leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>Friction Insights</h3>
+                  <p className={`text-xs ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Time from task creation to first action</p>
+                </div>
+              </div>
+
+              <div className="grid sm:grid-cols-3 gap-4 mb-6">
+                {/* Avg delay to first step */}
+                <div className={`rounded-xl p-4 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
+                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Avg. Time to Start</p>
+                  <p className={`text-2xl font-bold ${frictionColor.text}`}>
+                    {avgFrictionHours !== null ? formatTime(avgFrictionHours) : '--'}
+                  </p>
+                  <p className={`text-xs mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
+                    {tasksWithInteraction.length > 0 ? `across ${tasksWithInteraction.length} task${tasksWithInteraction.length !== 1 ? 's' : ''}` : 'no data yet'}
+                  </p>
+                </div>
+
+                {/* Untouched tasks */}
+                <div className={`rounded-xl p-4 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
+                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Untouched 24h+</p>
+                  <p className={`text-2xl font-bold ${untouchedTasks.length > 0 ? frictionColor.text : darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                    {untouchedTasks.length}
+                  </p>
+                  <p className={`text-xs mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
+                    {untouchedTasks.length > 0
+                      ? untouchedTasks.slice(0, 2).map(t => t.title).join(', ') + (untouchedTasks.length > 2 ? '…' : '')
+                      : 'all tasks started'}
+                  </p>
+                </div>
+
+                {/* Friction score */}
+                <div className={`rounded-xl p-4 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
+                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Friction Score</p>
+                  <p className={`text-2xl font-bold ${frictionColor.text}`}>
+                    {tasksWithInteraction.length > 0 || untouchedTasks.length > 0 ? `${frictionScore}` : '--'}
+                    {(tasksWithInteraction.length > 0 || untouchedTasks.length > 0) && (
+                      <span className={`text-sm font-semibold ml-1`}>{frictionLabel}</span>
+                    )}
+                  </p>
+                  <div className={`w-full rounded-full h-1.5 mt-2 overflow-hidden ${darkMode ? 'bg-slate-600' : 'bg-slate-200'}`}>
+                    <div
+                      className={`h-1.5 rounded-full transition-all duration-500 ${frictionColor.bar}`}
+                      style={{ width: `${frictionScore}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Personalized insight message */}
+              <div className={`rounded-xl px-4 py-3 ${frictionColor.bg}`}>
+                <p className={`text-sm font-medium ${frictionColor.text}`}>{frictionInsight()}</p>
               </div>
             </div>
 
