@@ -14,6 +14,7 @@ function PlannerContent() {
   const { user, trialStatus } = useAuth();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const searchParams = useSearchParams();
+  const checkoutStatus = searchParams.get('checkout');
   const taskIdParam = searchParams.get('task');
   const prefillParam = searchParams.get('prefill');
   const prefillDueDate = searchParams.get('dueDate');
@@ -500,6 +501,23 @@ function PlannerContent() {
     <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <Navigation />
       {showUpgradeModal && <UpgradeModal reason="limit" onClose={() => setShowUpgradeModal(false)} />}
+
+      {checkoutStatus === 'success' && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6">
+          <div className="flex items-center justify-between gap-3 bg-emerald-600 text-white px-5 py-3 rounded-xl shadow-lg">
+            <p className="font-semibold text-sm">You're now a Pro citizen. Welcome to the Nation.</p>
+            <a href="/planner" className="text-white/70 hover:text-white text-xs underline whitespace-nowrap">Dismiss</a>
+          </div>
+        </div>
+      )}
+      {checkoutStatus === 'canceled' && (
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6">
+          <div className="flex items-center justify-between gap-3 bg-slate-600 text-white px-5 py-3 rounded-xl shadow-lg">
+            <p className="font-semibold text-sm">Checkout canceled — you're still on the free tier.</p>
+            <a href="/planner" className="text-white/70 hover:text-white text-xs underline whitespace-nowrap">Dismiss</a>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {/* Header */}
