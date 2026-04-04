@@ -99,36 +99,54 @@ export default function CalendarPage() {
 
     for (const task of tasks) {
       const existingDates = task.step_dates || {};
+      const cachedDates = Object.values(existingDates);
+
+      // Detect stale cached dates: task is still in_progress but every resolved
+      // step date is in the past. Happens with recurring tasks whose step_dates
+      // were cached in a previous cycle and never refreshed.
+      const allDatesStale = cachedDates.length > 0 && cachedDates.every(d => d < today);
+
       const stepsNeedingDates = (task.steps || []).filter(
         s => !existingDates[String(s.id)]
       );
-      if (stepsNeedingDates.length === 0) continue;
+
+      // Skip if all steps have fresh dates
+      if (stepsNeedingDates.length === 0 && !allDatesStale) continue;
+
+      // Re-resolve all steps when dates are stale (recurring cycle refresh),
+      // otherwise only resolve the steps that are missing dates.
+      const stepsToResolve = allDatesStale ? (task.steps || []) : stepsNeedingDates;
+      if (stepsToResolve.length === 0) continue;
 
       setResolvingTaskIds(prev => new Set([...prev, task.id]));
 
       try {
+        // If the task's due_date is also in the past, anchor to today so the AI
+        // schedules steps going forward rather than into the past.
+        const rawDue = task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : null;
+        const anchorDue = rawDue && rawDue < today ? today : rawDue;
+
         const res = await fetch('/api/resolve-step-dates', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
           body: JSON.stringify({
-            steps: stepsNeedingDates.map(s => ({ id: s.id, title: s.title, when: s.when })),
-            dueDate: task.due_date
-              ? new Date(task.due_date).toISOString().split('T')[0]
-              : null,
+            steps: stepsToResolve.map(s => ({ id: s.id, title: s.title, when: s.when })),
+            dueDate: anchorDue,
             deadline: null,
             today,
           }),
         });
 
         const data = await res.json();
-        if (!data.dates || data.dates.length !== stepsNeedingDates.length) continue;
+        if (!data.dates || data.dates.length !== stepsToResolve.length) continue;
 
         const newDates = {};
-        stepsNeedingDates.forEach((step, i) => {
+        stepsToResolve.forEach((step, i) => {
           newDates[String(step.id)] = data.dates[i];
         });
 
-        const merged = { ...existingDates, ...newDates };
+        // When refreshing stale dates, replace entirely; otherwise merge in
+        const merged = allDatesStale ? newDates : { ...existingDates, ...newDates };
 
         // Persist to Supabase
         await supabase.from('tasks').update({ step_dates: merged }).eq('id', task.id);
