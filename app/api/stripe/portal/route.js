@@ -32,7 +32,7 @@ export async function POST(request) {
     },
     body: new URLSearchParams({
       customer: profile.stripe_customer_id,
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/planner`,
+      return_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://procrasti-nation.work'}/planner`,
     }).toString(),
   })
   const session = await res.json()
