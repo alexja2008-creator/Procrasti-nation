@@ -209,7 +209,10 @@ export default function DashboardPage() {
     return `${Math.round(hours / 24)} days`;
   };
 
-  // Friction detection metrics
+  // Friction detection metrics — based on full task history, not just open tasks,
+  // so that completing a task always improves (or holds) the score.
+
+  // Component 1: avg delay from creation → first interaction (behaviour-learned)
   const tasksWithInteraction = tasks.filter(t => t.first_interaction_at && t.created_at);
   const frictionDelays = tasksWithInteraction.map(t =>
     (new Date(t.first_interaction_at) - new Date(t.created_at)) / (1000 * 60 * 60)
@@ -218,8 +221,18 @@ export default function DashboardPage() {
     ? frictionDelays.reduce((s, d) => s + d, 0) / frictionDelays.length
     : null;
 
-  const realInProgress = rawInProgressTasks.filter(t => t.total_steps > 0);
-  const untouchedTasks = realInProgress.filter(t =>
+  // Component 2: historical engagement rate across ALL tasks (completed + open).
+  // Denominator grows when tasks complete, so finishing work always lowers or holds the score.
+  // Recurring auto-spawned tasks are part of the denominator but diluted by completed history.
+  const allRealTasks = tasks.filter(t => t.total_steps > 0);
+  const engagedTasks = allRealTasks.filter(t => t.first_interaction_at);
+  const unengagedRate = allRealTasks.length > 0
+    ? (allRealTasks.length - engagedTasks.length) / allRealTasks.length
+    : 0;
+
+  // Untouched open tasks shown for context in the card (not used in score calculation)
+  const untouchedTasks = rawInProgressTasks.filter(t =>
+    t.total_steps > 0 &&
     !t.first_interaction_at &&
     (Date.now() - new Date(t.created_at).getTime()) > 24 * 60 * 60 * 1000
   );
@@ -227,7 +240,7 @@ export default function DashboardPage() {
   // Friction score: 0 = low friction (great), 100 = high friction (concerning)
   let frictionScore = 0;
   if (avgFrictionHours !== null) frictionScore += Math.min((avgFrictionHours / 48) * 50, 50);
-  if (realInProgress.length > 0) frictionScore += (untouchedTasks.length / realInProgress.length) * 50;
+  frictionScore += unengagedRate * 50;
   frictionScore = Math.round(Math.min(frictionScore, 100));
 
   const frictionLabel = frictionScore <= 20 ? 'Low' : frictionScore <= 50 ? 'Moderate' : frictionScore <= 75 ? 'High' : 'Very High';
@@ -238,12 +251,11 @@ export default function DashboardPage() {
     : { bar: 'bg-rose-500', text: darkMode ? 'text-rose-400' : 'text-rose-600', bg: darkMode ? 'bg-rose-900/30' : 'bg-rose-50' };
 
   const frictionInsight = () => {
-    const hasData = tasksWithInteraction.length > 0 || untouchedTasks.length > 0;
-    if (!hasData) return 'Complete or interact with a task to see your friction patterns.';
+    if (allRealTasks.length === 0) return 'Create and interact with a task to see your friction patterns.';
     if (frictionScore <= 20) return 'You start tasks quickly — great momentum and low procrastination.';
     if (frictionScore <= 40) return 'Solid engagement. A small delay before starting is normal.';
     if (frictionScore <= 60) return 'You tend to wait before diving in. Try committing to just the first step immediately after planning.';
-    if (frictionScore <= 80) return `${untouchedTasks.length} task${untouchedTasks.length !== 1 ? 's' : ''} sitting untouched for 24h+. Pick one and do just step 1 today.`;
+    if (frictionScore <= 80) return 'Many tasks are going unstarted. Pick one and do just step 1 today.';
     return 'High friction detected. Break tasks into smaller first steps and use the commitment prompt to lock in a start time.';
   };
 
@@ -371,16 +383,16 @@ export default function DashboardPage() {
                   </p>
                 </div>
 
-                {/* Untouched tasks */}
+                {/* Untouched tasks — informational only, not used in score */}
                 <div className={`rounded-xl p-4 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
-                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Untouched 24h+</p>
-                  <p className={`text-2xl font-bold ${untouchedTasks.length > 0 ? frictionColor.text : darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Open & Untouched</p>
+                  <p className={`text-2xl font-bold ${untouchedTasks.length > 0 ? (darkMode ? 'text-amber-400' : 'text-amber-600') : darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
                     {untouchedTasks.length}
                   </p>
                   <p className={`text-xs mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
                     {untouchedTasks.length > 0
                       ? untouchedTasks.slice(0, 2).map(t => t.title).join(', ') + (untouchedTasks.length > 2 ? '…' : '')
-                      : 'all tasks started'}
+                      : 'all open tasks started'}
                   </p>
                 </div>
 
@@ -388,8 +400,8 @@ export default function DashboardPage() {
                 <div className={`rounded-xl p-4 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
                   <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Friction Score</p>
                   <p className={`text-2xl font-bold ${frictionColor.text}`}>
-                    {tasksWithInteraction.length > 0 || untouchedTasks.length > 0 ? `${frictionScore}` : '--'}
-                    {(tasksWithInteraction.length > 0 || untouchedTasks.length > 0) && (
+                    {allRealTasks.length > 0 ? `${frictionScore}` : '--'}
+                    {allRealTasks.length > 0 && (
                       <span className={`text-sm font-semibold ml-1`}>{frictionLabel}</span>
                     )}
                   </p>
