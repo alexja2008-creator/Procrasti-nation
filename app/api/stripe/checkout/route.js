@@ -51,11 +51,18 @@ export async function POST(request) {
     }
     customerId = customer.id
 
-    // Upsert profile row so legacy users without a profile get one
-    await supabaseAdmin.from('profiles').upsert(
-      { user_id: user.id, stripe_customer_id: customerId },
-      { onConflict: 'user_id' }
-    )
+    if (profile) {
+      // Profile row exists — update it directly
+      await supabaseAdmin
+        .from('profiles')
+        .update({ stripe_customer_id: customerId })
+        .eq('user_id', user.id)
+    } else {
+      // No profile row yet (legacy user) — insert one
+      await supabaseAdmin
+        .from('profiles')
+        .insert({ user_id: user.id, stripe_customer_id: customerId })
+    }
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://procrasti-nation.work'
