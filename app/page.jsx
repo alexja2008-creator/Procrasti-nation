@@ -71,6 +71,37 @@ export default function LandingPage() {
     }
   };
 
+  const [proLoading, setProLoading] = useState(false);
+  const handleProCTA = async (e) => {
+    e.preventDefault();
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    if (trialStatus === 'pro') {
+      window.location.href = '/planner';
+      return;
+    }
+    setProLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ plan: 'monthly' }),
+      });
+      const { url, error } = await res.json();
+      if (error) throw new Error(error);
+      window.location.href = url;
+    } catch (err) {
+      console.error('Checkout error:', err);
+      setProLoading(false);
+    }
+  };
+
   return (
     <div className={`min-h-screen transition-colors ${darkMode ? 'bg-slate-900' : 'bg-slate-50'}`}>
       <Navigation />
@@ -505,13 +536,13 @@ export default function LandingPage() {
                 </li>
               </ul>
 
-              <Link
-                href="/planner"
-                onClick={handleCTA}
-                className="block w-full bg-white hover:bg-slate-100 text-emerald-600 px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg text-center"
+              <button
+                onClick={handleProCTA}
+                disabled={proLoading}
+                className="block w-full bg-white hover:bg-slate-100 disabled:opacity-60 text-emerald-600 px-6 py-4 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg text-center"
               >
-                Join the Nation
-              </Link>
+                {proLoading ? 'Redirecting…' : trialStatus === 'pro' ? 'Go to Planner' : 'Join the Nation'}
+              </button>
             </div>
           </div>
         </div>
