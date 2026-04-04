@@ -209,56 +209,52 @@ export default function DashboardPage() {
     return `${Math.round(hours / 24)} days`;
   };
 
-  // Friction detection metrics — based on full task history, not just open tasks,
-  // so that completing a task always improves (or holds) the score.
+  // Schedule adherence: % of steps completed on or before their scheduled date.
+  // Only counts steps that have a step_dates entry AND are either completed or past-due —
+  // upcoming incomplete steps are not yet measurable.
+  const today = new Date().toISOString().split('T')[0];
+  let measurableSteps = 0;
+  let onTimeSteps = 0;
+  let overdueSteps = 0;
+  let lateSteps = 0;
 
-  // Component 1: avg delay from creation → first interaction (behaviour-learned)
-  const tasksWithInteraction = tasks.filter(t => t.first_interaction_at && t.created_at);
-  const frictionDelays = tasksWithInteraction.map(t =>
-    (new Date(t.first_interaction_at) - new Date(t.created_at)) / (1000 * 60 * 60)
-  );
-  const avgFrictionHours = frictionDelays.length > 0
-    ? frictionDelays.reduce((s, d) => s + d, 0) / frictionDelays.length
-    : null;
+  for (const task of tasks) {
+    const taskStepDates = task.step_dates || {};
+    for (const step of (task.steps || [])) {
+      const dueDate = taskStepDates[String(step.id)];
+      if (!dueDate) continue;
 
-  // Component 2: historical engagement rate across ALL tasks (completed + open).
-  // Denominator grows when tasks complete, so finishing work always lowers or holds the score.
-  // Completed tasks count as engaged regardless of first_interaction_at — a finished task
-  // was by definition acted on. This also handles the cold-start case where historical
-  // tasks predate the first_interaction_at column and have null.
-  const allRealTasks = tasks.filter(t => t.total_steps > 0);
-  const engagedTasks = allRealTasks.filter(t => t.first_interaction_at || t.status === 'completed');
-  const unengagedRate = allRealTasks.length > 0
-    ? (allRealTasks.length - engagedTasks.length) / allRealTasks.length
-    : 0;
+      if (step.completed) {
+        measurableSteps++;
+        const completedOn = step.completedAt ? step.completedAt.split('T')[0] : null;
+        if (completedOn && completedOn <= dueDate) {
+          onTimeSteps++;
+        } else {
+          lateSteps++;
+        }
+      } else if (dueDate < today) {
+        // Past due, not completed
+        measurableSteps++;
+        overdueSteps++;
+      }
+      // Upcoming incomplete steps: not yet measurable, don't count
+    }
+  }
 
-  // Untouched open tasks shown for context in the card (not used in score calculation)
-  const untouchedTasks = rawInProgressTasks.filter(t =>
-    t.total_steps > 0 &&
-    !t.first_interaction_at &&
-    (Date.now() - new Date(t.created_at).getTime()) > 24 * 60 * 60 * 1000
-  );
+  const onTimeRate = measurableSteps > 0 ? Math.round((onTimeSteps / measurableSteps) * 100) : null;
 
-  // Friction score: 0 = low friction (great), 100 = high friction (concerning)
-  let frictionScore = 0;
-  if (avgFrictionHours !== null) frictionScore += Math.min((avgFrictionHours / 48) * 50, 50);
-  frictionScore += unengagedRate * 50;
-  frictionScore = Math.round(Math.min(frictionScore, 100));
-
-  const frictionLabel = frictionScore <= 20 ? 'Low' : frictionScore <= 50 ? 'Moderate' : frictionScore <= 75 ? 'High' : 'Very High';
-  const frictionColor = frictionScore <= 20
+  const adherenceColor = onTimeRate === null || onTimeRate >= 80
     ? { bar: 'bg-emerald-500', text: darkMode ? 'text-emerald-400' : 'text-emerald-600', bg: darkMode ? 'bg-emerald-900/30' : 'bg-emerald-50' }
-    : frictionScore <= 50
+    : onTimeRate >= 50
     ? { bar: 'bg-amber-500', text: darkMode ? 'text-amber-400' : 'text-amber-600', bg: darkMode ? 'bg-amber-900/30' : 'bg-amber-50' }
     : { bar: 'bg-rose-500', text: darkMode ? 'text-rose-400' : 'text-rose-600', bg: darkMode ? 'bg-rose-900/30' : 'bg-rose-50' };
 
-  const frictionInsight = () => {
-    if (allRealTasks.length === 0) return 'Create and interact with a task to see your friction patterns.';
-    if (frictionScore <= 20) return 'You start tasks quickly — great momentum and low procrastination.';
-    if (frictionScore <= 40) return 'Solid engagement. A small delay before starting is normal.';
-    if (frictionScore <= 60) return 'You tend to wait before diving in. Try committing to just the first step immediately after planning.';
-    if (frictionScore <= 80) return 'Many tasks are going unstarted. Pick one and do just step 1 today.';
-    return 'High friction detected. Break tasks into smaller first steps and use the commitment prompt to lock in a start time.';
+  const adherenceInsight = () => {
+    if (onTimeRate === null) return 'Complete scheduled steps to see your on-time rate.';
+    if (overdueSteps === 0 && onTimeRate === 100) return 'Perfect — every scheduled step completed on time.';
+    if (onTimeRate >= 80) return `Strong follow-through. ${overdueSteps > 0 ? `${overdueSteps} overdue step${overdueSteps !== 1 ? 's' : ''} still need attention.` : 'Keep it up.'}`;
+    if (onTimeRate >= 50) return `You're completing most steps on time, but ${overdueSteps + lateSteps} slipped past their date. Review your step schedule in the Calendar.`;
+    return `More than half your measured steps are running late. Try breaking steps into smaller chunks or adjusting due dates to be more realistic.`;
   };
 
   const deleteTask = async (taskId) => {
@@ -361,64 +357,73 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Friction Insights */}
+            {/* Schedule Adherence */}
             <div className={`rounded-2xl p-6 border mb-8 transition-colors ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
               <div className="flex items-center space-x-2 mb-6">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${frictionColor.bg}`}>
-                  <Activity className={`w-5 h-5 ${frictionColor.text}`} />
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${adherenceColor.bg}`}>
+                  <Activity className={`w-5 h-5 ${adherenceColor.text}`} />
                 </div>
                 <div>
-                  <h3 className={`text-xl font-bold leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>Friction Insights</h3>
-                  <p className={`text-xs ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Time from task creation to first action</p>
+                  <h3 className={`text-xl font-bold leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`}>Schedule Adherence</h3>
+                  <p className={`text-xs ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>Steps completed on or before their due date</p>
                 </div>
               </div>
 
               <div className="grid sm:grid-cols-3 gap-4 mb-6">
-                {/* Avg delay to first step */}
+                {/* On-time rate */}
                 <div className={`rounded-xl p-4 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
-                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Avg. Time to Start</p>
-                  <p className={`text-2xl font-bold ${frictionColor.text}`}>
-                    {avgFrictionHours !== null ? formatTime(avgFrictionHours) : '--'}
+                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>On-Time Rate</p>
+                  <p className={`text-2xl font-bold ${adherenceColor.text}`}>
+                    {onTimeRate !== null ? `${onTimeRate}%` : '--'}
                   </p>
                   <p className={`text-xs mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                    {tasksWithInteraction.length > 0 ? `across ${tasksWithInteraction.length} task${tasksWithInteraction.length !== 1 ? 's' : ''}` : 'no data yet'}
+                    {measurableSteps > 0 ? `${onTimeSteps} of ${measurableSteps} measured steps` : 'no scheduled steps yet'}
                   </p>
                 </div>
 
-                {/* Untouched tasks — informational only, not used in score */}
+                {/* Overdue steps */}
                 <div className={`rounded-xl p-4 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
-                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Open & Untouched</p>
-                  <p className={`text-2xl font-bold ${untouchedTasks.length > 0 ? (darkMode ? 'text-amber-400' : 'text-amber-600') : darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                    {untouchedTasks.length}
+                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Overdue Steps</p>
+                  <p className={`text-2xl font-bold ${overdueSteps > 0 ? (darkMode ? 'text-rose-400' : 'text-rose-600') : darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                    {overdueSteps}
                   </p>
                   <p className={`text-xs mt-1 ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>
-                    {untouchedTasks.length > 0
-                      ? untouchedTasks.slice(0, 2).map(t => t.title).join(', ') + (untouchedTasks.length > 2 ? '…' : '')
-                      : 'all open tasks started'}
+                    {overdueSteps > 0 ? 'past due, not completed' : 'none outstanding'}
                   </p>
                 </div>
 
-                {/* Friction score */}
+                {/* On-time bar */}
                 <div className={`rounded-xl p-4 ${darkMode ? 'bg-slate-700/50' : 'bg-slate-50'}`}>
-                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Friction Score</p>
-                  <p className={`text-2xl font-bold ${frictionColor.text}`}>
-                    {allRealTasks.length > 0 ? `${frictionScore}` : '--'}
-                    {allRealTasks.length > 0 && (
-                      <span className={`text-sm font-semibold ml-1`}>{frictionLabel}</span>
-                    )}
-                  </p>
-                  <div className={`w-full rounded-full h-1.5 mt-2 overflow-hidden ${darkMode ? 'bg-slate-600' : 'bg-slate-200'}`}>
-                    <div
-                      className={`h-1.5 rounded-full transition-all duration-500 ${frictionColor.bar}`}
-                      style={{ width: `${frictionScore}%` }}
-                    />
+                  <p className={`text-xs font-semibold uppercase tracking-wide mb-1 ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Breakdown</p>
+                  <div className="space-y-1.5 mt-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                      <span className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{onTimeSteps} on time</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
+                      <span className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{lateSteps} completed late</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
+                      <span className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>{overdueSteps} overdue</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Personalized insight message */}
-              <div className={`rounded-xl px-4 py-3 ${frictionColor.bg}`}>
-                <p className={`text-sm font-medium ${frictionColor.text}`}>{frictionInsight()}</p>
+              {/* Progress bar */}
+              {measurableSteps > 0 && (
+                <div className={`w-full rounded-full h-2 overflow-hidden mb-4 flex ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                  <div className="bg-emerald-500 h-2 transition-all duration-500" style={{ width: `${(onTimeSteps / measurableSteps) * 100}%` }} />
+                  <div className="bg-amber-500 h-2 transition-all duration-500" style={{ width: `${(lateSteps / measurableSteps) * 100}%` }} />
+                  <div className="bg-rose-500 h-2 transition-all duration-500" style={{ width: `${(overdueSteps / measurableSteps) * 100}%` }} />
+                </div>
+              )}
+
+              {/* Insight message */}
+              <div className={`rounded-xl px-4 py-3 ${adherenceColor.bg}`}>
+                <p className={`text-sm font-medium ${adherenceColor.text}`}>{adherenceInsight()}</p>
               </div>
             </div>
 

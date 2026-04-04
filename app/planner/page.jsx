@@ -307,12 +307,14 @@ function PlannerContent() {
     const isFullyComplete = newCompleted.size === plan.steps.length;
 
     if (user && currentTaskId) {
+      const now = new Date().toISOString();
       const updatedSteps = plan.steps.map(s => ({
         ...s,
         completed: newCompleted.has(s.id),
+        // Preserve existing completedAt; stamp only when newly completing
+        completedAt: newCompleted.has(s.id) ? (s.completedAt || now) : s.completedAt,
       }));
 
-      const now = new Date().toISOString();
       await supabase.from('tasks').update({
         steps: updatedSteps,
         completed_steps: newCompleted.size,
