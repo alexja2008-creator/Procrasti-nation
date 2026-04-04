@@ -10,7 +10,7 @@ import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
 
-const ACCEPTED_TYPES = '.pdf,.docx,.doc,.png,.jpg,.jpeg';
+const ACCEPTED_TYPES = '.pdf,.docx,.png,.jpg,.jpeg';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
 export default function SyllabusPage() {
@@ -38,11 +38,15 @@ export default function SyllabusPage() {
       return;
     }
     const name = selectedFile.name.toLowerCase();
-    const valid = ['.pdf', '.docx', '.doc', '.png', '.jpg', '.jpeg'].some((ext) =>
+    if (name.endsWith('.doc') && !name.endsWith('.docx')) {
+      setError('Legacy .doc files are not supported. Please save as .docx and re-upload.');
+      return;
+    }
+    const valid = ['.pdf', '.docx', '.png', '.jpg', '.jpeg'].some((ext) =>
       name.endsWith(ext)
     );
     if (!valid) {
-      setError('Unsupported file type. Please upload a PDF, DOCX, DOC, PNG, JPG, or JPEG.');
+      setError('Unsupported file type. Please upload a PDF, DOCX, PNG, JPG, or JPEG.');
       return;
     }
     setFile(selectedFile);
@@ -87,6 +91,12 @@ export default function SyllabusPage() {
 
       if (!res.ok) {
         setError(data.error || 'Analysis failed. Please try again.');
+        setStep('upload');
+        return;
+      }
+
+      if (!data.assignments || data.assignments.length === 0) {
+        setError('No assignments or deadlines were found in this syllabus. Try uploading a clearer copy.');
         setStep('upload');
         return;
       }
@@ -147,7 +157,19 @@ export default function SyllabusPage() {
         .filter((r) => !r.error && r.data)
         .map((r) => r.data.id);
 
-      const boardName = `${parsed.courseName} · ${parsed.semester} ${parsed.year}`;
+      if (insertedTaskIds.length === 0) {
+        setError('Failed to save any tasks. Please try again.');
+        setStep('results');
+        return;
+      }
+
+      if (insertedTaskIds.length < chosenAssignments.length) {
+        setError(`${chosenAssignments.length - insertedTaskIds.length} task(s) failed to save — the rest were created.`);
+      }
+
+      const semester = parsed.semester || 'Unknown Semester';
+      const year = parsed.year || String(new Date().getFullYear());
+      const boardName = `${parsed.courseName} · ${semester} ${year}`;
       let existingBoards = [];
       try {
         existingBoards = JSON.parse(localStorage.getItem('task-boards') || '[]');
@@ -279,7 +301,7 @@ export default function SyllabusPage() {
                       </p>
                       <p className={`text-sm ${darkMode ? 'text-slate-500' : 'text-slate-500'}`}>or click to browse</p>
                       <p className={`text-xs mt-3 ${darkMode ? 'text-slate-600' : 'text-slate-400'}`}>
-                        PDF, DOCX, DOC, PNG, JPG, JPEG — max 10MB
+                        PDF, DOCX, PNG, JPG, JPEG — max 10MB
                       </p>
                     </>
                   )}

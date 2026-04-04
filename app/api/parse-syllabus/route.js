@@ -39,6 +39,14 @@ export async function POST(request) {
     const fileName = file.name.toLowerCase();
     const mimeType = file.type;
 
+    // Legacy .doc binary format is not supported by mammoth — reject early with a clear message
+    if (fileName.endsWith('.doc') && !fileName.endsWith('.docx')) {
+      return NextResponse.json(
+        { error: 'Legacy .doc files are not supported. Please save as .docx and re-upload.' },
+        { status: 400 }
+      );
+    }
+
     // Read the file into a Node.js Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -59,9 +67,7 @@ export async function POST(request) {
 
     } else if (
       fileName.endsWith('.docx') ||
-      mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-      fileName.endsWith('.doc') ||
-      mimeType === 'application/msword'
+      mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     ) {
       const mammoth = await import('mammoth');
       const result = await mammoth.extractRawText({ buffer });
@@ -90,7 +96,7 @@ export async function POST(request) {
 
     } else {
       return NextResponse.json(
-        { error: 'Unsupported file type. Please upload a PDF, DOCX, DOC, PNG, JPG, or JPEG.' },
+        { error: 'Unsupported file type. Please upload a PDF, DOCX, PNG, JPG, or JPEG.' },
         { status: 400 }
       );
     }
@@ -107,7 +113,7 @@ export async function POST(request) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 2000,
+        max_tokens: 4000,
         messages: claudeMessages,
       }),
       signal: ac.signal,
@@ -123,11 +129,13 @@ export async function POST(request) {
 
     const data = await response.json();
     const rawText = data.content.map((item) => item.text || '').join('\n');
-    const clean = rawText.replace(/```json|```/g, '').trim();
 
+    // Robust JSON extraction: find the outermost { ... } block rather than relying on code fences
     let parsed;
     try {
-      parsed = JSON.parse(clean);
+      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('No JSON object found in response');
+      parsed = JSON.parse(jsonMatch[0]);
     } catch {
       return NextResponse.json(
         { error: 'Failed to parse AI response. Please try again.' },
@@ -142,9 +150,33 @@ export async function POST(request) {
       );
     }
 
+    if (parsed.assignments.length === 0) {
+      return NextResponse.json(
+        { error: 'No assignments or deadlines were found in this syllabus. If this looks wrong, try uploading a clearer copy.' },
+        { status: 422 }
+      );
+    }
+
+    // Normalize missing metadata fields so the client never receives undefined
+    parsed.semester = parsed.semester || 'Unknown Semester';
+    parsed.year = parsed.year || String(new Date().getFullYear());
+
+    // Sanitize each assignment: ensure title is a string and dueDate is ISO 8601 or null
+    const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+    parsed.assignments = parsed.assignments.map((a) => ({
+      title: String(a.title || 'Untitled Assignment').slice(0, 120),
+      dueDate: a.dueDate && ISO_DATE_RE.test(String(a.dueDate)) ? a.dueDate : null,
+    }));
+
     return NextResponse.json(parsed);
 
   } catch (error) {
+    if (error?.name === 'AbortError') {
+      return NextResponse.json(
+        { error: 'The AI took too long to respond. Please try again.' },
+        { status: 504 }
+      );
+    }
     console.error('[parse-syllabus] Unexpected error:', error);
     return NextResponse.json(
       { error: 'An unexpected error occurred.' },
