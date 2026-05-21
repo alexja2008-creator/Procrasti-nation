@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
-import { buildNudgeEmail, buildCommitmentNudgeEmail } from '../../../../lib/emails';
+import { buildDailyDigestEmail, buildCommitmentNudgeEmail } from '../../../../lib/emails';
 
 // Use service role key so we can query all users' tasks (bypasses RLS)
 const supabaseAdmin = createClient(
@@ -10,6 +10,43 @@ const supabaseAdmin = createClient(
 );
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Pick the task the user should tackle first: due-soon tasks first, then fewest remaining steps
+function pickSpotlightTask(tasks) {
+  const now = new Date();
+  const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+  const eligible = tasks.filter(t => {
+    const steps = t.steps || [];
+    return steps.some(s => !s.completed);
+  });
+  if (eligible.length === 0) return null;
+
+  const scored = eligible.map(t => {
+    const steps = t.steps || [];
+    const nextStep = steps.find(s => !s.completed);
+    const remaining = steps.filter(s => !s.completed).length;
+    let score = 0;
+    let isDueSoon = false;
+    if (t.due_date) {
+      const due = new Date(t.due_date);
+      if (due <= threeDaysFromNow) { score += 100; isDueSoon = true; }
+    }
+    // Fewer remaining = closer to done = more motivating
+    score += Math.max(0, 20 - remaining);
+    return { ...t, score, isDueSoon, nextStep, remaining };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  const pick = scored[0];
+
+  return {
+    id: pick.id,
+    title: pick.title,
+    nextStepText: pick.nextStep?.title || pick.nextStep?.text || 'Continue this task',
+    isDueSoon: pick.isDueSoon,
+  };
+}
 
 export async function GET(request) {
   // Verify this is called by Vercel Cron (or us in testing)
@@ -27,7 +64,7 @@ export async function GET(request) {
     // 2. Haven't had a nudge sent in the last 24 hours (or never nudged)
     const { data: staleTasks, error } = await supabaseAdmin
       .from('tasks')
-      .select('id, user_id, title, steps, completed_steps, total_steps, last_nudge_sent')
+      .select('id, user_id, title, steps, completed_steps, total_steps, due_date, last_nudge_sent')
       .eq('status', 'in_progress')
       .lt('created_at', twentyFourHoursAgo)
       .or(`last_nudge_sent.is.null,last_nudge_sent.lt.${twentyFourHoursAgo}`);
@@ -41,8 +78,14 @@ export async function GET(request) {
       return NextResponse.json({ sent: 0, message: 'No stale tasks found' });
     }
 
-    // Get unique user IDs
-    const userIds = [...new Set(staleTasks.map(t => t.user_id))];
+    // Group tasks by user_id
+    const tasksByUser = {};
+    for (const task of staleTasks) {
+      if (!tasksByUser[task.user_id]) tasksByUser[task.user_id] = [];
+      tasksByUser[task.user_id].push(task);
+    }
+
+    const userIds = Object.keys(tasksByUser);
 
     // Fetch user emails from auth.users via admin API
     const userEmailMap = {};
@@ -56,21 +99,31 @@ export async function GET(request) {
     let sent = 0;
     let errors = 0;
 
-    for (const task of staleTasks) {
-      const email = userEmailMap[task.user_id];
+    for (const userId of userIds) {
+      const email = userEmailMap[userId];
       if (!email) continue;
 
-      // Calculate remaining steps
-      const steps = task.steps || [];
-      const stepsRemaining = steps.filter(s => !s.completed).length;
-      if (stepsRemaining === 0) continue; // All steps done, skip
+      const userTasks = tasksByUser[userId];
 
-      const { subject, html } = buildNudgeEmail({
-        taskTitle: task.title,
-        stepsRemaining,
-        taskId: task.id,
-        userEmail: email,
+      // Only include tasks that still have incomplete steps
+      const activeTasks = userTasks.filter(t => {
+        const steps = t.steps || [];
+        return steps.some(s => !s.completed);
       });
+      if (activeTasks.length === 0) continue;
+
+      const taskSummaries = activeTasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        completedSteps: t.completed_steps || 0,
+        totalSteps: t.total_steps || (t.steps || []).length || 1,
+        steps: t.steps || [],
+        due_date: t.due_date,
+      }));
+
+      const spotlightTask = pickSpotlightTask(activeTasks);
+
+      const { subject, html } = buildDailyDigestEmail({ tasks: taskSummaries, spotlightTask });
 
       try {
         await resend.emails.send({
@@ -80,15 +133,16 @@ export async function GET(request) {
           html,
         });
 
-        // Update last_nudge_sent so we don't spam
+        // Update last_nudge_sent on all this user's stale tasks
+        const taskIds = userTasks.map(t => t.id);
         await supabaseAdmin
           .from('tasks')
           .update({ last_nudge_sent: now.toISOString() })
-          .eq('id', task.id);
+          .in('id', taskIds);
 
         sent++;
       } catch (sendError) {
-        console.error(`[nudge] Failed to send to ${email}:`, sendError);
+        console.error(`[nudge] Failed to send digest to ${email}:`, sendError);
         errors++;
       }
     }
@@ -144,8 +198,8 @@ export async function GET(request) {
       }
     }
 
-    console.log(`[nudge] Sent ${sent} stale nudges + ${commitmentSent} commitment nudges, ${errors} errors`);
-    return NextResponse.json({ sent, commitmentSent, errors, total: staleTasks.length });
+    console.log(`[nudge] Sent ${sent} digest emails + ${commitmentSent} commitment nudges, ${errors} errors`);
+    return NextResponse.json({ sent, commitmentSent, errors, usersWithStaleTasks: userIds.length });
 
   } catch (err) {
     console.error('[nudge] Unexpected error:', err);
