@@ -24,8 +24,8 @@ const FAQ_CATEGORIES = [
         a: 'You can generate a plan without an account, but signing up (free) lets you save tasks, track your streak, access the Dashboard, and use Focus Pods. Your data is saved to the cloud so you can access it from any device.',
       },
       {
-        q: 'What is the 14-day Pro trial?',
-        a: 'Every new account gets full Pro access for 14 days at no cost — no credit card required. This gives you unlimited AI-generated plans, email nudges, weekly progress reports, and all other Pro features. After the trial, you move to the free tier (5 plans/month) unless you upgrade.',
+        q: 'What is the 10-day Pro trial?',
+        a: 'Every new account gets full Pro access for 10 days at no cost — no credit card required. This gives you unlimited AI-generated plans, email nudges, weekly progress reports, and all other Pro features. After the trial, you move to the free tier (3 plans/month) unless you upgrade.',
       },
     ],
   },
@@ -139,7 +139,7 @@ const FAQ_CATEGORIES = [
       },
       {
         q: 'What happens when my trial ends?',
-        a: 'You move to the free tier, which allows up to 5 AI-generated plans per calendar month. All previously saved tasks remain accessible. Upgrading to Pro removes the monthly limit and unlocks all features.',
+        a: 'You move to the free tier, which allows up to 3 AI-generated plans per calendar month. All previously saved tasks remain accessible. Upgrading to Pro removes the monthly limit and unlocks all features.',
       },
       {
         q: 'How do I upgrade to Pro?',

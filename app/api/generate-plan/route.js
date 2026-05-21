@@ -110,7 +110,7 @@ Respond ONLY with valid JSON in this exact format, no preamble or markdown:
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .gte('created_at', startOfMonth);
-      if (count >= 5) {
+      if (count >= 3) {
         return NextResponse.json(
           { error: 'Monthly plan limit reached. Upgrade to Pro for unlimited plans.' },
           { status: 429 }
