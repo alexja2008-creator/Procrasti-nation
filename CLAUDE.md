@@ -131,8 +131,8 @@ All tables have RLS policies filtering by `user_id`.
 ### Auth
 - `useAuth()` from `app/providers.jsx` — exposes `{ user, loading, trialStatus, trialDaysLeft, signOut }`
 - `trialStatus`: `'trial'` | `'free'` | `'pro'`
-- Free tier: 5 AI plans per calendar month
-- Trial: 14 days of Pro on signup (stored in `user_metadata.trial_ends_at`)
+- Free tier: 3 AI plans per calendar month
+- Trial: 10 days of Pro on signup (stored in `user_metadata.trial_ends_at`)
 
 ### Styling
 - All styling via Tailwind utility classes

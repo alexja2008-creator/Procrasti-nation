@@ -44,10 +44,10 @@ export default function UpgradeModal({ onClose, reason = 'limit' }) {
   const headlines = {
     limit: {
       title: "You've hit your free limit.",
-      subtitle: "Free citizens get 5 AI plans per month. Upgrade to plan without limits.",
+      subtitle: "Free citizens get 3 AI plans per month. Upgrade to plan without limits.",
     },
     trial: {
-      title: 'Your 14-day trial has ended.',
+      title: 'Your 10-day trial has ended.',
       subtitle: "You've experienced the full ProcrastiNation. Ready to make it permanent?",
     },
   };

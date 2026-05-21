@@ -9,8 +9,8 @@ const ThemeContext = createContext({
 });
 
 // trialStatus: 'trial' | 'free' | 'pro'
-// 'trial'  = within 14-day trial window
-// 'free'   = trial expired, on free tier (≤5 tasks/month)
+// 'trial'  = within 10-day trial window
+// 'free'   = trial expired, on free tier (≤3 tasks/month)
 // 'pro'    = paid subscriber (future)
 const AuthContext = createContext({
   user: null,
@@ -63,7 +63,7 @@ function computeTrialStatus(user) {
   const trialEndsAt = user.user_metadata?.trial_ends_at;
   if (!trialEndsAt) {
     // Existing users who signed up before this feature — give them a trial too
-    return { trialStatus: 'trial', trialDaysLeft: 14 };
+    return { trialStatus: 'trial', trialDaysLeft: 10 };
   }
   const msLeft = new Date(trialEndsAt).getTime() - Date.now();
   const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));

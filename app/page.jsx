@@ -271,7 +271,7 @@ export default function LandingPage() {
             </div>
 
             <p className={`text-sm ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-              Free to join • 14-day Pro trial included • No credit card required
+              Free to join • 10-day Pro trial included • No credit card required
             </p>
           </div>
         </div>
@@ -455,7 +455,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Every nation needs a rallying cry.</h2>
-            <p className="text-xl text-slate-400">Start free. Get 14 days of Pro — no credit card required.</p>
+            <p className="text-xl text-slate-400">Start free. Get 10 days of Pro — no credit card required.</p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -466,13 +466,13 @@ export default function LandingPage() {
                   <span className="text-5xl font-bold text-white">$0</span>
                   <span className="text-slate-400 ml-2">/month</span>
                 </div>
-                <p className="text-slate-400">After your 14-day trial</p>
+                <p className="text-slate-400">After your 10-day trial</p>
               </div>
               
               <ul className="space-y-4 mb-8">
                 <li className="flex items-center text-slate-300">
                   <Check className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" />
-                  5 AI-planned tasks per month
+                  3 AI-planned tasks per month
                 </li>
                 <li className="flex items-center text-slate-300">
                   <Check className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" />
@@ -500,7 +500,7 @@ export default function LandingPage() {
             <div className="bg-gradient-to-br from-emerald-600 to-teal-600 rounded-2xl p-8 relative transform md:scale-105 shadow-2xl">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <span className="bg-yellow-400 text-slate-900 px-4 py-1 rounded-full text-sm font-bold">
-                  14-DAY FREE TRIAL
+                  10-DAY FREE TRIAL
                 </span>
               </div>
               
@@ -510,7 +510,7 @@ export default function LandingPage() {
                   <span className="text-5xl font-bold text-white">$7.99</span>
                   <span className="text-emerald-100 ml-2">/month</span>
                 </div>
-                <p className="text-emerald-100">14-day trial free, then $7.99/mo — or <span className="font-bold">$72/yr</span></p>
+                <p className="text-emerald-100">10-day trial free, then $7.99/mo — or <span className="font-bold">$72/yr</span></p>
               </div>
               
               <ul className="space-y-4 mb-8">

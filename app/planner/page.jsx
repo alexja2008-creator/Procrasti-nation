@@ -184,7 +184,7 @@ function PlannerContent() {
   const generatePlan = async () => {
     if (!task || !deadline) return;
 
-    // Free tier: max 5 AI plans per calendar month
+    // Free tier: max 3 AI plans per calendar month
     if (user && trialStatus === 'free') {
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
@@ -194,7 +194,7 @@ function PlannerContent() {
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .gte('start_time', startOfMonth.toISOString());
-      if (count >= 5) {
+      if (count >= 3) {
         setShowUpgradeModal(true);
         return;
       }

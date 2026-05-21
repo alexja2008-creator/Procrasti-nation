@@ -43,7 +43,7 @@ export default function AuthModal({ onClose }) {
         return;
       }
 
-      const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      const trialEndsAt = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -106,7 +106,7 @@ export default function AuthModal({ onClose }) {
         <p className={`text-sm mb-6 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
           {mode === 'login'
             ? 'Sign in to access your tasks and streaks'
-            : 'Sign up free — includes a 14-day Pro trial, no credit card required'}
+            : 'Sign up free — includes a 10-day Pro trial, no credit card required'}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
