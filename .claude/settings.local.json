@@ -6,7 +6,23 @@
       "WebFetch(domain:jg-therapies.co.uk)",
       "WebFetch(domain:suninme.org)",
       "WebFetch(domain:www.werspecial.com)",
-      "WebFetch(domain:www.sandrarodriguezphd.com)"
+      "WebFetch(domain:www.sandrarodriguezphd.com)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(git pull:*)",
+      "Bash(git worktree *)",
+      "Read(//Users/alexanderson/.nvm/versions/node/**)",
+      "Bash(export PATH=\"$HOME/.nvm/versions/node/$\\(ls ~/.nvm/versions/node)",
+      "Bash(ln -s /Users/alexanderson/Desktop/Procrasti-nation/node_modules /Users/alexanderson/Desktop/procrasti-schools/node_modules)",
+      "Bash(ln -s /Users/alexanderson/Desktop/Procrasti-nation/.env.local /Users/alexanderson/Desktop/procrasti-schools/.env.local)",
+      "Bash(gh pr create --title 'Reduce trial to 10 days and free tier limit to 3 plans/month' --body ' *)",
+      "Bash(grep -E \"price|month|year|\\\\$\")",
+      "Bash(grep -E \"\\\\$|price|Pro|month|year\" app/page.jsx)",
+      "Bash(git fetch *)",
+      "Bash(git stash *)"
     ]
   }
 }
