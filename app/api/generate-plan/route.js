@@ -95,9 +95,20 @@ Respond ONLY with valid JSON in this exact format, no preamble or markdown:
       return NextResponse.json(result);
     }
 
-    // Enforce monthly plan limit for free (non-trial) users
+    // Enforce monthly plan limit for free (non-trial, non-pro) users
     const trialEndsAt = user.user_metadata?.trial_ends_at;
-    const isProOrTrial = trialEndsAt && new Date(trialEndsAt) > new Date();
+    const isActiveTrial = trialEndsAt && new Date(trialEndsAt) > new Date();
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    const { data: profile } = await adminSupabase
+      .from('profiles')
+      .select('stripe_subscription_status')
+      .eq('id', user.id)
+      .single();
+    const isStripeActive = profile?.stripe_subscription_status === 'active';
+    const isProOrTrial = isActiveTrial || isStripeActive;
     if (!isProOrTrial) {
       const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
       const userSupabase = createClient(
