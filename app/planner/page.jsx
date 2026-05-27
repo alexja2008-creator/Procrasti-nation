@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Brain, Calendar, Clock, CheckCircle2, Sparkles, Zap, Target, Trophy, ArrowLeft, Trash2, Pencil, Plus } from 'lucide-react';
@@ -8,6 +8,71 @@ import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
 import Navigation from '../../components/Navigation';
 import UpgradeModal from '../../components/UpgradeModal';
+
+const COMMIT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const COMMIT_DAYS = Array.from({ length: 31 }, (_, i) => String(i + 1));
+const COMMIT_YEARS = Array.from({ length: 75 }, (_, i) => String(2026 + i));
+const COMMIT_HOURS = Array.from({ length: 24 }, (_, i) => {
+  if (i === 0) return '12am';
+  if (i < 12) return `${i}am`;
+  if (i === 12) return '12pm';
+  return `${i - 12}pm`;
+});
+
+function ScrollPicker({ items, initialIndex = 0, onSelect, darkMode }) {
+  const ITEM_H = 40;
+  const containerRef = useRef(null);
+  const [displayIdx, setDisplayIdx] = useState(initialIndex);
+  const idxRef = useRef(initialIndex);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = initialIndex * ITEM_H;
+    }
+  }, []);
+
+  const handleScroll = () => {
+    if (!containerRef.current) return;
+    const idx = Math.round(containerRef.current.scrollTop / ITEM_H);
+    const clamped = Math.max(0, Math.min(idx, items.length - 1));
+    if (clamped !== idxRef.current) {
+      idxRef.current = clamped;
+      setDisplayIdx(clamped);
+      onSelect(clamped);
+    }
+  };
+
+  return (
+    <div className="relative w-full" style={{ height: ITEM_H * 3 }}>
+      <div
+        className={`absolute inset-x-0 rounded-lg pointer-events-none ${darkMode ? 'bg-white/10' : 'bg-emerald-600/10'}`}
+        style={{ top: ITEM_H, height: ITEM_H }}
+      />
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="h-full overflow-y-scroll [&::-webkit-scrollbar]:hidden"
+        style={{ scrollSnapType: 'y mandatory', scrollbarWidth: 'none' }}
+      >
+        <div style={{ height: ITEM_H }} />
+        {items.map((item, i) => (
+          <div
+            key={i}
+            style={{ height: ITEM_H, scrollSnapAlign: 'center' }}
+            className={`flex items-center justify-center text-sm select-none transition-colors ${
+              i === displayIdx
+                ? `font-bold ${darkMode ? 'text-white' : 'text-slate-900'}`
+                : `font-medium ${darkMode ? 'text-slate-500' : 'text-slate-400'}`
+            }`}
+          >
+            {item}
+          </div>
+        ))}
+        <div style={{ height: ITEM_H }} />
+      </div>
+    </div>
+  );
+}
 
 function PlannerContent() {
   const { darkMode } = useTheme();
@@ -48,7 +113,11 @@ function PlannerContent() {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [recurrence, setRecurrence] = useState(null); // null | { type: 'daily'|'weekly'|'monthly', startDate: ISO }
   const [showCommitmentPrompt, setShowCommitmentPrompt] = useState(false);
-  const [startCommitment, setStartCommitment] = useState('');
+  const now = new Date();
+  const [commitMonth, setCommitMonth] = useState(now.getMonth());
+  const [commitDay, setCommitDay] = useState(now.getDate() - 1);
+  const [commitYear, setCommitYear] = useState(Math.max(0, now.getFullYear() - 2026));
+  const [commitHour, setCommitHour] = useState(now.getHours());
   const [taskFirstInteraction, setTaskFirstInteraction] = useState(null);
 
   const encouragements = [
@@ -672,13 +741,13 @@ function PlannerContent() {
               <div className="space-y-6">
                 <div>
                   <label className={`block font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>What do you need to do?</label>
-                  <input
-                    type="text"
+                  <textarea
                     value={task}
                     onChange={(e) => setTask(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="e.g., Write essay for history class, Finish presentation for Business 101"
-                    className={`w-full px-4 py-4 rounded-lg border-2 focus:outline-none text-lg transition-colors ${
+                    rows={3}
+                    className={`w-full px-4 py-4 rounded-lg border-2 focus:outline-none text-lg transition-colors resize-none ${
                       darkMode
                         ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500'
                         : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
@@ -865,32 +934,41 @@ function PlannerContent() {
                   <span>When will you start this?</span>
                 </h3>
                 <p className={`text-sm mb-4 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
-                  Making a commitment helps you follow through. Pick a date and time.
+                  Making a commitment helps you follow through. Scroll to pick a date and time.
                 </p>
-                <div className="flex items-center gap-3 flex-wrap">
-                  <input
-                    type="datetime-local"
-                    value={startCommitment}
-                    onChange={(e) => setStartCommitment(e.target.value)}
-                    min={new Date().toISOString().slice(0, 16)}
-                    className={`px-4 py-3 rounded-lg border-2 focus:outline-none transition-colors ${
-                      darkMode
-                        ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white'
-                        : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900'
+                <div className={`flex gap-2 rounded-xl p-3 mb-4 ${darkMode ? 'bg-slate-800/60' : 'bg-white/70'}`}>
+                  {[
+                    { label: 'Month', items: COMMIT_MONTHS, val: commitMonth, set: setCommitMonth },
+                    { label: 'Day',   items: COMMIT_DAYS,   val: commitDay,   set: setCommitDay   },
+                    { label: 'Year',  items: COMMIT_YEARS,  val: commitYear,  set: setCommitYear  },
+                    { label: 'Time',  items: COMMIT_HOURS,  val: commitHour,  set: setCommitHour  },
+                  ].map(({ label, items, val, set }) => (
+                    <div key={label} className="flex-1 flex flex-col items-center gap-1">
+                      <span className={`text-xs font-medium ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>{label}</span>
+                      <ScrollPicker items={items} initialIndex={val} onSelect={set} darkMode={darkMode} />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowCommitmentPrompt(false)}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                      darkMode ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'
                     }`}
-                  />
+                  >
+                    Skip for now
+                  </button>
                   <button
                     onClick={async () => {
-                      if (startCommitment && currentTaskId) {
-                        await supabase.from('tasks').update({
-                          start_commitment: new Date(startCommitment).toISOString()
-                        }).eq('id', currentTaskId);
-                      }
+                      const commitDate = new Date(2026 + commitYear, commitMonth, commitDay + 1, commitHour, 0, 0);
+                      await supabase.from('tasks').update({
+                        start_commitment: commitDate.toISOString()
+                      }).eq('id', currentTaskId);
                       setShowCommitmentPrompt(false);
                     }}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-colors"
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-colors"
                   >
-                    {startCommitment ? 'I commit' : 'Skip for now'}
+                    I commit
                   </button>
                 </div>
               </div>
