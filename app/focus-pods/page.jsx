@@ -190,7 +190,7 @@ export default function FocusPodsPage() {
           <div className={`rounded-2xl overflow-hidden border mb-4 ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
             <iframe
               src={currentPod.room_url}
-              allow="camera *; microphone *; fullscreen *; speaker *; display-capture *; autoplay *"
+              allow="camera; microphone; fullscreen; speaker; display-capture; autoplay"
               className="w-full"
               style={{ height: '580px', border: 'none' }}
             />
