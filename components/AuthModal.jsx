@@ -47,12 +47,12 @@ export default function AuthModal({ onClose }) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { trial_ends_at: trialEndsAt, onboarding_seen: false } },
+        options: { data: { trial_ends_at: trialEndsAt, onboarding_seen: false, pending_username: trimmedUsername } },
       });
       if (error) {
         setError(error.message);
       } else if (data.session) {
-        // Create profile row with chosen username
+        // No email confirmation required — session exists immediately
         await supabase.from('profiles').insert({
           user_id: data.user.id,
           username: trimmedUsername,
@@ -60,6 +60,8 @@ export default function AuthModal({ onClose }) {
         });
         onClose('signup');
       } else {
+        // Email confirmation required — username stored in user_metadata.pending_username
+        // Profile will be created when the user confirms and the auth state change fires
         setMessage('Check your email for a confirmation link!');
       }
     } else {

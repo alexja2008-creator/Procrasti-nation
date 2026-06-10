@@ -44,12 +44,42 @@ export default function Navigation() {
     () => getTutorialStep() !== null
   );
 
-  // Also re-check on user change — covers the case where the user signs out
-  // mid-tutorial (clear) or a page refresh where localStorage still has a step.
+  // Re-check on user change — covers sign-out mid-tutorial, page refresh,
+  // and first login after email confirmation (onboarding_seen === false).
   useEffect(() => {
     if (!user) {
       setShowTutorial(false);
-    } else if (getTutorialStep() !== null) {
+      return;
+    }
+
+    if (getTutorialStep() !== null) {
+      setShowTutorial(true);
+      return;
+    }
+
+    // First-time user arriving via email confirmation link —
+    // onboarding_seen is false and no tutorial step is saved yet
+    if (user.user_metadata?.onboarding_seen === false) {
+      // Create profile from pending_username if it hasn't been created yet
+      const pendingUsername = user.user_metadata?.pending_username;
+      if (pendingUsername) {
+        supabase
+          .from('profiles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle()
+          .then(({ data: existing }) => {
+            if (!existing) {
+              supabase.from('profiles').insert({
+                user_id: user.id,
+                username: pendingUsername,
+                display_name: pendingUsername,
+              });
+            }
+          });
+      }
+
+      initTutorial();
       setShowTutorial(true);
     }
   }, [user]);
