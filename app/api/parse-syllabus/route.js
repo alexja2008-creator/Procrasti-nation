@@ -1,24 +1,42 @@
 import { NextResponse } from 'next/server';
 import { requireAuth } from '../../../lib/authMiddleware';
+import { callClaude, AIError, MODELS, sanitizeForXml, resolveToday } from '../../../lib/ai';
 
 // Must use Node.js runtime — pdf-parse and mammoth are Node-only libraries
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 
-const ANTHROPIC_TIMEOUT_MS = 60_000;
+const SYLLABUS_SCHEMA = {
+  type: 'object',
+  properties: {
+    courseName: { type: 'string', description: 'Full course name (e.g. Introduction to Psychology)' },
+    semester: { type: 'string', description: 'Semester name (e.g. Fall, Spring, Summer)' },
+    year: { type: 'string', description: '4-digit year (e.g. 2026)' },
+    assignments: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', description: 'Assignment or assessment title, concise but descriptive' },
+          dueDate: {
+            anyOf: [{ type: 'string', format: 'date' }, { type: 'null' }],
+            description: 'Due date as YYYY-MM-DD, or null if no date found',
+          },
+        },
+        required: ['title', 'dueDate'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['courseName', 'semester', 'year', 'assignments'],
+  additionalProperties: false,
+};
 
 export async function POST(request) {
   try {
     const { error: authError } = await requireAuth(request);
     if (authError) {
       return NextResponse.json({ error: authError }, { status: 401 });
-    }
-
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'API key not configured' },
-        { status: 500 }
-      );
     }
 
     const formData = await request.formData();
@@ -51,6 +69,7 @@ export async function POST(request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
+    const today = resolveToday(formData.get('today'), formData.get('timeZone'));
     let claudeMessages;
 
     if (fileName.endsWith('.pdf') || mimeType === 'application/pdf') {
@@ -63,7 +82,7 @@ export async function POST(request) {
           { status: 400 }
         );
       }
-      claudeMessages = [{ role: 'user', content: buildTextPrompt(text) }];
+      claudeMessages = [{ role: 'user', content: buildTextPrompt(text, today) }];
 
     } else if (
       fileName.endsWith('.docx') ||
@@ -78,7 +97,7 @@ export async function POST(request) {
           { status: 400 }
         );
       }
-      claudeMessages = [{ role: 'user', content: buildTextPrompt(text) }];
+      claudeMessages = [{ role: 'user', content: buildTextPrompt(text, today) }];
 
     } else if (
       fileName.endsWith('.png') || mimeType === 'image/png' ||
@@ -90,7 +109,7 @@ export async function POST(request) {
         role: 'user',
         content: [
           { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64String } },
-          { type: 'text', text: buildVisionPrompt() },
+          { type: 'text', text: buildVisionPrompt(today) },
         ],
       }];
 
@@ -101,47 +120,13 @@ export async function POST(request) {
       );
     }
 
-    // Call Claude
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), ANTHROPIC_TIMEOUT_MS);
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 4000,
-        messages: claudeMessages,
-      }),
-      signal: ac.signal,
+    const parsed = await callClaude({
+      model: MODELS.plan,
+      effort: 'low',
+      schema: SYLLABUS_SCHEMA,
+      timeoutMs: 55_000,
+      messages: claudeMessages,
     });
-    clearTimeout(timer);
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: 'AI analysis failed. Please try again.' },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    const rawText = data.content.map((item) => item.text || '').join('\n');
-
-    // Robust JSON extraction: find the outermost { ... } block rather than relying on code fences
-    let parsed;
-    try {
-      const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) throw new Error('No JSON object found in response');
-      parsed = JSON.parse(jsonMatch[0]);
-    } catch {
-      return NextResponse.json(
-        { error: 'Failed to parse AI response. Please try again.' },
-        { status: 500 }
-      );
-    }
 
     if (!parsed.courseName || !Array.isArray(parsed.assignments)) {
       return NextResponse.json(
@@ -171,11 +156,8 @@ export async function POST(request) {
     return NextResponse.json(parsed);
 
   } catch (error) {
-    if (error?.name === 'AbortError') {
-      return NextResponse.json(
-        { error: 'The AI took too long to respond. Please try again.' },
-        { status: 504 }
-      );
+    if (error instanceof AIError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
     console.error('[parse-syllabus] Unexpected error:', error);
     return NextResponse.json(
@@ -185,57 +167,31 @@ export async function POST(request) {
   }
 }
 
-function sanitizeForXml(s) {
-  return String(s ?? '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function buildTextPrompt(syllabusText) {
+function buildTextPrompt(syllabusText, today) {
   return `You are an academic assistant. The following is the text content of a course syllabus. Extract the course information and all assignments, tests, papers, projects, quizzes, and homework items that have due dates or scheduled dates.
 
 <syllabus>
-${sanitizeForXml(syllabusText.slice(0, 15000))}
+${sanitizeForXml(syllabusText.slice(0, 60000))}
 </syllabus>
 
-Respond ONLY with valid JSON in this exact format, no preamble or markdown:
-{
-  "courseName": "Full course name (e.g. Introduction to Psychology)",
-  "semester": "Semester name (e.g. Fall, Spring, Summer)",
-  "year": "4-digit year as a string (e.g. 2025)",
-  "assignments": [
-    {
-      "title": "Assignment or assessment title (be concise but descriptive)",
-      "dueDate": "ISO 8601 date string (YYYY-MM-DD) or null if no date found"
-    }
-  ]
-}
+Today is ${today.label}.
 
 Rules:
 - Include ALL assignments, tests, papers, quizzes, projects, readings, and homework items
-- If no year is explicitly stated, infer from context or use the current year
+- If no year is explicitly stated, infer it from context and today's date
 - If a due date cannot be determined, set dueDate to null
 - Keep assignment titles concise (under 80 characters)
 - Do not include office hours, class meetings, or general schedule items that are not student deliverables`;
 }
 
-function buildVisionPrompt() {
+function buildVisionPrompt(today) {
   return `You are an academic assistant. The attached image is a course syllabus. Extract the course information and all assignments, tests, papers, projects, quizzes, and homework items that have due dates or scheduled dates.
 
-Respond ONLY with valid JSON in this exact format, no preamble or markdown:
-{
-  "courseName": "Full course name (e.g. Introduction to Psychology)",
-  "semester": "Semester name (e.g. Fall, Spring, Summer)",
-  "year": "4-digit year as a string (e.g. 2025)",
-  "assignments": [
-    {
-      "title": "Assignment or assessment title (be concise but descriptive)",
-      "dueDate": "ISO 8601 date string (YYYY-MM-DD) or null if no date found"
-    }
-  ]
-}
+Today is ${today.label}.
 
 Rules:
 - Include ALL assignments, tests, papers, quizzes, projects, readings, and homework items
-- If no year is explicitly stated, infer from context or use the current year
+- If no year is explicitly stated, infer it from context and today's date
 - If a due date cannot be determined, set dueDate to null
 - Keep assignment titles concise (under 80 characters)
 - Do not include office hours, class meetings, or general schedule items that are not student deliverables`;

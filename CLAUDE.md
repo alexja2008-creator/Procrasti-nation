@@ -70,7 +70,8 @@ app/
     parse-syllabus/route.js         # Syllabus file → JSON assignments
     resolve-step-dates/route.js     # Relative timing → absolute calendar dates
     create-room/route.js            # Whereby room creation
-    cron/nudge/route.js             # Daily email nudge for stale tasks
+    cron/nudge/route.js             # Daily nudge digest (one email per user, untouched tasks only)
+    unsubscribe/route.js            # Signed one-click unsubscribe (reminders / reports)
     cron/weekly-report/route.js     # Monday weekly progress digest
 
 components/
@@ -85,6 +86,11 @@ components/
   CalendarEventPopover.jsx          # Click-to-edit step date popover
 
 lib/
+  ai.js                             # callClaude(), model constants, resolveToday()
+  prompts/plan.js                   # Adherence planner prompts + JSON schemas
+  prompts/dates.js                  # Step "when" → calendar date prompt
+  dates.js                          # Local-date helpers (localDateString, localTimeZone)
+  unsubscribe.js                    # Signed unsubscribe links + List-Unsubscribe headers
   supabase.js                       # Supabase client (anon key)
   storage.js                        # localStorage wrapper (legacy, still used for boards/resets)
   emails.js                         # Email templates (nudge + weekly report)
@@ -112,6 +118,9 @@ lib/
 | created_at | TIMESTAMP | Immutable — use for staleness checks |
 | updated_at | TIMESTAMP | Auto-trigger resets on every write |
 | last_nudge_sent | TIMESTAMP | Last nudge email timestamp |
+
+### `profiles` email preferences
+`email_reminders_enabled`, `email_reports_enabled` (BOOLEAN, default true) — set false by `/api/unsubscribe`; crons skip opted-out users.
 
 ### `streaks` table
 id, user_id, current_streak, highest_streak, last_completed_date, updated_at
@@ -153,7 +162,9 @@ All tables have RLS policies filtering by `user_id`.
 
 ### API Communication
 - Client uses `fetch()` to `/api/*` endpoints
-- Server uses raw `fetch()` to Anthropic API (model: `claude-sonnet-4-20250514`)
+- Server calls Anthropic through `callClaude()` in `lib/ai.js` (raw `fetch()`, structured JSON output). Models: `MODELS.plan` = `claude-sonnet-5-5` (plans, clarifying questions, syllabus), `MODELS.fast` = `claude-haiku-4-5` (step dates, short copy). Never build plans on Haiku.
+- Plan prompts live in `lib/prompts/plan.js`; any prompt/model change must pass `evals/plan-quality` (see its README) before shipping
+- Clients send `today` (local YYYY-MM-DD, from `lib/dates.js`) and `timeZone` so the AI resolves relative dates correctly; never use `toISOString()` for local calendar dates
 - Cron routes secured with `Authorization: Bearer <CRON_SECRET>`
 - Service role client created inline in cron routes to bypass RLS
 

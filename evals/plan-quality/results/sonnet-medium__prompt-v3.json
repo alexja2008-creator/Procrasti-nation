@@ -1,0 +1,3246 @@
+{
+  "summary": {
+    "label": "sonnet-medium__prompt-v3",
+    "config": "sonnet-medium",
+    "prompt": "evals/plan-quality/prompt-v3.js",
+    "cases": 30,
+    "errors": 0,
+    "passRate": "27/30",
+    "dueDateAccuracy": "30/30",
+    "medianFirstStepMin": 5,
+    "avgSteps": 11.2,
+    "latencyP50s": 11.222,
+    "latencyP95s": 19.144,
+    "avg_overall": 3.93,
+    "avg_firstStep": 4.23,
+    "avg_specificity": 4.13,
+    "avg_fit": 4.2,
+    "avg_sequence": 3.93,
+    "avg_timing": 3.6,
+    "avg_style": 4.17
+  },
+  "results": [
+    {
+      "id": "history-paper",
+      "latencyMs": 10816,
+      "checks": {
+        "stepCount": 10,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 105,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-02"
+      },
+      "grade": {
+        "fit": 5,
+        "firstStep": 5,
+        "specificity": 5,
+        "sequence": 4,
+        "timing": 4,
+        "style": 5,
+        "overall": 4,
+        "notes": "Thursday stacks about 4 hours of drafting, and step 3 (90 min of skimming) on Wednesday is heavy, so the schedule is tight. Friday has no buffer before the deadline and the submission time is unspecified, and the plan never mentions the thesis-polish perfectionism trap beyond stop rules."
+      },
+      "plan": {
+        "taskTitle": "Write a 10-page WWI causes research paper by Friday",
+        "analysis": "A researched 10-page paper needs about 11 hours, so with only Wednesday to Friday available the plan compresses it into roughly 3-4 hour days, with ugly drafting kept separate from polishing and a stopping point on every step.",
+        "totalEstimatedTime": "11 hours 5 min",
+        "resolvedDueDate": "2026-10-02",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Open the doc and paste in the prompt",
+            "description": "Create a new doc named 'WWI paper', paste in the assignment prompt and the Friday deadline, and type the title 'Causes of WWI - UGLY DRAFT'. Done when the doc is open with that text; stop there.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Gather 5 sources",
+            "description": "Find 5 sources on WWI's causes, such as your textbook chapter, 2 library database articles, and Christopher Clark's 'The Sleepwalkers' or Margaret MacMillan's 'The War That Ended Peace'. Paste the links or titles into the doc. Stop at 5, even if they feel imperfect.",
+            "estimatedTime": "30 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Skim and take messy notes",
+            "description": "Skim your sources for the MAIN causes: militarism, alliances, imperialism, nationalism, and the July Crisis after Franz Ferdinand's assassination. Bullet points are fine, and typos don't matter. Done when you have 3-4 bullets per source, with page numbers.",
+            "estimatedTime": "90 min",
+            "when": "Today"
+          },
+          {
+            "id": 4,
+            "title": "Write a bullet-point outline",
+            "description": "Write a thesis in one rough sentence, even if it's clunky, plus 5-6 section headers such as alliances, militarism, imperial rivalries, nationalism in the Balkans, and the July Crisis. Put 2-3 bullets of evidence under each. Stop when every header has bullets; this outline is not graded.",
+            "estimatedTime": "30 min",
+            "when": "Tonight"
+          },
+          {
+            "id": 5,
+            "title": "Ugly draft: intro and first two sections",
+            "description": "Turn the outline into sentences for the intro and the first two sections, aiming for about 4 pages. Write badly on purpose, and don't edit or delete anything. Stop at 4 pages or 90 minutes, whichever comes first.",
+            "estimatedTime": "90 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 6,
+            "title": "Ugly draft: remaining sections",
+            "description": "Write the remaining sections of the body, about 5 pages, including the July Crisis. Leave [brackets] where you need a fact or citation and keep going. Stop when every header has text underneath it.",
+            "estimatedTime": "105 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 7,
+            "title": "Ugly draft: conclusion and fill the brackets",
+            "description": "Write a rough conclusion of 3-4 sentences that restates your thesis, then fill in each [bracket] using your notes. Stop when the draft hits roughly 10 pages with no brackets left. It is now a complete draft, which is the goal.",
+            "estimatedTime": "60 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 8,
+            "title": "Polish pass 1: structure and argument",
+            "description": "After a night's rest, read only topic sentences and the thesis, then fix sections that drift from your argument by moving, cutting, or adding a sentence. Stop after one read-through and don't touch word choice yet.",
+            "estimatedTime": "60 min",
+            "when": "Friday morning"
+          },
+          {
+            "id": 9,
+            "title": "Polish pass 2: citations and bibliography",
+            "description": "Add in-text citations and build the bibliography in the format your teacher requires. Done when every fact from your notes has a source and all 5 sources are listed.",
+            "estimatedTime": "45 min",
+            "when": "Friday"
+          },
+          {
+            "id": 10,
+            "title": "Final proofread and submit",
+            "description": "Read the paper once aloud or with a read-aloud tool, fix only clear typos and awkward sentences, check the page count, and submit. Stop after one pass because good enough is done.",
+            "estimatedTime": "45 min",
+            "when": "Friday"
+          }
+        ]
+      }
+    },
+    {
+      "id": "orgo-midterm",
+      "latencyMs": 18622,
+      "checks": {
+        "stepCount": 18,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 60,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-06"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 4,
+        "specificity": 3,
+        "sequence": 4,
+        "timing": 3,
+        "style": 3,
+        "overall": 4,
+        "notes": "The plan is repetitive, with the same three-step cycle for every chapter and little content-specific detail such as named reaction types. Today's load (65 min) is fine, but Thursday through Sunday sessions run 2 hours each, and the Monday block of 2+ hours right before the exam is heavy and leaves no buffer. Wording for an overwhelmed student is only partly reassuring: the 'stand on its own' lines help, but the plan could break steps into smaller pieces."
+      },
+      "plan": {
+        "taskTitle": "Study for organic chemistry midterm (chapters 5-9)",
+        "analysis": "Spread about 11 hours of study over six days with one small chapter-by-chapter cycle (read, practice, flashcards) per session, then a mixed practice test on Monday so you're done before Tuesday's exam.",
+        "totalEstimatedTime": "11 hours 20 min",
+        "resolvedDueDate": "2026-10-06",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Set up your study spot",
+            "description": "Put your orgo textbook, lecture notes, and a blank notebook on your desk, open to Chapter 5. That's it. You can stop after this and it still counts.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Skim Chapter 5 notes and summary",
+            "description": "Read your Chapter 5 notes and the end-of-chapter summary, and write down any reaction or term you don't recognize. Done when you have a short list on one page.",
+            "estimatedTime": "30 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Do 10 Chapter 5 problems",
+            "description": "Try the first 10 end-of-chapter problems, peeking at answers as needed. Done when you've marked the ones you missed.",
+            "estimatedTime": "30 min",
+            "when": "Today"
+          },
+          {
+            "id": 4,
+            "title": "Skim Chapter 6 notes and summary",
+            "description": "Read your Chapter 6 notes and the chapter summary, and jot down anything confusing. This step stands on its own, so just do this one.",
+            "estimatedTime": "45 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 5,
+            "title": "Do 10 Chapter 6 problems",
+            "description": "Work 10 end-of-chapter problems and check your answers. Done when missed ones are starred.",
+            "estimatedTime": "45 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 6,
+            "title": "Make Chapter 5-6 flashcards",
+            "description": "Make flashcards for the key reactions and mechanisms from chapters 5 and 6, plus the ones you starred. Done when you've quizzed yourself through the stack once.",
+            "estimatedTime": "30 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 7,
+            "title": "Skim Chapter 7 notes and summary",
+            "description": "Read your Chapter 7 notes and summary, and write down anything that's unclear. Just this, nothing else.",
+            "estimatedTime": "45 min",
+            "when": "Friday"
+          },
+          {
+            "id": 8,
+            "title": "Do 10 Chapter 7 problems",
+            "description": "Work 10 end-of-chapter problems and check answers. Star the ones you missed.",
+            "estimatedTime": "45 min",
+            "when": "Friday"
+          },
+          {
+            "id": 9,
+            "title": "Make Chapter 7 flashcards",
+            "description": "Make flashcards for chapter 7's key reactions and mechanisms, then quiz yourself on them. Also flip through the chapter 5-6 cards once.",
+            "estimatedTime": "30 min",
+            "when": "Friday"
+          },
+          {
+            "id": 10,
+            "title": "Skim Chapter 8 notes and summary",
+            "description": "Read your Chapter 8 notes and summary, and note anything confusing. Each session is separate, so don't worry about the rest.",
+            "estimatedTime": "45 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 11,
+            "title": "Do 10 Chapter 8 problems",
+            "description": "Work 10 end-of-chapter problems and check answers. Star the ones you missed.",
+            "estimatedTime": "45 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 12,
+            "title": "Make Chapter 8 flashcards",
+            "description": "Make chapter 8 flashcards and quiz yourself. Then flip through the chapter 7 cards once.",
+            "estimatedTime": "30 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 13,
+            "title": "Skim Chapter 9 notes and summary",
+            "description": "Read your Chapter 9 notes and summary, and write down anything unclear. It's the last new chapter.",
+            "estimatedTime": "45 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 14,
+            "title": "Do 10 Chapter 9 problems",
+            "description": "Work 10 end-of-chapter problems and check answers. Star the ones you missed.",
+            "estimatedTime": "45 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 15,
+            "title": "Make Chapter 9 flashcards",
+            "description": "Make chapter 9 flashcards and quiz yourself. Then flip through all the older cards for chapters 5-8 once.",
+            "estimatedTime": "30 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 16,
+            "title": "Take a mixed practice test",
+            "description": "Pick 15-20 problems spread across chapters 5-9, or use an old exam if you have one. Do them under a timer without peeking, then stop. Done when you've finished or time is up.",
+            "estimatedTime": "60 min",
+            "when": "Monday"
+          },
+          {
+            "id": 17,
+            "title": "Fix your missed problems",
+            "description": "Go back over every problem you missed or starred and work out why, redoing each one until it makes sense. Done when each has a one-line fix in your notebook.",
+            "estimatedTime": "45 min",
+            "when": "Monday"
+          },
+          {
+            "id": 18,
+            "title": "Do a final flashcard pass and pack",
+            "description": "Flip through all your flashcards once, focusing on the ones you keep missing. Then put your pencils, eraser, and ID in your bag so you're ready for Tuesday.",
+            "estimatedTime": "30 min",
+            "when": "Monday"
+          }
+        ]
+      }
+    },
+    {
+      "id": "calc-pset",
+      "latencyMs": 12039,
+      "checks": {
+        "stepCount": 7,
+        "firstStepMinutes": 3,
+        "maxStepMinutes": 40,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-01"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 4,
+        "specificity": 3,
+        "sequence": 4,
+        "timing": 3,
+        "style": 4,
+        "overall": 4,
+        "notes": "Steps are well sized, but the plan is only lightly tailored to calculus (no reference to specific topics, or which examples to review). The timing is also inconsistent: 'Today' and 'Tonight' overlap, and step 1 asks the student to open to the first problem, which nudges past a truly trivial start. Deferring half the work to the deadline day is risky for an avoider, and no time of day is given for tomorrow."
+      },
+      "plan": {
+        "taskTitle": "Finish calc problem set 4 (all 12 problems)",
+        "analysis": "With only today and tomorrow available, we'll start with a tiny setup step, work through the problems in small batches tonight, and leave a short check-and-submit session tomorrow.",
+        "totalEstimatedTime": "3 hours 3 min",
+        "resolvedDueDate": "2026-10-01",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Set out your materials",
+            "description": "Just grab your problem set 4 sheet, a pencil, scratch paper, and your calculus textbook or notes, and put them on your desk. Done when everything is in one spot and you've opened to the first problem.",
+            "estimatedTime": "3 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Skim and sort the 12 problems",
+            "description": "Just read through all 12 problems once without solving anything, and put a star next to the ones that look easy and a dot next to the ones that look tricky. Done when every problem has a mark.",
+            "estimatedTime": "10 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Warm up with problems 1-3",
+            "description": "Just work through problems 1-3, starting with any starred ones. If one gets sticky, write what you know and move on; done when all three have at least an attempt.",
+            "estimatedTime": "35 min",
+            "when": "Today"
+          },
+          {
+            "id": 4,
+            "title": "Take a break, then do problems 4-6",
+            "description": "Just step away for 10 minutes, then work on problems 4-6 the same way. Done when each one has a full answer or a clear note on where you got stuck.",
+            "estimatedTime": "40 min",
+            "when": "Tonight"
+          },
+          {
+            "id": 5,
+            "title": "Do problems 7-9",
+            "description": "Just give problems 7-9 one focused session, skipping anything that stalls you for more than 10 minutes. Done when these three are answered or flagged.",
+            "estimatedTime": "40 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 6,
+            "title": "Do problems 10-12",
+            "description": "Just tackle the last three problems, which is the home stretch. Done when all 12 problems have something written down.",
+            "estimatedTime": "40 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 7,
+            "title": "Revisit flagged problems and submit",
+            "description": "Just go back to the problems you flagged, check your textbook examples or ask a classmate for a nudge, then tidy up your work and submit or pack it. Done when the set is handed in.",
+            "estimatedTime": "15 min",
+            "when": "Tomorrow"
+          }
+        ]
+      }
+    },
+    {
+      "id": "internships",
+      "latencyMs": 11286,
+      "checks": {
+        "stepCount": 13,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 60,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-15"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 5,
+        "specificity": 4,
+        "sequence": 4,
+        "timing": 4,
+        "style": 5,
+        "overall": 4,
+        "notes": "Step 2 (finding 5 postings) bundles real decision-making into one 45-minute block, which could stall an avoider, and the estimated total of 10.5 hours doesn't match the listed step times (about 8 hours). Timing is otherwise well-spread with a buffer day, though the resume feedback request on Oct 5 leaves little time for replies before applications start."
+      },
+      "plan": {
+        "taskTitle": "Apply to 5 software engineering summer internships",
+        "analysis": "Spread the work over about two weeks, starting with a tiny setup step, then building one reusable resume and application kit so each of the five applications becomes a small, repeatable session.",
+        "totalEstimatedTime": "10 hours 30 min",
+        "resolvedDueDate": "2026-10-15",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Create your folder and a list doc",
+            "description": "Just make a folder called 'Internships 2027' and inside it a blank doc called 'Application tracker'. Done when both exist, even if they're empty.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Gather 5 postings to the tracker",
+            "description": "Just open LinkedIn, Handshake, or your school's career page, and paste the links of 5 software engineering internship postings into your tracker. Don't overthink it; 'good enough' links are perfect, and you can swap any later.",
+            "estimatedTime": "45 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 3,
+            "title": "Dust off your current resume",
+            "description": "Just open your latest resume (or a fresh template if you don't have one) and save a copy named 'Resume_master'. Add any recent projects, classes, or jobs you haven't listed yet, and stop when everything is at least in there roughly.",
+            "estimatedTime": "45 min",
+            "when": "Friday"
+          },
+          {
+            "id": 4,
+            "title": "Polish the resume to one page",
+            "description": "Just tighten your bullets for your top 2-3 projects using the format 'Did X using Y, resulting in Z'. Done when it fits on one page and you've exported a PDF.",
+            "estimatedTime": "60 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 5,
+            "title": "Write one flexible cover letter template",
+            "description": "Just write a short 3-paragraph template: why software engineering, one project you're proud of, and why this company, with a blank spot for the company details. Done when it's saved in your folder.",
+            "estimatedTime": "45 min",
+            "when": "Oct 4"
+          },
+          {
+            "id": 6,
+            "title": "Ask for a quick resume check",
+            "description": "Just send your resume PDF to a friend, TA, or your career center with a one-line message asking for quick feedback. Done when the message is sent, and you don't need to wait for a reply right now.",
+            "estimatedTime": "10 min",
+            "when": "Oct 5"
+          },
+          {
+            "id": 7,
+            "title": "Submit application #1",
+            "description": "Just open the first link in your tracker, tailor 1-2 lines of your cover letter, and submit. Mark it 'Applied' with the date in your tracker.",
+            "estimatedTime": "60 min",
+            "when": "Oct 6"
+          },
+          {
+            "id": 8,
+            "title": "Submit application #2",
+            "description": "Just repeat what you did for the first one with the second posting. It will go faster, since your materials are already done.",
+            "estimatedTime": "50 min",
+            "when": "Oct 8"
+          },
+          {
+            "id": 9,
+            "title": "Apply any feedback to your resume",
+            "description": "Just skim the feedback you got and make the 2-3 easiest edits, then re-export the PDF. If nobody replied, just give it one read-through for typos.",
+            "estimatedTime": "20 min",
+            "when": "Oct 9"
+          },
+          {
+            "id": 10,
+            "title": "Submit application #3",
+            "description": "Just open posting number three, adjust a couple of lines, and hit submit. Update your tracker afterwards.",
+            "estimatedTime": "50 min",
+            "when": "Oct 10"
+          },
+          {
+            "id": 11,
+            "title": "Submit application #4",
+            "description": "Just do the same routine for posting four, so you have only one left after this. Log it in your tracker.",
+            "estimatedTime": "50 min",
+            "when": "Oct 12"
+          },
+          {
+            "id": 12,
+            "title": "Submit application #5",
+            "description": "Just finish the last one and check it off, and you're officially done with all five. Celebrate with something you enjoy.",
+            "estimatedTime": "50 min",
+            "when": "Oct 13"
+          },
+          {
+            "id": 13,
+            "title": "Quick final check of your tracker",
+            "description": "Just check your email for any confirmation messages or assessment links, and note any deadlines in your tracker. This is your buffer day, so if an application slipped, submit it now.",
+            "estimatedTime": "20 min",
+            "when": "Oct 14"
+          }
+        ]
+      }
+    },
+    {
+      "id": "clean-room",
+      "latencyMs": 8989,
+      "checks": {
+        "stepCount": 8,
+        "firstStepMinutes": 3,
+        "maxStepMinutes": 25,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-04"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 4,
+        "specificity": 4,
+        "sequence": 3,
+        "timing": 4,
+        "style": 4,
+        "overall": 4,
+        "notes": "Sequence has flaws: the laundry sort comes before the trash sweep finishes cleanly, the sheets are stripped after the floor is done on Saturday (step 6 before step 7 is fine) but the clean clothes are put away on Friday while dirty laundry is never washed, and step 8 is 2 min yet claims a full scan. The first step also has small decisions (bag plus basket), and the 'Today' steps add 18 minutes, which is heavier than a tiny start."
+      },
+      "plan": {
+        "taskTitle": "Clean my room by Sunday",
+        "analysis": "A room reset takes about 2.5 hours, so I split it into short, timeboxed sessions of different kinds (trash, laundry, surfaces, floor) spread over Thursday to Saturday with a buffer before Sunday.",
+        "totalEstimatedTime": "2 hours 35 min",
+        "resolvedDueDate": "2026-10-04",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Grab a trash bag and do a 3-minute grab",
+            "description": "Get one trash bag and an empty laundry basket, then put them in the middle of your room. Done when both are sitting on your floor, ready to use.",
+            "estimatedTime": "3 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Trash sweep sprint",
+            "description": "Set a 15-minute timer and race it to fill the bag with every wrapper, used tissue, old paper and empty bottle you can see. Done when the bag is tied and out of your room.",
+            "estimatedTime": "15 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Laundry round-up",
+            "description": "Set a 20-minute timer and toss every piece of clothing on the floor, chair and bed into the basket, then sort clean from dirty. Done when no clothes are lying around and the dirty pile is in the basket or hamper.",
+            "estimatedTime": "20 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 4,
+            "title": "Put away clean clothes with a playlist",
+            "description": "Play one playlist of about 5 songs and hang or fold all the clean clothes into drawers or the closet. Done when the playlist ends and the clothes are put away.",
+            "estimatedTime": "25 min",
+            "when": "Friday"
+          },
+          {
+            "id": 5,
+            "title": "Desk and nightstand reset",
+            "description": "Set a 25-minute timer and clear your desk and nightstand: return dishes to the kitchen, group papers into one pile, put supplies in their spots. Done when you can see the surfaces and only the things you use daily remain.",
+            "estimatedTime": "25 min",
+            "when": "Friday"
+          },
+          {
+            "id": 6,
+            "title": "Strip and remake the bed",
+            "description": "Take off your sheets, start them in the wash, and put on fresh ones (or straighten the current ones if you can't wash them). Done when the bed is made with the pillows on top.",
+            "estimatedTime": "20 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 7,
+            "title": "Floor and dust finish",
+            "description": "Set a 25-minute timer: wipe the desk and shelves with a cloth, pick up anything left on the floor, then vacuum or sweep. Try to beat the timer for a bonus point. Done when the floor is clear and clean.",
+            "estimatedTime": "25 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 8,
+            "title": "Final walkthrough and photo",
+            "description": "Spend a few minutes scanning the room from the doorway, fix any spot that bugs you, then take an after photo. Done when the photo is taken and the room feels finished.",
+            "estimatedTime": "2 min",
+            "when": "Saturday"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tesla-slides",
+      "latencyMs": 10171,
+      "checks": {
+        "stepCount": 10,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 60,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-05"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 4,
+        "specificity": 5,
+        "sequence": 4,
+        "timing": 4,
+        "style": null,
+        "overall": 4,
+        "notes": "The first step is concrete, but it bundles several actions (create the deck, add 10 slides, name it, share the link) and assumes a Google account. The plan also assumes a group-split model, yet step 3 asks the student to research all of the 4Ps and step 4 to research brand and competitors, which overlaps with the slide assignments and is ambiguous. Step 2 at 20 min is also a bit vague since it depends on group replies, and Sunday is heavily loaded with polish, rehearsal, and final submission."
+      },
+      "plan": {
+        "taskTitle": "Finish 10-slide Tesla marketing strategy presentation for Business 101 group project",
+        "analysis": "Start with a zero-decision setup, then spread research, group coordination, slide building and rehearsal across Thursday to Sunday so everything is done before Monday 9am.",
+        "totalEstimatedTime": "6 hours 5 min",
+        "resolvedDueDate": "2026-10-05",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Create the shared deck and invite your group",
+            "description": "Open Google Slides, name it 'BUS101 Tesla Marketing', add 10 blank slides, and paste the link into your group chat. Done when the link is sent.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Split the slides and set deadlines with your group",
+            "description": "Propose in the group chat who takes which slides (e.g. intro, 4Ps, brand/Elon Musk, digital and no-ad strategy, competitors, conclusion) and ask everyone to finish drafts by Saturday night. Done when each slide has a name next to it.",
+            "estimatedTime": "20 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Research Tesla's 4Ps and no-advertising approach",
+            "description": "Gather 6-8 facts with sources on Tesla's product, price, place (direct sales, showrooms) and promotion (referrals, social media, earned media). Paste them into the speaker notes of your assigned slides.",
+            "estimatedTime": "60 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 4,
+            "title": "Research brand, target market and competitors",
+            "description": "Find facts on Tesla's target customers, brand positioning and how it compares to Ford, GM or BYD in marketing. Note 2-3 statistics with sources for your slides.",
+            "estimatedTime": "45 min",
+            "when": "Friday"
+          },
+          {
+            "id": 5,
+            "title": "Draft your assigned slides",
+            "description": "Turn your research into slides with one headline, 3 bullets max and one image or chart each. Done when every slide you own has content, even if unpolished.",
+            "estimatedTime": "60 min",
+            "when": "Friday"
+          },
+          {
+            "id": 6,
+            "title": "Write the title, agenda and conclusion slides",
+            "description": "Create the opening slide, a short agenda, and a conclusion slide with 3 takeaways on why Tesla's strategy works and its risks. Done when slides 1, 2 and 10 are filled in.",
+            "estimatedTime": "30 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 7,
+            "title": "Check group drafts and nudge stragglers",
+            "description": "Review the full deck for missing slides, and message anyone who has not finished. Add comments on anything unclear or unsourced.",
+            "estimatedTime": "30 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 8,
+            "title": "Polish design and add a sources slide",
+            "description": "Apply one consistent font, color scheme and layout, trim wordy slides, and add citations to the last slide. Done when the deck looks uniform and readable.",
+            "estimatedTime": "45 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 9,
+            "title": "Rehearse and write speaker notes",
+            "description": "Run through the deck out loud with a timer, noting who presents which slide and adding 2-3 lines of notes for your slides. Done when you can present within the time limit.",
+            "estimatedTime": "45 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 10,
+            "title": "Final check and submit or download a backup",
+            "description": "Confirm the submission method, export a PDF backup, and send it to the group chat. Done when the final file is saved and everyone has confirmed.",
+            "estimatedTime": "25 min",
+            "when": "Sunday"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gatsby-response",
+      "latencyMs": 7887,
+      "checks": {
+        "stepCount": 7,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 55,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-01"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 4,
+        "specificity": 5,
+        "sequence": 4,
+        "timing": 3,
+        "style": 4,
+        "overall": 4,
+        "notes": "Timing is the weakest point: the plan assumes Thursday is the deadline but never says what time, and all of Thursday's work (about 2 hours) is stacked into one day, with Chapter 4 reading left for the deadline day instead of tonight. Step 1 also bundles several small actions, so it is a bit less tiny than ideal, and the boredom hooks are good but could be more varied."
+      },
+      "plan": {
+        "taskTitle": "Read Gatsby chapters 3-4 and write a 1-page response",
+        "analysis": "With only today and Thursday (tomorrow), split the reading into two timeboxed sessions with a mid-point break in type of work, then draft and polish the response, finishing substantive work by Thursday morning.",
+        "totalEstimatedTime": "3 hours 15 min",
+        "resolvedDueDate": "2026-10-01",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Set up your doc and book",
+            "description": "Open a new doc named 'Gatsby Ch 3-4 Response', paste in the assignment prompt, and put your copy of The Great Gatsby open to Chapter 3 next to your keyboard with a pen or sticky notes.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Read Chapter 3 with a mission",
+            "description": "Set a 40-minute timer and read Chapter 3 (Gatsby's party). Hook: stick a note on or jot down 3 moments that make Gatsby seem mysterious, and stop when the timer ends or the chapter does.",
+            "estimatedTime": "40 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Write a 5-line Chapter 3 reaction",
+            "description": "Set a 10-minute timer and type 5 quick bullet reactions to Chapter 3 in your doc, such as the rumors about Gatsby, Jordan, or Nick's view of the party. Done means 5 bullets exist, however messy.",
+            "estimatedTime": "10 min",
+            "when": "Today"
+          },
+          {
+            "id": 4,
+            "title": "Read Chapter 4 in two sprints",
+            "description": "Do two 25-minute timed sprints with a 5-minute stretch between them, reading Chapter 4 (Gatsby's car ride with Nick and Meyer Wolfsheim, plus Jordan's story about Daisy). Mark one quote you'd argue about.",
+            "estimatedTime": "55 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 5,
+            "title": "Pick your angle and draft fast",
+            "description": "Look over your bullets and quotes, circle the one idea that interests you most (like Gatsby's truth vs. his rumors), then set a 30-minute timer and write a messy full-page draft with at least 2 quotes. Race the clock and don't edit.",
+            "estimatedTime": "35 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 6,
+            "title": "Polish and submit",
+            "description": "Set a 20-minute timer to tighten your opening sentence, check your quotes, trim to 1 page, read it aloud once, and then submit or save it in the required format.",
+            "estimatedTime": "20 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 7,
+            "title": "Buffer check before it's due",
+            "description": "Spend 10 minutes confirming the file submitted or printed correctly and fixing any typos.",
+            "estimatedTime": "10 min",
+            "when": "Tomorrow"
+          }
+        ]
+      }
+    },
+    {
+      "id": "taxes",
+      "latencyMs": 11222,
+      "checks": {
+        "stepCount": 13,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 90,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2027-04-15"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 5,
+        "specificity": 4,
+        "sequence": 4,
+        "timing": 4,
+        "style": 4,
+        "overall": 4,
+        "notes": "The plan is well-tailored and low-pressure, but large gaps (Oct to Feb) with no reminders risk the avoider forgetting, and the total time estimate (8h30) doesn't match the summed steps (~7h). Step 5 bundles a long-window task into one date, and step 12 is a vague buffer."
+      },
+      "plan": {
+        "taskTitle": "File my taxes by April 15",
+        "analysis": "Since the deadline is over six months away, the plan spreads a few small, low-pressure sessions across the window, starting with a tiny folder setup, then collecting documents as they arrive in January, and finishing filing well before April 15.",
+        "totalEstimatedTime": "8 hours 30 min",
+        "resolvedDueDate": "2027-04-15",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Make a 'Taxes 2026' folder",
+            "description": "Just create one folder on your computer or desktop named 'Taxes 2026' and, if you like, a matching paper folder or envelope. That's it: it's done when the empty folder exists.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Jot down what income you had this year",
+            "description": "Just open a note in that folder and list every job, scholarship, or side income you had in 2026, even roughly. Done when you've got a short list, no math needed.",
+            "estimatedTime": "20 min",
+            "when": "Oct 10"
+          },
+          {
+            "id": 3,
+            "title": "Find your login info and last year's return",
+            "description": "Just locate last year's tax return (or note that you didn't file) and your IRS or bank login details, and drop copies into the folder. Done when they're in there.",
+            "estimatedTime": "30 min",
+            "when": "Nov 7"
+          },
+          {
+            "id": 4,
+            "title": "Pick your filing method",
+            "description": "Just look at the free options, like IRS Free File or your school's free tax help, and choose one. Done when you've written the name of the option in your note.",
+            "estimatedTime": "30 min",
+            "when": "Dec 12"
+          },
+          {
+            "id": 5,
+            "title": "Drop in your W-2s and 1098-Ts as they arrive",
+            "description": "Just save each form that arrives, such as W-2s, 1098-T tuition forms, and 1099s for any side work, into the folder. Done when everything on your income list has a matching form or you've noted what's missing.",
+            "estimatedTime": "30 min",
+            "when": "Feb 6"
+          },
+          {
+            "id": 6,
+            "title": "Start the return and enter your basic info",
+            "description": "Just open your chosen filing tool and enter your name, address, Social Security number, and filing status. Stop after that; done when the account is created and saved.",
+            "estimatedTime": "30 min",
+            "when": "Feb 20"
+          },
+          {
+            "id": 7,
+            "title": "Enter your income forms",
+            "description": "Just type in the numbers from your W-2s and any 1099s, one form at a time. Done when all income forms are entered.",
+            "estimatedTime": "45 min",
+            "when": "Mar 6"
+          },
+          {
+            "id": 8,
+            "title": "Add education credits and deductions",
+            "description": "Just enter your 1098-T and answer the tool's questions about student credits and deductions. Done when the tool shows your estimated refund or amount owed.",
+            "estimatedTime": "45 min",
+            "when": "Mar 13"
+          },
+          {
+            "id": 9,
+            "title": "Review the whole return once",
+            "description": "Just read through the summary page, checking names, Social Security number, and income totals against your forms. Done when you've fixed or noted anything odd.",
+            "estimatedTime": "30 min",
+            "when": "Mar 27"
+          },
+          {
+            "id": 10,
+            "title": "Get help on any stuck spots",
+            "description": "Just ask a campus tax clinic, a parent, or the tool's support about any question you noted. Done when each question has an answer.",
+            "estimatedTime": "45 min",
+            "when": "Apr 3"
+          },
+          {
+            "id": 11,
+            "title": "Submit your return and save the confirmation",
+            "description": "Just hit file, set up direct deposit or payment if needed, and save the confirmation PDF into your folder. Done when you see the accepted or submitted message.",
+            "estimatedTime": "30 min",
+            "when": "Apr 8"
+          },
+          {
+            "id": 12,
+            "title": "Buffer session to finish anything left",
+            "description": "Just use this slot if anything is unfinished, like a rejected e-file or a missing form, and fix it calmly. If all is done, enjoy the free time.",
+            "estimatedTime": "1 hour 30 min",
+            "when": "Apr 12"
+          },
+          {
+            "id": 13,
+            "title": "Confirm your return was accepted",
+            "description": "Just check your email or filing account for an accepted status and file a copy in your folder. Done when you've seen the word accepted.",
+            "estimatedTime": "20 min",
+            "when": "Apr 13"
+          }
+        ]
+      }
+    },
+    {
+      "id": "personal-statement",
+      "latencyMs": 11438,
+      "checks": {
+        "stepCount": 12,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 60,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-14"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 4,
+        "specificity": 4,
+        "sequence": 4,
+        "timing": 4,
+        "style": 5,
+        "overall": 4,
+        "notes": "Step 1 is small but asks the student to name a doc, paste the prompt and type a phrase, which is slightly more than a 5-minute zero-decision action. Total time (~11.5 hours stated vs ~6.5 hours in steps) is inconsistent, and the plan has little room for deeper revision or a buffer, which is thin for a high-stakes med school statement."
+      },
+      "plan": {
+        "taskTitle": "Write my med school personal statement",
+        "analysis": "Start with a tiny physical action, then draft ugly and rough first, spread sessions across two weeks, and keep polishing in separate, time-boxed steps ending a day early.",
+        "totalEstimatedTime": "11 hours 30 min",
+        "resolvedDueDate": "2026-10-14",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Open the doc and paste in the prompt",
+            "description": "Create a new doc called 'Personal Statement - UGLY DRAFT' and paste in the AMCAS prompt and character limit (5,300 characters). Type 'Rough drafts are the goal' at the top; done when the doc is open and saved.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Dump raw story moments as bullets",
+            "description": "Set a timer and list bullet points of moments that pulled you toward medicine: clinical experiences, volunteering, research, a personal or family health moment. Fragments are fine, no sorting or judging; stop when the timer ends.",
+            "estimatedTime": "30 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Circle 3 moments and jot why they matter",
+            "description": "Look at your bullets and circle the 3 that feel most alive to you, then write 2-3 messy sentences under each on what you learned or how it changed you. Stop after 3 moments, even if they feel imperfect.",
+            "estimatedTime": "30 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 4,
+            "title": "Write a bullet-point skeleton",
+            "description": "Arrange your 3 moments into a beginning, middle and end using bullets only (hook, why medicine, what you did, what you'll bring). Done when you have about 10 bullets in order; it does not need to be good.",
+            "estimatedTime": "20 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 5,
+            "title": "Ugly draft: opening and first experience",
+            "description": "Turn your first 3-4 skeleton bullets into paragraphs without editing or deleting anything. Stop at 30 minutes, even mid-sentence, and leave placeholders like [FIX LATER].",
+            "estimatedTime": "30 min",
+            "when": "Oct 5"
+          },
+          {
+            "id": 6,
+            "title": "Ugly draft: middle experiences",
+            "description": "Write paragraphs for your second and third moments straight from the bullets, ignoring word count and wording. Stop when the timer ends or both are roughly covered.",
+            "estimatedTime": "45 min",
+            "when": "Oct 6"
+          },
+          {
+            "id": 7,
+            "title": "Ugly draft: ending and finish the full draft",
+            "description": "Write the closing paragraph on why you're ready for medical school and what you'll contribute, then read nothing back. Done when the draft has a beginning, middle and end, however rough.",
+            "estimatedTime": "45 min",
+            "when": "Oct 8"
+          },
+          {
+            "id": 8,
+            "title": "Cut to length (no polishing yet)",
+            "description": "Check the character count and cut whole sentences that repeat or drift until you're under 5,300 characters. Only cut here, don't reword; stop at 45 minutes.",
+            "estimatedTime": "45 min",
+            "when": "Oct 9"
+          },
+          {
+            "id": 9,
+            "title": "Polish pass 1: structure and flow",
+            "description": "Read the statement aloud once and fix only transitions and any paragraph that feels out of order. Leave word-level tweaks alone; stop at 60 minutes.",
+            "estimatedTime": "1 hour",
+            "when": "Oct 11"
+          },
+          {
+            "id": 10,
+            "title": "Get one outside reader",
+            "description": "Send the draft to one trusted person, such as an advisor, mentor or friend, with one question: 'Does this sound like me and is anything confusing?' Done when it's sent; don't rework it while you wait.",
+            "estimatedTime": "15 min",
+            "when": "Oct 11"
+          },
+          {
+            "id": 11,
+            "title": "Apply feedback: 3 changes max",
+            "description": "Choose the 3 most useful comments and make those changes only. Ignore the rest; stop at 45 minutes.",
+            "estimatedTime": "45 min",
+            "when": "Oct 13"
+          },
+          {
+            "id": 12,
+            "title": "Final polish and proofread",
+            "description": "Do one line-by-line read for typos, tone, and the opening sentence, then confirm it's under the character limit. Save as 'Personal Statement - FINAL' and stop; it's good enough.",
+            "estimatedTime": "45 min",
+            "when": "Oct 13"
+          }
+        ]
+      }
+    },
+    {
+      "id": "prof-email",
+      "latencyMs": 4874,
+      "checks": {
+        "stepCount": 5,
+        "firstStepMinutes": 3,
+        "maxStepMinutes": 15,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-09-30"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 5,
+        "specificity": 4,
+        "sequence": 4,
+        "timing": 3,
+        "style": 4,
+        "overall": 4,
+        "notes": "Five steps is slightly heavy for a short email, and step 5 (a reminder for tomorrow) is marked 'Today' without clear timing, while no steps spread times across the day to a realistic send-by hour. Avoider language is gentle, but it could add more reassurance about the professor's possible reaction."
+      },
+      "plan": {
+        "taskTitle": "Reply to professor's email about the extension",
+        "analysis": "This is a short one-sitting task, so I've kept it to a few tiny, low-pressure steps that get the email sent today.",
+        "totalEstimatedTime": "40 min",
+        "resolvedDueDate": "2026-09-30",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Open the email and a reply window",
+            "description": "Just open your professor's email and click Reply, nothing more. Done when a blank reply box is sitting open in front of you.",
+            "estimatedTime": "3 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Jot down the facts you need",
+            "description": "Just type a few rough bullets in the reply box: which assignment, the current due date, the new date you'd like, and a one-line honest reason. Done when all four bullets are on the screen, however messy.",
+            "estimatedTime": "10 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Turn the bullets into a short email",
+            "description": "Just write a greeting, then 3-4 sentences: thank them for their email, ask politely for the extension with your proposed date, and say thanks. Done when it reads like a kind, simple note, and it doesn't need to be perfect.",
+            "estimatedTime": "15 min",
+            "when": "Today"
+          },
+          {
+            "id": 4,
+            "title": "Read it once and hit send",
+            "description": "Just read it aloud once to check the names, dates and tone, then press Send. Done when it shows up in your Sent folder, and you can take a breath.",
+            "estimatedTime": "7 min",
+            "when": "Today"
+          },
+          {
+            "id": 5,
+            "title": "Note their reply",
+            "description": "Just set a quick reminder to check your inbox tomorrow morning for their answer. Done when the reminder is saved.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          }
+        ]
+      }
+    },
+    {
+      "id": "deloitte-interview",
+      "latencyMs": 17553,
+      "checks": {
+        "stepCount": 12,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 50,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-08"
+      },
+      "grade": {
+        "fit": 5,
+        "firstStep": 5,
+        "specificity": 4,
+        "sequence": 5,
+        "timing": 4,
+        "style": 4,
+        "overall": 5,
+        "notes": "Timing is mostly fine, but Thursday Oct 1 through Wednesday Oct 7 is well spread, and the deadline Oct 8 is the interview day itself so the final review lands the day before. Style for overwhelmed is decent with small pieces and 'that's it' reassurance, but later steps (e.g., step 9 combining a case plus drills, step 10 mock round) are less reassuring and bundle several tasks, and some steps use vague days like 'Friday' rather than dates."
+      },
+      "plan": {
+        "taskTitle": "Get ready for Deloitte behavioral + case interview",
+        "analysis": "Each step is small and stands on its own: set up a prep doc, build your stories, learn case basics, practice out loud, then do a light review the day before.",
+        "totalEstimatedTime": "6 hours 30 min",
+        "resolvedDueDate": "2026-10-08",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Open your prep doc",
+            "description": "Create a doc called 'Deloitte interview prep' and paste in the job posting and your interview invite. That's it, and you're done for this step.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Skim what the role does",
+            "description": "Read the job posting and Deloitte's page for your service line, then jot 3 bullets in your doc on what the team does. Rough notes are fine.",
+            "estimatedTime": "20 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "List 5 past experiences",
+            "description": "In your doc, write 5 one-line experiences from a class project, job, club or team. Just the headlines, no details yet.",
+            "estimatedTime": "25 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 4,
+            "title": "Draft 'Tell me about yourself' and 'Why Deloitte'",
+            "description": "Write 4-5 sentences for each answer in your doc. Messy is fine. Done means both have a first draft.",
+            "estimatedTime": "30 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 5,
+            "title": "Turn 2 experiences into STAR stories",
+            "description": "Pick two from your list and write Situation, Task, Action and Result in bullets for each. Done means each has a clear result.",
+            "estimatedTime": "40 min",
+            "when": "Friday"
+          },
+          {
+            "id": 6,
+            "title": "Turn 3 more experiences into STAR stories",
+            "description": "Do the same STAR bullets for the remaining three. Try to cover teamwork, conflict and leadership across your five stories.",
+            "estimatedTime": "45 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 7,
+            "title": "Learn the case interview basics",
+            "description": "Read one beginner guide to case structure and the profitability and market-entry frameworks, then write a one-page cheat sheet in your doc. Done means you can name the steps without looking.",
+            "estimatedTime": "45 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 8,
+            "title": "Do one practice case out loud",
+            "description": "Find a free profitability case, set a timer and talk through it aloud, using your cheat sheet if you need it. Afterward, write down 2 things to improve.",
+            "estimatedTime": "50 min",
+            "when": "Monday"
+          },
+          {
+            "id": 9,
+            "title": "Do a second case plus mental math",
+            "description": "Do a market-entry case out loud, then 10 minutes of quick percentage and estimation drills. Done means you've tried the improvements from your first case.",
+            "estimatedTime": "50 min",
+            "when": "Tuesday"
+          },
+          {
+            "id": 10,
+            "title": "Run a mock behavioral round",
+            "description": "Say your intro, your 'Why Deloitte' answer and 3 STAR stories out loud, ideally to a friend or recording your phone. Fix anything that felt clunky.",
+            "estimatedTime": "30 min",
+            "when": "Tuesday"
+          },
+          {
+            "id": 11,
+            "title": "Prep questions and logistics",
+            "description": "Write 3 questions to ask your interviewer, then confirm the time, location or link, and lay out your outfit. Done means nothing is left to figure out tomorrow.",
+            "estimatedTime": "30 min",
+            "when": "Wednesday"
+          },
+          {
+            "id": 12,
+            "title": "Do a light final review",
+            "description": "Skim your cheat sheet and STAR bullet headlines once, then stop. You're prepared, so get some rest.",
+            "estimatedTime": "20 min",
+            "when": "Wednesday"
+          }
+        ]
+      }
+    },
+    {
+      "id": "bio-lab-report",
+      "latencyMs": 8417,
+      "checks": {
+        "stepCount": 8,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 60,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-02"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 4,
+        "specificity": 5,
+        "sequence": 4,
+        "timing": 4,
+        "style": null,
+        "overall": 4,
+        "notes": "The first step is concrete, but it bundles several actions (create doc, paste requirements, gather files) and could be trimmed to one. Friday holds about 2.4 hours of heavy work ending near the deadline, so the workload is back-loaded with little buffer. Step 2 also takes 45 min with no smaller entry point."
+      },
+      "plan": {
+        "taskTitle": "Write and submit Bio 201 enzyme kinetics lab report",
+        "analysis": "A typical lab report needs roughly 6 hours of work, so I spread it over Wednesday to Friday, with data and figures first, then writing, then a revision pass before the Friday 5pm deadline.",
+        "totalEstimatedTime": "6 hours 10 min",
+        "resolvedDueDate": "2026-10-02",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Set up your report document and gather files",
+            "description": "Create a doc named 'Bio201_EnzymeKinetics_LabReport', paste in the lab handout's report requirements, and drag your raw data sheet and lab notebook photos into the same folder. Done when the doc and files are all open.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Enter raw data and calculate reaction rates",
+            "description": "Put your raw absorbance or product readings into a spreadsheet and calculate initial velocities for each substrate concentration. Done when you have a table of [S] versus v0.",
+            "estimatedTime": "45 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Make your kinetics figures",
+            "description": "Plot the Michaelis-Menten curve and the Lineweaver-Burk plot, then read off Vmax and Km. Add axis labels with units and draft a caption for each figure.",
+            "estimatedTime": "50 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 4,
+            "title": "Write Methods and Results",
+            "description": "Write the Methods from your lab notebook in past tense, then the Results, describing the trends in your table and figures and stating your Vmax and Km values. Done when both sections are drafted with figures inserted.",
+            "estimatedTime": "60 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 5,
+            "title": "Write the Introduction",
+            "description": "Write one page on the enzyme's function, the principles of Michaelis-Menten kinetics, and your hypothesis, citing your textbook's enzyme chapter and the lab manual. Done when it ends with a clear statement of the experiment's purpose.",
+            "estimatedTime": "45 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 6,
+            "title": "Write the Discussion and Conclusion",
+            "description": "Interpret your Km and Vmax, compare them with expected values, and explain likely sources of error such as pipetting, temperature, or timing. Finish with two or three sentences of conclusion.",
+            "estimatedTime": "60 min",
+            "when": "Friday"
+          },
+          {
+            "id": 7,
+            "title": "Write the abstract, references, and title page",
+            "description": "Write a 150-word abstract summarizing the aim, method, key results, and conclusion. Format your references in the required citation style and add the title and course details.",
+            "estimatedTime": "35 min",
+            "when": "Friday"
+          },
+          {
+            "id": 8,
+            "title": "Proofread, check the rubric, and submit",
+            "description": "Read the report aloud once, fix errors, and check each rubric item against your document. Export to PDF and submit well before 5pm.",
+            "estimatedTime": "50 min",
+            "when": "Friday"
+          }
+        ]
+      }
+    },
+    {
+      "id": "surprise-party",
+      "latencyMs": 15277,
+      "checks": {
+        "stepCount": 16,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 180,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-24"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 3,
+        "specificity": 4,
+        "sequence": 3,
+        "timing": 3,
+        "style": 4,
+        "overall": 4,
+        "notes": "The first step bundles two actions (create a note and text a co-conspirator) and requires deciding whom to text, so it isn't a truly tiny step. The sequence also has problems: the save-the-date goes out on Oct 3 before the venue is booked on Oct 6, and the cake, decorations, and playlist steps could have moved earlier. Step 2 is also scheduled for the same day as step 1, which adds load on day one."
+      },
+      "plan": {
+        "taskTitle": "Plan a surprise birthday party for ~15 people",
+        "analysis": "Start with a tiny physical action, then lock in date, venue and guest logistics early, vary the work type (calls, lists, shopping, crafting), and pace sessions evenly through Oct 24 with buffer days before the party.",
+        "totalEstimatedTime": "11 hours 5 min",
+        "resolvedDueDate": "2026-10-24",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Start a party note and text a co-conspirator",
+            "description": "Open a new note titled 'Surprise Party - [Friend]' on your phone and paste in today's date and 'Deadline: Oct 24'. Then text one mutual friend: 'Want to help me plan a surprise party?' Done when the message is sent.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Lock the date and budget with your co-planner",
+            "description": "Set a 20-minute timer and message or call your co-conspirator to settle on a party date (on or near Oct 24), a rough per-person budget, and who the friend's closest people are. Write all three in your note.",
+            "estimatedTime": "20 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Venue speed-round",
+            "description": "Set a 25-minute timer and see how many venue options you can collect: a friend's home, a campus room, a park pavilion, a restaurant back room. Contact at least 3 and ask about availability, capacity for 15, and cost. Done when 3 messages are sent.",
+            "estimatedTime": "25 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 4,
+            "title": "Build the guest list and send a save-the-date",
+            "description": "List 15 guests with contact info, then send a short private group message with the date, a 'keep it secret!' warning, and a note that details are coming. Done when everyone on the list has been messaged.",
+            "estimatedTime": "30 min",
+            "when": "Oct 3"
+          },
+          {
+            "id": 5,
+            "title": "Book the venue",
+            "description": "Compare the replies you got, pick the best fit for 15 people and your budget, and confirm it in writing. Put the booking details in your note and tell your co-planner.",
+            "estimatedTime": "20 min",
+            "when": "Oct 6"
+          },
+          {
+            "id": 6,
+            "title": "Design the cover story",
+            "description": "With your co-planner, set a 15-minute timer and decide how you will get the birthday friend to the venue at the right time without suspicion, and who will bring them. Write a one-line script and a backup excuse.",
+            "estimatedTime": "15 min",
+            "when": "Oct 8"
+          },
+          {
+            "id": 7,
+            "title": "Plan food and drinks",
+            "description": "Set a 30-minute timer and decide on the menu: order in, potluck, or catering. Check for dietary restrictions, estimate quantities for 15 people, and order or assign dishes. Done when the food plan and budget are in your note.",
+            "estimatedTime": "35 min",
+            "when": "Oct 11"
+          },
+          {
+            "id": 8,
+            "title": "Order the cake and pin down the schedule",
+            "description": "Place a cake order or assign someone to bake it, with pickup for Oct 23 or 24. Then write a simple run-of-show covering arrival time, hiding, surprise moment, cake and wrap-up.",
+            "estimatedTime": "30 min",
+            "when": "Oct 13"
+          },
+          {
+            "id": 9,
+            "title": "Plan the playlist and one activity",
+            "description": "Challenge yourself to build a 45-minute playlist of the friend's favorite songs in 20 minutes. Then pick one simple activity, like a memory jar or photo slideshow, and ask guests to contribute.",
+            "estimatedTime": "45 min",
+            "when": "Oct 15"
+          },
+          {
+            "id": 10,
+            "title": "Make the decorations list and shop online",
+            "description": "Set a 30-minute timer and list the essentials: banner, balloons, tablecloths, plates, candles. Order online with delivery before Oct 22, or plan one in-person store trip.",
+            "estimatedTime": "45 min",
+            "when": "Oct 17"
+          },
+          {
+            "id": 11,
+            "title": "Collect photos and memories",
+            "description": "Message guests to collect 10 to 15 photos or short notes about the birthday friend. Start a shared album and save everything into it.",
+            "estimatedTime": "30 min",
+            "when": "Oct 18"
+          },
+          {
+            "id": 12,
+            "title": "Craft hour: banner and slideshow",
+            "description": "Put on the playlist and set a 60-minute timer. Make the banner and assemble the photo slideshow or memory jar from your collected material. Done when both are finished.",
+            "estimatedTime": "1 hour",
+            "when": "Oct 19"
+          },
+          {
+            "id": 13,
+            "title": "Send final details and confirm RSVPs",
+            "description": "Send the private group message with address, arrival time (at least 20 minutes before the guest of honor), cover story and any food assignments. Follow up with anyone who has not replied and confirm a final headcount.",
+            "estimatedTime": "30 min",
+            "when": "Oct 20"
+          },
+          {
+            "id": 14,
+            "title": "Confirm vendors and pick up supplies",
+            "description": "Call or message the venue, cake source and any caterer to confirm times. Pick up anything still missing, such as ice, candles or drinks, and put everything in one box.",
+            "estimatedTime": "1 hour",
+            "when": "Oct 22"
+          },
+          {
+            "id": 15,
+            "title": "Setup dry run and packing",
+            "description": "Go through your run-of-show with your co-planner, test the speaker and slideshow, and pack the car or bag. Assign setup jobs for party day.",
+            "estimatedTime": "45 min",
+            "when": "Oct 23"
+          },
+          {
+            "id": 16,
+            "title": "Party day setup and go time",
+            "description": "Arrive early, decorate, set up food, cue the playlist, and brief guests on where to hide. Done when your co-planner texts that the birthday friend is on the way.",
+            "estimatedTime": "3 hours",
+            "when": "Oct 24"
+          }
+        ]
+      }
+    },
+    {
+      "id": "move-out",
+      "latencyMs": 14045,
+      "checks": {
+        "stepCount": 22,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 300,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-31"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 5,
+        "specificity": 4,
+        "sequence": 3,
+        "timing": 3,
+        "style": 3,
+        "overall": 4,
+        "notes": "Sequence and timing have flaws: the move-out notice (Oct 2) comes before the lease/notice check's consequences and before the destination is decided (Oct 4), movers are booked Oct 5 only after a late-start decision, and the total time of 27.5 hours seems off versus the listed steps (about 22 hours). Wording is tiny-step but offers little explicit reassurance for an overwhelmed student, and the 5-hour move-out day and 2-hour cleans are large unbroken blocks."
+      },
+      "plan": {
+        "taskTitle": "Move out of my apartment by end of October",
+        "analysis": "Break the move into tiny, standalone steps: lock in logistics first, then pack a little at a time across October, and finish with cleaning, keys and a buffer before Oct 31.",
+        "totalEstimatedTime": "27 hours 30 min",
+        "resolvedDueDate": "2026-10-31",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Put 5 empty boxes or bags in one room",
+            "description": "Grab any boxes, bags, or laundry baskets you already have and set them in your living room. That's it, and you're done.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Find your lease and note two dates",
+            "description": "Open your lease and write the move-out date and notice requirement on a sticky note. Stick it on your door.",
+            "estimatedTime": "15 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 3,
+            "title": "Send your landlord the move-out notice",
+            "description": "Email your landlord confirming your move-out date and asking about inspection and key return. Done when it is sent.",
+            "estimatedTime": "15 min",
+            "when": "Oct 2"
+          },
+          {
+            "id": 4,
+            "title": "Decide where you're moving things",
+            "description": "Write down where you're going and how your stuff will get there: car, friend, or movers. Done when you have a written plan.",
+            "estimatedTime": "20 min",
+            "when": "Oct 4"
+          },
+          {
+            "id": 5,
+            "title": "Book movers or a vehicle",
+            "description": "Reserve a truck, movers, or a friend's help for a date around Oct 29-30. Done when you have a confirmation.",
+            "estimatedTime": "30 min",
+            "when": "Oct 5"
+          },
+          {
+            "id": 6,
+            "title": "Get packing supplies",
+            "description": "Get boxes, tape, and a marker from a store or free from local groups. Done when they're in your apartment.",
+            "estimatedTime": "45 min",
+            "when": "Oct 7"
+          },
+          {
+            "id": 7,
+            "title": "Pack the stuff you never use",
+            "description": "Pack off-season clothes, books, and decor from one closet or shelf. Done when that space is empty and boxes are labeled.",
+            "estimatedTime": "45 min",
+            "when": "Oct 9"
+          },
+          {
+            "id": 8,
+            "title": "Pack the bathroom extras",
+            "description": "Box spare toiletries, towels, and cleaning supplies you won't need this week. Done when labeled boxes are stacked.",
+            "estimatedTime": "30 min",
+            "when": "Oct 11"
+          },
+          {
+            "id": 9,
+            "title": "Set aside a donate/trash pile",
+            "description": "Fill one bag with things to donate and one with trash from a single room. Done when both bags are by the door.",
+            "estimatedTime": "45 min",
+            "when": "Oct 13"
+          },
+          {
+            "id": 10,
+            "title": "Drop off donations",
+            "description": "Take your donate bag to a donation center. Done when the bag is out of your car or apartment.",
+            "estimatedTime": "30 min",
+            "when": "Oct 14"
+          },
+          {
+            "id": 11,
+            "title": "Pack the living room",
+            "description": "Box books, games, and decor, and take down anything on the walls. Done when the room has only essentials left.",
+            "estimatedTime": "1 hour",
+            "when": "Oct 16"
+          },
+          {
+            "id": 12,
+            "title": "Pack the kitchen, part 1",
+            "description": "Box the dishes, pans, and small appliances you don't use daily. Keep one plate, bowl, cup, and set of utensils out.",
+            "estimatedTime": "1 hour",
+            "when": "Oct 18"
+          },
+          {
+            "id": 13,
+            "title": "Set up utilities transfer or shutoff",
+            "description": "Call or go online to schedule internet and electric shutoff or transfer for Oct 31. Done when you have confirmation numbers saved.",
+            "estimatedTime": "30 min",
+            "when": "Oct 19"
+          },
+          {
+            "id": 14,
+            "title": "Submit your change of address",
+            "description": "Do your USPS change of address online and update your bank or school. Done when the confirmation email arrives.",
+            "estimatedTime": "20 min",
+            "when": "Oct 20"
+          },
+          {
+            "id": 15,
+            "title": "Pack the bedroom and closet",
+            "description": "Box clothes, shoes, and bedding you won't need this week. Keep a small bag for the final days.",
+            "estimatedTime": "1 hour 30 min",
+            "when": "Oct 22"
+          },
+          {
+            "id": 16,
+            "title": "Pack the desk and electronics",
+            "description": "Box your chargers, cables, and desk items. Take photos of setups to help reassemble later.",
+            "estimatedTime": "45 min",
+            "when": "Oct 24"
+          },
+          {
+            "id": 17,
+            "title": "Do a room-by-room sweep",
+            "description": "Walk through and pack anything left over, then make a list of what remains for moving day. Done when every room has been checked.",
+            "estimatedTime": "1 hour",
+            "when": "Oct 26"
+          },
+          {
+            "id": 18,
+            "title": "Deep-clean the kitchen and bathroom",
+            "description": "Scrub the stove, fridge, sink, toilet, and shower. Done when the surfaces are wiped and the fridge is empty.",
+            "estimatedTime": "2 hours",
+            "when": "Oct 27"
+          },
+          {
+            "id": 19,
+            "title": "Pack the final essentials",
+            "description": "Pack your last bag of clothes, toiletries, and bedding. Done when only the moving-day items remain.",
+            "estimatedTime": "45 min",
+            "when": "Oct 28"
+          },
+          {
+            "id": 20,
+            "title": "Move everything out",
+            "description": "Load and move your boxes and furniture to your new place. Done when the apartment is empty.",
+            "estimatedTime": "5 hours",
+            "when": "Oct 29"
+          },
+          {
+            "id": 21,
+            "title": "Sweep and vacuum the empty apartment",
+            "description": "Vacuum and wipe floors, counters, and windowsills. Done when each room is clean and you've taken photos of every room.",
+            "estimatedTime": "2 hours",
+            "when": "Oct 30"
+          },
+          {
+            "id": 22,
+            "title": "Return keys and do the final check",
+            "description": "Do the walkthrough with your landlord or leave the keys as instructed. Done when you've confirmed the return in writing.",
+            "estimatedTime": "45 min",
+            "when": "Oct 30"
+          }
+        ]
+      }
+    },
+    {
+      "id": "spanish-trip",
+      "latencyMs": 22907,
+      "checks": {
+        "stepCount": 26,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 60,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-12-20"
+      },
+      "grade": {
+        "fit": 3,
+        "firstStep": 4,
+        "specificity": 4,
+        "sequence": 4,
+        "timing": 3,
+        "style": 4,
+        "overall": 3,
+        "notes": "The plan claims about 24.5 hours of practice, but the listed steps add up to roughly 16 hours at most, and they are sparse (about one 30-45 min session every 3-4 days), which is too little to reach functional travel Spanish. Step 1's 'Done when' works, but the first 'today' block of 25 min bundles install plus a lesson; the flashcard-heavy steps also lack daily habit reinforcement despite the stated daily reminder."
+      },
+      "plan": {
+        "taskTitle": "Learn survival Spanish for your Mexico trip",
+        "analysis": "Build a steady habit of short, varied sessions (apps, audio, speaking, real-life scenarios) spread from now until Dec 20, with about 25 hours of total practice covering travel-essential phrases and a final mock trip run-through.",
+        "totalEstimatedTime": "24 hours 30 min",
+        "resolvedDueDate": "2026-12-20",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Install Duolingo and set a daily reminder",
+            "description": "Download Duolingo (or open Language Transfer's free Complete Spanish), tap Spanish, and set a daily reminder for 7 pm. Done when the first lesson tile is on your screen.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Beat your first 20-minute lesson sprint",
+            "description": "Set a 20-minute timer and complete as many beginner lessons as you can: greetings, please, thank you, numbers 1-10. Challenge: finish with zero mistakes on the last lesson.",
+            "estimatedTime": "20 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Make a 'Top 40 travel phrases' flashcard deck",
+            "description": "In Anki or Quizlet, create a deck with 40 phrases such as '¿Cuánto cuesta?', '¿Dónde está el baño?', 'La cuenta, por favor', and 'No entiendo'. Done when all 40 cards are entered with translations.",
+            "estimatedTime": "30 min",
+            "when": "Oct 2"
+          },
+          {
+            "id": 4,
+            "title": "Learn pronunciation rules with a video",
+            "description": "Watch one 20-minute Spanish pronunciation video (vowels, rr, ll, j, h, silent u in 'qu/gu') and say each example aloud. Done when you can read 5 Spanish street names aloud without hesitating.",
+            "estimatedTime": "30 min",
+            "when": "Oct 5"
+          },
+          {
+            "id": 5,
+            "title": "Do flashcard and lesson session: greetings and basics",
+            "description": "Do 15 minutes of flashcards on your Top 40 deck, then 15 minutes of app lessons. Game: beat your previous day's score.",
+            "estimatedTime": "30 min",
+            "when": "Oct 8"
+          },
+          {
+            "id": 6,
+            "title": "Learn numbers, prices and time",
+            "description": "Practice numbers 1-1000, telling time, and pesos prices with a 30-minute timer, then quiz yourself by reading random price tags from an online Mexican supermarket site aloud. Done when you can say 10 prices without checking.",
+            "estimatedTime": "45 min",
+            "when": "Oct 12"
+          },
+          {
+            "id": 7,
+            "title": "Podcast walk: Coffee Break Spanish",
+            "description": "Take a 30-minute walk while listening to an early Coffee Break Spanish episode. Jot down 5 new words on your phone afterward.",
+            "estimatedTime": "30 min",
+            "when": "Oct 15"
+          },
+          {
+            "id": 8,
+            "title": "Practice the restaurant scenario",
+            "description": "Write and say aloud a 10-line script for ordering food: table for two, menu, ordering, allergies, asking for the bill. Record yourself on your phone and done when you get through it once without notes.",
+            "estimatedTime": "45 min",
+            "when": "Oct 19"
+          },
+          {
+            "id": 9,
+            "title": "Flashcards plus app lessons: food and drink",
+            "description": "Add 20 food and drink words (agua sin gas, pollo, sin picante, etc.) to your deck. Review the whole deck for 15 minutes and do one lesson on food.",
+            "estimatedTime": "40 min",
+            "when": "Oct 22"
+          },
+          {
+            "id": 10,
+            "title": "Learn directions and transportation",
+            "description": "Study 'a la derecha', 'izquierda', 'derecho', 'cerca', 'lejos', plus taxi, bus and metro phrases. Then open Google Maps in Mexico City and narrate a route from the airport to a hotel in Spanish.",
+            "estimatedTime": "45 min",
+            "when": "Oct 26"
+          },
+          {
+            "id": 11,
+            "title": "Book a first 30-minute online tutor session",
+            "description": "Book a 30-minute trial on italki or Preply and tell the tutor you're traveling to Mexico and want to practice. Done when a session is on your calendar.",
+            "estimatedTime": "10 min",
+            "when": "Oct 29"
+          },
+          {
+            "id": 12,
+            "title": "First tutor conversation",
+            "description": "Do your 30-minute session focusing on introductions and ordering food. Write down three phrases you stumbled on and add them to your deck.",
+            "estimatedTime": "30 min",
+            "when": "Nov 2"
+          },
+          {
+            "id": 13,
+            "title": "Learn hotel and shopping phrases",
+            "description": "Set a 30-minute timer and write phrases for check-in, reservation names, Wi-Fi password, asking for discounts at markets ('¿Último precio?'), and sizes. Role-play both sides aloud.",
+            "estimatedTime": "30 min",
+            "when": "Nov 5"
+          },
+          {
+            "id": 14,
+            "title": "Watch a Spanish show episode with subtitles",
+            "description": "Watch one 25-minute episode of a Spanish-language show with Spanish subtitles. Note 5 words you recognize and 5 you don't, then add them to your deck.",
+            "estimatedTime": "30 min",
+            "when": "Nov 9"
+          },
+          {
+            "id": 15,
+            "title": "Learn emergency and health phrases",
+            "description": "Study 'necesito ayuda', 'me siento mal', pharmacy, doctor, lost passport, and police phrases. Save 10 key phrases in your phone notes for offline use.",
+            "estimatedTime": "30 min",
+            "when": "Nov 12"
+          },
+          {
+            "id": 16,
+            "title": "Second tutor session: directions and transport",
+            "description": "Book and do a 45-minute session where you practice asking for directions, taking taxis, and buying bus tickets. Done when you've completed a full role-play without switching to English.",
+            "estimatedTime": "45 min",
+            "when": "Nov 16"
+          },
+          {
+            "id": 17,
+            "title": "Verb basics: present tense essentials",
+            "description": "Learn present-tense forms of ir, querer, necesitar, tener, and estar with a 30-minute drill. Then write 10 sentences about your trip such as 'Quiero ir a la playa'.",
+            "estimatedTime": "45 min",
+            "when": "Nov 19"
+          },
+          {
+            "id": 18,
+            "title": "Flashcard marathon with a score target",
+            "description": "Review your whole deck in one 30-minute timed round. Challenge: hit 85 percent correct and mark the misses for extra review.",
+            "estimatedTime": "30 min",
+            "when": "Nov 23"
+          },
+          {
+            "id": 19,
+            "title": "Do a full-day Spanish immersion challenge",
+            "description": "Switch your phone to Spanish and narrate your actions aloud for an hour while cooking or walking. Done when you've spoken for 60 minutes total in short bursts.",
+            "estimatedTime": "60 min",
+            "when": "Nov 26"
+          },
+          {
+            "id": 20,
+            "title": "Third tutor session: mock Mexico trip",
+            "description": "Do a 45-minute session where the tutor plays a hotel clerk, waiter, taxi driver, and shop owner. Ask for feedback and write down your top 5 weak spots.",
+            "estimatedTime": "45 min",
+            "when": "Nov 30"
+          },
+          {
+            "id": 21,
+            "title": "Targeted drill on your weak spots",
+            "description": "Spend 30 minutes making flashcards and sentence drills for your five weak spots from the mock session. Done when you've said each fixed phrase aloud three times.",
+            "estimatedTime": "30 min",
+            "when": "Dec 3"
+          },
+          {
+            "id": 22,
+            "title": "Listen to a slow Spanish podcast",
+            "description": "Listen to a 30-minute Mexican Spanish podcast such as Dreaming Spanish or Notes in Spanish and pick out 10 phrases you understand. Note any regional words like 'ahorita' and 'mande'.",
+            "estimatedTime": "30 min",
+            "when": "Dec 7"
+          },
+          {
+            "id": 23,
+            "title": "Practice talking to yourself at home",
+            "description": "Set a 30-minute timer and do a solo role-play of your trip day: airport, taxi, hotel, dinner, sightseeing, and shopping. Record it and listen back for pauses.",
+            "estimatedTime": "30 min",
+            "when": "Dec 10"
+          },
+          {
+            "id": 24,
+            "title": "Fourth tutor session: free conversation",
+            "description": "Do a 45-minute session of unscripted chat about your itinerary. Done when you've kept talking for at least 10 minutes with only a few English words.",
+            "estimatedTime": "45 min",
+            "when": "Dec 13"
+          },
+          {
+            "id": 25,
+            "title": "Build an offline cheat sheet",
+            "description": "Write a one-page cheat sheet of your top 50 phrases and save it as a phone screenshot favorite. Also download Spanish offline in Google Translate.",
+            "estimatedTime": "30 min",
+            "when": "Dec 16"
+          },
+          {
+            "id": 26,
+            "title": "Final full-trip run-through",
+            "description": "Set a 45-minute timer and do a final run: flashcards on all decks, three role-plays aloud (restaurant, taxi, hotel), and numbers quiz. Done when you've finished with no English and scored at least 90 percent.",
+            "estimatedTime": "45 min",
+            "when": "Dec 19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "linked-list-bug",
+      "latencyMs": 6987,
+      "checks": {
+        "stepCount": 7,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 30,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-09-30"
+      },
+      "grade": {
+        "fit": 5,
+        "firstStep": 4,
+        "specificity": 5,
+        "sequence": 5,
+        "timing": 3,
+        "style": null,
+        "overall": 4,
+        "notes": "The first step is good, but it also asks the student to find the delete function and run the program, which is slightly more than a pure 5-minute no-decision action. Timing is vague, since 'Today' and 'Tonight' give no clock times and the plan allows no buffer for a bug that takes longer than expected."
+      },
+      "plan": {
+        "taskTitle": "Fix linked list delete bug in CS 106 assignment",
+        "analysis": "Start with a zero-decision setup, then reproduce the bug, trace pointer handling on paper, fix it, and verify with edge-case tests before submitting tonight.",
+        "totalEstimatedTime": "2 hours 35 min",
+        "resolvedDueDate": "2026-09-30",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Open the project and run it once",
+            "description": "Open your CS 106 assignment project in your editor, find your linked list delete function, and run the program once so you see the current failing output. Done when the code and the terminal are both open side by side.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Write a minimal reproduction",
+            "description": "Write a small test that builds a list of 5 nodes, deletes one, then prints the whole list so you can see exactly which nodes vanish. Done when you can trigger the lost-node bug every time and note which deletion case fails (head, middle, or tail).",
+            "estimatedTime": "25 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Trace the delete pointers on paper",
+            "description": "Draw the 5-node list on paper and step through your delete function line by line, updating the arrows for the failing case. Circle the line where a next pointer gets overwritten or a node gets orphaned before it is relinked.",
+            "estimatedTime": "25 min",
+            "when": "Today"
+          },
+          {
+            "id": 4,
+            "title": "Fix the pointer logic",
+            "description": "Change the circled line so you save the next pointer (or previous node) before unlinking, and handle the head and tail cases explicitly. Done when your minimal reproduction prints the correct remaining nodes.",
+            "estimatedTime": "30 min",
+            "when": "Tonight"
+          },
+          {
+            "id": 5,
+            "title": "Test edge cases",
+            "description": "Test deleting the head, the tail, a middle node, the only node in a one-item list, a value not in the list, and on an empty list. Done when every case prints the right list with no crashes or lost nodes.",
+            "estimatedTime": "30 min",
+            "when": "Tonight"
+          },
+          {
+            "id": 6,
+            "title": "Check memory and run the official tests",
+            "description": "Run the assignment's provided tests or autograder, and check for memory leaks or invalid frees if you are using C/C++ (e.g. valgrind). Fix anything that shows up, then clean up debug prints.",
+            "estimatedTime": "30 min",
+            "when": "Tonight"
+          },
+          {
+            "id": 7,
+            "title": "Submit before the deadline",
+            "description": "Package and submit your assignment, then confirm the submission receipt or page shows your latest version. Done when you have confirmation well before 11:59pm.",
+            "estimatedTime": "10 min",
+            "when": "Tonight"
+          }
+        ]
+      }
+    },
+    {
+      "id": "psych-post",
+      "latencyMs": 13874,
+      "checks": {
+        "stepCount": 7,
+        "firstStepMinutes": 3,
+        "maxStepMinutes": 40,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-04"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 5,
+        "specificity": 4,
+        "sequence": 4,
+        "timing": 4,
+        "style": 5,
+        "overall": 4,
+        "notes": "Step 7 is on the deadline day (Sunday) with no buffer, and the plan has minor inconsistencies: the total time of 2h18 doesn't quite match the step sum, and step 7's reply plan is vague. Steps 2-3 could be merged, and the plan is slightly heavy on steps for a 500-word post."
+      },
+      "plan": {
+        "taskTitle": "Write a 500-word Psych 101 discussion post on the bystander effect",
+        "analysis": "Start with a tiny setup action, then write an intentionally ugly draft in a separate session from polishing, spread across days and finished before Sunday.",
+        "totalEstimatedTime": "2 hours 18 min",
+        "resolvedDueDate": "2026-10-04",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Open the doc and paste in the prompt",
+            "description": "Create a new doc called 'Psych 101 bystander post', paste in the discussion prompt and any rubric, and type 'UGLY DRAFT' at the top. Done when the doc is open and saved; no reading or thinking yet.",
+            "estimatedTime": "3 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Skim the textbook section and jot rough notes",
+            "description": "Skim your Psych 101 textbook or lecture notes on the bystander effect (Kitty Genovese, Darley and Latané's 1968 studies, diffusion of responsibility). Write 5-8 messy bullet points in your doc; stop at 25 minutes even if it feels incomplete.",
+            "estimatedTime": "25 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 3,
+            "title": "Pick one angle with a quick gut-check",
+            "description": "Under your bullets, write one sentence finishing 'My main point is...' (e.g., diffusion of responsibility, or a real-life example). Your first instinct is fine, and you are done when the sentence exists.",
+            "estimatedTime": "10 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 4,
+            "title": "Write the ugly first draft",
+            "description": "Set a 40-minute timer and write roughly 500 words from your bullets without editing or deleting anything. Typos, clunky sentences and [fill in later] placeholders are all fine; stop when the timer rings or you hit about 500 words.",
+            "estimatedTime": "40 min",
+            "when": "Friday"
+          },
+          {
+            "id": 5,
+            "title": "Fix structure only",
+            "description": "Reread once and make sure you have an intro, one or two supporting points with an example, and a closing sentence. Move or cut paragraphs as needed but do not polish wording; stop after 20 minutes.",
+            "estimatedTime": "20 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 6,
+            "title": "Polish wording and check length",
+            "description": "Fix typos, swap in any [fill in later] placeholders, add a citation if required, and trim or pad to about 500 words. Stop at 30 minutes; good enough counts as done.",
+            "estimatedTime": "30 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 7,
+            "title": "Post it and add a reply plan",
+            "description": "Paste the post into the discussion board and submit it. Then set a 10-minute reminder to reply to classmates if your assignment requires it; done when the post shows as submitted.",
+            "estimatedTime": "10 min",
+            "when": "Sunday"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gym",
+      "latencyMs": 11304,
+      "checks": {
+        "stepCount": 12,
+        "firstStepMinutes": 3,
+        "maxStepMinutes": 45,
+        "dueDateCorrect": true,
+        "resolvedDueDate": null
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 5,
+        "specificity": 4,
+        "sequence": 4,
+        "timing": 3,
+        "style": 5,
+        "overall": 4,
+        "notes": "Timing is shaky: the intro says about three weeks but the schedule covers roughly 12 days, and Step 3 picks Friday, Sunday and Tuesday while Step 8 schedules Oct 5-11 on the Oct 4 Sunday before an Oct 6 session, so the Tuesday step 7 and Oct 4 step crowd the gym days. Total time of 5 hours 3 min also doesn't quite match the step sum (about 4.5 hours), and 12 steps is a little heavy for an avoider."
+      },
+      "plan": {
+        "taskTitle": "Ease into a regular gym habit",
+        "analysis": "With no deadline, this plan spreads small, low-pressure steps over about three weeks so the gym becomes familiar before you ask yourself to do a full workout.",
+        "totalEstimatedTime": "5 hours 3 min",
+        "resolvedDueDate": null,
+        "steps": [
+          {
+            "id": 1,
+            "title": "Put your gym clothes by the door",
+            "description": "Just grab a shirt, shorts or leggings, socks, and shoes and set them in a pile by your door or on top of your bag. Done when you can see them from where you'd leave the house.",
+            "estimatedTime": "3 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Find your gym's hours and pack a bag",
+            "description": "Just look up when your campus or local gym is open today and put a water bottle, headphones, and your ID or key fob in your bag. Done when the bag is zipped and sitting with your clothes.",
+            "estimatedTime": "10 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Pick three gym days and add them to your calendar",
+            "description": "Just choose three 30-minute slots over the next week, such as Friday, Sunday, and Tuesday, and add them as calendar events. Done when they're saved with a reminder 30 minutes before each one.",
+            "estimatedTime": "10 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 4,
+            "title": "Do a no-pressure visit",
+            "description": "Just go, walk around, and find the lockers, water fountain, and the machines you might like. You can leave after 20 minutes, and walking on a treadmill or bike counts as a win.",
+            "estimatedTime": "30 min",
+            "when": "Friday"
+          },
+          {
+            "id": 5,
+            "title": "Try an easy 30-minute session",
+            "description": "Just do 10 minutes on the bike or treadmill, then 3 easy machines for 2 sets of 10 each. Stop when you've finished those; you don't need to do more.",
+            "estimatedTime": "40 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 6,
+            "title": "Repeat the easy session",
+            "description": "Just do the same warm-up and the same 3 machines as Sunday. Doing the same routine makes it feel familiar, and done means you checked off the calendar event.",
+            "estimatedTime": "40 min",
+            "when": "Tuesday"
+          },
+          {
+            "id": 7,
+            "title": "Write down your routine in your notes app",
+            "description": "Just jot down the warm-up, the 3 machines, and the weights you used. Done when you have a short list you can follow next time without thinking.",
+            "estimatedTime": "10 min",
+            "when": "Tuesday"
+          },
+          {
+            "id": 8,
+            "title": "Schedule next week's three sessions",
+            "description": "Just put three 45-minute gym slots in your calendar for Oct 5 to Oct 11, at times you already know are free. Done when they each have a reminder.",
+            "estimatedTime": "10 min",
+            "when": "Oct 4"
+          },
+          {
+            "id": 9,
+            "title": "Gym session: add one new thing",
+            "description": "Just follow your written routine and add one extra machine or 5 more minutes of cardio. Done when you've finished and noted what you did.",
+            "estimatedTime": "45 min",
+            "when": "Oct 6"
+          },
+          {
+            "id": 10,
+            "title": "Gym session: repeat with the new piece",
+            "description": "Just do your routine again including the new addition. Done when you finish and tick it off your calendar.",
+            "estimatedTime": "45 min",
+            "when": "Oct 8"
+          },
+          {
+            "id": 11,
+            "title": "Gym session: complete week two",
+            "description": "Just go for your third session this week, even a shorter one is fine. Done when you've been and logged it.",
+            "estimatedTime": "45 min",
+            "when": "Oct 10"
+          },
+          {
+            "id": 12,
+            "title": "Look back and set your ongoing schedule",
+            "description": "Just review which days and times you actually went and pick 2 or 3 to keep each week. Done when those slots are set to repeat weekly in your calendar.",
+            "estimatedTime": "15 min",
+            "when": "Oct 11"
+          }
+        ]
+      }
+    },
+    {
+      "id": "lsat",
+      "latencyMs": 19144,
+      "checks": {
+        "stepCount": 14,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 60,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-11-14"
+      },
+      "grade": {
+        "fit": 3,
+        "firstStep": 4,
+        "specificity": 4,
+        "sequence": 4,
+        "timing": 3,
+        "style": 3,
+        "overall": 3,
+        "notes": "Only about 10 hours over 6 weeks is thin for the LSAT, and 14 steps with some 60-minute blocks may still feel heavy for an overwhelmed student. The first step is tiny, but it gives no reassurance and includes a small choice between a book and a bookmark. Step 2 jumps to a 40-minute timed section with no warm-up, which is a big leap for an overwhelmed student."
+      },
+      "plan": {
+        "taskTitle": "Study for the LSAT by Nov 14",
+        "analysis": "Tiny first step today, then one short session every few days through Nov 12, moving from a baseline to drills, timed sections and review; each step stands alone, so you can do it without finishing the others.",
+        "totalEstimatedTime": "9 hours 45 min",
+        "resolvedDueDate": "2026-11-14",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Set up your LSAT spot",
+            "description": "Make a free LawHub account at lawhub.org and put your LSAT prep book or a bookmark to it on your desk. That's all, and you're done.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Take one timed Logical Reasoning section",
+            "description": "Set a 35-minute timer and do one LR section from a free LawHub practice test. Don't check answers yet, just finish it.",
+            "estimatedTime": "40 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 3,
+            "title": "Mark your misses",
+            "description": "Check the section and make a simple note listing each wrong question and its type (flaw, assumption, strengthen, etc.). Done when the list exists, however messy.",
+            "estimatedTime": "30 min",
+            "when": "Friday"
+          },
+          {
+            "id": 4,
+            "title": "Learn your most-missed LR type",
+            "description": "Pick the question type you missed most and read or watch one short lesson on it. Write down the 2-3 rules you'd follow next time.",
+            "estimatedTime": "45 min",
+            "when": "Monday"
+          },
+          {
+            "id": 5,
+            "title": "Do 10 untimed LR questions",
+            "description": "Do 10 questions of that type without a timer, then read every explanation. Done when you can explain each wrong answer.",
+            "estimatedTime": "35 min",
+            "when": "Oct 8"
+          },
+          {
+            "id": 6,
+            "title": "Try one Reading Comprehension passage",
+            "description": "Do one RC passage with its questions, untimed. Afterward, write a one-line summary of the passage's main point.",
+            "estimatedTime": "45 min",
+            "when": "Oct 12"
+          },
+          {
+            "id": 7,
+            "title": "Drill 2 more RC passages",
+            "description": "Do two passages with a loose 9 minutes each, then review the misses. Note whether errors were about main idea, detail or inference.",
+            "estimatedTime": "40 min",
+            "when": "Oct 16"
+          },
+          {
+            "id": 8,
+            "title": "Timed LR section plus review",
+            "description": "Do a fresh 35-minute LR section, then spend the rest of the hour reviewing wrong answers. Add new misses to your list.",
+            "estimatedTime": "60 min",
+            "when": "Oct 20"
+          },
+          {
+            "id": 9,
+            "title": "Review your mistake list",
+            "description": "Reread your running list of misses and redo 8 questions you got wrong earlier. Done when you can name why each trap fooled you.",
+            "estimatedTime": "45 min",
+            "when": "Oct 24"
+          },
+          {
+            "id": 10,
+            "title": "Timed RC section plus review",
+            "description": "Do one full 35-minute RC section, then review each miss. Take a short break halfway through the review if you need it.",
+            "estimatedTime": "60 min",
+            "when": "Oct 28"
+          },
+          {
+            "id": 11,
+            "title": "Weak-spot LR drill",
+            "description": "Choose the LR type you still miss most and do 12 questions on it, checking answers as you go. Done when you've reviewed every miss.",
+            "estimatedTime": "45 min",
+            "when": "Nov 1"
+          },
+          {
+            "id": 12,
+            "title": "Two-section timed mini-test",
+            "description": "Do one LR and one RC section back to back with a 10-minute break, to practice focus. Score it and mark the misses.",
+            "estimatedTime": "60 min",
+            "when": "Nov 5"
+          },
+          {
+            "id": 13,
+            "title": "Review the mini-test",
+            "description": "Go through every miss from the mini-test and write one rule to remember for each type. Keep it to one page.",
+            "estimatedTime": "45 min",
+            "when": "Nov 9"
+          },
+          {
+            "id": 14,
+            "title": "Light final review",
+            "description": "Skim your one-page rules and redo 5 old missed questions. Then stop: you've put in the work, so rest before Nov 14.",
+            "estimatedTime": "30 min",
+            "when": "Nov 12"
+          }
+        ]
+      }
+    },
+    {
+      "id": "thesis-litreview",
+      "latencyMs": 12863,
+      "checks": {
+        "stepCount": 16,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 150,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-31"
+      },
+      "grade": {
+        "fit": 5,
+        "firstStep": 4,
+        "specificity": 4,
+        "sequence": 5,
+        "timing": 4,
+        "style": 5,
+        "overall": 4,
+        "notes": "Strong plan with explicit rough-draft permission and time caps, but steps 1 and 2 both land today and the first step still requires pasting a research question, which is a small decision. Steps are also slightly generic across the sections and the plan leaves little buffer for advisor feedback or the 'Oct 3' Saturday sessions."
+      },
+      "plan": {
+        "taskTitle": "Finish Thesis Chapter 2: Literature Review (~25 pages)",
+        "analysis": "Spread roughly 24 hours of work across the month in short sessions, with a separate ugly-draft phase and polish phase so perfectionism never blocks the writing.",
+        "totalEstimatedTime": "24 hours",
+        "resolvedDueDate": "2026-10-31",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Create the Chapter 2 doc and paste in a skeleton",
+            "description": "Open a new doc named 'Thesis Ch2 - Lit Review DRAFT', type the heading 'Chapter 2: Literature Review', and paste in your thesis research question. Done when the file is saved and open; no writing needed.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Dump every source you already have into a list",
+            "description": "Paste every paper, PDF title, or citation you already have into the doc under 'Sources', messy and unsorted. Stop at 30 minutes even if the list feels incomplete.",
+            "estimatedTime": "30 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Sketch a bullet-point section outline",
+            "description": "Group your sources into 4-6 themed sections as rough headings with a few bullets each. Bullet points are fine and the outline can be wrong; stop at 45 minutes.",
+            "estimatedTime": "45 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 4,
+            "title": "Fill gaps: find missing key sources",
+            "description": "For any section with fewer than 3 sources, search Google Scholar and add up to 8 candidate papers to your list. Stop after 60 minutes and do not read them fully yet.",
+            "estimatedTime": "1 hour",
+            "when": "Oct 3"
+          },
+          {
+            "id": 5,
+            "title": "Take rough notes on sources for sections 1-2",
+            "description": "For each source in your first two sections, write 2-3 bullets: the claim, the method, and how it relates to your question. Messy notes are the goal; stop at 2 hours.",
+            "estimatedTime": "2 hours",
+            "when": "Oct 5"
+          },
+          {
+            "id": 6,
+            "title": "Take rough notes on sources for sections 3-4",
+            "description": "Repeat the same 2-3 bullet notes for the next two sections' sources. Stop at 2 hours even if some are unfinished.",
+            "estimatedTime": "2 hours",
+            "when": "Oct 8"
+          },
+          {
+            "id": 7,
+            "title": "Take rough notes on remaining sections",
+            "description": "Finish bullet notes for any remaining sections (5-6) and flag any source you won't use. Stop at 2 hours.",
+            "estimatedTime": "2 hours",
+            "when": "Oct 11"
+          },
+          {
+            "id": 8,
+            "title": "Ugly first draft: Section 1 (intro and background)",
+            "description": "Turn your bullets into rough paragraphs for the chapter intro and first themed section, about 4 pages. Typos, clunky sentences and '[cite?]' placeholders are all fine; stop at 2 hours.",
+            "estimatedTime": "2 hours",
+            "when": "Oct 13"
+          },
+          {
+            "id": 9,
+            "title": "Ugly first draft: Section 2",
+            "description": "Write the second themed section as rough paragraphs, about 4 pages. Do not edit as you go; stop at 2 hours.",
+            "estimatedTime": "2 hours",
+            "when": "Oct 15"
+          },
+          {
+            "id": 10,
+            "title": "Ugly first draft: Section 3",
+            "description": "Write the third themed section, about 4 pages, compare sources against each other and keep moving. Stop at 2 hours.",
+            "estimatedTime": "2 hours",
+            "when": "Oct 17"
+          },
+          {
+            "id": 11,
+            "title": "Ugly first draft: Section 4",
+            "description": "Write the fourth themed section, about 4 pages, with no polishing. Stop at 2 hours.",
+            "estimatedTime": "2 hours",
+            "when": "Oct 19"
+          },
+          {
+            "id": 12,
+            "title": "Ugly first draft: remaining sections and gap summary",
+            "description": "Draft the last section(s) and a rough 1-page summary stating the research gap your thesis fills. Stop at 2.5 hours; the full draft now exists.",
+            "estimatedTime": "2 hours 30 min",
+            "when": "Oct 21"
+          },
+          {
+            "id": 13,
+            "title": "Read-through and structure fixes only",
+            "description": "Read the whole draft once and only move, cut, or add headings and paragraphs to fix the flow; do not fix wording. Stop at 1.5 hours.",
+            "estimatedTime": "1 hour 30 min",
+            "when": "Oct 24"
+          },
+          {
+            "id": 14,
+            "title": "Polish pass 1: sections 1-2 prose and citations",
+            "description": "Now edit wording and fill in every '[cite?]' placeholder for the first half of the chapter. Stop at 1.5 hours; good enough is the standard.",
+            "estimatedTime": "1 hour 30 min",
+            "when": "Oct 26"
+          },
+          {
+            "id": 15,
+            "title": "Polish pass 2: remaining sections and references list",
+            "description": "Edit wording in the second half and format the reference list in your required style. Stop at 1.5 hours.",
+            "estimatedTime": "1 hour 30 min",
+            "when": "Oct 28"
+          },
+          {
+            "id": 16,
+            "title": "Final check and send to advisor",
+            "description": "Spell-check, confirm the page count and headings, save a PDF, and send it to your advisor. One pass only, then you're done.",
+            "estimatedTime": "1 hour",
+            "when": "Oct 30"
+          }
+        ]
+      }
+    },
+    {
+      "id": "dentist",
+      "latencyMs": 5926,
+      "checks": {
+        "stepCount": 4,
+        "firstStepMinutes": 3,
+        "maxStepMinutes": 10,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-04"
+      },
+      "grade": {
+        "fit": 5,
+        "firstStep": 4,
+        "specificity": 4,
+        "sequence": 5,
+        "timing": 4,
+        "style": 4,
+        "overall": 4,
+        "notes": "Step 1 (sticky note by phone) is a bit of a busywork warm-up and the 'Just...' phrasing is repetitive; step 2 bundles number lookup and calendar checking (10 min) which is larger than ideal for an avoider. Due date of Oct 4 (Sunday) is fine, but the dentist office may be closed weekends, so the call should be scheduled with a fallback day."
+      },
+      "plan": {
+        "taskTitle": "Schedule your dentist cleaning",
+        "analysis": "This is a one-sitting chore, so a few tiny, low-pressure steps get the call made before the week ends.",
+        "totalEstimatedTime": "27 min",
+        "resolvedDueDate": "2026-10-04",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Put your phone and a sticky note together",
+            "description": "Just grab a sticky note, write 'Dentist cleaning' on it, and set it next to your phone. Done when the note is sitting there, nothing more.",
+            "estimatedTime": "3 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Find the dentist's number and a few free times",
+            "description": "Just look up the dentist's phone number and jot it on the note, then glance at your calendar and write down two or three days that could work. No perfect answer needed, done when the note has a number and a couple of options.",
+            "estimatedTime": "10 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Make the call (or use online booking)",
+            "description": "Just dial the number and say, 'Hi, I'd like to schedule a cleaning.' If it goes to voicemail, leave your name and number, or try the online booking form instead. Done when you've asked for an appointment in any form.",
+            "estimatedTime": "10 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 4,
+            "title": "Put the appointment in your calendar",
+            "description": "Just add the date and time to your phone calendar with a reminder the day before. Done when it shows up on your calendar, then you can cross off the sticky note.",
+            "estimatedTime": "4 min",
+            "when": "Tomorrow"
+          }
+        ]
+      }
+    },
+    {
+      "id": "resume",
+      "latencyMs": 8103,
+      "checks": {
+        "stepCount": 9,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 45,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-07"
+      },
+      "grade": {
+        "fit": 5,
+        "firstStep": 4,
+        "specificity": 5,
+        "sequence": 4,
+        "timing": 4,
+        "style": null,
+        "overall": 4,
+        "notes": "Step 1 is tiny, but it asks for a file copy plus opening LinkedIn, and naming the copy is a small decision. The LinkedIn steps also come before the resume review, so feedback-driven resume changes never make it back into LinkedIn, and the Sunday–Monday spacing is a bit uneven."
+      },
+      "plan": {
+        "taskTitle": "Update resume and LinkedIn before the career fair",
+        "analysis": "Start by gathering the files, then update the resume first, since LinkedIn can reuse its content, and finish with a polish and a print so everything is ready a day early.",
+        "totalEstimatedTime": "4 hours 5 min",
+        "resolvedDueDate": "2026-10-07",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Open your resume file and a new notes doc",
+            "description": "Find your current resume file, save a copy named 'Resume_Fall2026', and open your LinkedIn profile in another tab. Done when both are open side by side.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "List new experiences since your last update",
+            "description": "In a notes doc, jot down every job, class project, club role, award, and skill you've added since your resume was last edited, in rough bullets. Done when you've got at least 5 items, even if unpolished.",
+            "estimatedTime": "20 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Rewrite the Experience and Projects sections",
+            "description": "Turn your notes into 2-4 bullets per role, each starting with an action verb and including a number or result where possible. Done when every role has fresh, specific bullets.",
+            "estimatedTime": "45 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 4,
+            "title": "Update Education, Skills, and the top of your resume",
+            "description": "Add your current GPA, expected graduation date, relevant coursework, and skills, and update contact info and your LinkedIn URL. Done when the resume fits on one page.",
+            "estimatedTime": "30 min",
+            "when": "Friday"
+          },
+          {
+            "id": 5,
+            "title": "Update your LinkedIn headline, About, and photo",
+            "description": "Write a headline with your major and career interest, then paste a 3-4 sentence About summary based on your resume. Done when both sections are saved and your photo is current.",
+            "estimatedTime": "35 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 6,
+            "title": "Copy experience and skills into LinkedIn",
+            "description": "Add the new roles, bullets, and projects from your resume into the LinkedIn Experience section, and add at least 5 skills. Done when LinkedIn matches your resume.",
+            "estimatedTime": "45 min",
+            "when": "Monday"
+          },
+          {
+            "id": 7,
+            "title": "Get a quick review from a friend or career center",
+            "description": "Send your resume PDF to a friend, or submit it to your career center for feedback, and ask for typos and clarity fixes. Done when you've got at least one person's comments.",
+            "estimatedTime": "15 min",
+            "when": "Monday"
+          },
+          {
+            "id": 8,
+            "title": "Apply feedback, proofread, and export the final PDF",
+            "description": "Make the suggested fixes, read the resume aloud once to catch typos, and save it as a PDF named 'FirstLast_Resume.pdf'. Done when the final PDF is saved to your phone and laptop.",
+            "estimatedTime": "30 min",
+            "when": "Tuesday"
+          },
+          {
+            "id": 9,
+            "title": "Print copies and pack your fair folder",
+            "description": "Print 10 copies on quality paper and put them in a folder with a pen. Done when the folder is in your bag for Wednesday.",
+            "estimatedTime": "20 min",
+            "when": "Tuesday"
+          }
+        ]
+      }
+    },
+    {
+      "id": "periodic-table",
+      "latencyMs": 10754,
+      "checks": {
+        "stepCount": 10,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 30,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-05"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 3,
+        "specificity": 4,
+        "sequence": 2,
+        "timing": 3,
+        "style": 3,
+        "overall": 3,
+        "notes": "Steps 9 and 10 are appended out of order (Sunday and Friday after the Monday step), which breaks the sequence, and the first step asks for writing 36 cards or setting up Quizlet with some decisions and is not quite tiny. Boredom style is only partly addressed: timers are used, but variety is limited and Friday/Saturday/Sunday loads are uneven, with Thursday/Friday sessions being light on spaced review."
+      },
+      "plan": {
+        "taskTitle": "Memorize elements 1-36 (H through Kr) for Monday's chem quiz",
+        "analysis": "Split the 36 elements into small chunks learned with varied methods (chants, flashcards, games, blank-table recall) and spaced across Thursday to Sunday, leaving Monday for a light review.",
+        "totalEstimatedTime": "3 hours 18 min",
+        "resolvedDueDate": "2026-10-05",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Set up your flashcard stack",
+            "description": "Grab 36 index cards (or open a blank Quizlet set titled 'Elements 1-36') and write just the numbers 1-36 on the fronts or as term slots. Done when the stack is sitting on your desk or the set is open on your screen.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Learn elements 1-10 with a silly mnemonic",
+            "description": "Set a 20-minute timer and fill in symbols and names for H through Ne on your cards. Make up a goofy sentence or chant for the order (H, He, Li, Be, B, C, N, O, F, Ne) and say it aloud 5 times. Done when you can recite all 10 without looking.",
+            "estimatedTime": "20 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Learn elements 11-20",
+            "description": "Set a 25-minute timer and make cards for Na through Ca. Invent a chant or story linking them, and say it out loud. Then quiz yourself on 1-20 and keep going until you hit at least 15 of 20 correct.",
+            "estimatedTime": "25 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 4,
+            "title": "Learn elements 21-36",
+            "description": "Set a 30-minute timer and make cards for Sc through Kr, covering the transition metals Sc, Ti, V, Cr, Mn, Fe, Co, Ni, Cu, Zn, then Ga through Kr. Say the sequence as a chant a few times. Done when you can say 21-36 in order once, even with peeks.",
+            "estimatedTime": "30 min",
+            "when": "Friday"
+          },
+          {
+            "id": 5,
+            "title": "Blank-table recall challenge",
+            "description": "Print or sketch a blank list of numbers 1-36, set a 15-minute timer, and fill in as many symbols and names as you can from memory. Then check and circle every miss. Beat your score of correct answers next time.",
+            "estimatedTime": "15 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 6,
+            "title": "Drill your circled misses with a game",
+            "description": "Spend 20 minutes on a Quizlet Match or Learn round, or have a friend or family member quiz you on random numbers and symbols. Focus on the circled misses until you get them right twice in a row.",
+            "estimatedTime": "20 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 7,
+            "title": "Speed-run test: beat the clock",
+            "description": "Write numbers 1-36 out of order on a fresh sheet, set a 10-minute timer, and fill in names and symbols. Aim for 34/36 or better. Then redo any misses 3 times each and call it done.",
+            "estimatedTime": "25 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 8,
+            "title": "Final quick review",
+            "description": "Spend 15 minutes before the quiz flipping through your cards one last time, focusing only on the ones you've missed recently. Stop when the timer ends and go take the quiz.",
+            "estimatedTime": "15 min",
+            "when": "Monday"
+          },
+          {
+            "id": 9,
+            "title": "Second-pass recall, elements 1-36 in order",
+            "description": "Set a 20-minute timer and write all 36 symbols and names in order from memory, then say the chants aloud once more to lock them in. Done when you can write the full list with 3 or fewer errors.",
+            "estimatedTime": "20 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 10,
+            "title": "Walk and recite",
+            "description": "Take a 18-minute walk or pace around your room reciting elements 1-36 aloud without your cards, starting over whenever you get stuck. Done when you complete the whole run once without stopping.",
+            "estimatedTime": "18 min",
+            "when": "Friday"
+          }
+        ]
+      }
+    },
+    {
+      "id": "cover-letter",
+      "latencyMs": 9751,
+      "checks": {
+        "stepCount": 8,
+        "firstStepMinutes": 3,
+        "maxStepMinutes": 60,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-02"
+      },
+      "grade": {
+        "fit": 5,
+        "firstStep": 4,
+        "specificity": 4,
+        "sequence": 4,
+        "timing": 4,
+        "style": 5,
+        "overall": 4,
+        "notes": "The first step is tiny, but it asks the student to find the job posting and resume, and it doesn't say where to get them. Friday has an outside-read dependency with a same-day submit, which is risky if the friend is slow, and a 4-hour total is slightly heavy for a cover letter."
+      },
+      "plan": {
+        "taskTitle": "Write and submit the Google APM cover letter",
+        "analysis": "Start with a zero-decision setup, then draft ugly and fast, and save polishing for a separate later session so the letter is finished by Friday without perfectionism stalling it.",
+        "totalEstimatedTime": "4 hours 3 min",
+        "resolvedDueDate": "2026-10-02",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Set up the doc and paste in the job posting",
+            "description": "Open a new doc named 'Google APM cover letter', paste in the APM job description and your current resume below it, and type 'UGLY DRAFT - nobody sees this' at the top. Done when the doc is saved with both pasted; stop there.",
+            "estimatedTime": "3 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Dump raw bullet points for 3 stories",
+            "description": "Under three headings ('Why Google/APM', 'Product or leadership story 1', 'Story 2'), write messy bullets from your resume: what you built or led, what happened, and any numbers. Bullet fragments are fine and typos are expected; stop when each heading has 3-4 bullets or after 30 minutes.",
+            "estimatedTime": "30 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Write the ugly first draft",
+            "description": "Turn your bullets into 3-4 short paragraphs: opening hook, story 1, story 2, closing. Do not edit as you go, and brackets like [add number] are allowed. Done when there are roughly 300-400 words, even if they are bad; set a timer and stop at 60 minutes.",
+            "estimatedTime": "60 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 4,
+            "title": "Step away, then do one structural pass",
+            "description": "Reread once and only fix big things: does each paragraph show a skill from the posting (product sense, leadership, technical ability)? Fill in the bracketed gaps and cut anything that's filler. Done when the structure works; do not fix wording yet, and stop at 45 minutes.",
+            "estimatedTime": "45 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 5,
+            "title": "Tailor the opening and closing to Google",
+            "description": "Rewrite only the first 2 sentences and last 2 sentences so they mention a specific Google product you use and why it interests you as a future APM. Done when both are written; 'good enough' counts, and stop at 30 minutes.",
+            "estimatedTime": "30 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 6,
+            "title": "Polish pass: read aloud and trim",
+            "description": "Read the letter aloud, fix clunky sentences, cut to one page, and run spell check. This is the only step for polishing, so stop at 45 minutes and save as a PDF.",
+            "estimatedTime": "45 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 7,
+            "title": "Get one quick outside read",
+            "description": "Send the letter to one friend or career center contact and ask only 'Anything confusing or clearly wrong?' Fix only real errors and ignore style nitpicks. Stop at 20 minutes of edits.",
+            "estimatedTime": "20 min",
+            "when": "Friday"
+          },
+          {
+            "id": 8,
+            "title": "Final check and submit",
+            "description": "Confirm the name, role title, and company are correct, upload the PDF to the Google application, and hit submit. Done when you see the confirmation screen; no more edits after this.",
+            "estimatedTime": "10 min",
+            "when": "Friday"
+          }
+        ]
+      }
+    },
+    {
+      "id": "organize-notes",
+      "latencyMs": 14092,
+      "checks": {
+        "stepCount": 10,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 30,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-05"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 4,
+        "specificity": 3,
+        "sequence": 4,
+        "timing": 4,
+        "style": 4,
+        "overall": 4,
+        "notes": "Steps 3-7 are nearly identical and somewhat generic (\"date order, topic labels\"), with no concrete how-to or per-class differentiation. Step 2 (15 min, needs the midterm dates) exceeds the tiny first-step ideal, and 30-min class blocks may still feel big to an overwhelmed student; timing is sensible but has no buffer before the Oct 5 deadline and the midterms' dates are unknown."
+      },
+      "plan": {
+        "taskTitle": "Organize notes for all 5 classes before midterms",
+        "analysis": "Break it into one small session per class plus a quick gap check, so each step stands alone and you can stop after any of them.",
+        "totalEstimatedTime": "3 hours 55 min",
+        "resolvedDueDate": "2026-10-05",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Pile up everything in one spot",
+            "description": "Grab your notebooks, printouts and laptop, and put them on one desk or table. Done when all 5 classes' materials are in one place. Nothing else needed today.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Make a one-page class list",
+            "description": "Open a doc called 'Midterm notes plan' and type your 5 classes with each midterm date. Put the earliest midterm first. Done when you have 5 lines.",
+            "estimatedTime": "15 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Organize class #1 (earliest midterm)",
+            "description": "Put this class's notes in date order and label each with its topic or chapter. Done when you can flip through and find every lecture. This step stands alone.",
+            "estimatedTime": "30 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 4,
+            "title": "Organize class #2",
+            "description": "Sort by date, label each set of notes with its topic, and put any loose handouts in the same pile. Done when it's in order. Stop after this.",
+            "estimatedTime": "30 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 5,
+            "title": "Organize class #3",
+            "description": "Same routine: date order, topic labels, handouts added. Done when the class is one neat stack or folder.",
+            "estimatedTime": "30 min",
+            "when": "Friday"
+          },
+          {
+            "id": 6,
+            "title": "Organize class #4",
+            "description": "Sort by date, label topics, and file the handouts. Done when you can find any lecture in under a minute.",
+            "estimatedTime": "30 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 7,
+            "title": "Organize class #5",
+            "description": "Last class: date order, topic labels, handouts. Done when all 5 classes are sorted. That's the big part finished.",
+            "estimatedTime": "30 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 8,
+            "title": "List missing notes",
+            "description": "Skim your 5 sorted sets against each syllabus and write down any lecture or chapter you're missing. Done when your doc has a short gap list, even if it's empty.",
+            "estimatedTime": "20 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 9,
+            "title": "Fill the gaps",
+            "description": "Message a classmate or check the course site for the missing notes, slides or readings, and add what you get to the right class. Done when each gap is filled or requested.",
+            "estimatedTime": "30 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 10,
+            "title": "Final check and stage for studying",
+            "description": "Put each class's notes in its own folder, with the midterm date on the front. Place them where you'll study. Done when you're ready to study.",
+            "estimatedTime": "15 min",
+            "when": "Monday"
+          }
+        ]
+      }
+    },
+    {
+      "id": "coffee-shop-group",
+      "latencyMs": 12167,
+      "checks": {
+        "stepCount": 15,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 60,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-20"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 4,
+        "specificity": 4,
+        "sequence": 4,
+        "timing": 4,
+        "style": null,
+        "overall": 4,
+        "notes": "The plan is solid and specific, but the first day stacks a 15-minute coordination step on the 5-minute setup step, and the first real step depends on teammates agreeing on a time, which is out of the student's control. Some steps carry hidden decisions (e.g. which shop, which roles), and the plan treats steps 13 and 14 as conditional without checking the requirements first."
+      },
+      "plan": {
+        "taskTitle": "Build a marketing plan for a local coffee shop with your 3 teammates",
+        "analysis": "Start with a tiny setup action, then pace group coordination, research, drafting and review in a few sessions per week so everything is finished a day before Oct 20.",
+        "totalEstimatedTime": "11 hours 25 min",
+        "resolvedDueDate": "2026-10-20",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Create the shared doc and invite teammates",
+            "description": "Create a Google Doc named 'Coffee Shop Marketing Plan', paste in the assignment prompt and deadline (Oct 20), and share the link in your group chat. Done when the link is sent.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Propose a kickoff meeting and split roles",
+            "description": "In the group chat, suggest 2 meeting times this week and propose four roles: market research, branding and messaging, channels and budget, and editing and slides. Done when a time is agreed on.",
+            "estimatedTime": "15 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Hold kickoff meeting and assign sections",
+            "description": "Meet for 45 minutes to pick the coffee shop, confirm the required plan sections from the prompt, assign each person a section, and set internal deadlines. Write the assignments at the top of the doc.",
+            "estimatedTime": "45 min",
+            "when": "Friday"
+          },
+          {
+            "id": 4,
+            "title": "Visit or research the coffee shop",
+            "description": "Visit the shop or study its website, Instagram and Google reviews, noting 5 facts about its menu, prices, location, customers and current marketing. Paste the notes into the doc under 'Shop Overview'.",
+            "estimatedTime": "60 min",
+            "when": "Oct 3"
+          },
+          {
+            "id": 5,
+            "title": "Research your section's competitors and audience",
+            "description": "For your assigned section, look at 3 nearby competing cafes and find data on local customers. Write bullet-point findings in the doc with links to your sources.",
+            "estimatedTime": "60 min",
+            "when": "Oct 5"
+          },
+          {
+            "id": 6,
+            "title": "Draft SWOT and target audience",
+            "description": "As a group, or split up if needed, write a SWOT analysis and 2 customer personas using the shop overview and competitor notes. Done when both sit in the doc in rough form.",
+            "estimatedTime": "60 min",
+            "when": "Oct 7"
+          },
+          {
+            "id": 7,
+            "title": "Group check-in on goals and strategy",
+            "description": "Meet for 30 minutes to agree on 3 measurable marketing goals and the core positioning, and to fix any gaps in the research. Note the decisions in the doc.",
+            "estimatedTime": "30 min",
+            "when": "Oct 8"
+          },
+          {
+            "id": 8,
+            "title": "Draft your section of the plan",
+            "description": "Write a full first draft of your assigned section (for example branding, social media, promotions or budget) in about 500 words. Done when it is in the doc, even if rough.",
+            "estimatedTime": "60 min",
+            "when": "Oct 10"
+          },
+          {
+            "id": 9,
+            "title": "Continue drafting and build the budget",
+            "description": "Finish your draft section, and have the channels person build a simple budget table and a 3-month timeline of campaigns. Done when every section has a complete draft.",
+            "estimatedTime": "60 min",
+            "when": "Oct 12"
+          },
+          {
+            "id": 10,
+            "title": "Peer review teammates' sections",
+            "description": "Read two teammates' sections and leave comments on clarity, consistency with the goals, and missing details. Done when you have left at least 3 comments on each.",
+            "estimatedTime": "45 min",
+            "when": "Oct 14"
+          },
+          {
+            "id": 11,
+            "title": "Revise your section from feedback",
+            "description": "Go through the comments on your section and revise it, resolving each one. Done when all comments are resolved or answered.",
+            "estimatedTime": "45 min",
+            "when": "Oct 15"
+          },
+          {
+            "id": 12,
+            "title": "Write the executive summary and assemble the plan",
+            "description": "The editor combines the sections, writes a one-page executive summary, and unifies formatting and headings. Others fix any overlaps flagged in the doc.",
+            "estimatedTime": "60 min",
+            "when": "Oct 16"
+          },
+          {
+            "id": 13,
+            "title": "Build slides or presentation materials if required",
+            "description": "Turn the main points into 8-10 slides with one key idea each, and split the speaking parts. Skip if only a written plan is due and use the time for polishing.",
+            "estimatedTime": "60 min",
+            "when": "Oct 17"
+          },
+          {
+            "id": 14,
+            "title": "Final group review and proofread",
+            "description": "Meet for 60 minutes to read the full plan aloud, fix typos, check sources and the budget numbers, and rehearse if presenting. Done when everyone approves the final version.",
+            "estimatedTime": "60 min",
+            "when": "Oct 18"
+          },
+          {
+            "id": 15,
+            "title": "Submit the final plan",
+            "description": "Export to PDF, check that all four names are on it, and submit it as required. Confirm the submission in the group chat.",
+            "estimatedTime": "20 min",
+            "when": "Oct 19"
+          }
+        ]
+      }
+    },
+    {
+      "id": "sapiens",
+      "latencyMs": 9395,
+      "checks": {
+        "stepCount": 11,
+        "firstStepMinutes": 3,
+        "maxStepMinutes": 45,
+        "dueDateCorrect": true,
+        "resolvedDueDate": null
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 4,
+        "specificity": 4,
+        "sequence": 3,
+        "timing": 3,
+        "style": 5,
+        "overall": 4,
+        "notes": "The plan says 8 sessions, but only 2 sprints plus 6 sessions are scheduled, and the sessions are not actually tied to the computed page ranges (session numbering is inconsistent, e.g. 'session 4' follows the listen session). The schedule also has odd gaps (Sat, Mon, then Oct 7) and the first step bundles a pen and bookmark setup, but otherwise it is engaging."
+      },
+      "plan": {
+        "taskTitle": "Finish reading Sapiens",
+        "analysis": "With no deadline, pace the remaining reading in short timeboxed sessions over about two weeks, varying the activity each time with small hooks to keep it from feeling dull.",
+        "totalEstimatedTime": "5 hours 18 min",
+        "resolvedDueDate": null,
+        "steps": [
+          {
+            "id": 1,
+            "title": "Set up your reading spot",
+            "description": "Put your copy of Sapiens on your pillow or desk, and open to your bookmark (or stick a sticky note on the page where you stopped). Done when the book is open and a pen is resting on it.",
+            "estimatedTime": "3 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "20-minute sprint: read and mark one surprise",
+            "description": "Set a 20-minute timer and read from your bookmark without stopping. Hook: underline or flag the single most surprising claim you find, and stop when the timer ends.",
+            "estimatedTime": "20 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Count remaining pages and split them",
+            "description": "Check how many pages are left, divide by 8 sessions, and write the page target on a sticky note inside the cover. Done when each upcoming session has a page range.",
+            "estimatedTime": "10 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 4,
+            "title": "Read session 1 on your feet or somewhere new",
+            "description": "Set a 40-minute timer and read your first page range somewhere different, like a cafe, library or the couch. Challenge: beat your page target before the timer ends.",
+            "estimatedTime": "40 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 5,
+            "title": "Read session 2 with a 1-line recap",
+            "description": "Set a 40-minute timer and read your next page range. Afterward, write a one-sentence summary of what you read in the margin or your phone notes.",
+            "estimatedTime": "40 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 6,
+            "title": "Listen-and-read session",
+            "description": "Play an audiobook or a YouTube talk by Yuval Noah Harari on the section you're reading for 15 minutes, then read the matching pages for 25 minutes. Done when you've covered your next page range.",
+            "estimatedTime": "40 min",
+            "when": "Monday"
+          },
+          {
+            "id": 7,
+            "title": "Read session 4 and rate the chapter",
+            "description": "Set a 40-minute timer and read your next page range. When done, give the chapter a score out of 10 and jot down one reason why.",
+            "estimatedTime": "40 min",
+            "when": "Oct 7"
+          },
+          {
+            "id": 8,
+            "title": "Read session 5 with a debate question",
+            "description": "Set a 35-minute timer and read the next range while looking for one claim you disagree with. Write a one-line counterargument in the margin.",
+            "estimatedTime": "35 min",
+            "when": "Oct 9"
+          },
+          {
+            "id": 9,
+            "title": "Read session 6 in a 2-part split",
+            "description": "Read for 20 minutes, take a 5-minute walk or stretch, then read 20 more minutes. Done when you've reached the end of your page range.",
+            "estimatedTime": "45 min",
+            "when": "Oct 11"
+          },
+          {
+            "id": 10,
+            "title": "Final push to the last page",
+            "description": "Set a 40-minute timer and read the remaining pages through the book's final chapter. Done when you've closed the book after the last page.",
+            "estimatedTime": "40 min",
+            "when": "Oct 13"
+          },
+          {
+            "id": 11,
+            "title": "Write your 3-line takeaway",
+            "description": "Spend 5 minutes writing three lines on your phone or a sticky note: the biggest idea, the most surprising fact, and whether you'd recommend Sapiens. Done when it's saved and the book is back on your shelf.",
+            "estimatedTime": "5 min",
+            "when": "Oct 13"
+          }
+        ]
+      }
+    },
+    {
+      "id": "fafsa",
+      "latencyMs": 8603,
+      "checks": {
+        "stepCount": 10,
+        "firstStepMinutes": 3,
+        "maxStepMinutes": 45,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-10"
+      },
+      "grade": {
+        "fit": 5,
+        "firstStep": 4,
+        "specificity": 5,
+        "sequence": 4,
+        "timing": 4,
+        "style": 4,
+        "overall": 4,
+        "notes": "Step 1 is tiny, but step 2 (20 min account creation) also lands on day one, and the FSA ID can take time to verify. Step 4, asking the parent, comes after gathering docs and is placed late; it should come earlier since avoiders may delay it and the parent also needs their own FSA ID. The Oct 7 to Oct 9 gap after Sunday Oct 4 is loose, and the plan never acknowledges that the 'Just...' phrasing could feel repetitive."
+      },
+      "plan": {
+        "taskTitle": "Submit the FAFSA for the next school year",
+        "analysis": "Break the FAFSA into tiny, low-pressure sessions spread across the 10 days: gather documents, create the login, fill it in by section, then review and submit a couple of days early.",
+        "totalEstimatedTime": "3 hours 10 min",
+        "resolvedDueDate": "2026-10-10",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Open the FAFSA site and leave it in a tab",
+            "description": "Just type studentaid.gov into your browser and leave the page open in a tab. That's it, nothing to fill in yet.",
+            "estimatedTime": "3 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Make a FSA ID (or find your existing one)",
+            "description": "Just click 'Create Account' and follow the prompts with your email and phone. If you already have one, just log in to confirm it works. Done when you're logged in.",
+            "estimatedTime": "20 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Gather your documents in one folder",
+            "description": "Just pull up your Social Security number, driver's license, and a photo or PDF of last year's tax return or W-2s. Put them in one folder on your desktop. Done when the folder exists, even if a few items are missing.",
+            "estimatedTime": "25 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 4,
+            "title": "Ask a parent for their part (if you're dependent)",
+            "description": "Just send one short text or email: 'Can we spend 30 min on the FAFSA this weekend? I need your FSA ID and tax info.' Done when the message is sent.",
+            "estimatedTime": "5 min",
+            "when": "Friday"
+          },
+          {
+            "id": 5,
+            "title": "Fill in your personal info and school list",
+            "description": "Just start the form and complete the sections about you, plus add the schools you want to receive your FAFSA. Save and stop when those sections are done.",
+            "estimatedTime": "30 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 6,
+            "title": "Complete the parent and financial sections together",
+            "description": "Just sit down with your parent and work through the tax and income sections, using the IRS data link if it's offered. Done when every required section shows complete.",
+            "estimatedTime": "45 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 7,
+            "title": "Do a gentle review pass",
+            "description": "Just read through the summary page once, checking names, SSN, and school codes for typos. Done when you've fixed anything off or confirmed it looks right.",
+            "estimatedTime": "15 min",
+            "when": "Oct 7"
+          },
+          {
+            "id": 8,
+            "title": "Sign and submit",
+            "description": "Just have you and your parent e-sign with your FSA IDs, then click Submit. Done when you see the confirmation page.",
+            "estimatedTime": "15 min",
+            "when": "Oct 8"
+          },
+          {
+            "id": 9,
+            "title": "Save your confirmation",
+            "description": "Just screenshot or download the confirmation and drop it in your FAFSA folder. Then you can celebrate.",
+            "estimatedTime": "5 min",
+            "when": "Oct 8"
+          },
+          {
+            "id": 10,
+            "title": "Check for follow-up requests",
+            "description": "Just check your email and each school's portal for any missing items. Done when you've either found nothing or noted what to send.",
+            "estimatedTime": "10 min",
+            "when": "Oct 9"
+          }
+        ]
+      }
+    },
+    {
+      "id": "plato-essay",
+      "latencyMs": 8260,
+      "checks": {
+        "stepCount": 8,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 50,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-01"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 5,
+        "specificity": 4,
+        "sequence": 4,
+        "timing": 4,
+        "style": 4,
+        "overall": 4,
+        "notes": "Step 3 (45 min skimming two primary texts) is too big and vague for an avoider, and steps 5-8 pack a lot of writing into Thursday with no buffer. The repeated \"Just...\" phrasing also gets formulaic, though the low-pressure tone and the 5-minute first step suit an avoider."
+      },
+      "plan": {
+        "taskTitle": "Write a 3-page essay comparing Plato and Aristotle on justice",
+        "analysis": "With only today and tomorrow, we'll split the essay into small, low-pressure sessions: set up, a bit of gathering, a simple plan, then drafting in two chunks today and tomorrow, and finally a gentle polish.",
+        "totalEstimatedTime": "4 hours 10 min",
+        "resolvedDueDate": "2026-10-01",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Open your doc and paste in the prompt",
+            "description": "Just open a new doc called 'Plato vs Aristotle – Justice' and paste in the assignment prompt. That's it, and you're allowed to stop after this if you want.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Jot down what you already know",
+            "description": "Just type a few messy bullets under 'Plato' and 'Aristotle' for whatever you remember about justice, like the Republic's harmony of the soul and Aristotle's Nicomachean Ethics Book V. Stop when you have 3-4 bullets each; they can be rough.",
+            "estimatedTime": "15 min",
+            "when": "Today"
+          },
+          {
+            "id": 3,
+            "title": "Skim your sources for key points",
+            "description": "Just skim Republic Book IV (justice as each part doing its own work) and Nicomachean Ethics Book V (distributive and corrective justice). Copy down one or two quotes for each thinker with page numbers.",
+            "estimatedTime": "45 min",
+            "when": "Today"
+          },
+          {
+            "id": 4,
+            "title": "Sketch a simple 5-line outline",
+            "description": "Just write one line each for: intro with thesis, Plato's view, Aristotle's view, key differences, and conclusion. A thesis like 'Plato sees justice as inner and structural, Aristotle as practical and relational' is plenty.",
+            "estimatedTime": "15 min",
+            "when": "Tonight"
+          },
+          {
+            "id": 5,
+            "title": "Draft the intro and Plato section",
+            "description": "Just write the intro and the Plato paragraphs, about 1.5 pages, and don't worry about polish. Done means the words exist on the page.",
+            "estimatedTime": "50 min",
+            "when": "Tonight"
+          },
+          {
+            "id": 6,
+            "title": "Draft the Aristotle section",
+            "description": "Just write the Aristotle paragraphs, about 1 page, using your quotes on distributive and corrective justice. Rough is fine.",
+            "estimatedTime": "45 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 7,
+            "title": "Write the comparison and conclusion",
+            "description": "Just write the paragraph on how they differ (inner harmony vs. fair treatment between people) and a short conclusion that restates your thesis. Done means you have a full rough draft at about 3 pages.",
+            "estimatedTime": "40 min",
+            "when": "Tomorrow"
+          },
+          {
+            "id": 8,
+            "title": "Read through, tidy up, and submit",
+            "description": "Just read it once aloud, fix awkward sentences, check your quotes and citations, and submit. Good enough is the goal.",
+            "estimatedTime": "35 min",
+            "when": "Tomorrow"
+          }
+        ]
+      }
+    },
+    {
+      "id": "stats-r-hw",
+      "latencyMs": 6979,
+      "checks": {
+        "stepCount": 8,
+        "firstStepMinutes": 5,
+        "maxStepMinutes": 60,
+        "dueDateCorrect": true,
+        "resolvedDueDate": "2026-10-06"
+      },
+      "grade": {
+        "fit": 4,
+        "firstStep": 4,
+        "specificity": 4,
+        "sequence": 4,
+        "timing": 4,
+        "style": null,
+        "overall": 4,
+        "notes": "First step is concrete but slightly bundles tasks (create file, paste prompt, copy first problem) and could be tinier. Step 7 has a minor wording glitch (\"office hours and office email\"), and there's no buffer for Tuesday, and the flagged-problem fix is saved for Monday with little slack."
+      },
+      "plan": {
+        "taskTitle": "Finish 20 hypothesis testing problems in R",
+        "analysis": "Get the setup done immediately, then knock out the problems in four small batches spread across the week, leaving a review session before the Tuesday deadline.",
+        "totalEstimatedTime": "5 hours 5 min",
+        "resolvedDueDate": "2026-10-06",
+        "steps": [
+          {
+            "id": 1,
+            "title": "Set up your R script",
+            "description": "Open RStudio, create a new script called 'hw_hypothesis_testing.R', and paste in the assignment prompt as comments at the top. Done when the file is saved and the first problem is copied below it.",
+            "estimatedTime": "5 min",
+            "when": "Today"
+          },
+          {
+            "id": 2,
+            "title": "Review the test functions you'll need",
+            "description": "Skim your lecture notes or textbook section and write a comment cheat sheet in your script for t.test(), prop.test(), chisq.test(), and var.test(), plus when to use each. Done when you have one example line for each function.",
+            "estimatedTime": "30 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 3,
+            "title": "Solve problems 1-5",
+            "description": "For each problem, state H0 and Ha in comments, run the appropriate test in R, and write your conclusion in one sentence. Done when problems 1-5 have code, output, and a written conclusion.",
+            "estimatedTime": "60 min",
+            "when": "Thursday"
+          },
+          {
+            "id": 4,
+            "title": "Solve problems 6-10",
+            "description": "Use the same routine: hypotheses, R test, interpretation with the p-value and your alpha level. Done when problems 6-10 are finished and the script runs without errors.",
+            "estimatedTime": "60 min",
+            "when": "Friday"
+          },
+          {
+            "id": 5,
+            "title": "Solve problems 11-15",
+            "description": "Work through the next five using the same routine, and flag any problem you're unsure about with a '# CHECK' comment. Done when all five have answers and flagged items are marked.",
+            "estimatedTime": "60 min",
+            "when": "Saturday"
+          },
+          {
+            "id": 6,
+            "title": "Solve problems 16-20",
+            "description": "Finish the last five problems with hypotheses, code, and conclusions. Done when every problem has an answer in your script.",
+            "estimatedTime": "60 min",
+            "when": "Sunday"
+          },
+          {
+            "id": 7,
+            "title": "Fix flagged problems and review",
+            "description": "Resolve each '# CHECK' item using your notes or office hours and office email if needed, then re-run the whole script from top to bottom to confirm no errors. Done when every conclusion matches its output.",
+            "estimatedTime": "45 min",
+            "when": "Monday"
+          },
+          {
+            "id": 8,
+            "title": "Format and submit",
+            "description": "Knit or export your script and output into the format your instructor requires, check that all 20 problems appear, and upload it. Done when you see the submission confirmation.",
+            "estimatedTime": "25 min",
+            "when": "Monday"
+          }
+        ]
+      }
+    }
+  ]
+}
