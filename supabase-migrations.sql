@@ -153,3 +153,13 @@ CREATE POLICY "Users can send nudges"
 CREATE POLICY "Receiver can mark nudges read"
   ON friend_nudges FOR UPDATE
   USING (auth.uid() = receiver_id);
+
+-- 8. Email preferences on profiles
+--    Opt-outs set by the signed unsubscribe links in reminder and report emails
+--    (app/api/unsubscribe). Crons skip users where the flag is false.
+
+ALTER TABLE profiles
+ADD COLUMN IF NOT EXISTS email_reminders_enabled BOOLEAN DEFAULT true;
+
+ALTER TABLE profiles
+ADD COLUMN IF NOT EXISTS email_reports_enabled BOOLEAN DEFAULT true;

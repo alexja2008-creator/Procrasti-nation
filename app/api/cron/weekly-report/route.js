@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { buildWeeklyReportEmail } from '../../../../lib/emails';
+import { callClaude, MODELS } from '../../../../lib/ai';
+import { unsubscribeUrl, unsubscribeHeaders } from '../../../../lib/unsubscribe';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -9,12 +11,10 @@ const supabaseAdmin = createClient(
 );
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const ANTHROPIC_TIMEOUT_MS = 30_000;
+
+export const maxDuration = 60;
 
 async function generatePepTalk(completedCount, inProgressCount, streak) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return null;
-
   const context = completedCount > 0
     ? `completed ${completedCount} task${completedCount === 1 ? '' : 's'} this week with a ${streak}-day streak`
     : `didn't complete any tasks this week but has ${inProgressCount} task${inProgressCount === 1 ? '' : 's'} in progress`;
@@ -31,27 +31,11 @@ Write a 2-sentence motivational note for a user who ${context}.
 Respond with only the text, no quotes or preamble.`;
 
   try {
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), ANTHROPIC_TIMEOUT_MS);
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 100,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-      signal: ac.signal,
-    });
-    clearTimeout(timer);
-
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data.content?.[0]?.text?.trim() || null;
+    return await callClaude({
+      model: MODELS.fast,
+      maxTokens: 200,
+      messages: [{ role: 'user', content: prompt }],
+    }) || null;
   } catch {
     return null;
   }
@@ -131,6 +115,20 @@ export async function GET(request) {
       streakByUser[row.user_id] = row.current_streak;
     }
 
+    // Respect opt-outs. If the preference column doesn't exist yet, treat everyone as opted in.
+    const optedOut = new Set();
+    const { data: prefs, error: prefsError } = await supabaseAdmin
+      .from('profiles')
+      .select('user_id, email_reports_enabled')
+      .in('user_id', uniqueUserIds);
+    if (prefsError) {
+      console.error('[weekly-report] Could not read email preferences:', prefsError.message);
+    } else {
+      for (const p of prefs || []) {
+        if (p.email_reports_enabled === false) optedOut.add(p.user_id);
+      }
+    }
+
     const userById = {};
     for (const result of userResults) {
       const u = result.data?.user;
@@ -143,7 +141,7 @@ export async function GET(request) {
     for (const userId of uniqueUserIds) {
       try {
         const user = userById[userId];
-        if (!user?.email) continue;
+        if (!user?.email || optedOut.has(userId)) continue;
 
         const completedTitles = completedByUser[userId] || [];
         const inProgressTitles = inProgressByUser[userId] || [];
@@ -151,6 +149,7 @@ export async function GET(request) {
         const currentStreak = streakByUser[userId] || 0;
 
         const pepTalk = completedThisWeek > 0 ? pepTalkActive : pepTalkInactive;
+        const unsubUrl = unsubscribeUrl(userId, 'reports');
 
         const { subject, html } = buildWeeklyReportEmail({
           completedThisWeek,
@@ -158,6 +157,7 @@ export async function GET(request) {
           currentStreak,
           inProgressTasks: inProgressTitles,
           pepTalk,
+          unsubscribeUrl: unsubUrl,
         });
 
         await resend.emails.send({
@@ -165,6 +165,7 @@ export async function GET(request) {
           to: user.email,
           subject,
           html,
+          headers: unsubscribeHeaders(unsubUrl),
         });
 
         sent++;

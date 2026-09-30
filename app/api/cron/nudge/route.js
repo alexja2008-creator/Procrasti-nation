@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { buildDailyDigestEmail, buildCommitmentNudgeEmail } from '../../../../lib/emails';
+import { unsubscribeUrl, unsubscribeHeaders } from '../../../../lib/unsubscribe';
 
 // Use service role key so we can query all users' tasks (bypasses RLS)
 const supabaseAdmin = createClient(
@@ -10,6 +11,29 @@ const supabaseAdmin = createClient(
 );
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+
+export const maxDuration = 60;
+
+// Stop nudging tasks that have clearly been abandoned
+const GIVE_UP_AFTER_DAYS = 30;
+
+// Users who clicked "unsubscribe". If the preference column doesn't exist yet, nobody is opted out.
+async function fetchOptedOut(userIds) {
+  const optedOut = new Set();
+  if (userIds.length === 0) return optedOut;
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .select('user_id, email_reminders_enabled')
+    .in('user_id', userIds);
+  if (error) {
+    console.error('[nudge] Could not read email preferences:', error.message);
+    return optedOut;
+  }
+  for (const p of data || []) {
+    if (p.email_reminders_enabled === false) optedOut.add(p.user_id);
+  }
+  return optedOut;
+}
 
 // Pick the task the user should tackle first: due-soon tasks first, then fewest remaining steps
 function pickSpotlightTask(tasks) {
@@ -57,6 +81,7 @@ export async function GET(request) {
 
   const now = new Date();
   const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const giveUpCutoff = new Date(now.getTime() - GIVE_UP_AFTER_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
   try {
     // Find all in-progress tasks that:
@@ -67,6 +92,7 @@ export async function GET(request) {
       .select('id, user_id, title, steps, completed_steps, total_steps, due_date, last_nudge_sent')
       .eq('status', 'in_progress')
       .lt('created_at', twentyFourHoursAgo)
+      .gt('created_at', giveUpCutoff)
       .or(`last_nudge_sent.is.null,last_nudge_sent.lt.${twentyFourHoursAgo}`);
 
     if (error) {
@@ -86,6 +112,7 @@ export async function GET(request) {
     }
 
     const userIds = Object.keys(tasksByUser);
+    const optedOut = await fetchOptedOut(userIds);
 
     // Fetch user emails from auth.users via admin API
     const userEmailMap = {};
@@ -101,7 +128,7 @@ export async function GET(request) {
 
     for (const userId of userIds) {
       const email = userEmailMap[userId];
-      if (!email) continue;
+      if (!email || optedOut.has(userId)) continue;
 
       const userTasks = tasksByUser[userId];
 
@@ -123,15 +150,18 @@ export async function GET(request) {
 
       const spotlightTask = pickSpotlightTask(activeTasks);
 
-      const { subject, html } = buildDailyDigestEmail({ tasks: taskSummaries, spotlightTask });
+      const unsubUrl = unsubscribeUrl(userId, 'reminders');
+      const { subject, html } = buildDailyDigestEmail({ tasks: taskSummaries, spotlightTask, unsubscribeUrl: unsubUrl });
 
       try {
-        await resend.emails.send({
+        const { error: sendError } = await resend.emails.send({
           from: 'ProcrastiNation <nudge@procrasti-nation.work>',
           to: email,
           subject,
           html,
+          headers: unsubscribeHeaders(unsubUrl),
         });
+        if (sendError) throw sendError;
 
         // Update last_nudge_sent on all this user's stale tasks
         const taskIds = userTasks.map(t => t.id);
@@ -157,11 +187,14 @@ export async function GET(request) {
       .not('start_commitment', 'is', null)
       .lt('start_commitment', oneHourAgo)
       .eq('completed_steps', 0)
+      .gt('start_commitment', giveUpCutoff)
       .or(`last_nudge_sent.is.null,last_nudge_sent.lt.${twentyFourHoursAgo}`);
 
     let commitmentSent = 0;
     if (missedCommitments && missedCommitments.length > 0) {
+      const commitmentOptedOut = await fetchOptedOut([...new Set(missedCommitments.map(t => t.user_id))]);
       for (const task of missedCommitments) {
+        if (commitmentOptedOut.has(task.user_id)) continue;
         const email = userEmailMap[task.user_id];
         if (!email) {
           // Fetch email if not already in the map
@@ -175,20 +208,23 @@ export async function GET(request) {
           month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
         });
 
+        const unsubUrl = unsubscribeUrl(task.user_id, 'reminders');
         const { subject, html } = buildCommitmentNudgeEmail({
           taskTitle: task.title,
           commitmentTime: commitTime,
           taskId: task.id,
-          userEmail: toEmail,
+          unsubscribeUrl: unsubUrl,
         });
 
         try {
-          await resend.emails.send({
+          const { error: sendError } = await resend.emails.send({
             from: 'ProcrastiNation <nudge@procrasti-nation.work>',
             to: toEmail,
             subject,
             html,
+            headers: unsubscribeHeaders(unsubUrl),
           });
+          if (sendError) throw sendError;
           await supabaseAdmin.from('tasks').update({ last_nudge_sent: now.toISOString() }).eq('id', task.id);
           commitmentSent++;
         } catch (sendError) {
