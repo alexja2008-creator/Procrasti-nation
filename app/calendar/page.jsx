@@ -10,6 +10,7 @@ import CalendarMonthGrid from '../../components/CalendarMonthGrid';
 import CalendarDayGrid from '../../components/CalendarDayGrid';
 import CalendarEventPopover from '../../components/CalendarEventPopover';
 import StaleTaskPrompt from '../../components/StaleTaskPrompt';
+import { localDateString } from '../../lib/dates';
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
@@ -94,7 +95,7 @@ export default function CalendarPage() {
   }, [tasks]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function resolveAllStepDates() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateString();
     const { data: { session } } = await supabase.auth.getSession();
 
     for (const task of tasks) {

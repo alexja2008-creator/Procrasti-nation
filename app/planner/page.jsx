@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Brain, Calendar, Clock, CheckCircle2, Sparkles, Zap, Target, Trophy, ArrowLeft, Trash2, Pencil, Plus } from 'lucide-react';
 import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
+import { localDateString, localTimeZone } from '../../lib/dates';
 import Navigation from '../../components/Navigation';
 import UpgradeModal from '../../components/UpgradeModal';
 
@@ -210,7 +211,7 @@ function PlannerContent() {
   const updateStreak = async () => {
     if (!user) return;
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateString();
 
     const { data: existing } = await supabase
       .from('streaks')
@@ -223,7 +224,7 @@ function PlannerContent() {
 
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toISOString().split('T')[0];
+      const yesterdayStr = localDateString(yesterday);
 
       const newStreak = existing.last_completed_date === yesterdayStr
         ? existing.current_streak + 1
@@ -262,7 +263,7 @@ function PlannerContent() {
         .from('tasks')
         .select('id', { count: 'exact', head: true })
         .eq('user_id', user.id)
-        .gte('start_time', startOfMonth.toISOString());
+        .gte('created_at', startOfMonth.toISOString());
       if (count >= 3) {
         setShowUpgradeModal(true);
         return;
@@ -275,12 +276,13 @@ function PlannerContent() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const authHeader = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` };
+      const dateContext = { today: localDateString(), timeZone: localTimeZone() };
 
       if (!clarificationNeeded) {
         const clarificationRes = await fetch('/api/generate-plan', {
           method: 'POST',
           headers: authHeader,
-          body: JSON.stringify({ task, deadline, checkClarification: true, procrastinationType: user?.user_metadata?.procrastination_type || null }),
+          body: JSON.stringify({ task, deadline, checkClarification: true, procrastinationType: user?.user_metadata?.procrastination_type || null, ...dateContext }),
         });
         const clarificationData = await clarificationRes.json();
         if (!clarificationRes.ok) throw new Error(clarificationData.error || 'Failed to check clarification');
@@ -295,7 +297,7 @@ function PlannerContent() {
       const planRes = await fetch('/api/generate-plan', {
         method: 'POST',
         headers: authHeader,
-        body: JSON.stringify({ task, deadline, clarificationAnswers, clarificationQuestions, checkClarification: false, procrastinationType: user?.user_metadata?.procrastination_type || null }),
+        body: JSON.stringify({ task, deadline, clarificationAnswers, clarificationQuestions, checkClarification: false, procrastinationType: user?.user_metadata?.procrastination_type || null, ...dateContext }),
       });
       const planData = await planRes.json();
       if (!planRes.ok) throw new Error(planData.error || 'Failed to generate plan');
@@ -497,6 +499,11 @@ function PlannerContent() {
     newSteps.splice(dropIndex, 0, draggedItem);
     setPlan({ ...plan, steps: newSteps });
     setDraggedStep(null);
+    if (user && currentTaskId) {
+      supabase.from('tasks').update({ steps: newSteps }).eq('id', currentTaskId).then(({ error: saveError }) => {
+        if (saveError) console.error('[reorder] save failed:', saveError);
+      });
+    }
   };
 
   const handleDragEnd = () => setDraggedStep(null);
@@ -623,8 +630,7 @@ function PlannerContent() {
 
         {error && (
           <div className="mb-6 p-4 rounded-xl bg-rose-100 border border-rose-300 text-rose-700">
-            <p className="font-medium">Error: {error}</p>
-            <p className="text-sm mt-1">Make sure your ANTHROPIC_API_KEY is set in your environment variables.</p>
+            <p className="font-medium">{error}</p>
           </div>
         )}
 
@@ -1228,7 +1234,7 @@ function PlannerContent() {
                       const title = `ProcrastiNation: ${plan.taskTitle}`;
                       const date = dueDate
                         ? dueDate.replace(/-/g, '')
-                        : new Date().toISOString().split('T')[0].replace(/-/g, '');
+                        : localDateString().replace(/-/g, '');
                       const ics = [
                         'BEGIN:VCALENDAR',
                         'VERSION:2.0',

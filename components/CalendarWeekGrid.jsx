@@ -1,5 +1,7 @@
 'use client';
 
+import { localDateString } from '../lib/dates';
+
 export const TASK_COLORS = [
   { bg: 'bg-emerald-500', text: 'text-white' },
   { bg: 'bg-blue-500',    text: 'text-white' },
@@ -44,7 +46,7 @@ export function EventChip({ event, compact = false, darkMode, onClick }) {
 }
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const todayISO = () => new Date().toISOString().split('T')[0];
+const todayISO = () => localDateString();
 
 export default function CalendarWeekGrid({ events, weekStart, darkMode, onEventClick, onDayClick }) {
   const today = todayISO();
@@ -60,7 +62,7 @@ export default function CalendarWeekGrid({ events, weekStart, darkMode, onEventC
       {/* Day headers */}
       <div className={`grid grid-cols-7 border-b ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}>
         {days.map((day, i) => {
-          const iso = day.toISOString().split('T')[0];
+          const iso = localDateString(day);
           const isToday = iso === today;
           return (
             <div
@@ -94,7 +96,7 @@ export default function CalendarWeekGrid({ events, weekStart, darkMode, onEventC
       {/* Event columns */}
       <div className="grid grid-cols-7">
         {days.map((day) => {
-          const iso = day.toISOString().split('T')[0];
+          const iso = localDateString(day);
           const isToday = iso === today;
           const dayEvents = events.filter(e => e.resolvedDate === iso);
           return (

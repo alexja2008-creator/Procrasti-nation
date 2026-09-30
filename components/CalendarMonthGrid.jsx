@@ -1,11 +1,12 @@
 'use client';
 
 import { TASK_COLORS, EventChip } from './CalendarWeekGrid';
+import { localDateString } from '../lib/dates';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function CalendarMonthGrid({ events, month, year, darkMode, onEventClick, onDayClick }) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateString();
 
   const firstDay = new Date(year, month, 1);
   const firstDayOfWeek = firstDay.getDay(); // 0=Sun
@@ -48,7 +49,7 @@ export default function CalendarMonthGrid({ events, month, year, darkMode, onEve
             );
           }
 
-          const iso = day.toISOString().split('T')[0];
+          const iso = localDateString(day);
           const isToday = iso === today;
           const dayEvents = events.filter(e => e.resolvedDate === iso);
           const overflow = dayEvents.length > 3;

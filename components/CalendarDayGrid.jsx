@@ -1,10 +1,11 @@
 'use client';
 
 import { TASK_COLORS } from './CalendarWeekGrid';
+import { localDateString } from '../lib/dates';
 
 export default function CalendarDayGrid({ events, date, darkMode, onEventClick }) {
-  const iso = date.toISOString().split('T')[0];
-  const today = new Date().toISOString().split('T')[0];
+  const iso = localDateString(date);
+  const today = localDateString();
   const isToday = iso === today;
 
   const dayEvents = events.filter(e => e.resolvedDate === iso);

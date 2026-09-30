@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
+import { localDateString, localTimeZone } from '../../lib/dates';
 import Navigation from '../../components/Navigation';
 
 const ACCEPTED_TYPES = '.pdf,.docx,.png,.jpg,.jpeg';
@@ -79,6 +80,8 @@ export default function SyllabusPage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('today', localDateString());
+      formData.append('timeZone', localTimeZone() || '');
 
       const { data: { session } } = await supabase.auth.getSession();
       const res = await fetch('/api/parse-syllabus', {

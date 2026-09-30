@@ -5,6 +5,7 @@ import { useTheme } from '../app/providers';
 import { usePathname } from 'next/navigation';
 import { supabase } from '../lib/supabase';
 import { X, ArrowRight } from 'lucide-react';
+import { localDateString } from '../lib/dates';
 
 // ── Quiz questions ────────────────────────────────────────────────────────────
 const QUIZ_QUESTIONS = [
@@ -278,7 +279,7 @@ export default function TutorialOverlay({ user, router, onComplete }) {
     const dayAfter = new Date(today); dayAfter.setDate(today.getDate() + 2);
     const dueDate = new Date(today); dueDate.setDate(today.getDate() + 7);
 
-    const toDateStr = (d) => d.toISOString().split('T')[0];
+    const toDateStr = (d) => localDateString(d);
 
     const sampleSteps = [
       { id: 1, title: 'Review your week', description: 'Look at what you have coming up and note any deadlines.', estimatedTime: '10 min', when: 'Today', completed: false },

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { BarChart3, Flame, Zap, CheckCircle2, Clock, TrendingUp, Calendar, Archive, ChevronRight, X, PlayCircle, Trash2, ArrowUpDown, Plus, GripVertical, FolderOpen, Activity } from 'lucide-react';
 import { useTheme, useAuth } from '../providers';
 import { supabase } from '../../lib/supabase';
+import { localDateString } from '../../lib/dates';
 import Navigation from '../../components/Navigation';
 import Link from 'next/link';
 import StaleTaskPrompt from '../../components/StaleTaskPrompt';
@@ -212,7 +213,7 @@ export default function DashboardPage() {
   // Schedule adherence: % of steps completed on or before their scheduled date.
   // Only counts steps that have a step_dates entry AND are either completed or past-due —
   // upcoming incomplete steps are not yet measurable.
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateString();
   let measurableSteps = 0;
   let onTimeSteps = 0;
   let overdueSteps = 0;
@@ -226,7 +227,7 @@ export default function DashboardPage() {
 
       if (step.completed) {
         measurableSteps++;
-        const completedOn = step.completedAt ? step.completedAt.split('T')[0] : null;
+        const completedOn = step.completedAt ? localDateString(new Date(step.completedAt)) : null;
         if (completedOn && completedOn <= dueDate) {
           onTimeSteps++;
         } else {
