@@ -70,7 +70,7 @@ app/
     parse-syllabus/route.js         # Syllabus file → JSON assignments
     resolve-step-dates/route.js     # Relative timing → absolute calendar dates
     create-room/route.js            # Whereby room creation
-    cron/nudge/route.js             # Daily nudge digest (one email per user, untouched tasks only)
+    cron/nudge/route.js             # Daily nudge digest (one email per user) + missed-commitment nudges
     unsubscribe/route.js            # Signed one-click unsubscribe (reminders / reports)
     cron/weekly-report/route.js     # Monday weekly progress digest
 
