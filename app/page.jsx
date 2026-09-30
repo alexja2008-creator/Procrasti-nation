@@ -520,19 +520,7 @@ export default function LandingPage() {
                 </li>
                 <li className="flex items-center text-white">
                   <Check className="w-5 h-5 text-white mr-3 flex-shrink-0" />
-                  <span className="font-medium">Advanced analytics & insights</span>
-                </li>
-                <li className="flex items-center text-white">
-                  <Check className="w-5 h-5 text-white mr-3 flex-shrink-0" />
-                  <span className="font-medium">Private Focus Pods</span>
-                </li>
-                <li className="flex items-center text-white">
-                  <Check className="w-5 h-5 text-white mr-3 flex-shrink-0" />
-                  <span className="font-medium">Priority support</span>
-                </li>
-                <li className="flex items-center text-white">
-                  <Check className="w-5 h-5 text-white mr-3 flex-shrink-0" />
-                  <span className="font-medium">Export & integrations</span>
+                  <span className="font-medium">Everything in Free</span>
                 </li>
               </ul>
 
@@ -555,7 +543,7 @@ export default function LandingPage() {
             Your nation is waiting.
           </h2>
           <p className={`text-xl mb-10 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-            Thousands of former procrastinators have already changed their status. One step at a time. Together.
+            Pick the thing you've been avoiding. We'll break it into steps small enough to start today.
           </p>
           <Link
             href="/planner"

@@ -6,13 +6,8 @@ import { useTheme } from '../app/providers';
 import { supabase } from '../lib/supabase';
 
 const PRO_FEATURES = [
-  'Unlimited AI-planned tasks',
-  'Email nudges when tasks go stale',
-  'Weekly Citizen Report (progress digest)',
-  'Streak freeze — keep your streak alive',
-  'Private Focus Pods with friends',
-  'Task templates for common challenges',
-  'Advanced metrics & insights',
+  'Unlimited AI-planned tasks, with no monthly cap',
+  'Everything in Free: calendar, syllabus import, Focus Pods, nudges',
 ];
 
 export default function UpgradeModal({ onClose, reason = 'limit' }) {
