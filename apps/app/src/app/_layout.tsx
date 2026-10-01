@@ -14,12 +14,12 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AuthProvider, useAuth } from '@/auth/auth-provider';
 import { useTokens } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const t = useTokens();
   const [loaded, error] = useFonts({
     [fonts.display]: Fraunces_500Medium,
     [fonts.displayItalic]: Fraunces_500Medium_Italic,
@@ -31,11 +31,26 @@ export default function RootLayout() {
     [fonts.logo]: SpaceGrotesk_700Bold,
   });
 
-  useEffect(() => {
-    if (loaded || error) SplashScreen.hideAsync();
-  }, [loaded, error]);
+  return (
+    <SafeAreaProvider>
+      <AuthProvider>
+        <RootNavigator fontsReady={loaded || !!error} />
+      </AuthProvider>
+    </SafeAreaProvider>
+  );
+}
 
-  if (!loaded && !error) return null;
+/** Keeps the splash up until fonts and the stored session are ready, so signed-in people never see sign-in flash by. */
+function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
+  const t = useTokens();
+  const { session, loading } = useAuth();
+  const ready = fontsReady && !loading;
+
+  useEffect(() => {
+    if (ready) SplashScreen.hideAsync();
+  }, [ready]);
+
+  if (!ready) return null;
 
   const night = t.scheme === 'night';
   const base = night ? DarkTheme : DefaultTheme;
@@ -52,11 +67,18 @@ export default function RootLayout() {
   };
 
   return (
-    <SafeAreaProvider>
-      <ThemeProvider value={navTheme}>
-        <StatusBar style={night ? 'light' : 'dark'} />
-        <Stack screenOptions={{ headerShown: false }} />
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <ThemeProvider value={navTheme}>
+      <StatusBar style={night ? 'light' : 'dark'} />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Protected guard={!!session}>
+          <Stack.Screen name="(tabs)" />
+        </Stack.Protected>
+        <Stack.Protected guard={!session}>
+          <Stack.Screen name="sign-in" />
+        </Stack.Protected>
+        {/* Open in both states: it's where magic links and OAuth land. */}
+        <Stack.Screen name="auth/callback" />
+      </Stack>
+    </ThemeProvider>
   );
 }

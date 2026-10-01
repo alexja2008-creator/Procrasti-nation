@@ -1,11 +1,14 @@
+import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { useTokens } from '@/theme/tokens';
 
+type Props = { eyebrow: string; title: string; lead: string; children?: ReactNode };
+
 /** Placeholder for a tab that is designed but not built yet. */
-export function DraftPage({ eyebrow, title, lead }: { eyebrow: string; title: string; lead: string }) {
+export function DraftPage({ eyebrow, title, lead, children }: Props) {
   const t = useTokens();
   return (
     <Screen>
@@ -20,6 +23,7 @@ export function DraftPage({ eyebrow, title, lead }: { eyebrow: string; title: st
           {lead}
         </Text>
       </View>
+      {children}
     </Screen>
   );
 }

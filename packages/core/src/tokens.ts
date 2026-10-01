@@ -36,6 +36,12 @@ export interface Palette {
   dashed: string;
   /** Unchecked checkbox ring. */
   checkbox: string;
+  /** Text inputs and secondary buttons. Border keeps ≥3:1 against `card`. */
+  field: { bg: string; border: string };
+  /** Validation and failure copy. */
+  error: string;
+  /** Sign in with Apple: black on light grounds, white on dark (Apple HIG). */
+  apple: { bg: string; fg: string };
 
   /** "Your next small step" ticket. */
   next: { bg: string; border: string; stub: string; meta: string };
@@ -64,6 +70,9 @@ export const palettes: Record<Scheme, Palette> = {
     outline: '#CFC4AE',
     dashed: '#A99C80',
     checkbox: '#8E8A7E',
+    field: { bg: '#FBF8F1', border: '#8E8A7E' },
+    error: '#A8513B',
+    apple: { bg: '#000000', fg: '#FFFFFF' },
     next: { bg: '#E4EADD', border: '#C9D5C0', stub: '#A9BFA6', meta: '#4A5A4E' },
     tabBar: { bg: '#ECE5D6', border: '#D8CDB5' },
     stamp: { terracotta: '#A8513B', violet: '#5E5D8F', forest: '#3A6B52' },
@@ -87,12 +96,20 @@ export const palettes: Record<Scheme, Palette> = {
     outline: '#3A4163',
     dashed: '#5E6180',
     checkbox: '#8A8DA3',
+    field: { bg: '#1E2440', border: '#8A8DA3' },
+    error: '#E08A70',
+    apple: { bg: '#FFFFFF', fg: '#000000' },
     next: { bg: '#1D2B28', border: '#34503F', stub: '#4F7A63', meta: '#B5C4BA' },
     tabBar: { bg: '#10152A', border: '#2A3150' },
     // Only terracotta was drawn for night; violet is lightened to match it.
     stamp: { terracotta: '#E08A70', violet: '#A3A2D6', forest: '#7CC3A0' },
   },
 };
+
+/** Third-party marks whose colors are fixed by brand guidelines, not by A2. */
+export const brandMarks = {
+  google: { blue: '#4285F4', green: '#34A853', yellow: '#FBBC05', red: '#EA4335' },
+} as const;
 
 /**
  * Font family names. The app registers each loaded font file under exactly

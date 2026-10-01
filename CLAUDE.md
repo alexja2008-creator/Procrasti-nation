@@ -8,7 +8,8 @@ apps/app       # NEW Expo SDK 57 app (expo-router, TypeScript) → App Store + w
 packages/core  # Shared, dependency-free TS: A2 tokens, nation naming/voice, date helpers, data types (@pn/core)
 ```
 - **Not an npm workspace.** The site is on React 18 and the Expo app on React 19, so each app has its own `node_modules`; `packages/core` is imported by `apps/app` through the `@pn/core` tsconfig alias plus Metro `watchFolders`. Root `package.json` only holds convenience scripts (`npm run site:dev`, `app:web`, `app:check`, `evals`).
-- **The Expo app never holds secrets.** It gets only `EXPO_PUBLIC_*` values and calls `apps/site`'s `/api/*` routes for anything needing a key.
+- **The Expo app never holds secrets.** It gets only `EXPO_PUBLIC_*` values (see `apps/app/.env.example`; real values in gitignored `apps/app/.env.local`) and calls `apps/site`'s `/api/*` routes for anything needing a key.
+- **v2 auth:** Supabase magic link (PKCE), Sign in with Apple (native on iOS via `signInWithIdToken` + nonce; OAuth on web), Google (OAuth). Supabase Auth's redirect allow list must include every callback form: `procrastination://auth/callback`, `exp://**` (Expo Go), `http://localhost:8081/auth/callback`, and the production web URL. Expo Go lacks the Apple native module, so Apple sign-in needs a development build.
 - Everything below this section describes `apps/site` unless it says otherwise; paths are relative to `apps/site/`.
 
 ## Project Overview
@@ -118,7 +119,11 @@ lib/
 
 ### apps/app (Expo, v2)
 ```
-src/app/_layout.tsx               # Root Stack: loads A2 fonts, nav theme from tokens
+src/app/_layout.tsx               # Root Stack: A2 fonts, AuthProvider, Stack.Protected sign-in gate
+src/app/sign-in.tsx               # Magic link + Apple + Google (each shown only if in EXPO_PUBLIC_AUTH_PROVIDERS)
+src/app/auth/callback.tsx         # Where magic links / OAuth land; exchanges the PKCE ?code=
+src/auth/                         # auth-provider (session), sign-in actions, apple(.web).ts
+src/lib/supabase.ts               # Anon-key client (PKCE, AsyncStorage, foreground-only token refresh)
 src/app/(tabs)/_layout.tsx        # Headless expo-router/ui tabs + custom NavBar
 src/app/(tabs)/index.tsx          # Today (A2 design, mock data for now)
 src/app/(tabs)/upcoming|territories|passport.tsx   # Placeholders

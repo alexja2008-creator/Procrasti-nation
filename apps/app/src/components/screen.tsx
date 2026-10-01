@@ -16,6 +16,9 @@ export function Screen({ children }: { children: ReactNode }) {
     <View style={[styles.fill, { backgroundColor: t.c.bg }]}>
       <SecurityLines color={t.c.securityLine} />
       <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
         contentContainerStyle={[
           styles.column,
           { paddingTop: insets.top + (wide ? 48 : t.space.xxl), gap: 14 },

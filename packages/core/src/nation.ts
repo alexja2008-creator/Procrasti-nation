@@ -111,6 +111,38 @@ export const voice = {
   passportLead: 'A little proof of progress.',
   encouragement: 'Starting counts. So does coming back, and asking for help.',
   stamped: 'Stamped',
+  signIn: {
+    eyebrow: 'Passport control',
+    titleLead: 'Welcome to the',
+    titleAccent: 'Nation.',
+    lead: 'Sign in to pick up where you left off. New here? This is where your passport begins.',
+    /** Shown bilingually like the passport ID labels; screen readers get `emailLabelSpoken`. */
+    emailLabel: 'Email / Courriel',
+    emailLabelSpoken: 'Email',
+    emailPlaceholder: 'you@school.edu',
+    continueWithApple: 'Continue with Apple',
+    continueWithGoogle: 'Continue with Google',
+    sendLink: 'Email me a sign-in link',
+    sending: 'Sending…',
+    hint: 'No password needed. Open the link on this device and you’re in.',
+    invalidEmail: 'That email doesn’t look quite right.',
+    sentTitle: 'Check your email.',
+    sentBody: (email: string) => `We sent a sign-in link to ${email}. Open it on this device and you’re in.`,
+    resend: 'Resend the link',
+    resendIn: (seconds: number) => `Resend in ${seconds}s`,
+    differentEmail: 'Use a different email',
+    checking: 'Checking your papers…',
+    callbackFailedTitle: 'That link didn’t work.',
+    backToSignIn: 'Back to sign in',
+    signedInAs: (email: string) => `Signed in as ${email}`,
+    signOut: 'Sign out',
+  },
+  authErrors: {
+    rateLimited: 'Too many tries. Give it a minute, then try again.',
+    offline: 'Can’t reach the Nation right now. Check your connection and try again.',
+    staleLink: 'That link has expired, or it was opened on a different device or browser. Request a fresh one.',
+    generic: 'Something went wrong signing you in. Please try again.',
+  },
 } as const;
 
 // ---------------------------------------------------------------------------
