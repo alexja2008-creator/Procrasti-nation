@@ -1,6 +1,7 @@
-// Draft v2 data model, mirroring the planned Supabase schema (Phase 2
-// migration). Timestamps are ISO strings (TIMESTAMPTZ); calendar dates are
-// local YYYY-MM-DD strings. Rows are soft-deleted (`deleted_at`) for sync.
+// v2 data model, mirroring supabase/v2/01_schema.sql (camelCase here,
+// snake_case in SQL). Timestamps are ISO strings (TIMESTAMPTZ); `*On`
+// fields are local YYYY-MM-DD calendar dates. Rows are soft-deleted
+// (`deletedAt`) so offline sync can propagate deletions.
 
 export type ISODateTime = string;
 /** Local calendar date, YYYY-MM-DD. */
@@ -22,16 +23,22 @@ export interface Preferences {
   channels: { push: boolean; email: boolean };
 }
 
-export interface Profile {
-  id: string;
-  displayName: string | null;
+/**
+ * `user_settings`: private, owner-only. Kept off `profiles`, which is
+ * publicly readable (and only exists for users who picked a username).
+ */
+export interface UserSettings {
+  userId: string;
+  /** Assigned by the database in signup order; never changes. */
   citizenNumber: number;
   timezone: string | null;
   /** Hour (0–6) at which the user's day rolls over. */
   dayRolloverHour: number;
-  preferences: Preferences | null;
+  /** Empty until the Citizenship Application is finished. */
+  preferences: Partial<Preferences>;
   onboardingCompletedAt: ISODateTime | null;
-  entitlement: 'free' | 'trial' | 'pro';
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
 }
 
 export type ListKind = 'school' | 'work' | 'home' | 'custom';
@@ -60,13 +67,15 @@ export interface Task {
   parentId: string | null;
   title: string;
   notes: string | null;
-  dueDate: LocalDate | null;
+  /** `status` is v1's column, kept: 'completed' iff `completedAt` is set. */
+  status: 'in_progress' | 'completed';
+  dueOn: LocalDate | null;
   /** Set when the task is due at a specific time. */
   dueAt: ISODateTime | null;
   remindAt: ISODateTime | null;
   rrule: string | null;
   estimateMinutes: number | null;
-  scheduledDate: LocalDate | null;
+  scheduledOn: LocalDate | null;
   sortOrder: number;
   source: TaskSource;
   externalId: string | null;
@@ -86,10 +95,23 @@ export interface Stamp {
   earnedAt: ISODateTime;
 }
 
+/** Capture-first note, optionally attached to a task or a territory. */
+export interface Note {
+  id: string;
+  userId: string;
+  listId: string | null;
+  taskId: string | null;
+  body: string;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+  deletedAt: ISODateTime | null;
+}
+
 export interface StartSession {
   id: string;
   userId: string;
-  taskId: string;
+  /** Null once the task is deleted; the start still counts. */
+  taskId: string | null;
   startedAt: ISODateTime;
   endedAt: ISODateTime | null;
   plannedMinutes: number;

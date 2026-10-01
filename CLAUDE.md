@@ -164,6 +164,14 @@ id, name, category, duration, max_participants, participants, room_url, created_
 
 All tables have RLS policies filtering by `user_id`.
 
+### v2 data model (`supabase/v2/`, not yet on production)
+Additive migration with a cutover-only backfill and a tested rollback; see `supabase/v2/README.md` and run `npm test` there (real Postgres via PGlite).
+- `user_settings` (PK `user_id`): `citizen_number` (DB-assigned in signup order, immutable), `timezone`, `day_rollover_hour`, `preferences` JSONB (Citizenship Application answers), `onboarding_completed_at`. **Owner-only; private settings never go on `profiles`, which is publicly readable.**
+- `lists` (Territories; `list_id` NULL = Customs), `notes`, `stamps`, `start_sessions`, `push_tokens`.
+- `tasks` gains `list_id`, `parent_id` (steps/subtasks are child rows, one level deep), `notes`, `due_on`, `due_at`, `remind_at`, `rrule`, `estimate_minutes`, `scheduled_on`, `sort_order` (float), `source`, `external_id`, `deleted_at`. v1 columns (`steps`, `step_dates`, `recurrence`, `due_date`) stay until a later contract migration.
+- Naming: `*_on` = local DATE, `*_at` = TIMESTAMPTZ; soft deletes via `deleted_at` (sync needs tombstones).
+- Triggers reject `list_id`/`task_id`/`parent_id` pointing at another user's rows (an FK alone would accept them).
+
 ## Key Patterns
 
 ### Dark Mode

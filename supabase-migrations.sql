@@ -163,3 +163,7 @@ ADD COLUMN IF NOT EXISTS email_reminders_enabled BOOLEAN DEFAULT true;
 
 ALTER TABLE profiles
 ADD COLUMN IF NOT EXISTS email_reports_enabled BOOLEAN DEFAULT true;
+
+-- 9. ProcrastiNation 2.0 data model → see supabase/v2/ (README.md).
+--    01_schema.sql is additive and safe before cutover; 02_backfill.sql runs
+--    only at cutover; 99_rollback.sql undoes both. Staging first.
