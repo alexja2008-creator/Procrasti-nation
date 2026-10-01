@@ -1,5 +1,16 @@
 # ProcrastiNation – Claude Code Guide
 
+## Repo Layout (v2 branch)
+ProcrastiNation 2.0 is being rebuilt on the `v2` branch (`main` still has the old root layout and is what production deploys). On `v2`:
+```
+apps/site      # The Next.js app described below (moved here unchanged): marketing site + /api/* backend
+apps/app       # NEW Expo SDK 57 app (expo-router, TypeScript) → App Store + web. See apps/app/README.md
+packages/core  # Shared, dependency-free TS: A2 tokens, nation naming/voice, date helpers, data types (@pn/core)
+```
+- **Not an npm workspace.** The site is on React 18 and the Expo app on React 19, so each app has its own `node_modules`; `packages/core` is imported by `apps/app` through the `@pn/core` tsconfig alias plus Metro `watchFolders`. Root `package.json` only holds convenience scripts (`npm run site:dev`, `app:web`, `app:check`, `evals`).
+- **The Expo app never holds secrets.** It gets only `EXPO_PUBLIC_*` values and calls `apps/site`'s `/api/*` routes for anything needing a key.
+- Everything below this section describes `apps/site` unless it says otherwise; paths are relative to `apps/site/`.
+
 ## Project Overview
 AI-powered productivity SaaS that helps users overcome procrastination via:
 - AI task breakdown with step editing, scheduling, and recurrence
@@ -27,11 +38,20 @@ AI-powered productivity SaaS that helps users overcome procrastination via:
 - **Domain**: procrasti-nation.work
 
 ## Dev Commands
+Site (run inside `apps/site`):
 ```bash
 npm run dev      # Start dev server at http://localhost:3000
 npm run build    # Production build
 npm start        # Run production build
-npm run lint     # ESLint
+npm run lint     # ESLint (never configured; opens an interactive setup, so use build to check)
+```
+
+App (run inside `apps/app`):
+```bash
+npx expo start --web            # Web at http://localhost:8081
+npx expo start --ios            # iOS Simulator (needs Xcode, license accepted)
+npx tsc --noEmit && npx expo lint
+npx expo install <pkg>          # Always, instead of npm install, for SDK-compatible versions
 ```
 
 Note: nvm is installed. If node isn't found, run:
@@ -40,7 +60,7 @@ export PATH="$HOME/.nvm/versions/node/$(ls ~/.nvm/versions/node | tail -1)/bin:$
 ```
 
 ## Environment Setup
-Requires `.env.local` with:
+Requires `apps/site/.env.local` (Next only reads it from its own folder) with:
 ```
 ANTHROPIC_API_KEY=sk-ant-...
 NEXT_PUBLIC_SUPABASE_URL=https://tmigxhhnhledszjdgnwk.supabase.co
@@ -96,6 +116,20 @@ lib/
   emails.js                         # Email templates (nudge + weekly report)
 ```
 
+### apps/app (Expo, v2)
+```
+src/app/_layout.tsx               # Root Stack: loads A2 fonts, nav theme from tokens
+src/app/(tabs)/_layout.tsx        # Headless expo-router/ui tabs + custom NavBar
+src/app/(tabs)/index.tsx          # Today (A2 design, mock data for now)
+src/app/(tabs)/upcoming|territories|passport.tsx   # Placeholders
+src/components/                   # NavBar, NextStepCard, TaskRow, Screen, Text, Icon, Logo, SecurityLines
+src/theme/tokens.ts               # useTokens() / useStyles() over @pn/core palettes
+src/data/mock.ts                  # Mock profile + agenda until Supabase sync lands
+```
+
+### packages/core
+`src/tokens.ts` (A2 palettes for light/"night passport", fonts, type scale, spacing, radii, motion), `src/nation.ts` (names, plain action labels, ranks, nudge tones, voice strings, citizen number + passport code lines), `src/dates.ts` (local-date helpers, day rollover, RRULE labels), `src/types.ts` (draft v2 data model).
+
 ## Database (Supabase)
 
 ### `tasks` table
@@ -133,9 +167,11 @@ All tables have RLS policies filtering by `user_id`.
 ## Key Patterns
 
 ### Dark Mode
-- Use `useTheme()` hook from `app/providers.jsx`
+- **apps/site:** Use `useTheme()` hook from `app/providers.jsx`
 - Apply dark styles via ternary: `` `${darkMode ? 'bg-slate-800' : 'bg-white'}` ``
 - **Never** use Tailwind's `dark:` prefix — the project uses class-based JS toggling
+- **apps/app (v2) does not use ternaries.** Style with React Native `StyleSheet` and A2 tokens: `const s = useStyles(makeStyles)` with a module-level `makeStyles = (t: Tokens) => ...`, or `useTokens()` for one-off colors. Light/night follow the system scheme. Never hard-code a hex in a component; add a token to `packages/core/src/tokens.ts` instead. Use the `Text` component's `variant` for type roles, and the `Icon` component (SVG strokes), never emoji.
+- v2 copy: nation names for places and rewards (from `@pn/core` `names`/`voice`), plain labels on buttons (`actions`). The AI-plan button is always "Plan it".
 
 ### Auth
 - `useAuth()` from `app/providers.jsx` — exposes `{ user, loading, trialStatus, trialDaysLeft, signOut }`
@@ -210,3 +246,4 @@ When adding new agent files, update this table.
 - **Domain**: procrasti-nation.work (Porkbun → Vercel DNS)
 - **Cron**: `vercel.json` — nudge daily 2pm UTC, weekly report Monday 1pm UTC
 - **Env vars**: All 8 vars above must be set in Vercel dashboard
+- **v2 merge:** the Vercel project's Root Directory must flip to `apps/site` at the same moment `v2` merges to `main` (the setting applies to every branch, so flipping it early breaks production). Until then, `v2` pushes produce failing previews. The Expo web build will get its own Vercel project at `app.procrasti-nation.work`.

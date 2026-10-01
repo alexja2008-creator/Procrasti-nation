@@ -1,0 +1,70 @@
+import type { ReactNode } from 'react';
+import Svg, { Circle, Path, Rect } from 'react-native-svg';
+
+// Stroke icons drawn for the A2 canvas (24×24 grid, round caps). Never emoji.
+const glyphs = {
+  sun: (
+    <>
+      <Circle cx={12} cy={12} r={4} />
+      <Path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </>
+  ),
+  inbox: (
+    <>
+      <Path d="M3 13h5l1.5 3h5l1.5-3h5" />
+      <Path d="M5 5h14l2 8v6H3v-6z" />
+    </>
+  ),
+  chevronRight: <Path d="M9 6l6 6-6 6" />,
+  calendar: (
+    <>
+      <Rect x={3} y={5} width={18} height={16} rx={2} />
+      <Path d="M16 3v4M8 3v4M3 10h18" />
+    </>
+  ),
+  map: (
+    <>
+      <Path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z" />
+      <Path d="M9 4v14M15 6v14" />
+    </>
+  ),
+  passport: (
+    <>
+      <Path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v16H5.5A1.5 1.5 0 0 1 4 18.5z" />
+      <Path d="M20 5.5A1.5 1.5 0 0 0 18.5 4H13v16h5.5a1.5 1.5 0 0 0 1.5-1.5z" />
+    </>
+  ),
+  plus: <Path d="M12 5v14M5 12h14" />,
+  repeat: (
+    <>
+      <Path d="M17 2l3 3-3 3" />
+      <Path d="M4 11V9a4 4 0 0 1 4-4h12" />
+      <Path d="M7 22l-3-3 3-3" />
+      <Path d="M20 13v2a4 4 0 0 1-4 4H4" />
+    </>
+  ),
+  /** "Made smaller": the shrink arrows on AI-built steps and the Plan it pill. */
+  shrink: <Path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" />,
+  check: <Path d="M5 12.5l4.5 4.5L19 7.5" />,
+} satisfies Record<string, ReactNode>;
+
+export type IconName = keyof typeof glyphs;
+
+type Props = { name: IconName; size?: number; color: string; strokeWidth?: number };
+
+export function Icon({ name, size = 22, color, strokeWidth = 1.7 }: Props) {
+  return (
+    <Svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden>
+      {glyphs[name]}
+    </Svg>
+  );
+}

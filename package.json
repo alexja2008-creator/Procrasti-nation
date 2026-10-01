@@ -1,0 +1,14 @@
+{
+  "name": "procrastination-repo",
+  "private": true,
+  "description": "Not an npm workspace: apps/site (Next 14, React 18) and apps/app (Expo SDK 57, React 19) each keep their own node_modules. packages/core is dependency-free TS imported by apps/app via the @pn/core alias.",
+  "scripts": {
+    "install:all": "npm --prefix apps/site ci && npm --prefix apps/app ci",
+    "site:dev": "npm --prefix apps/site run dev",
+    "site:build": "npm --prefix apps/site run build",
+    "app:web": "npm --prefix apps/app run web",
+    "app:ios": "npm --prefix apps/app run ios",
+    "app:check": "cd apps/app && npx tsc --noEmit && npx expo lint",
+    "evals": "cd apps/site && node --no-warnings evals/plan-quality/run.mjs"
+  }
+}
