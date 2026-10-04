@@ -28,6 +28,8 @@ Staging project: `mbuakrohovzjegonrplp`. It gets production's **structure only**
 4. Run `prod-stats.sql` in the **production** SQL Editor (SELECT only; counts and anonymized patterns, no personal data). Its numbers predict what `02_backfill.sql` will do on real data and flag shapes the tests don't cover yet.
 5. Apply `.local/prod-schema.sql` to staging, then `01_schema.sql`; seed test users and v1-shaped tasks; run `02_backfill.sql`; check; run `99_rollback.sql`; re-apply.
 
+**Staging status (2026-10-03):** production's structure (14 tables, 42 policies, 2 triggers, 7 functions; counts verified against the dump) plus `01_schema.sql` are applied. `02_backfill.sql` and `99_rollback.sql` were rehearsed on production-shaped rows inside a transaction that was rolled back, so staging holds no data. The anon API sees the new tables, and RLS blocks signed-out reads and writes.
+
 Connection strings: Supabase dashboard → project → **Connect** → **Session pooler** (the direct connection is IPv6-only on the free plan).
 
 `npm test` also runs every check against `.local/prod-schema.sql` when it exists, so the real production structure (including the schools tables and the teacher RLS policy) is covered locally.
