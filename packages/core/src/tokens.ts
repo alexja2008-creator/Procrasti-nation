@@ -40,6 +40,8 @@ export interface Palette {
   field: { bg: string; border: string };
   /** Validation and failure copy. */
   error: string;
+  /** Dims the page behind sheets and dialogs. */
+  scrim: string;
   /** Sign in with Apple: black on light grounds, white on dark (Apple HIG). */
   apple: { bg: string; fg: string };
 
@@ -72,6 +74,7 @@ export const palettes: Record<Scheme, Palette> = {
     checkbox: '#8E8A7E',
     field: { bg: '#FBF8F1', border: '#8E8A7E' },
     error: '#A8513B',
+    scrim: 'rgba(35,42,69,0.35)',
     apple: { bg: '#000000', fg: '#FFFFFF' },
     next: { bg: '#E4EADD', border: '#C9D5C0', stub: '#A9BFA6', meta: '#4A5A4E' },
     tabBar: { bg: '#ECE5D6', border: '#D8CDB5' },
@@ -98,6 +101,7 @@ export const palettes: Record<Scheme, Palette> = {
     checkbox: '#8A8DA3',
     field: { bg: '#1E2440', border: '#8A8DA3' },
     error: '#E08A70',
+    scrim: 'rgba(5,8,18,0.6)',
     apple: { bg: '#FFFFFF', fg: '#000000' },
     next: { bg: '#1D2B28', border: '#34503F', stub: '#4F7A63', meta: '#B5C4BA' },
     tabBar: { bg: '#10152A', border: '#2A3150' },

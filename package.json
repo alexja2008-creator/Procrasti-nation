@@ -9,6 +9,8 @@
     "app:web": "npm --prefix apps/app run web",
     "app:ios": "npm --prefix apps/app run ios",
     "app:check": "cd apps/app && npx tsc --noEmit && npx expo lint",
-    "evals": "cd apps/site && node --no-warnings evals/plan-quality/run.mjs"
+    "evals": "cd apps/site && node --no-warnings evals/plan-quality/run.mjs",
+    "core:test": "node --test packages/core/test/*.test.ts",
+    "db:test": "npm --prefix supabase/v2 test"
   }
 }

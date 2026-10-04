@@ -46,6 +46,18 @@ const glyphs = {
   /** "Made smaller": the shrink arrows on AI-built steps and the Plan it pill. */
   shrink: <Path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" />,
   check: <Path d="M5 12.5l4.5 4.5L19 7.5" />,
+  clock: (
+    <>
+      <Circle cx={12} cy={12} r={9} />
+      <Path d="M12 7v5l3.5 2" />
+    </>
+  ),
+  globe: (
+    <>
+      <Circle cx={12} cy={12} r={9} />
+      <Path d="M3.5 9h17M3.5 15h17M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9s1.3-6.4 3.8-9z" />
+    </>
+  ),
   mail: (
     <>
       <Rect x={3} y={5} width={18} height={14} rx={2} />

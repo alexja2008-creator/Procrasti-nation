@@ -2,6 +2,7 @@ import type { TabListProps, TabTriggerSlotProps } from 'expo-router/ui';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useCapture } from '@/components/capture';
 import { Icon, type IconName } from '@/components/icon';
 import { Logo } from '@/components/logo';
 import { Text } from '@/components/text';
@@ -55,14 +56,15 @@ export function NavItem({ icon, label, wide, isFocused, ...props }: NavItemProps
   );
 }
 
-/** The always-present capture button. Quick add lands here in Phase 3. */
-export function CaptureButton({ wide, onPress }: { wide: boolean; onPress?: () => void }) {
+/** The always-present capture button: opens quick add. */
+export function CaptureButton({ wide }: { wide: boolean }) {
+  const { open } = useCapture();
   const s = useStyles(makeStyles);
   const t = s.t;
   if (wide) {
     return (
       <Pressable
-        onPress={onPress}
+        onPress={open}
         accessibilityRole="button"
         style={({ pressed }) => [s.sideCapture, pressed && s.pressed]}>
         <Icon name="plus" color={t.c.onPrimary} size={18} strokeWidth={2} />
@@ -74,7 +76,7 @@ export function CaptureButton({ wide, onPress }: { wide: boolean; onPress?: () =
   }
   return (
     <Pressable
-      onPress={onPress}
+      onPress={open}
       accessibilityRole="button"
       accessibilityLabel="Capture something new"
       style={({ pressed }) => [s.capture, pressed && s.pressed]}>

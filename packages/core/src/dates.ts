@@ -77,3 +77,94 @@ export function describeRRule(rrule: string): string {
   if (interval === 1 && days.length === 5 && !days.includes('SA') && !days.includes('SU')) return 'Every weekday';
   return `${every} on ${days.map((d) => DAY_NAMES[d] ?? d).join(', ')}`;
 }
+
+// ---------------------------------------------------------------------------
+// Day arithmetic and labels
+
+const titleCase = (s: string) => s[0] + s.slice(1).toLowerCase();
+
+/** Whole days from `a` to `b` (negative if `b` is earlier). DST-safe. */
+export function daysBetween(a: string, b: string): number {
+  return Math.round((parseLocalDate(b).getTime() - parseLocalDate(a).getTime()) / 86_400_000);
+}
+
+/** Same day-of-month `months` later, clamped to the month's length (Jan 31 + 1 → Feb 28). */
+export function addMonthsClamped(ymd: string, months: number): string {
+  const [y, m, d] = ymd.split('-').map(Number);
+  const target = new Date(y, m - 1 + months, 1);
+  const last = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
+  target.setDate(Math.min(d, last));
+  return localDateString(target);
+}
+
+/** "Fri 9 Oct". */
+export function formatShortDate(ymd: string): string {
+  const d = parseLocalDate(ymd);
+  return `${titleCase(WEEKDAYS[d.getDay()])} ${d.getDate()} ${titleCase(MONTHS[d.getMonth()])}`;
+}
+
+/** "Today", "Tomorrow", "Yesterday", "Fri" (within the coming week) or "Fri 9 Oct". */
+export function relativeDayLabel(ymd: string, today: string): string {
+  const diff = daysBetween(today, ymd);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff === -1) return 'Yesterday';
+  if (diff > 1 && diff < 7) return titleCase(WEEKDAYS[parseLocalDate(ymd).getDay()]);
+  return formatShortDate(ymd);
+}
+
+// ---------------------------------------------------------------------------
+// Recurrence (the RRULE subset quick add produces)
+
+const RRULE_DAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+
+function parseRRule(rrule: string) {
+  const parts = Object.fromEntries(
+    rrule.replace(/^RRULE:/, '').split(';').map((p) => p.split('=') as [string, string]),
+  );
+  return {
+    freq: parts.FREQ as string | undefined,
+    interval: Math.max(1, Number(parts.INTERVAL || 1)),
+    byDay: parts.BYDAY ? parts.BYDAY.split(',').map((d) => RRULE_DAYS.indexOf(d)).filter((d) => d >= 0) : null,
+  };
+}
+
+/** Monday of the week containing `ymd` (RRULE weeks start on Monday). */
+function weekStart(ymd: string): string {
+  return addDays(ymd, -((parseLocalDate(ymd).getDay() + 6) % 7));
+}
+
+/**
+ * The first date on or after `date` in the series that starts at `anchor`.
+ * Supports FREQ=DAILY|WEEKLY|MONTHLY|YEARLY with INTERVAL, and BYDAY for WEEKLY.
+ */
+export function occurrenceOnOrAfter(rrule: string, anchor: string, date: string): string {
+  const { freq, interval, byDay } = parseRRule(rrule);
+  const start = date < anchor ? anchor : date;
+
+  if (freq === 'DAILY' || (freq === 'WEEKLY' && !byDay)) {
+    const step = freq === 'DAILY' ? interval : 7 * interval;
+    return addDays(anchor, Math.ceil(daysBetween(anchor, start) / step) * step);
+  }
+  if (freq === 'WEEKLY' && byDay) {
+    const anchorWeek = weekStart(anchor);
+    for (let i = 0; i < 7 * interval + 7; i++) {
+      const d = addDays(start, i);
+      const weeks = daysBetween(anchorWeek, weekStart(d)) / 7;
+      if (byDay.includes(parseLocalDate(d).getDay()) && weeks % interval === 0) return d;
+    }
+  }
+  if (freq === 'MONTHLY' || freq === 'YEARLY') {
+    const step = freq === 'MONTHLY' ? interval : 12 * interval;
+    for (let k = 0; ; k++) {
+      const d = addMonthsClamped(anchor, k * step);
+      if (d >= start) return d;
+    }
+  }
+  return start;
+}
+
+/** The next occurrence strictly after `after` (skips any missed ones, like Reminders does). */
+export function nextOccurrence(rrule: string, anchor: string, after: string): string {
+  return occurrenceOnOrAfter(rrule, anchor, addDays(after, 1));
+}

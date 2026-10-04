@@ -4,11 +4,25 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/text';
-import type { AgendaItem } from '@/data/mock';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
+/** What a row shows; screens map tasks onto this. */
+export interface TaskRowItem {
+  id: string;
+  title: string;
+  /** Second line, e.g. "Chem 201 · step 3 of 6" or "due Fri". */
+  meta?: string;
+  rrule?: string;
+  minutes?: number;
+  /** Clock label on the right, e.g. "2:00 PM". */
+  time?: string;
+  /** Big or vague task with no plan yet: offer "Plan it". */
+  suggestPlan?: boolean;
+  done?: boolean;
+}
+
 type Props = {
-  item: AgendaItem;
+  item: TaskRowItem;
   last?: boolean;
   onToggle: (id: string) => void;
   onPlan?: (id: string) => void;
