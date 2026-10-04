@@ -13,9 +13,15 @@
 -- Mapping:
 --   steps[i]           → child row (parent_id = task, legacy_step_index = i)
 --     .title           → title          .description → notes
---     .estimatedTime   → estimate_minutes ("15 min", "1 hour", "1.5 hours")
---     .completed       → status/completed_at
+--     .estimatedTime   → estimate_minutes ("15 min", "1 hour", "1.5 hours";
+--                        ranges like "10-15 min" take the upper bound)
+--     done when .completed is true, .completedAt is set, or the parent task
+--     is completed (some v1 steps carry no .completed flag at all)
+--                      → status 'completed', completed_at = .completedAt when
+--                        valid, else the parent's completed_at/updated_at
 --     step_dates[.id]  → scheduled_on
+--     (source 'ai'; the parent keeps its own source, so 'assignment' tasks
+--      stay visible to their teacher)
 --   due_date           → due_on (v1 stored dates as midnight UTC)
 --   recurrence.type    → rrule (daily/weekly/monthly)
 -- ============================================================
@@ -32,6 +38,19 @@ EXCEPTION WHEN others THEN
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql IMMUTABLE;
+
+-- ISO timestamp text (v1's step.completedAt) → TIMESTAMPTZ, or NULL if unreadable.
+CREATE OR REPLACE FUNCTION v2_try_timestamptz(value TEXT)
+RETURNS TIMESTAMPTZ AS $$
+BEGIN
+  IF value IS NULL OR btrim(value) = '' THEN
+    RETURN NULL;
+  END IF;
+  RETURN value::timestamptz;
+EXCEPTION WHEN others THEN
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql STABLE;
 
 -- v1 estimate strings → minutes: "15 min", "45 mins", "1 hour", "1.5 hours",
 -- "2 hrs", "1h 30m". NULL when there's no number.
@@ -66,8 +85,8 @@ BEGIN
     t.id,
     coalesce(nullif(btrim(s.step->>'title'), ''), 'Step ' || s.ord),
     nullif(btrim(s.step->>'description'), ''),
-    CASE WHEN s.step->>'completed' = 'true' THEN 'completed' ELSE 'in_progress' END,
-    CASE WHEN s.step->>'completed' = 'true' THEN coalesce(t.completed_at, t.updated_at, now()) END,
+    CASE WHEN d.done THEN 'completed' ELSE 'in_progress' END,
+    CASE WHEN d.done THEN coalesce(d.step_completed_at, t.completed_at, t.updated_at, now()) END,
     v2_parse_minutes(s.step->>'estimatedTime'),
     v2_try_date(t.step_dates->>(s.step->>'id')),
     s.ord,
@@ -80,6 +99,13 @@ BEGIN
   CROSS JOIN LATERAL jsonb_array_elements(
     CASE WHEN jsonb_typeof(t.steps) = 'array' THEN t.steps ELSE '[]'::jsonb END
   ) WITH ORDINALITY AS s(step, ord)
+  CROSS JOIN LATERAL (
+    SELECT
+      v2_try_timestamptz(s.step->>'completedAt') AS step_completed_at,
+      s.step->>'completed' = 'true'
+        OR v2_try_timestamptz(s.step->>'completedAt') IS NOT NULL
+        OR t.status = 'completed' AS done
+  ) d
   WHERE t.parent_id IS NULL
     AND t.v1_backfilled_at IS NULL
     AND jsonb_typeof(s.step) = 'object'
@@ -93,10 +119,6 @@ BEGIN
       WHEN 'weekly' THEN 'FREQ=WEEKLY'
       WHEN 'monthly' THEN 'FREQ=MONTHLY'
     END),
-    source = CASE
-      WHEN jsonb_typeof(t.steps) = 'array' AND jsonb_array_length(t.steps) > 0 THEN 'ai'
-      ELSE t.source
-    END,
     v1_backfilled_at = now()
   WHERE t.parent_id IS NULL
     AND t.v1_backfilled_at IS NULL;

@@ -57,7 +57,11 @@ export interface List {
   deletedAt: ISODateTime | null;
 }
 
-export type TaskSource = 'manual' | 'ai' | 'syllabus' | 'lms' | 'reminders';
+/**
+ * Where a task came from. 'self' (typed by the person) and 'assignment' (sent
+ * by a teacher; the teacher RLS policy reads it) predate v2.
+ */
+export type TaskSource = 'self' | 'assignment' | 'ai' | 'syllabus' | 'lms' | 'reminders';
 
 /** A task, subtask or AI plan step (steps are child rows via `parentId`). */
 export interface Task {

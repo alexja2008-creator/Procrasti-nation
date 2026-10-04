@@ -154,8 +154,13 @@ ALTER TABLE tasks ADD COLUMN IF NOT EXISTS rrule TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS estimate_minutes INTEGER CHECK (estimate_minutes > 0);
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS scheduled_on DATE;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS sort_order DOUBLE PRECISION NOT NULL DEFAULT 0;
-ALTER TABLE tasks ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'manual'
-  CHECK (source IN ('manual', 'ai', 'syllabus', 'lms', 'reminders'));
+-- `source` predates v2: the schools feature uses 'self' | 'assignment', and the
+-- teacher RLS policy reads it. v2 keeps the column and widens the allowed values
+-- ('self' still means typed by the person; 'ai' marks AI-built plan steps).
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'self';
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_source_check;
+ALTER TABLE tasks ADD CONSTRAINT tasks_source_check
+  CHECK (source IN ('self', 'assignment', 'ai', 'syllabus', 'lms', 'reminders'));
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS external_id TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
 -- Backfill bookkeeping: which v1 rows were converted, and which child

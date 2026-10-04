@@ -20,6 +20,12 @@ DROP TABLE IF EXISTS notes;
 DROP TRIGGER IF EXISTS tasks_owned_refs ON tasks;
 DROP TRIGGER IF EXISTS tasks_owned_list ON tasks;
 
+-- `source` predates v2 (schools feature), so keep the column and restore its
+-- v1 values. Never drop it: assignment tasks and the teacher policy depend on it.
+UPDATE tasks SET source = 'self' WHERE source NOT IN ('self', 'assignment');
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_source_check;
+ALTER TABLE tasks ADD CONSTRAINT tasks_source_check CHECK (source IN ('self', 'assignment'));
+
 ALTER TABLE tasks
   DROP COLUMN IF EXISTS list_id,
   DROP COLUMN IF EXISTS parent_id,
@@ -31,7 +37,6 @@ ALTER TABLE tasks
   DROP COLUMN IF EXISTS estimate_minutes,
   DROP COLUMN IF EXISTS scheduled_on,
   DROP COLUMN IF EXISTS sort_order,
-  DROP COLUMN IF EXISTS source,
   DROP COLUMN IF EXISTS external_id,
   DROP COLUMN IF EXISTS deleted_at,
   DROP COLUMN IF EXISTS v1_backfilled_at,
@@ -44,6 +49,7 @@ DROP SEQUENCE IF EXISTS citizen_number_seq;
 DROP FUNCTION IF EXISTS v2_backfill_tasks();
 DROP FUNCTION IF EXISTS v2_parse_minutes(TEXT);
 DROP FUNCTION IF EXISTS v2_try_date(TEXT);
+DROP FUNCTION IF EXISTS v2_try_timestamptz(TEXT);
 DROP FUNCTION IF EXISTS tasks_check_owned_refs();
 DROP FUNCTION IF EXISTS v2_check_owned_refs();
 DROP FUNCTION IF EXISTS user_settings_guard_citizen_number();

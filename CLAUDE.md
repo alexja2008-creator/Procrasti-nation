@@ -157,6 +157,12 @@ src/data/mock.ts                  # Mock profile + agenda until Supabase sync la
 | created_at | TIMESTAMP | Immutable — use for staleness checks |
 | updated_at | TIMESTAMP | Auto-trigger resets on every write |
 | last_nudge_sent | TIMESTAMP | Last nudge email timestamp |
+| start_commitment, first_interaction_at | TIMESTAMPTZ | Commitment device; first engagement |
+| assignment_id | UUID | FK → assignments (schools feature), null for personal tasks |
+| source | TEXT NOT NULL | 'self' (default) or 'assignment'; a teacher RLS policy reads it. v2 widens it, never drops it |
+
+### Schools tables (in production, not documented elsewhere)
+`organizations`, `org_memberships`, `classes`, `enrollments`, `class_invites`, `assignment_templates`, `assignments`, plus `reset_sessions`. Teachers can SELECT students' `tasks` where `source = 'assignment'` via `is_teacher_of_assignment()`. The full structure is in a pg_dump at `supabase/v2/.local/prod-schema.sql` (gitignored; regenerate with `supabase/v2/scripts/dump-prod-schema.sh`).
 
 ### `profiles` email preferences
 `email_reminders_enabled`, `email_reports_enabled` (BOOLEAN, default true) — set false by `/api/unsubscribe`; crons skip opted-out users.
@@ -170,10 +176,10 @@ id, name, category, duration, max_participants, participants, room_url, created_
 All tables have RLS policies filtering by `user_id`.
 
 ### v2 data model (`supabase/v2/`, not yet on production)
-Additive migration with a cutover-only backfill and a tested rollback; see `supabase/v2/README.md` and run `npm test` there (real Postgres via PGlite).
+Additive migration with a cutover-only backfill and a tested rollback; see `supabase/v2/README.md` and run `npm test` there (real Postgres via PGlite; also runs against the real production structure when the local dump exists).
 - `user_settings` (PK `user_id`): `citizen_number` (DB-assigned in signup order, immutable), `timezone`, `day_rollover_hour`, `preferences` JSONB (Citizenship Application answers), `onboarding_completed_at`. **Owner-only; private settings never go on `profiles`, which is publicly readable.**
 - `lists` (Territories; `list_id` NULL = Customs), `notes`, `stamps`, `start_sessions`, `push_tokens`.
-- `tasks` gains `list_id`, `parent_id` (steps/subtasks are child rows, one level deep), `notes`, `due_on`, `due_at`, `remind_at`, `rrule`, `estimate_minutes`, `scheduled_on`, `sort_order` (float), `source`, `external_id`, `deleted_at`. v1 columns (`steps`, `step_dates`, `recurrence`, `due_date`) stay until a later contract migration.
+- `tasks` gains `list_id`, `parent_id` (steps/subtasks are child rows, one level deep), `notes`, `due_on`, `due_at`, `remind_at`, `rrule`, `estimate_minutes`, `scheduled_on`, `sort_order` (float), `external_id`, `deleted_at`, and widens the existing `source` to `self | assignment | ai | syllabus | lms | reminders` (backfilled steps are `ai`; parents keep theirs). v1 columns (`steps`, `step_dates`, `recurrence`, `due_date`) stay until a later contract migration.
 - Naming: `*_on` = local DATE, `*_at` = TIMESTAMPTZ; soft deletes via `deleted_at` (sync needs tombstones).
 - Triggers reject `list_id`/`task_id`/`parent_id` pointing at another user's rows (an FK alone would accept them).
 

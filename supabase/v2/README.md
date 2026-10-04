@@ -30,4 +30,6 @@ Staging project: `mbuakrohovzjegonrplp`. It gets production's **structure only**
 
 Connection strings: Supabase dashboard → project → **Connect** → **Session pooler** (the direct connection is IPv6-only on the free plan).
 
-Known differences from the test stand-in that staging will reveal: any extra `NOT NULL` columns on the real `tasks` table, and the real RLS policies.
+`npm test` also runs every check against `.local/prod-schema.sql` when it exists, so the real production structure (including the schools tables and the teacher RLS policy) is covered locally.
+
+What the 2026-10-03 production dump and stats changed: `tasks.source` already existed ('self' | 'assignment', used by the schools feature), so v2 widens it instead of adding it and the rollback keeps it; steps carry `completedAt` and some lack a `completed` flag, so the backfill uses both and treats steps of completed tasks as done. Expected on production: 24 tasks converted, 145 steps created.
