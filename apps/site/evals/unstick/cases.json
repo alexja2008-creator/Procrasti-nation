@@ -1,0 +1,20 @@
+{
+  "cases": [
+    { "id": "paper-intro", "parent": "10-page history paper on the causes of WWI, due Friday", "step": "Write a rough intro paragraph", "notes": "Three to five sentences ending with a working thesis. Ugly is fine.", "reason": "start", "type": "perfectionist" },
+    { "id": "paper-outline", "parent": "10-page history paper on the causes of WWI, due Friday", "step": "Outline sections 2 and 3", "notes": "Section 2: alliances. Section 3: militarism. One bullet per paragraph.", "reason": "big", "type": "overwhelmed" },
+    { "id": "orgo-problems", "parent": "Study for orgo midterm", "step": "Do practice problems 1-10 from chapter 7", "reason": "mood", "type": "boredom" },
+    { "id": "email-prof", "step": "Email Professor Alvarez to ask about an extension on the lab report", "reason": "start", "type": "avoider" },
+    { "id": "resume-dates", "parent": "Apply to 5 summer internships", "step": "Add the summer camp job to your resume", "reason": "missing", "type": "avoider" },
+    { "id": "desk", "parent": "Clean my room", "step": "Clear off the desk", "reason": "mood" },
+    { "id": "gatsby-reading", "parent": "Gatsby essay on the green light", "step": "Read pages 40-60 and mark 3 quotes about longing", "reason": "big", "type": "overwhelmed" },
+    { "id": "bio-slides", "parent": "Bio lab presentation on Thursday", "step": "Make one slide for each of the 3 findings", "reason": "start", "type": "perfectionist" },
+    { "id": "fafsa", "step": "File the FAFSA", "reason": "missing", "type": "overwhelmed" },
+    { "id": "calc-pset", "parent": "Calc problem set 5", "step": "Do problems 1-4 (related rates)", "reason": "missing" },
+    { "id": "dentist", "step": "Call the dentist to book a cleaning", "reason": "mood", "type": "avoider" },
+    { "id": "cover-letter-again", "parent": "Apply to 5 summer internships", "step": "Draft the cover letter for Deloitte", "reason": "start", "type": "perfectionist", "avoid": ["Open a blank doc and type \"Dear Hiring Manager,\" at the top."] },
+    { "id": "dorm-kitchen", "parent": "Move out of the dorm by Friday", "step": "Pack up the kitchen stuff", "reason": "big", "type": "overwhelmed" },
+    { "id": "conclusion", "parent": "English essay final draft", "step": "Revise the conclusion", "reason": "mood", "type": "boredom" },
+    { "id": "krebs", "parent": "Bio final", "step": "Study the Krebs cycle", "reason": "start", "type": "avoider" },
+    { "id": "thesis-methods", "parent": "Senior thesis, chapter 2", "step": "Write 300 words of the methods section", "notes": "Describe the survey design and how participants were recruited.", "reason": "big", "type": "perfectionist" }
+  ]
+}

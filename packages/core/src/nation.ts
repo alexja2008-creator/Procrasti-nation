@@ -91,6 +91,9 @@ const NUMBER_WORDS = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Sev
 
 const spell = (n: number) => NUMBER_WORDS[n] ?? String(n);
 const things = (n: number) => (n === 1 ? '1 thing' : `${n} things`);
+/** Start Mode timer lengths, spelled: "Just five minutes." */
+const minutesWord = (n: number) => ({ 2: 'two', 5: 'five', 10: 'ten', 25: 'twenty-five' })[n] ?? String(n);
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export const voice = {
   /** Today styles the name separately: "A fresh page, *Maya.*" */
@@ -105,8 +108,18 @@ export const voice = {
   things,
   customsWaiting: (count: number) => `${things(count)} waiting at ${names.customs}`,
   nextStepLabel: 'Your next small step',
+  /** The Today ticket when no plan step is due: the most pressing task. */
+  upNextLabel: 'Up next',
   madeSmaller: 'Made smaller by AI',
-  startModeLead: 'Just five minutes. No pressure, just a beginning. Stop when the timer ends, or keep going.',
+  /** Today's one-time tip about the row menu. */
+  rowMenuHint: (web: boolean) =>
+    web
+      ? 'Tip: right-click any task, or press and hold it, to Start it or Plan it.'
+      : 'Tip: press and hold any task to Start it or Plan it.',
+  gotIt: 'Got it',
+  cancel: 'Cancel',
+  /** VoiceOver's name for the row menu action. */
+  rowMenuLabel: 'Start or Plan it',
   passportStatus: 'Proudly in progress',
   passportLead: 'A little proof of progress.',
   encouragement: 'Starting counts. So does coming back, and asking for help.',
@@ -157,6 +170,53 @@ export const voice = {
     movedOn: (title: string, day: string) => `${title} · back ${day}`,
     due: (day: string) => `due ${day}`,
   },
+  start: {
+    eyebrow: 'Start mode',
+    step: (parent: string, index: number, count: number) => `${parent} · step ${index} of ${count}`,
+    of: (clock: string) => `of ${clock}`,
+    andCounting: 'and counting',
+    paused: 'paused',
+    lead: (minutes: number) =>
+      `Just ${minutesWord(minutes)} minutes. No pressure, just a beginning. Stop when the timer ends, or keep going.`,
+    done: 'Done. Stamp it.',
+    stuck: 'I’m stuck',
+    pause: 'Pause',
+    resume: 'Resume',
+    close: 'Leave Start Mode',
+    firstStart: 'Your first start. That’s a stamp in your passport.',
+    contractTitle: (minutes: number) => `${capitalize(minutesWord(minutes))} minutes. You started.`,
+    contractBody: 'That was the hard part. Keep going, or stop here with a clear conscience.',
+    keepGoing: 'Keep going',
+    stopHere: 'Stop here',
+    /** Shown on Today after leaving without Done. */
+    leftNotice: 'You started. That counts.',
+    stuckTitle: 'What’s in the way?',
+    stuckLead: 'Pick one and we’ll make this step smaller.',
+    breatherInstead: 'Take a breather instead',
+    shrinking: 'Making it smaller…',
+    justThis: 'First, just this',
+    startTiny: (minutes: number) => `Start ${minutesWord(minutes)} minutes`,
+    another: 'Try another',
+    back: 'Back',
+    stuckFailed: 'Couldn’t make it smaller just now. Try again, or take a breather.',
+    stuckLimit: 'That’s a lot of help for one day. Take a breather, then try the smallest piece you can see.',
+    breatherTitle: 'Take a breather',
+    breathe: { in: 'Breathe in', hold: 'Hold', out: 'Breathe out' },
+    backToIt: 'Back to it',
+    stampedTitle: 'Stamped.',
+    stampedBody: 'One more small step, officially done.',
+    nextStep: 'Next step',
+    startNext: 'Start the next step',
+    backToToday: 'Back to Today',
+    notFound: 'That task isn’t here anymore.',
+  },
+  /** Words on the ink stamps (mono caps). */
+  stampText: {
+    rim: 'PROCRASTINATION',
+    started: ['OFFICIALLY', 'STARTED'],
+    done: ['OFFICIALLY', 'DONE'],
+    smallSteps: ['SMALL STEPS', 'AND COUNTING'],
+  },
   plan: {
     reading: 'Reading the task…',
     building: 'Making it smaller…',
@@ -184,7 +244,12 @@ export const voice = {
     citizenLabel: 'Citizen no. / No de citoyen',
     noName: 'Not given yet',
     stampsLabel: 'Visas & stamps',
-    noStamps: 'Your first stamp lands the first time you finish something.',
+    noStamps: 'Your first stamp lands the first time you start something.',
+    /** The stamp page, read aloud. */
+    stampsSpoken: (started: boolean, stepsDone: number) =>
+      [started ? 'Officially started' : null, stepsDone > 0 ? `${stepsDone} small ${stepsDone === 1 ? 'step' : 'steps'} done` : null]
+        .filter(Boolean)
+        .join('. '),
     toNextRank: (n: number, rank: string) => `${n} more ${n === 1 ? 'start' : 'starts'} to ${rank}`,
     loadFailed: 'Couldn’t load your passport. Check your connection.',
   },

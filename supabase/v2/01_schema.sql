@@ -255,6 +255,9 @@ CREATE TABLE IF NOT EXISTS stamps (
 CREATE INDEX IF NOT EXISTS stamps_user_idx ON stamps (user_id, earned_at DESC);
 CREATE INDEX IF NOT EXISTS stamps_task_idx ON stamps (task_id) WHERE task_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS stamps_list_idx ON stamps (list_id) WHERE list_id IS NOT NULL;
+-- Milestone stamps are earned once. Two devices racing to award the first
+-- one get a unique violation, which the app treats as "already earned".
+CREATE UNIQUE INDEX IF NOT EXISTS stamps_once_idx ON stamps (user_id, kind) WHERE kind IN ('first-start');
 
 DROP TRIGGER IF EXISTS stamps_owned_refs ON stamps;
 CREATE TRIGGER stamps_owned_refs
@@ -355,6 +358,29 @@ CREATE POLICY "Owners read their plan generations" ON plan_generations FOR SELEC
   USING (user_id = (SELECT auth.uid()));
 DROP POLICY IF EXISTS "Owners log their plan generations" ON plan_generations;
 CREATE POLICY "Owners log their plan generations" ON plan_generations FOR INSERT
+  WITH CHECK (user_id = (SELECT auth.uid()));
+
+-- ------------------------------------------------------------
+-- 9. ai_requests: one row per metered AI call that isn't a plan ("I'm
+--    stuck" today; brain dump and screenshots later). The site's routes
+--    count these for per-user daily caps. Insert and read only, like
+--    plan_generations, so a cap can't be reset by deleting rows.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS ai_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('unstick')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS ai_requests_user_idx ON ai_requests (user_id, kind, created_at DESC);
+
+ALTER TABLE ai_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners read their AI requests" ON ai_requests;
+CREATE POLICY "Owners read their AI requests" ON ai_requests FOR SELECT
+  USING (user_id = (SELECT auth.uid()));
+DROP POLICY IF EXISTS "Owners log their AI requests" ON ai_requests;
+CREATE POLICY "Owners log their AI requests" ON ai_requests FOR INSERT
   WITH CHECK (user_id = (SELECT auth.uid()));
 
 -- Not yet: `integrations` (LMS feed URLs, encrypted with Supabase Vault)

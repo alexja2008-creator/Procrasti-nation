@@ -48,6 +48,11 @@ export function formatDayLabel(date: Date = new Date()): string {
   return `${WEEKDAYS[date.getDay()]} · ${date.getDate()} ${MONTHS[date.getMonth()]}`;
 }
 
+/** "14 SEP · 2026", the date on a stamp's rim. */
+export function formatStampDate(date: Date): string {
+  return `${pad(date.getDate())} ${MONTHS[date.getMonth()]} · ${date.getFullYear()}`;
+}
+
 /** "2:00 PM". */
 export function formatTime(date: Date): string {
   const h = date.getHours();

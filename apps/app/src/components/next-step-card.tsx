@@ -1,4 +1,4 @@
-import { voice } from '@pn/core';
+import { actions, voice } from '@pn/core';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 
@@ -9,33 +9,39 @@ import { useStyles, type Tokens } from '@/theme/tokens';
 type Props = {
   title: string;
   meta: string;
-  index: number;
-  total: number;
+  /** Defaults to "Your next small step"; "Up next" when it's a plain task. */
+  label?: string;
+  /** "1 OF 8", for plan steps. */
+  position?: { index: number; total: number };
   aiBuilt?: boolean;
   onStart?: () => void;
 };
 
 /** "Your next small step": a ticket with a perforated stub holding Start. */
-export function NextStepCard({ title, meta, index, total, aiBuilt, onStart }: Props) {
+export function NextStepCard({ title, meta, label = voice.nextStepLabel, position, aiBuilt, onStart }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   return (
-    <View style={s.card} accessibilityLabel={voice.nextStepLabel} accessibilityRole="summary">
+    <View style={s.card} accessibilityLabel={label} accessibilityRole="summary">
       <View style={s.body}>
         <View style={s.headRow}>
           <Text variant="label" color={c.primaryText}>
-            {voice.nextStepLabel.toUpperCase()}
+            {label.toUpperCase()}
           </Text>
-          <View style={s.counter}>
-            <Text variant="labelSmall" color={c.primaryText}>
-              {index} OF {total}
-            </Text>
-          </View>
+          {position ? (
+            <View style={s.counter}>
+              <Text variant="labelSmall" color={c.primaryText}>
+                {position.index} OF {position.total}
+              </Text>
+            </View>
+          ) : null}
         </View>
         <Text variant="step">{title}</Text>
-        <Text variant="meta" color={c.next.meta} style={s.meta}>
-          {meta}
-        </Text>
+        {meta ? (
+          <Text variant="meta" color={c.next.meta} style={s.meta}>
+            {meta}
+          </Text>
+        ) : null}
         {aiBuilt && (
           <View style={s.tag}>
             <Icon name="shrink" size={13} color={c.primaryText} strokeWidth={2} />
@@ -54,10 +60,10 @@ export function NextStepCard({ title, meta, index, total, aiBuilt, onStart }: Pr
         <Pressable
           onPress={onStart}
           accessibilityRole="button"
-          accessibilityLabel={`Start: ${title}`}
+          accessibilityLabel={`${actions.start}: ${title}`}
           style={({ pressed }) => [s.start, pressed && s.pressed]}>
           <Text variant="step" color={c.onPrimary} style={s.startText}>
-            Start
+            {actions.start}
           </Text>
         </Pressable>
       </View>

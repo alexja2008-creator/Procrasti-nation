@@ -21,6 +21,11 @@ export interface TodayView {
   customs: Task[];
   /** "Your next small step": the most urgent open plan step due by today. */
   nextStep: AgendaEntry | null;
+  /**
+   * With no plan step due, the most pressing open task without a set time, so
+   * Today always offers one thing to Start. Timed items happen at their time.
+   */
+  upNext: AgendaEntry | null;
 }
 
 const bySortOrder = (a: Task, b: Task) => a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt);
@@ -78,12 +83,49 @@ export function buildToday(tasks: Task[], today: LocalDate, rolloverHour = 0): T
         return nullsLast(pa?.dueOn ?? null, pb?.dueOn ?? null) || nullsLast(a.task.scheduledOn, b.task.scheduledOn) || bySortOrder(a.task, b.task);
       })[0] ?? null;
 
+  const upNext = nextStep
+    ? null
+    : (entries
+        .filter((e) => !e.done && !e.task.remindAt && !e.task.dueAt)
+        .sort(
+          (a, b) =>
+            // Deadlines first, one-offs before repeats, missed before new, then as arranged.
+            nullsLast(a.task.dueOn, b.task.dueOn) ||
+            Number(!!a.task.rrule) - Number(!!b.task.rrule) ||
+            nullsLast(a.task.scheduledOn, b.task.scheduledOn) ||
+            bySortOrder(a.task, b.task),
+        )[0] ?? null);
+
   return {
-    agenda: entries.filter((e) => e !== nextStep).sort(agendaOrder),
+    agenda: entries.filter((e) => e !== nextStep && e !== upNext).sort(agendaOrder),
     customs: live
       // A task with a plan is sorted already, even without a date.
       .filter((t) => !t.parentId && !isDone(t) && !t.scheduledOn && !t.dueOn && !t.listId && !t.rrule && !childrenOf.has(t.id))
       .sort(bySortOrder),
     nextStep,
+    upNext,
+  };
+}
+
+export interface StepContext {
+  parent: Task | undefined;
+  /** 1-based position among the plan's steps. */
+  index: number;
+  count: number;
+  /** The next open step after this one (wrapping to an earlier skipped one). */
+  next: Task | null;
+}
+
+/** A plan step's place in its plan ("step 2 of 6") and what comes after it. Null for top-level tasks. */
+export function stepContext(tasks: Task[], step: Task): StepContext | null {
+  if (!step.parentId) return null;
+  const siblings = tasks.filter((t) => t.parentId === step.parentId && !t.deletedAt).sort(bySortOrder);
+  const at = siblings.findIndex((t) => t.id === step.id);
+  const open = (t: Task) => t.completedAt === null && t.id !== step.id;
+  return {
+    parent: tasks.find((t) => t.id === step.parentId),
+    index: at + 1,
+    count: siblings.length,
+    next: siblings.slice(at + 1).find(open) ?? siblings.find(open) ?? null,
   };
 }

@@ -1,0 +1,277 @@
+{
+  "summary": {
+    "label": "sonnet-low__v2",
+    "config": "sonnet-low",
+    "cases": 16,
+    "errors": 0,
+    "passRate": "11/16",
+    "over25Words": 0,
+    "latencyP50s": 1.918,
+    "latencyP95s": 2.214,
+    "avg_overall": 3.69,
+    "avg_tiny": 4.38,
+    "avg_concrete": 4.63,
+    "avg_noDecisions": 3.63,
+    "avg_specific": 4.06,
+    "avg_progress": 3.69,
+    "avg_fitsReason": 3.44
+  },
+  "results": [
+    {
+      "id": "paper-intro",
+      "latencyMs": 1858,
+      "words": 23,
+      "action": "Open a blank page and type this ugly sentence: \"World War I started because of...\" then finish it with whatever cause comes first.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "Finishing the sentence with 'whatever cause comes first' asks the student to pick a cause from memory, which could stall a student who says they don't know where to begin; supplying a default like 'alliances' would remove that decision."
+      }
+    },
+    {
+      "id": "paper-outline",
+      "latencyMs": 1980,
+      "words": 19,
+      "action": "Open your outline document and type \"Section 2: Alliances\" followed by a bullet starting \"Triple Alliance and Triple Entente:\"",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 5,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It shrinks the step to typing one heading and one bullet start, but the student must still decide what to write after the colon and may not have an outline document open or created yet."
+      }
+    },
+    {
+      "id": "orgo-problems",
+      "latencyMs": 1747,
+      "words": 19,
+      "action": "Open your textbook to chapter 7 problem 1 and write just the first line of your answer; that's all.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 4,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 2,
+        "overall": 3,
+        "notes": "It doesn't address the 'not in the mood' boredom barrier at all (no hook, novelty, or low-bar framing), and 'first line of your answer' is slightly vague about what to write, e.g. copying the problem or drawing the starting structure."
+      }
+    },
+    {
+      "id": "email-prof",
+      "latencyMs": 2032,
+      "words": 18,
+      "action": "Open a blank email to Professor Alvarez and type this subject line: \"Question about extension for lab report\".",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 5,
+        "specific": 5,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It gives a concrete starting point, but it only covers the subject line and doesn't offer an opening sentence for the body, which is where an avoider would likely stall next; it also doesn't specify which email app or address to use."
+      }
+    },
+    {
+      "id": "resume-dates",
+      "latencyMs": 1978,
+      "words": 20,
+      "action": "Open your resume and type \"Summer Camp Counselor, [CAMP NAME], [DATES]\" as a new line under Experience, placeholders and all.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 5,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It sidesteps the vague 'missing something' blocker well with placeholders, but it assumes the resume has an Experience section and doesn't explicitly address what is missing (e.g., exact dates or title), so an avoider may still hesitate on opening the file."
+      }
+    },
+    {
+      "id": "desk",
+      "latencyMs": 1647,
+      "words": 20,
+      "action": "Grab any trash on your desk and drop it in the bin; that's all you have to do right now.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It doesn't say what to do if there's no trash or where the bin is, and it never acknowledges the low mood, though the low-effort framing ('that's all you have to do') suits it well."
+      }
+    },
+    {
+      "id": "gatsby-reading",
+      "latencyMs": 1968,
+      "words": 22,
+      "action": "Open your Gatsby copy to page 40 and read just that one page, putting a sticky note beside any line about wanting.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "Reading a full page and deciding which lines are about wanting requires judgment, and it assumes a sticky note is at hand, so it is slightly longer and fuzzier than a true two-minute first action (e.g., just open to page 40 and read the first paragraph)."
+      }
+    },
+    {
+      "id": "bio-slides",
+      "latencyMs": 1888,
+      "words": 20,
+      "action": "Open your slides, add three blank slides, and type \"Finding 1:\" as a messy placeholder title on the first one.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It bundles two or three mini-actions (open, add three slides, type a title) and the placeholder title doesn't prompt the student to actually name the finding, though the 'messy' framing nicely suits a perfectionist."
+      }
+    },
+    {
+      "id": "fafsa",
+      "latencyMs": 1728,
+      "words": 17,
+      "action": "Open studentaid.gov/fafsa, sign in, and start the form, typing [MISSING] in any box you can't fill yet.",
+      "grade": {
+        "tiny": 2,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 3,
+        "notes": "The action bundles opening the site, signing in (which needs an FSA ID the student may be missing), and starting the form, so it takes well over two minutes and doesn't pin down what the missing item is or help identify it."
+      }
+    },
+    {
+      "id": "calc-pset",
+      "latencyMs": 2091,
+      "words": 23,
+      "action": "Open problem set 5, write \"Problem 1: Given rates:\" on scratch paper, then copy the problem's numbers beneath it, leaving [MISSING] for unknowns.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 3,
+        "overall": 4,
+        "notes": "The action is concrete and starts the problem, but it doesn't clearly address the vague 'missing something' (e.g., a formula, a diagram, or understanding), and copying all the numbers plus marking unknowns may take more than two minutes and involves a little judgment about what is unknown."
+      }
+    },
+    {
+      "id": "dentist",
+      "latencyMs": 1868,
+      "words": 21,
+      "action": "Pick up your phone, search \"my dentist phone number\", and type it into your notes; that's all you have to do.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 3,
+        "progress": 3,
+        "fitsReason": 2,
+        "overall": 3,
+        "notes": "The action is small but only loosely addresses 'not in the mood' (it doesn't lower the emotional barrier of calling), and it leaves ambiguity (which dentist, why type it into notes instead of just dialing) while adding a detour step that doesn't bring the student much closer to actually booking."
+      }
+    },
+    {
+      "id": "cover-letter-again",
+      "latencyMs": 1893,
+      "words": 21,
+      "action": "Open the Deloitte internship posting and paste three bullet points from its requirements into a blank doc; messy copy-paste is fine.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 5,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "Choosing which three requirements to copy is a small decision, and finding the posting may take longer than two minutes, though the action does differ from the earlier suggestion and gives a perfectionist a low-stakes starting point."
+      }
+    },
+    {
+      "id": "dorm-kitchen",
+      "latencyMs": 1707,
+      "words": 19,
+      "action": "Grab one empty box, set it on the kitchen counter, and put the mugs from your cupboard into it.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 5,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It assumes an empty box is on hand and leaves small choices open (which box, which cupboard, wrapping the mugs), so it is slightly less frictionless than it could be."
+      }
+    },
+    {
+      "id": "conclusion",
+      "latencyMs": 1918,
+      "words": 21,
+      "action": "Open your essay, scroll to the conclusion, and type \"In short, my essay shows that\" above it. That's all for now.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 3,
+        "progress": 2,
+        "fitsReason": 2,
+        "overall": 3,
+        "notes": "The action is tiny and physical, but typing a generic filler sentence above the conclusion doesn't revise anything or address boredom/low mood, so it leaves the student barely closer to a revised conclusion."
+      }
+    },
+    {
+      "id": "krebs",
+      "latencyMs": 1987,
+      "words": 21,
+      "action": "Grab a blank page and write \"Krebs cycle: Acetyl-CoA enters and combines with oxaloacetate to make...\" then just copy that start.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 3,
+        "notes": "The action is muddled and incomplete: it cuts off at 'to make...' and says 'copy that start' without saying where the student gets the answer, so they must either know it or look it up, which leaves the 'where to begin' problem unsolved."
+      }
+    },
+    {
+      "id": "thesis-methods",
+      "latencyMs": 2214,
+      "words": 21,
+      "action": "Open your draft and type, messily: \"Participants were recruited by...\" then finish that one sentence however it comes, rough is fine.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 4,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It's strong for a perfectionist, but \"finish that sentence however it comes\" still requires recalling recruitment details and doesn't address the sense of size beyond shrinking to one sentence; it could name the exact file or give a fallback if the student doesn't remember."
+      }
+    }
+  ]
+}

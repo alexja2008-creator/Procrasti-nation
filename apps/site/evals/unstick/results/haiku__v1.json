@@ -1,0 +1,276 @@
+{
+  "summary": {
+    "config": "haiku",
+    "cases": 16,
+    "errors": 0,
+    "passRate": "8/16",
+    "over25Words": 0,
+    "latencyP50s": 1.483,
+    "latencyP95s": 2.92,
+    "avg_overall": 3.44,
+    "avg_tiny": 4.06,
+    "avg_concrete": 4.06,
+    "avg_noDecisions": 3.63,
+    "avg_specific": 3.81,
+    "avg_progress": 3.19,
+    "avg_fitsReason": 3.06
+  },
+  "results": [
+    {
+      "id": "paper-intro",
+      "latencyMs": 1841,
+      "words": 11,
+      "action": "Write one messy sentence about why European alliances mattered before 1914.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It leaves the student to pick the wording and angle on alliances, and it doesn't say where to write or give a sentence starter, so a perfectionist could still stall on that first sentence."
+      }
+    },
+    {
+      "id": "paper-outline",
+      "latencyMs": 2043,
+      "words": 15,
+      "action": "Open a blank document and write 'Section 2: Alliances' and 'Section 3: Militarism' as headers.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 4,
+        "notes": "It's an easy, doable start, but typing two headers is a thin first step that doesn't shrink 'too big' much (e.g., it doesn't ask for just one bullet on the first alliance) and leaves the student with an empty page after the headers."
+      }
+    },
+    {
+      "id": "orgo-problems",
+      "latencyMs": 2294,
+      "words": 14,
+      "action": "Open chapter 7 and write the answer to practice problem 1, even if unsure.",
+      "grade": {
+        "tiny": 3,
+        "concrete": 4,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 2,
+        "overall": 3,
+        "notes": "It ignores the 'not in the mood' boredom barrier and may take longer than two minutes since orgo problem 1 could need real work, so it lacks a hook or lowered bar like just copying the problem onto paper or setting a 2-minute timer."
+      }
+    },
+    {
+      "id": "email-prof",
+      "latencyMs": 2790,
+      "words": 13,
+      "action": "Open your email and type the subject line: 'Extension Request for Lab Report.'",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "The subject line is a small, easy start that answers 'don't know where to begin', but it leaves a few choices open (which email app, wording of the subject, addressing Professor Alvarez) and doesn't create much momentum, such as typing the greeting 'Dear Professor Alvarez,' or opening a draft addressed to them."
+      }
+    },
+    {
+      "id": "resume-dates",
+      "latencyMs": 2195,
+      "words": 18,
+      "action": "Open your resume document and locate the summer camp job entry to see what information is already there.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 3,
+        "noDecisions": 4,
+        "specific": 3,
+        "progress": 2,
+        "fitsReason": 2,
+        "overall": 3,
+        "notes": "The action is vague about what is missing and mostly asks the student to look at the resume, so it does not diagnose or fix the gap (e.g., dates, title, or duties) and leaves the student barely closer to adding the job."
+      }
+    },
+    {
+      "id": "desk",
+      "latencyMs": 2920,
+      "words": 19,
+      "action": "Set a timer for two minutes and physically touch every item on your desk, moving each to the floor.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 4,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 3,
+        "notes": "Moving everything to the floor just creates a new mess and may not get done in two minutes, and it doesn't address the low-mood barrier with a low-effort entry point (e.g., just pick up the trash or one item)."
+      }
+    },
+    {
+      "id": "gatsby-reading",
+      "latencyMs": 847,
+      "words": 12,
+      "action": "Open your book to page 40 and read just the first paragraph.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 4,
+        "noDecisions": 5,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It shrinks the task nicely, but it doesn't tell the student to look for longing or to mark anything, so the first paragraph read may not move the quote-marking goal forward and could still feel like an open-ended start."
+      }
+    },
+    {
+      "id": "bio-slides",
+      "latencyMs": 1047,
+      "words": 18,
+      "action": "Open a blank slide deck and type 'Finding 1:', 'Finding 2:', 'Finding 3:' as three rough section headers.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 3,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 4,
+        "notes": "The action is physical and low-barrier, but it is somewhat generic (doesn't name the actual findings or have them pull from the lab data), and typing 'Finding 1/2/3' placeholders gives only modest progress and doesn't address the perfectionist's not-knowing-where-to-begin beyond scaffolding; it also leaves the choice of deck tool and whether slides or headers are used unspecified."
+      }
+    },
+    {
+      "id": "fafsa",
+      "latencyMs": 1531,
+      "words": 16,
+      "action": "List the five documents FAFSA requires: Social Security number, tax return, W-2s, driver's license, school codes.",
+      "grade": {
+        "tiny": 3,
+        "concrete": 2,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 2,
+        "overall": 2,
+        "notes": "The action asks the student to 'list' items the app already supplied, so it is mostly reading rather than a physical action, and it doesn't address the vague 'I'm missing something' (e.g., by having them check which of those items they can physically find, or open studentaid.gov to see what's missing)."
+      }
+    },
+    {
+      "id": "calc-pset",
+      "latencyMs": 851,
+      "words": 17,
+      "action": "Open your textbook to the related rates section and write down the setup equation for problem 1.",
+      "grade": {
+        "tiny": 3,
+        "concrete": 4,
+        "noDecisions": 4,
+        "specific": 3,
+        "progress": 3,
+        "fitsReason": 2,
+        "overall": 3,
+        "notes": "The student said they're 'missing something' (vague, possibly a concept, material, or info), but the action assumes they can write a setup equation for problem 1, which is not tiny and could be the very thing they're stuck on; a simpler action like opening the problem set and copying problem 1's given quantities would fit better."
+      }
+    },
+    {
+      "id": "dentist",
+      "latencyMs": 835,
+      "words": 12,
+      "action": "Open your phone's contacts and find your dentist's phone number or website.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 2,
+        "overall": 3,
+        "notes": "It doesn't address the 'not in the mood' barrier (no mood-bypass framing) and leaves a small decision (phone number or website, and what if the contact isn't saved), while only modestly advancing the actual call."
+      }
+    },
+    {
+      "id": "cover-letter-again",
+      "latencyMs": 869,
+      "words": 15,
+      "action": "Open Deloitte's internship posting and copy one sentence describing what appeals to you about them.",
+      "grade": {
+        "tiny": 3,
+        "concrete": 4,
+        "noDecisions": 2,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 3,
+        "notes": "The action requires judgment (choosing which sentence 'appeals' to them, and finding the right posting), which invites perfectionist dithering, and it's somewhat unclear whether it takes two minutes."
+      }
+    },
+    {
+      "id": "dorm-kitchen",
+      "latencyMs": 785,
+      "words": 14,
+      "action": "Set out a box and put only your drinking glasses in it right now.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 5,
+        "overall": 4,
+        "notes": "It still leaves small decisions (which box to use, where to find one, and whether glasses means all drinking glasses or only some), and it assumes a box is already at hand, which could stall a stuck student."
+      }
+    },
+    {
+      "id": "conclusion",
+      "latencyMs": 1483,
+      "words": 15,
+      "action": "Open your essay and read just your conclusion paragraph aloud to hear what sounds off.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 4,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 2,
+        "overall": 3,
+        "notes": "It doesn't address the 'not in the mood' boredom (no novelty, play, or ultra-low-effort hook), and 'hear what sounds off' asks the student to evaluate rather than make a visible edit, so progress is modest."
+      }
+    },
+    {
+      "id": "krebs",
+      "latencyMs": 1135,
+      "words": 16,
+      "action": "Open your biology textbook or notes to the Krebs cycle diagram and read the first paragraph.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It assumes the student already has a textbook or notes handy and bundles two actions (open to the diagram, read a paragraph) with an unclear stopping point, so it leaves room for the avoider to stall on finding the material or choosing which source to use."
+      }
+    },
+    {
+      "id": "thesis-methods",
+      "latencyMs": 1444,
+      "words": 19,
+      "action": "Open a blank doc and write three messy bullet points about your survey questions, sample size, and recruitment method.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It leaves the student to decide which survey details to write and to open a new blank doc instead of the thesis file, and 'messy' only partly offsets perfectionism; a fixed starter such as typing 'I recruited participants by...' in the actual methods section would be more decision-free."
+      }
+    }
+  ]
+}

@@ -286,6 +286,49 @@ for (const baseline of baselines) {
       });
     });
 
+    await t.test('AI requests can be logged and counted, never erased', async () => {
+      await as(db, U1, async () => {
+        await db.query(`INSERT INTO ai_requests (user_id, kind) VALUES ($1, 'unstick')`, [U1]);
+        await assert.rejects(db.query(`INSERT INTO ai_requests (user_id, kind) VALUES ($1, 'anything')`, [U1]), /ai_requests_kind_check/);
+        await assert.rejects(db.query(`INSERT INTO ai_requests (user_id, kind) VALUES ($1, 'unstick')`, [U2]), /row-level security/);
+        const deleted = await db.query(`DELETE FROM ai_requests WHERE user_id = $1`, [U1]);
+        assert.equal(deleted.affectedRows, 0, 'no delete policy: a daily cap cannot be reset');
+        const updated = await db.query(`UPDATE ai_requests SET created_at = now() - interval '2 days' WHERE user_id = $1`, [U1]);
+        assert.equal(updated.affectedRows, 0, 'no update policy: rows cannot be backdated out of the window');
+        const count = await one(db, `SELECT count(*)::int AS n FROM ai_requests WHERE kind = 'unstick' AND created_at > now() - interval '1 day'`);
+        assert.equal(count.n, 1);
+      });
+      await as(db, U2, async () => {
+        assert.equal((await one(db, `SELECT count(*)::int AS n FROM ai_requests`)).n, 0, "others' requests are invisible");
+      });
+    });
+
+    await t.test('Start Mode: sessions count, the first-start stamp is earned once', async () => {
+      await as(db, U1, async () => {
+        const session = await one(
+          db,
+          `INSERT INTO start_sessions (user_id, task_id, planned_minutes) VALUES ($1, $2, 5) RETURNING id`,
+          [U1, TASK_A],
+        );
+        await db.query(`UPDATE start_sessions SET ended_at = now(), outcome = 'done' WHERE id = $1`, [session.id]);
+        await assert.rejects(
+          db.query(`INSERT INTO start_sessions (user_id, task_id, planned_minutes) VALUES ($1, $2, 5)`, [U1, TASK_C]),
+          /task .* not found/,
+          "can't start another user's task",
+        );
+        await db.query(`INSERT INTO stamps (user_id, kind) VALUES ($1, 'first-start')`, [U1]);
+        await assert.rejects(db.query(`INSERT INTO stamps (user_id, kind) VALUES ($1, 'first-start')`, [U1]), /stamps_once_idx/);
+        await db.query(`INSERT INTO stamps (user_id, task_id, kind) VALUES ($1, $2, 'task-done')`, [U1, TASK_A]);
+        await db.query(`INSERT INTO stamps (user_id, task_id, kind) VALUES ($1, $2, 'task-done')`, [U1, TASK_A]);
+        const kinds = await rows(db, `SELECT kind, count(*)::int AS n FROM stamps GROUP BY kind ORDER BY kind`);
+        assert.deepEqual(kinds, [{ kind: 'first-start', n: 1 }, { kind: 'task-done', n: 2 }], 'done stamps repeat; milestones do not');
+      });
+      await as(db, U2, async () => {
+        await db.query(`INSERT INTO stamps (user_id, kind) VALUES ($1, 'first-start')`, [U2]);
+        assert.equal((await one(db, `SELECT count(*)::int AS n FROM start_sessions`)).n, 0, "others' sessions are invisible");
+      });
+    });
+
     await t.test('rollback restores v1 exactly and can be re-applied', async () => {
       await db.exec(sql('99_rollback.sql'));
 
@@ -309,7 +352,7 @@ for (const baseline of baselines) {
       const leftovers = await rows(
         db,
         `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'
-           AND table_name IN ('lists', 'notes', 'stamps', 'start_sessions', 'push_tokens', 'user_settings', 'plan_generations')`,
+           AND table_name IN ('lists', 'notes', 'stamps', 'start_sessions', 'push_tokens', 'user_settings', 'plan_generations', 'ai_requests')`,
       );
       assert.deepEqual(leftovers, []);
 

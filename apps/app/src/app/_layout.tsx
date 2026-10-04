@@ -72,6 +72,8 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
       <Stack.Protected guard={!!session}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="plan/[id]" options={{ presentation: 'modal' }} />
+        {/* Full screen, no swipe-to-dismiss: leaving goes through the close button, which ends the session. */}
+        <Stack.Screen name="start/[id]" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
       </Stack.Protected>
       <Stack.Protected guard={!session}>
         <Stack.Screen name="sign-in" />

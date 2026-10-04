@@ -12,7 +12,7 @@ import {
 } from '@pn/core';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text as RNText, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text as RNText, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
 import { personName } from '@/auth/person-name';
@@ -20,10 +20,12 @@ import { Button } from '@/components/button';
 import { useCapture } from '@/components/capture';
 import { Icon } from '@/components/icon';
 import { NextStepCard } from '@/components/next-step-card';
+import { RowMenu } from '@/components/row-menu';
 import { Screen } from '@/components/screen';
 import { TaskRow, type TaskRowItem } from '@/components/task-row';
 import { Text } from '@/components/text';
 import { useTasks } from '@/data/tasks-store';
+import { useOneTimeHint } from '@/hooks/use-one-time-hint';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 /** "due today" / "due Fri" */
@@ -56,20 +58,33 @@ export default function TodayScreen() {
   const { tasks, status, today, rolloverHour, error, notice, refresh, toggle } = useTasks();
   const { open: capture } = useCapture();
   const [customsOpen, setCustomsOpen] = useState(false);
+  const [menuFor, setMenuFor] = useState<Task | null>(null);
+  const [hintVisible, dismissHint] = useOneTimeHint('row-menu');
 
   const view = buildToday(tasks, today, rolloverHour);
   const byId = new Map<string, Task>(tasks.map((t) => [t.id, t]));
   const planned = new Set(tasks.flatMap((t) => (t.parentId ? [t.parentId] : [])));
   const onPlan = (id: string) => router.push({ pathname: '/plan/[id]', params: { id } });
+  const onStart = (id: string) => router.push({ pathname: '/start/[id]', params: { id } });
   const onToggle = (id: string) => {
     const task = byId.get(id);
     if (task) toggle(task);
   };
+  const onMenu = (id: string) => {
+    const task = byId.get(id);
+    if (!task) return;
+    setMenuFor(task);
+    if (hintVisible) dismissHint(); // found it
+  };
+  const canPlan = (t: Task) => !t.parentId && t.source !== 'ai' && !planned.has(t.id) && !t.completedAt;
 
   const firstName = personName(session?.user).first;
-  const next = view.nextStep;
+  // One thing to Start: the next plan step, or else the most pressing task.
+  const next = view.nextStep ?? view.upNext;
+  const isStep = next === view.nextStep;
   const openCount = view.agenda.filter((e) => !e.done).length + (next ? 1 : 0);
   const nextParent = next?.task.parentId ? byId.get(next.task.parentId) : undefined;
+  const nextDueOn = isStep ? nextParent?.dueOn : next?.task.dueOn;
 
   return (
     <Screen>
@@ -141,6 +156,7 @@ export default function TodayScreen() {
                   last={i === view.customs.length - 1}
                   onToggle={onToggle}
                   onPlan={onPlan}
+                  onMenu={onMenu}
                 />
               ))}
             </View>
@@ -154,13 +170,14 @@ export default function TodayScreen() {
           meta={[
             next.task.estimateMinutes ? `${next.task.estimateMinutes} min` : null,
             next.parentTitle,
-            nextParent?.dueOn ? dueLabel(nextParent.dueOn, today) : null,
+            nextDueOn ? dueLabel(nextDueOn, today) : null,
           ]
             .filter(Boolean)
             .join(' · ')}
-          index={next.stepIndex ?? 1}
-          total={next.stepCount ?? 1}
+          label={isStep ? voice.nextStepLabel : voice.upNextLabel}
+          position={isStep ? { index: next.stepIndex ?? 1, total: next.stepCount ?? 1 } : undefined}
           aiBuilt={next.task.source === 'ai'}
+          onStart={() => onStart(next.task.id)}
         />
       ) : null}
 
@@ -183,6 +200,15 @@ export default function TodayScreen() {
             </Text>
           ) : null}
 
+          {hintVisible && view.agenda.some((e) => !e.done) ? (
+            <View style={s.hint}>
+              <Text variant="meta" color={c.inkSoft} style={s.hintText}>
+                {voice.rowMenuHint(Platform.OS === 'web')}
+              </Text>
+              <Button variant="quiet" label={voice.gotIt} onPress={dismissHint} />
+            </View>
+          ) : null}
+
           {view.agenda.length === 0 && !next ? (
             <View style={s.empty}>
               <Text variant="body" color={c.inkSoft}>
@@ -199,12 +225,21 @@ export default function TodayScreen() {
                   last={i === view.agenda.length - 1}
                   onToggle={onToggle}
                   onPlan={onPlan}
+                  onMenu={onMenu}
                 />
               ))}
             </View>
           )}
         </>
       ) : null}
+
+      <RowMenu
+        task={menuFor}
+        canPlan={!!menuFor && canPlan(menuFor)}
+        onStart={(t) => onStart(t.id)}
+        onPlan={(t) => onPlan(t.id)}
+        onClose={() => setMenuFor(null)}
+      />
     </Screen>
   );
 }
@@ -235,6 +270,17 @@ const makeStyles = (t: Tokens) => ({
     count: { backgroundColor: t.c.chip, borderRadius: t.radii.sm, paddingHorizontal: 7, paddingVertical: 2 },
     countText: { letterSpacing: 0 },
     list: { marginTop: -6 },
+    hint: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      paddingLeft: 14,
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderColor: t.c.dashed,
+      borderRadius: t.radii.md,
+    },
+    hintText: { flex: 1, paddingVertical: 10 },
     empty: {
       gap: 12,
       padding: 16,

@@ -26,9 +26,11 @@ type Props = {
   last?: boolean;
   onToggle: (id: string) => void;
   onPlan?: (id: string) => void;
+  /** Opens the row's menu (Start, Plan it): press and hold, or right-click on web. */
+  onMenu?: (id: string) => void;
 };
 
-export function TaskRow({ item, last, onToggle, onPlan }: Props) {
+export function TaskRow({ item, last, onToggle, onPlan, onMenu }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const done = !!item.done;
@@ -37,6 +39,17 @@ export function TaskRow({ item, last, onToggle, onPlan }: Props) {
     if (!done && Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onToggle(item.id);
   };
+
+  const menu = onMenu && !done ? () => onMenu(item.id) : undefined;
+  const holdForMenu = () => {
+    if (Platform.OS !== 'web') Haptics.selectionAsync();
+    menu?.();
+  };
+  // react-native-web passes onContextMenu through; RN's types don't know it.
+  const rightClick =
+    Platform.OS === 'web' && menu
+      ? ({ onContextMenu: (e: { preventDefault: () => void }) => (e.preventDefault(), menu()) } as object)
+      : {};
 
   return (
     <View style={[s.row, item.suggestPlan && s.rowTop, !last && s.rule]}>
@@ -56,23 +69,32 @@ export function TaskRow({ item, last, onToggle, onPlan }: Props) {
       </Pressable>
 
       <View style={[s.main, item.suggestPlan && s.mainTop]}>
-        <Text variant="item" color={done ? c.muted : c.ink} style={done && s.struck}>
-          {item.title}
-        </Text>
-        {/* Ternaries, not &&: an empty string outside <Text> crashes on native. */}
-        {item.meta ? (
-          <Text variant="meta" color={c.muted}>
-            {item.meta}
+        <Pressable
+          onLongPress={menu ? holdForMenu : undefined}
+          delayLongPress={350}
+          disabled={!menu}
+          accessibilityActions={menu ? [{ name: 'menu', label: voice.rowMenuLabel }] : undefined}
+          onAccessibilityAction={(e) => e.nativeEvent.actionName === 'menu' && menu?.()}
+          style={s.text}
+          {...rightClick}>
+          <Text variant="item" color={done ? c.muted : c.ink} style={done && s.struck}>
+            {item.title}
           </Text>
-        ) : null}
-        {item.rrule ? (
-          <View style={s.repeat}>
-            <Icon name="repeat" size={12} color={c.muted} strokeWidth={2} />
+          {/* Ternaries, not &&: an empty string outside <Text> crashes on native. */}
+          {item.meta ? (
             <Text variant="meta" color={c.muted}>
-              {describeRRule(item.rrule)}
+              {item.meta}
             </Text>
-          </View>
-        ) : null}
+          ) : null}
+          {item.rrule ? (
+            <View style={s.repeat}>
+              <Icon name="repeat" size={12} color={c.muted} strokeWidth={2} />
+              <Text variant="meta" color={c.muted}>
+                {describeRRule(item.rrule)}
+              </Text>
+            </View>
+          ) : null}
+        </Pressable>
         {item.suggestPlan && !done && (
           <Pressable
             onPress={() => onPlan?.(item.id)}
@@ -129,6 +151,7 @@ const makeStyles = (t: Tokens) => ({
     },
     main: { flex: 1, gap: 2 },
     mainTop: { gap: 6, paddingTop: 11 },
+    text: { gap: 2 },
     struck: { textDecorationLine: 'line-through' },
     repeat: { flexDirection: 'row', alignItems: 'center', gap: 5 },
     planIt: {

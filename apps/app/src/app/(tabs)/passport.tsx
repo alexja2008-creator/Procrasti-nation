@@ -1,4 +1,6 @@
-import { formatCitizenNumber, mrzMottoLine, mrzNameLine, rankFor, voice } from '@pn/core';
+import { formatCitizenNumber, formatStampDate, mrzMottoLine, mrzNameLine, rankFor, voice } from '@pn/core';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
@@ -6,7 +8,10 @@ import { personName } from '@/auth/person-name';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
+import { CountStamp, RoundStamp } from '@/components/stamp';
 import { Text } from '@/components/text';
+import { fetchPassportStamps, type PassportStamps } from '@/data/stamps';
+import { countStarts } from '@/data/starts';
 import { useUserSettings } from '@/data/user-settings';
 import { supabase } from '@/lib/supabase';
 import { useStyles, type Tokens } from '@/theme/tokens';
@@ -18,6 +23,23 @@ export default function PassportScreen() {
   const { c } = s.t;
   const { session } = useAuth();
   const { settings, status } = useUserSettings();
+  const userId = session?.user.id;
+  const [record, setRecord] = useState<{ starts: number; stamps: PassportStamps } | null>(null);
+
+  // Refresh on every visit: a Start or a stamp may have happened since.
+  useFocusEffect(
+    useCallback(() => {
+      if (!userId) return;
+      let cancelled = false;
+      Promise.all([countStarts(userId), fetchPassportStamps(userId)]).then(
+        ([starts, stamps]) => !cancelled && setRecord({ starts, stamps }),
+        () => undefined, // keep what's shown; the next visit tries again
+      );
+      return () => {
+        cancelled = true;
+      };
+    }, [userId]),
+  );
 
   const name = personName(session?.user);
   const email = session?.user.email ?? '';
@@ -28,9 +50,11 @@ export default function PassportScreen() {
       .slice(0, 2)
       .map((w) => w[0].toUpperCase())
       .join('') || '?';
-  // Starts are counted once Start Mode exists; until then everyone is at the beginning.
-  const { next, startsToNext } = rankFor(0);
-  const progress = next ? 1 - startsToNext / next.minStarts : 1;
+  const starts = record?.starts ?? 0;
+  const { next, startsToNext } = rankFor(starts);
+  const progress = next ? starts / next.minStarts : 1;
+  const firstStartAt = record?.stamps.firstStartAt;
+  const stepsDone = record?.stamps.stepsDone ?? 0;
 
   return (
     <Screen>
@@ -99,9 +123,34 @@ export default function PassportScreen() {
         <Text variant="label" color={c.muted} style={s.stampsLabel}>
           {copy.stampsLabel.toUpperCase()}
         </Text>
-        <Text variant="body" color={c.inkSoft}>
-          {copy.noStamps}
-        </Text>
+        {firstStartAt || stepsDone > 0 ? (
+          <View style={s.stampPage} accessible accessibilityLabel={copy.stampsSpoken(!!firstStartAt, stepsDone)}>
+            {firstStartAt ? (
+              <View style={s.started}>
+                <RoundStamp
+                  ink={c.stamp.terracotta}
+                  rim={voice.stampText.rim}
+                  lines={voice.stampText.started}
+                  date={formatStampDate(new Date(firstStartAt))}
+                />
+              </View>
+            ) : null}
+            {stepsDone > 0 ? (
+              <View style={[s.counted, !firstStartAt && s.countedAlone]}>
+                <CountStamp
+                  ink={c.stamp.violet}
+                  top={voice.stampText.smallSteps[0]}
+                  value={stepsDone}
+                  bottom={voice.stampText.smallSteps[1]}
+                />
+              </View>
+            ) : null}
+          </View>
+        ) : (
+          <Text variant="body" color={c.inkSoft}>
+            {copy.noStamps}
+          </Text>
+        )}
         <Text variant="body" color={c.inkSoft}>
           {voice.encouragement}
         </Text>
@@ -112,10 +161,10 @@ export default function PassportScreen() {
                 {copy.toNextRank(startsToNext, next.name)}
               </Text>
               <Text variant="labelSmall" color={c.muted}>
-                {next.minStarts - startsToNext} / {next.minStarts}
+                {starts} / {next.minStarts}
               </Text>
             </View>
-            <View style={s.track} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: next.minStarts, now: next.minStarts - startsToNext }}>
+            <View style={s.track} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: next.minStarts, now: starts }}>
               <View style={[s.fill, { width: `${Math.round(progress * 100)}%` }]} />
             </View>
           </View>
@@ -176,6 +225,10 @@ const makeStyles = (t: Tokens) => ({
       borderRadius: t.radii.card,
     },
     stampsLabel: { letterSpacing: 1.5 },
+    stampPage: { height: 150, marginVertical: 4 },
+    started: { position: 'absolute', left: 0, top: 0, transform: [{ rotate: '-10deg' }] },
+    counted: { position: 'absolute', left: 124, top: 30, transform: [{ rotate: '-6deg' }] },
+    countedAlone: { left: 8, top: 14 },
     progress: { gap: 6, marginTop: 2 },
     progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
     progressLabel: { fontFamily: t.fonts.bodySemibold, flex: 1 },

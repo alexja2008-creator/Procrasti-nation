@@ -37,6 +37,8 @@ type Store = {
   toggle: (task: Task) => void;
   /** Adds or replaces tasks already saved elsewhere (e.g. a new plan's steps). */
   merge: (saved: Task[]) => void;
+  /** Shows a short-lived note on Today (e.g. after leaving Start Mode). */
+  notify: (message: string) => void;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -176,7 +178,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
   };
 
   return (
-    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, toggle, merge }}>
+    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, toggle, merge, notify: setNotice }}>
       {children}
     </Ctx.Provider>
   );

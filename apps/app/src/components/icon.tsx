@@ -47,6 +47,8 @@ const glyphs = {
   /** "Made smaller": the shrink arrows on AI-built steps and the Plan it pill. */
   shrink: <Path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" />,
   check: <Path d="M5 12.5l4.5 4.5L19 7.5" />,
+  play: <Path d="M8 5.5v13l10.5-6.5z" />,
+  pause: <Path d="M9 5.5v13M15 5.5v13" />,
   clock: (
     <>
       <Circle cx={12} cy={12} r={9} />

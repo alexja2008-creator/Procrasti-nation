@@ -5,3 +5,4 @@ export * from './types.ts';
 export * from './quick-add.ts';
 export * from './agenda.ts';
 export * from './planning.ts';
+export * from './start-mode.ts';
