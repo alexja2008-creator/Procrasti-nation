@@ -36,3 +36,7 @@ Thumbs.db
 
 # Testing
 coverage/
+
+# Supabase v2 migration work (local dumps, staging credentials)
+supabase/v2/.local/
+supabase/v2/.env.staging

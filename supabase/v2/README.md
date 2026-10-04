@@ -18,12 +18,16 @@ Runs all three scripts against real Postgres (PGlite, in-process) on a stand-in 
 npm install && npm test
 ```
 
-## Staging checklist (before anything touches production)
+## Staging (before anything touches production)
 
-1. Create a staging Supabase project and copy production's schema into it (`supabase db dump --schema-only` from prod, run in staging), plus a copy of the data.
-2. Record counts: `SELECT count(*), sum(jsonb_array_length(steps)) FROM tasks WHERE jsonb_typeof(steps) = 'array';`
-3. Run `01_schema.sql`, then `02_backfill.sql`. Its result row should show `tasks_converted` = all v1 tasks and `steps_created` = the step sum from step 2 (minus any non-object steps).
-4. Spot-check a few users' tasks in the v2 app.
-5. Run `99_rollback.sql` and confirm the counts and v1 site behavior match step 2, then re-apply.
+Staging project: `mbuakrohovzjegonrplp`. It gets production's **structure only**; real users' data stays in production.
+
+1. `brew install libpq` (gives `pg_dump`/`psql`).
+2. `scripts/dump-prod-schema.sh`: reads production's public-schema DDL into `.local/prod-schema.sql` (gitignored). Read-only; asks for the connection string at a hidden prompt.
+3. `scripts/save-staging-url.sh`: stores the staging connection string in `.env.staging` (gitignored) so the schema and migrations can be applied there.
+4. Run `prod-stats.sql` in the **production** SQL Editor (SELECT only; counts and anonymized patterns, no personal data). Its numbers predict what `02_backfill.sql` will do on real data and flag shapes the tests don't cover yet.
+5. Apply `.local/prod-schema.sql` to staging, then `01_schema.sql`; seed test users and v1-shaped tasks; run `02_backfill.sql`; check; run `99_rollback.sql`; re-apply.
+
+Connection strings: Supabase dashboard → project → **Connect** → **Session pooler** (the direct connection is IPv6-only on the free plan).
 
 Known differences from the test stand-in that staging will reveal: any extra `NOT NULL` columns on the real `tasks` table, and the real RLS policies.
