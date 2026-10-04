@@ -4,9 +4,11 @@ import {
   formatTime,
   parseQuickAdd,
   relativeDayLabel,
+  suggestsPlan,
   voice,
   type QuickAddResult,
 } from '@pn/core';
+import { router } from 'expo-router';
 import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -63,11 +65,22 @@ function CaptureSheet({ onClose }: { onClose: () => void }) {
   const [text, setText] = useState('');
   const [parsed, setParsed] = useState<QuickAddResult | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
+  const bigTask = !!parsed && suggestsPlan(parsed.title);
 
   const onChange = (value: string) => {
     setText(value);
     setConfirmation(null);
     setParsed(value.trim() ? parseQuickAdd(value.trim(), new Date()) : null);
+  };
+
+  /** Captures the task, then opens Plan it for it. */
+  const planIt = async () => {
+    const p = parsed;
+    if (!p) return;
+    const saved = await add(p);
+    if (!saved) return;
+    onClose();
+    router.push({ pathname: '/plan/[id]', params: { id: saved.id } });
   };
 
   const submit = async () => {
@@ -131,7 +144,21 @@ function CaptureSheet({ onClose }: { onClose: () => void }) {
                 ) : null}
           </View>
 
-          <Button label={actions.add} disabled={!parsed} onPress={submit} />
+          {/* Big-sounding tasks lead with Plan it; small ones with Add. */}
+          <View style={[s.actions, bigTask && s.actionsReversed]}>
+            <View style={s.action}>
+              <Button label={actions.add} variant={bigTask ? 'secondary' : 'primary'} disabled={!parsed} onPress={submit} />
+            </View>
+            <View style={s.action}>
+              <Button
+                label={actions.planIt}
+                variant={bigTask ? 'primary' : 'secondary'}
+                icon={<Icon name="shrink" size={16} color={bigTask ? c.onPrimary : c.ink} strokeWidth={2} />}
+                disabled={!parsed}
+                onPress={planIt}
+              />
+            </View>
+          </View>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -180,5 +207,8 @@ const makeStyles = (t: Tokens) => ({
       borderColor: t.c.next.border,
     },
     chipMuted: { backgroundColor: t.c.chip, borderColor: t.c.rule },
+    actions: { flexDirection: 'row', gap: 10 },
+    actionsReversed: { flexDirection: 'row-reverse' },
+    action: { flex: 1 },
   }),
 });

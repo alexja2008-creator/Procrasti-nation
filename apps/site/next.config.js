@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   async headers() {
-    const allowedOrigin = process.env.NEXT_PUBLIC_BASE_URL || 'https://procrasti-nation.work';
+    // CORS for /api/* lives in middleware.js (it needs a per-request origin allowlist).
     return [
       {
         // Security headers for all routes
@@ -13,15 +13,6 @@ const nextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(self "https://procrasti-nation.whereby.com"), microphone=(self "https://procrasti-nation.whereby.com"), geolocation=()' },
           { key: 'X-XSS-Protection', value: '1; mode=block' },
-        ],
-      },
-      {
-        // CORS — restrict API routes to the app's own origin only
-        source: '/api/:path*',
-        headers: [
-          { key: 'Access-Control-Allow-Origin', value: allowedOrigin },
-          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type, Authorization' },
         ],
       },
     ];

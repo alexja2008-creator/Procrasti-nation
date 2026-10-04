@@ -5,10 +5,12 @@ import {
   names,
   parseLocalDate,
   relativeDayPhrase,
+  suggestsPlan,
   voice,
   type AgendaEntry,
   type Task,
 } from '@pn/core';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text as RNText, View } from 'react-native';
 
@@ -27,7 +29,8 @@ import { useStyles, type Tokens } from '@/theme/tokens';
 /** "due today" / "due Fri" */
 const dueLabel = (dueOn: string, today: string) => voice.today.due(relativeDayPhrase(dueOn, today));
 
-function rowFor(entry: AgendaEntry, today: string): TaskRowItem {
+/** `planned` holds ids of tasks that already have plan steps. */
+function rowFor(entry: AgendaEntry, today: string, planned: Set<string>): TaskRowItem {
   const t = entry.task;
   const meta: string[] = [];
   if (entry.parentTitle) meta.push(`${entry.parentTitle} · step ${entry.stepIndex} of ${entry.stepCount}`);
@@ -42,6 +45,7 @@ function rowFor(entry: AgendaEntry, today: string): TaskRowItem {
     minutes: t.estimateMinutes ?? undefined,
     time: clock && !entry.done ? formatTime(new Date(clock)) : undefined,
     done: entry.done,
+    suggestPlan: !entry.done && !t.parentId && t.source !== 'ai' && !planned.has(t.id) && suggestsPlan(t.title),
   };
 }
 
@@ -55,6 +59,8 @@ export default function TodayScreen() {
 
   const view = buildToday(tasks, today, rolloverHour);
   const byId = new Map<string, Task>(tasks.map((t) => [t.id, t]));
+  const planned = new Set(tasks.flatMap((t) => (t.parentId ? [t.parentId] : [])));
+  const onPlan = (id: string) => router.push({ pathname: '/plan/[id]', params: { id } });
   const onToggle = (id: string) => {
     const task = byId.get(id);
     if (task) toggle(task);
@@ -131,9 +137,10 @@ export default function TodayScreen() {
               {view.customs.map((t, i) => (
                 <TaskRow
                   key={t.id}
-                  item={rowFor({ task: t, done: false }, today)}
+                  item={rowFor({ task: t, done: false }, today, planned)}
                   last={i === view.customs.length - 1}
                   onToggle={onToggle}
+                  onPlan={onPlan}
                 />
               ))}
             </View>
@@ -186,7 +193,13 @@ export default function TodayScreen() {
           ) : (
             <View style={s.list}>
               {view.agenda.map((entry, i) => (
-                <TaskRow key={entry.task.id} item={rowFor(entry, today)} last={i === view.agenda.length - 1} onToggle={onToggle} />
+                <TaskRow
+                  key={entry.task.id}
+                  item={rowFor(entry, today, planned)}
+                  last={i === view.agenda.length - 1}
+                  onToggle={onToggle}
+                  onPlan={onPlan}
+                />
               ))}
             </View>
           )}

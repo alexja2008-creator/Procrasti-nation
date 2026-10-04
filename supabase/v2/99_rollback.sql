@@ -12,6 +12,7 @@
 -- standalone tasks once parent_id is gone, so remove them first.
 DELETE FROM tasks WHERE parent_id IS NOT NULL;
 
+DROP TABLE IF EXISTS plan_generations;
 DROP TABLE IF EXISTS push_tokens;
 DROP TABLE IF EXISTS start_sessions;
 DROP TABLE IF EXISTS stamps;

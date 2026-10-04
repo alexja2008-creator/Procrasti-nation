@@ -328,5 +328,34 @@ CREATE POLICY "Owners manage their push tokens" ON push_tokens FOR ALL
   USING (user_id = (SELECT auth.uid()))
   WITH CHECK (user_id = (SELECT auth.uid()));
 
+-- ------------------------------------------------------------
+-- 8. plan_generations: one row per AI plan built. The free tier's
+--    monthly allowance counts these (counting tasks stopped working once
+--    quick add made most tasks non-AI). Insert and read only: no update or
+--    delete policy, so nobody can reset their own count.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS plan_generations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS plan_generations_user_idx ON plan_generations (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS plan_generations_task_idx ON plan_generations (task_id) WHERE task_id IS NOT NULL;
+
+DROP TRIGGER IF EXISTS plan_generations_owned_refs ON plan_generations;
+CREATE TRIGGER plan_generations_owned_refs
+  BEFORE INSERT OR UPDATE OF task_id, user_id ON plan_generations
+  FOR EACH ROW EXECUTE FUNCTION v2_check_owned_refs();
+
+ALTER TABLE plan_generations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners read their plan generations" ON plan_generations;
+CREATE POLICY "Owners read their plan generations" ON plan_generations FOR SELECT
+  USING (user_id = (SELECT auth.uid()));
+DROP POLICY IF EXISTS "Owners log their plan generations" ON plan_generations;
+CREATE POLICY "Owners log their plan generations" ON plan_generations FOR INSERT
+  WITH CHECK (user_id = (SELECT auth.uid()));
+
 -- Not yet: `integrations` (LMS feed URLs, encrypted with Supabase Vault)
 -- lands with Phase 5.

@@ -15,6 +15,7 @@ import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@/auth/auth-provider';
+import { SignedInProviders } from '@/data/signed-in-providers';
 import { useTokens } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -66,19 +67,24 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
     },
   };
 
+  const stack = (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Protected guard={!!session}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="plan/[id]" options={{ presentation: 'modal' }} />
+      </Stack.Protected>
+      <Stack.Protected guard={!session}>
+        <Stack.Screen name="sign-in" />
+      </Stack.Protected>
+      {/* Open in both states: it's where magic links and OAuth land. */}
+      <Stack.Screen name="auth/callback" />
+    </Stack>
+  );
+
   return (
     <ThemeProvider value={navTheme}>
       <StatusBar style={night ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Protected guard={!!session}>
-          <Stack.Screen name="(tabs)" />
-        </Stack.Protected>
-        <Stack.Protected guard={!session}>
-          <Stack.Screen name="sign-in" />
-        </Stack.Protected>
-        {/* Open in both states: it's where magic links and OAuth land. */}
-        <Stack.Screen name="auth/callback" />
-      </Stack>
+      {session ? <SignedInProviders userId={session.user.id}>{stack}</SignedInProviders> : stack}
     </ThemeProvider>
   );
 }

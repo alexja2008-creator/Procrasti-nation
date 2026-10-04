@@ -93,7 +93,7 @@ export async function insertTask(t: NewTask): Promise<Task> {
   return fromRow(data as unknown as Row);
 }
 
-export type TaskPatch = Partial<Pick<Task, 'status' | 'completedAt' | 'scheduledOn' | 'remindAt'>>;
+export type TaskPatch = Partial<Pick<Task, 'status' | 'completedAt' | 'scheduledOn' | 'remindAt' | 'dueOn'>>;
 
 export async function updateTask(id: string, patch: TaskPatch): Promise<Task> {
   const row: Record<string, unknown> = {};
@@ -101,7 +101,33 @@ export async function updateTask(id: string, patch: TaskPatch): Promise<Task> {
   if ('completedAt' in patch) row.completed_at = patch.completedAt;
   if ('scheduledOn' in patch) row.scheduled_on = patch.scheduledOn;
   if ('remindAt' in patch) row.remind_at = patch.remindAt;
+  if ('dueOn' in patch) row.due_on = patch.dueOn;
   const { data, error } = await supabase.from('tasks').update(row).eq('id', id).select(COLUMNS).single();
   if (error) throw error;
   return fromRow(data as unknown as Row);
+}
+
+export type NewStep = Pick<Task, 'id' | 'userId' | 'parentId' | 'title' | 'notes' | 'estimateMinutes' | 'scheduledOn' | 'sortOrder'>;
+
+/** Saves AI plan steps as child rows in one request. */
+export async function insertSteps(steps: NewStep[]): Promise<Task[]> {
+  const { data, error } = await supabase
+    .from('tasks')
+    .insert(
+      steps.map((s) => ({
+        id: s.id,
+        user_id: s.userId,
+        parent_id: s.parentId,
+        title: s.title,
+        notes: s.notes,
+        estimate_minutes: s.estimateMinutes,
+        scheduled_on: s.scheduledOn,
+        sort_order: s.sortOrder,
+        source: 'ai',
+        status: 'in_progress',
+      })),
+    )
+    .select(COLUMNS);
+  if (error) throw error;
+  return (data as unknown as Row[]).map(fromRow);
 }

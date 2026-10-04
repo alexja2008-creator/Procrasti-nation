@@ -35,6 +35,8 @@ type Store = {
   refresh: () => void;
   add: (parsed: QuickAddResult) => Promise<Task | null>;
   toggle: (task: Task) => void;
+  /** Adds or replaces tasks already saved elsewhere (e.g. a new plan's steps). */
+  merge: (saved: Task[]) => void;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -161,13 +163,20 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
     );
   };
 
+  const merge: Store['merge'] = (saved) =>
+    setTasks((prev) => {
+      const byId = new Map(prev.map((t) => [t.id, t]));
+      for (const t of saved) byId.set(t.id, t);
+      return [...byId.values()];
+    });
+
   const refresh = () => {
     setStatus('loading');
     setReloads((n) => n + 1);
   };
 
   return (
-    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, toggle }}>
+    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, toggle, merge }}>
       {children}
     </Ctx.Provider>
   );

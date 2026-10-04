@@ -10,6 +10,7 @@ packages/core  # Shared, dependency-free TS: A2 tokens, nation naming/voice, dat
 - **Not an npm workspace.** The site is on React 18 and the Expo app on React 19, so each app has its own `node_modules`; `packages/core` is imported by `apps/app` through the `@pn/core` tsconfig alias plus Metro `watchFolders`. Root `package.json` only holds convenience scripts (`npm run site:dev`, `app:web`, `app:check`, `evals`).
 - **The Expo app never holds secrets.** It gets only `EXPO_PUBLIC_*` values (see `apps/app/.env.example`; real values in gitignored `apps/app/.env.local`) and calls `apps/site`'s `/api/*` routes for anything needing a key.
 - **v2 auth:** Supabase magic link (PKCE), Sign in with Apple (native on iOS via `signInWithIdToken` + nonce; OAuth on web), Google (OAuth). Supabase Auth's redirect allow list must include every callback form: `procrastination://auth/callback`, `exp://**` (Expo Go), `http://localhost:8081/auth/callback`, and the production web URL. Expo Go lacks the Apple native module, so Apple sign-in needs a development build.
+- **v2 → site API:** the app calls `apps/site` `/api/*` with the Supabase access token (`src/lib/api.ts`). CORS lives in `apps/site/middleware.js` (allowlist: the site's origin, `app.procrasti-nation.work`, and `localhost:8081` in development). For local work, `apps/site/.env.development.local` (gitignored) points the site at the staging Supabase project so it accepts staging sessions.
 - Everything below this section describes `apps/site` unless it says otherwise; paths are relative to `apps/site/`.
 
 ## Project Overview
@@ -124,6 +125,9 @@ src/app/sign-in.tsx               # Magic link + Apple + Google (each shown only
 src/app/auth/callback.tsx         # Where magic links / OAuth land; exchanges the PKCE ?code=
 src/auth/                         # auth-provider (session), sign-in actions, apple(.web).ts
 src/lib/supabase.ts               # Anon-key client (PKCE, AsyncStorage, foreground-only token refresh)
+src/app/plan/[id].tsx             # Plan it: clarifying questions → plan preview → saves steps as child tasks
+src/data/                         # user-settings, tasks (+ store), plans, signed-in-providers
+src/lib/api.ts                    # apiPost() to apps/site with the session token
 src/app/(tabs)/_layout.tsx        # Headless expo-router/ui tabs + custom NavBar
 src/app/(tabs)/index.tsx          # Today (A2 design, mock data for now)
 src/app/(tabs)/upcoming|territories|passport.tsx   # Placeholders
@@ -179,6 +183,7 @@ All tables have RLS policies filtering by `user_id`.
 Additive migration with a cutover-only backfill and a tested rollback; see `supabase/v2/README.md` and run `npm test` there (real Postgres via PGlite; also runs against the real production structure when the local dump exists).
 - `user_settings` (PK `user_id`): `citizen_number` (DB-assigned in signup order, immutable), `timezone`, `day_rollover_hour`, `preferences` JSONB (Citizenship Application answers), `onboarding_completed_at`. **Owner-only; private settings never go on `profiles`, which is publicly readable.**
 - `lists` (Territories; `list_id` NULL = Customs), `notes`, `stamps`, `start_sessions`, `push_tokens`.
+- `plan_generations`: one row per AI plan built; the free tier (3/month) counts these in `/api/generate-plan` (insert and read only, so the count can't be reset). **v2's route needs this table: apply `01_schema.sql` to production before the v2 site deploys.**
 - `tasks` gains `list_id`, `parent_id` (steps/subtasks are child rows, one level deep), `notes`, `due_on`, `due_at`, `remind_at`, `rrule`, `estimate_minutes`, `scheduled_on`, `sort_order` (float), `external_id`, `deleted_at`, and widens the existing `source` to `self | assignment | ai | syllabus | lms | reminders` (backfilled steps are `ai`; parents keep theirs). v1 columns (`steps`, `step_dates`, `recurrence`, `due_date`) stay until a later contract migration.
 - Naming: `*_on` = local DATE, `*_at` = TIMESTAMPTZ; soft deletes via `deleted_at` (sync needs tombstones).
 - Triggers reject `list_id`/`task_id`/`parent_id` pointing at another user's rows (an FK alone would accept them).

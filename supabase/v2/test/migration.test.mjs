@@ -265,6 +265,27 @@ for (const baseline of baselines) {
       });
     });
 
+    await t.test('plan generations can be logged and counted, never erased', async () => {
+      await as(db, U1, async () => {
+        await db.query(`INSERT INTO plan_generations (user_id, task_id) VALUES ($1, $2)`, [U1, TASK_A]);
+        await db.query(`INSERT INTO plan_generations (user_id) VALUES ($1)`, [U1]);
+        await assert.rejects(
+          db.query(`INSERT INTO plan_generations (user_id, task_id) VALUES ($1, $2)`, [U1, TASK_C]),
+          /task .* not found/,
+          "can't log against another user's task",
+        );
+        await assert.rejects(db.query(`INSERT INTO plan_generations (user_id) VALUES ($1)`, [U2]), /row-level security/);
+
+        const deleted = await db.query(`DELETE FROM plan_generations WHERE user_id = $1`, [U1]);
+        assert.equal(deleted.affectedRows, 0, 'no delete policy: the count cannot be reset');
+        const count = await one(db, `SELECT count(*)::int AS n FROM plan_generations WHERE created_at >= date_trunc('month', now())`);
+        assert.equal(count.n, 2);
+      });
+      await as(db, U2, async () => {
+        assert.equal((await one(db, `SELECT count(*)::int AS n FROM plan_generations`)).n, 0, "others' generations are invisible");
+      });
+    });
+
     await t.test('rollback restores v1 exactly and can be re-applied', async () => {
       await db.exec(sql('99_rollback.sql'));
 
@@ -288,7 +309,7 @@ for (const baseline of baselines) {
       const leftovers = await rows(
         db,
         `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'
-           AND table_name IN ('lists', 'notes', 'stamps', 'start_sessions', 'push_tokens', 'user_settings')`,
+           AND table_name IN ('lists', 'notes', 'stamps', 'start_sessions', 'push_tokens', 'user_settings', 'plan_generations')`,
       );
       assert.deepEqual(leftovers, []);
 

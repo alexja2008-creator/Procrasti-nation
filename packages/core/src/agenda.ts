@@ -81,7 +81,8 @@ export function buildToday(tasks: Task[], today: LocalDate, rolloverHour = 0): T
   return {
     agenda: entries.filter((e) => e !== nextStep).sort(agendaOrder),
     customs: live
-      .filter((t) => !t.parentId && !isDone(t) && !t.scheduledOn && !t.dueOn && !t.listId && !t.rrule)
+      // A task with a plan is sorted already, even without a date.
+      .filter((t) => !t.parentId && !isDone(t) && !t.scheduledOn && !t.dueOn && !t.listId && !t.rrule && !childrenOf.has(t.id))
       .sort(bySortOrder),
     nextStep,
   };

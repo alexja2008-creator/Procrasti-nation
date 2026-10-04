@@ -15,7 +15,7 @@ export async function POST(request) {
       return NextResponse.json({ error: authError }, { status: 401 });
     }
 
-    const { task, deadline, clarificationAnswers, clarificationQuestions, checkClarification, procrastinationType, today: clientToday, timeZone } = await request.json();
+    const { task, taskId, deadline, clarificationAnswers, clarificationQuestions, checkClarification, procrastinationType, today: clientToday, timeZone } = await request.json();
 
     if (!task || typeof task !== 'string' || task.trim().length === 0) {
       return NextResponse.json({ error: 'task is required' }, { status: 400 });
@@ -28,6 +28,9 @@ export async function POST(request) {
     }
     if (procrastinationType && procrastinationType.length > 50) {
       return NextResponse.json({ error: 'invalid procrastinationType' }, { status: 400 });
+    }
+    if (taskId != null && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(taskId))) {
+      return NextResponse.json({ error: 'invalid taskId' }, { status: 400 });
     }
 
     const today = resolveToday(clientToday, timeZone);
@@ -61,12 +64,14 @@ export async function POST(request) {
       const isPro = profile?.stripe_subscription_status === 'active';
 
       if (!isPro) {
+        // Count plans actually built (v2: most tasks come from quick add, not the planner).
         const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-        const { count } = await userSupabase
-          .from('tasks')
+        const { count, error: countError } = await userSupabase
+          .from('plan_generations')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .gte('created_at', startOfMonth);
+        if (countError) throw countError;
         if (count >= FREE_PLANS_PER_MONTH) {
           return NextResponse.json(
             { error: 'Monthly plan limit reached. Upgrade to Pro for unlimited plans.' },
@@ -99,6 +104,12 @@ export async function POST(request) {
       schema: PLAN_SCHEMA,
       messages: [{ role: 'user', content: buildPlanPrompt({ taskContext, deadline, today, procrastinationType }) }],
     });
+
+    // Log the plan for the monthly allowance (RLS: the user can insert their own rows only).
+    const { error: logError } = await userSupabase
+      .from('plan_generations')
+      .insert({ user_id: user.id, task_id: taskId ?? null });
+    if (logError) console.error('generate-plan: could not log plan generation', logError.code);
 
     return NextResponse.json({ plan });
   } catch (error) {
