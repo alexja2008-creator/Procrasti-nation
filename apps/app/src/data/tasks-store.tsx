@@ -2,7 +2,7 @@ import {
   logicalDateString,
   nextOccurrence,
   parseLocalDate,
-  relativeDayLabel,
+  relativeDayPhrase,
   voice,
   type LocalDate,
   type QuickAddResult,
@@ -144,7 +144,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
       const next = nextOccurrence(task.rrule, anchor, anchor > today ? anchor : today);
       const remind = task.remindAt ? new Date(task.remindAt) : null;
       patch = { scheduledOn: next, remindAt: remind ? atLocal(next, remind.getHours(), remind.getMinutes()) : null };
-      setNotice(voice.today.next(task.title, relativeDayLabel(next, today)));
+      setNotice(voice.today.movedOn(task.title, relativeDayPhrase(next, today)));
     } else {
       patch = { status: 'completed', completedAt: new Date().toISOString() };
     }

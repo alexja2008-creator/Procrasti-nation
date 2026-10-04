@@ -4,7 +4,7 @@ import {
   formatTime,
   names,
   parseLocalDate,
-  relativeDayLabel,
+  relativeDayPhrase,
   voice,
   type AgendaEntry,
   type Task,
@@ -25,10 +25,7 @@ import { useTasks } from '@/data/tasks-store';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 /** "due today" / "due Fri" */
-function dueLabel(dueOn: string, today: string): string {
-  const day = relativeDayLabel(dueOn, today);
-  return voice.today.due(['Today', 'Tomorrow', 'Yesterday'].includes(day) ? day.toLowerCase() : day);
-}
+const dueLabel = (dueOn: string, today: string) => voice.today.due(relativeDayPhrase(dueOn, today));
 
 function rowFor(entry: AgendaEntry, today: string): TaskRowItem {
   const t = entry.task;

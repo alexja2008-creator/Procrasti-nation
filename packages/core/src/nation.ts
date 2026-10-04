@@ -153,7 +153,8 @@ export const voice = {
     loadFailed: 'Couldn’t load your day. Check your connection.',
     saveFailed: 'Couldn’t save that change. Check your connection and try again.',
     retry: 'Try again',
-    next: (title: string, day: string) => `${title} · next ${day}`,
+    /** A repeating task moved on: "Walk Biscuit · back tomorrow". */
+    movedOn: (title: string, day: string) => `${title} · back ${day}`,
     due: (day: string) => `due ${day}`,
   },
   passport: {

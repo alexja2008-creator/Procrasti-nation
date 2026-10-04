@@ -168,3 +168,9 @@ export function occurrenceOnOrAfter(rrule: string, anchor: string, date: string)
 export function nextOccurrence(rrule: string, anchor: string, after: string): string {
   return occurrenceOnOrAfter(rrule, anchor, addDays(after, 1));
 }
+
+/** `relativeDayLabel` for mid-sentence use: "today", "tomorrow", "yesterday", "Fri", "Fri 9 Oct". */
+export function relativeDayPhrase(ymd: string, today: string): string {
+  const label = relativeDayLabel(ymd, today);
+  return ['Today', 'Tomorrow', 'Yesterday'].includes(label) ? label.toLowerCase() : label;
+}

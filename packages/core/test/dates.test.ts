@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { formatShortDate, nextOccurrence, occurrenceOnOrAfter, relativeDayLabel } from '../src/dates.ts';
+import { formatShortDate, nextOccurrence, occurrenceOnOrAfter, relativeDayLabel, relativeDayPhrase } from '../src/dates.ts';
 
 test('weekly repeats on chosen days', () => {
   assert.equal(occurrenceOnOrAfter('FREQ=WEEKLY;BYDAY=MO,WE', '2026-10-03', '2026-10-03'), '2026-10-05');
@@ -32,4 +32,11 @@ test('day labels', () => {
     ['Today', 'Tomorrow', 'Yesterday', 'Wed', 'Mon 12 Oct'],
   );
   assert.equal(formatShortDate('2026-10-09'), 'Fri 9 Oct');
+});
+
+test('mid-sentence day phrases', () => {
+  assert.deepEqual(
+    ['2026-10-03', '2026-10-04', '2026-10-07'].map((d) => relativeDayPhrase(d, '2026-10-03')),
+    ['today', 'tomorrow', 'Wed'],
+  );
 });
