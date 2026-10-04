@@ -54,6 +54,19 @@ async function ensureUserSettings(userId: string): Promise<UserSettings> {
   return fromRow(row);
 }
 
+// One request per person at a time. React can run effects twice (development),
+// and two concurrent first-run inserts burn a citizen number on the loser's conflict.
+const inFlight = new Map<string, Promise<UserSettings>>();
+
+function loadUserSettings(userId: string): Promise<UserSettings> {
+  let pending = inFlight.get(userId);
+  if (!pending) {
+    pending = ensureUserSettings(userId).finally(() => inFlight.delete(userId));
+    inFlight.set(userId, pending);
+  }
+  return pending;
+}
+
 type State = { settings: UserSettings | null; status: 'loading' | 'ready' | 'error' };
 
 const Ctx = createContext<State>({ settings: null, status: 'loading' });
@@ -63,7 +76,7 @@ export function UserSettingsProvider({ userId, children }: { userId: string; chi
 
   useEffect(() => {
     let cancelled = false;
-    ensureUserSettings(userId).then(
+    loadUserSettings(userId).then(
       (settings) => !cancelled && setState({ settings, status: 'ready' }),
       () => !cancelled && setState({ settings: null, status: 'error' }),
     );

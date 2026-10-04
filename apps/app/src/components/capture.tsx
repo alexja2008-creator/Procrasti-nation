@@ -7,7 +7,7 @@ import {
   voice,
   type QuickAddResult,
 } from '@pn/core';
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -59,6 +59,7 @@ function CaptureSheet({ onClose }: { onClose: () => void }) {
   const insets = useSafeAreaInsets();
   const { add, today } = useTasks();
 
+  const inputRef = useRef<TextInput>(null);
   const [text, setText] = useState('');
   const [parsed, setParsed] = useState<QuickAddResult | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
@@ -74,6 +75,8 @@ function CaptureSheet({ onClose }: { onClose: () => void }) {
     if (!p) return;
     setText('');
     setParsed(null);
+    // Keep the cursor here for the next capture; web blurs inputs on submit.
+    setTimeout(() => inputRef.current?.focus(), 0);
     const saved = await add(p);
     if (saved) setConfirmation(voice.capture.added(whereItWent(p, today)));
   };
@@ -98,6 +101,7 @@ function CaptureSheet({ onClose }: { onClose: () => void }) {
           </View>
 
           <TextInput
+            ref={inputRef}
             value={text}
             onChangeText={onChange}
             onSubmitEditing={submit}
