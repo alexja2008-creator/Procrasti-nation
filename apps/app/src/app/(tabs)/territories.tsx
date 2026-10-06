@@ -11,6 +11,7 @@ import { NotesCard } from '@/components/note/notes-card';
 import { NotesView } from '@/components/note/notes-view';
 import { NoticeBar } from '@/components/notice-bar';
 import { Screen } from '@/components/screen';
+import { SearchButton } from '@/components/search-button';
 import { Text } from '@/components/text';
 import { CustomsCard } from '@/components/territory/customs-card';
 import { TerritoryCard } from '@/components/territory/territory-card';
@@ -47,9 +48,12 @@ export default function TerritoriesScreen() {
   const index = (
     <View style={s.index}>
       <View style={s.head}>
-        <Text variant="label" color={c.muted}>
-          {copy.eyebrow.toUpperCase()}
-        </Text>
+        <View style={s.eyebrow}>
+          <Text variant="label" color={c.muted}>
+            {copy.eyebrow.toUpperCase()}
+          </Text>
+          <SearchButton />
+        </View>
         <Text variant="pageTitle" accessibilityRole="header">
           {copy.title}
         </Text>
@@ -155,6 +159,7 @@ const makeStyles = (t: Tokens) => ({
     index: { gap: 14 },
     aside: { paddingRight: 8, paddingBottom: 32 },
     head: { gap: 6 },
+    eyebrow: { flexDirection: 'row', alignItems: 'center' },
     loading: { marginTop: 12 },
     failed: { gap: 10, alignItems: 'flex-start' },
     empty: { gap: 10 },

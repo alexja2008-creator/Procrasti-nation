@@ -1,5 +1,6 @@
 import { localDateString, relativeDayPhrase, voice, type LocalDate, type NoteSummary } from '@pn/core';
 import { router } from 'expo-router';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
@@ -12,10 +13,17 @@ const copy = voice.notes;
 export const openNote = (id: string, listId?: string | null) =>
   router.push({ pathname: '/note/[id]', params: listId ? { id, list: listId } : { id } });
 
-type Props = { summary: NoteSummary; today: LocalDate; territory?: string; last?: boolean };
+type Props = {
+  summary: NoteSummary;
+  today: LocalDate;
+  territory?: string;
+  last?: boolean;
+  /** Shown in place of the next line, e.g. search's snippet of where it matched. */
+  snippet?: ReactNode;
+};
 
 /** A note in a list: its title, next line, and where and when it was last touched. */
-export function NoteRow({ summary, today, territory, last }: Props) {
+export function NoteRow({ summary, today, territory, last, snippet }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const { note, title, preview, progress } = summary;
@@ -34,7 +42,9 @@ export function NoteRow({ summary, today, territory, last }: Props) {
         <Text variant="item" numberOfLines={1}>
           {title || copy.untitled}
         </Text>
-        {preview ? (
+        {snippet ? (
+          snippet
+        ) : preview ? (
           <Text variant="meta" color={c.inkSoft} numberOfLines={1}>
             {preview}
           </Text>

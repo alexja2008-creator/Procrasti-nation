@@ -20,6 +20,7 @@ import { MonthCalendar } from '@/components/month-calendar';
 import { NoticeBar } from '@/components/notice-bar';
 import { RowMenu } from '@/components/row-menu';
 import { Screen } from '@/components/screen';
+import { SearchButton } from '@/components/search-button';
 import { Text } from '@/components/text';
 import { DaySection } from '@/components/upcoming/day-section';
 import { WeekStrip } from '@/components/upcoming/week-strip';
@@ -84,9 +85,12 @@ export default function UpcomingScreen() {
       stickyHeaderIndices={wide ? undefined : pinned ? [1] : []}
       aside={<View style={[s.card, s.asideCard]}>{month}</View>}>
       <View style={s.head}>
-        <Text variant="label" color={c.muted}>
-          {copy.eyebrow.toUpperCase()}
-        </Text>
+        <View style={s.eyebrow}>
+          <Text variant="label" color={c.muted}>
+            {copy.eyebrow.toUpperCase()}
+          </Text>
+          <SearchButton />
+        </View>
         <Text variant="pageTitle" accessibilityRole="header">
           {copy.title}
         </Text>
@@ -171,6 +175,7 @@ const makeStyles = (t: Tokens) => ({
   t,
   ...StyleSheet.create({
     head: { gap: 6 },
+    eyebrow: { flexDirection: 'row', alignItems: 'center' },
     // Opaque, so rows scroll out of sight beneath the pinned strip.
     pinned: { backgroundColor: t.c.bg, paddingVertical: 4 },
     card: {

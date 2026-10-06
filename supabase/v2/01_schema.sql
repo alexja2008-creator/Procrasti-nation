@@ -475,9 +475,15 @@ BEGIN
     RETURN QUERY
     SELECT n.id,
            ts_rank(to_tsvector('english', regexp_replace(n.body, '\[\[task:[0-9a-f-]+\]\]', ' ', 'g')), q),
-           ts_headline('english', regexp_replace(n.body, '\[\[task:[0-9a-f-]+\]\]', ' ', 'g'), q, marks),
+           -- From the text under the title (a match in the title alone needs no snippet).
+           CASE WHEN to_tsvector('english', b.rest) @@ q THEN ts_headline('english', b.rest, q, marks) END,
            (SELECT to_jsonb(r) FROM (SELECT n.id, n.user_id, n.list_id, n.task_id, n.body, n.created_at, n.updated_at, n.deleted_at) r)
       FROM notes n
+      CROSS JOIN LATERAL (
+        SELECT CASE WHEN strpos(n.body, E'\n') > 0
+                    THEN regexp_replace(substr(n.body, strpos(n.body, E'\n') + 1), '\[\[task:[0-9a-f-]+\]\]', ' ', 'g')
+                    ELSE '' END AS rest
+      ) b
      WHERE n.deleted_at IS NULL
        AND to_tsvector('english', regexp_replace(n.body, '\[\[task:[0-9a-f-]+\]\]', ' ', 'g')) @@ q
        AND (in_list IS NULL OR n.list_id = in_list)

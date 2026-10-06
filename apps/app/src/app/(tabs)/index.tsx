@@ -24,6 +24,7 @@ import { NextStepCard } from '@/components/next-step-card';
 import { NoticeBar } from '@/components/notice-bar';
 import { RowMenu } from '@/components/row-menu';
 import { Screen } from '@/components/screen';
+import { SearchButton } from '@/components/search-button';
 import { TaskRow, type TaskRowItem } from '@/components/task-row';
 import { Text } from '@/components/text';
 import { useLists } from '@/data/lists-store';
@@ -105,6 +106,7 @@ export default function TodayScreen() {
         <Text variant="label" color={c.muted} style={s.dateText}>
           {formatDayLabel(parseLocalDate(today))}
         </Text>
+        <SearchButton />
       </View>
 
       <View style={s.greeting}>

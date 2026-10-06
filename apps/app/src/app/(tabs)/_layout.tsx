@@ -1,11 +1,17 @@
+import { usePathname } from 'expo-router';
 import { TabList, Tabs, TabSlot, TabTrigger } from 'expo-router/ui';
 import { StyleSheet } from 'react-native';
 
 import { CaptureButton, NavBar, NavItem } from '@/components/nav-bar';
+import { openSearch } from '@/components/search-button';
 import { useIsWide } from '@/hooks/use-is-wide';
+import { useShortcuts } from '@/hooks/use-shortcuts';
 
 export default function TabsLayout() {
   const wide = useIsWide();
+  // Web: ⌘K (Ctrl+K) or / opens search from anywhere; not a second one while it's open.
+  const pathname = usePathname();
+  useShortcuts(pathname === '/search' ? {} : { 'Mod+K': openSearch, '/': openSearch });
 
   const list = (
     <TabList asChild>

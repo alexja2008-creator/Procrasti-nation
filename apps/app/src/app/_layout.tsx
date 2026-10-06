@@ -12,6 +12,7 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -78,7 +79,8 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
         <Stack.Screen name="task/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="territory/[id]" />
         <Stack.Screen name="note/[id]" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="search" options={{ presentation: 'modal' }} />
+        {/* On web it draws its own panel over the page at laptop width (a full page on phones). */}
+        <Stack.Screen name="search" options={{ presentation: Platform.OS === 'web' ? 'transparentModal' : 'modal' }} />
         {/* Full screen, no swipe-to-dismiss: leaving goes through the close button, which ends the session. */}
         <Stack.Screen name="start/[id]" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
       </Stack.Protected>

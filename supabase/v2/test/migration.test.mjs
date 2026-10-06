@@ -418,6 +418,8 @@ for (const baseline of baselines) {
           const krebs = await find('krebs', 'notes');
           assert.equal(krebs.length, 1);
           assert.match(krebs[0].snippet, /«Krebs»/);
+        assert.doesNotMatch(krebs[0].snippet, /Lecture/, 'the snippet comes from under the title');
+        assert.equal((await find('goggles', 'notes'))[0].snippet, null, 'a title-only match needs no snippet');
           assert.deepEqual(await find('task', 'notes'), [], 'checklist tokens are never matched');
           assert.deepEqual(await find(report.slice(0, 8), 'notes'), []);
           assert.deepEqual((await find('lab', 'notes')).map((r) => r.body), ['Bring goggles to lab'], "not someone else's note");

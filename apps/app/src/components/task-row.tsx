@@ -1,5 +1,6 @@
 import { actions, describeRRule, voice } from '@pn/core';
 import * as Haptics from 'expo-haptics';
+import type { ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
@@ -30,9 +31,11 @@ type Props = {
   onMenu?: (id: string) => void;
   /** Opens the task's detail page (a tap). */
   onOpen?: (id: string) => void;
+  /** A line under the meta, e.g. search's snippet of where it matched. */
+  detail?: ReactNode;
 };
 
-export function TaskRow({ item, last, onToggle, onPlan, onMenu, onOpen }: Props) {
+export function TaskRow({ item, last, onToggle, onPlan, onMenu, onOpen, detail }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const done = !!item.done;
@@ -90,6 +93,7 @@ export function TaskRow({ item, last, onToggle, onPlan, onMenu, onOpen }: Props)
               {item.meta}
             </Text>
           ) : null}
+          {detail ?? null}
           {item.rrule ? (
             <View style={s.repeat}>
               <Icon name="repeat" size={12} color={c.muted} strokeWidth={2} />
