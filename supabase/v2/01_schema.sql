@@ -408,25 +408,28 @@ CREATE POLICY "Owners log their AI requests" ON ai_requests FOR INSERT
 -- ------------------------------------------------------------
 -- 10. Search: tasks (title, then the Notes field) and notes (their text,
 --     without checklist tokens). The app keeps only what's on the go, so
---     finding anything older happens here. The GIN indexes cover exactly
---     the expressions search_items() matches on.
+--     finding anything older happens here.
+--
+--     No full-text (GIN) index: under RLS Postgres can't use one, because
+--     the @@ operator isn't leakproof. Instead each query is bounded to the
+--     person's own rows (an explicit user_id filter, which the user indexes
+--     serve) and matches within them. Measured on staging: ~40-100 ms for a
+--     typical search in an account of 10,000 tasks, ~300 ms for a word that
+--     matches 9,000 of them. If accounts grow far past that, store the
+--     tsvectors in generated columns.
 -- ------------------------------------------------------------
-CREATE INDEX IF NOT EXISTS tasks_search_idx ON tasks USING gin (
-  (setweight(to_tsvector('english', title), 'A') || setweight(to_tsvector('english', coalesce(notes, '')), 'B'))
-);
-CREATE INDEX IF NOT EXISTS notes_search_idx ON notes USING gin (
-  to_tsvector('english', regexp_replace(body, '\[\[task:[0-9a-f-]+\]\]', ' ', 'g'))
-);
 
 -- One group of matches for the signed-in person: 'open' or 'done' tasks, or
--- 'notes'. Runs as the caller, so RLS keeps it to their own rows. Each word
+-- 'notes'. Runs as the caller under RLS, and only ever looks at their own
+-- rows (a teacher's search doesn't wander into students' tasks). Each word
 -- matches as a prefix after English stemming ("read ch" finds "Reading
 -- chapter 4"); everything but letters and digits is dropped first, so typed
--- input can't break the query. `in_list` narrows to a territory (a plan's
--- steps count as in their plan's). A snippet shows the match («like this»)
--- for notes, and for tasks found by their Notes field. A task carries its
--- plan's title and its note's first line (`parent_title`, `note_title`), since
--- neither may be loaded on the device. Best match first.
+-- input can't break the query, and only its first 200 characters count.
+-- `in_list` narrows to a territory (a plan's steps count as in their plan's).
+-- A snippet shows the match («like this») for notes, and for tasks found by
+-- their Notes field. A task carries its plan's title and its note's first
+-- line (`parent_title`, `note_title`), since neither may be loaded on the
+-- device. Best match first; at most 100 rows a call (the app asks for 26).
 CREATE OR REPLACE FUNCTION search_items(
   query TEXT,
   kind TEXT,
@@ -445,7 +448,7 @@ DECLARE
 BEGIN
   SELECT to_tsquery('english', string_agg(w || ':*', ' & '))
     INTO q
-    FROM regexp_split_to_table(lower(regexp_replace(coalesce(query, ''), '[^[:alnum:]]+', ' ', 'g')), ' ') AS w
+    FROM regexp_split_to_table(lower(regexp_replace(left(coalesce(query, ''), 200), '[^[:alnum:]]+', ' ', 'g')), ' ') AS w
     WHERE w <> '';
   -- Nothing searchable (empty, or only words like "the").
   IF q IS NULL OR numnode(q) = 0 THEN
@@ -465,12 +468,13 @@ BEGIN
       FROM tasks t
       LEFT JOIN tasks p ON p.id = t.parent_id
       LEFT JOIN notes nn ON nn.id = t.note_id
-     WHERE t.deleted_at IS NULL
+     WHERE t.user_id = (SELECT auth.uid())
+       AND t.deleted_at IS NULL
        AND (setweight(to_tsvector('english', t.title), 'A') || setweight(to_tsvector('english', coalesce(t.notes, '')), 'B')) @@ q
        AND (t.completed_at IS NOT NULL) = (kind = 'done')
        AND (in_list IS NULL OR CASE WHEN t.parent_id IS NULL THEN t.list_id ELSE p.list_id END = in_list)
      ORDER BY 2 DESC, t.completed_at DESC NULLS LAST, t.updated_at DESC, t.id
-     LIMIT max_rows OFFSET skip;
+     LIMIT least(greatest(max_rows, 0), 100) OFFSET greatest(skip, 0);
   ELSIF kind = 'notes' THEN
     RETURN QUERY
     SELECT n.id,
@@ -484,11 +488,12 @@ BEGIN
                     THEN regexp_replace(substr(n.body, strpos(n.body, E'\n') + 1), '\[\[task:[0-9a-f-]+\]\]', ' ', 'g')
                     ELSE '' END AS rest
       ) b
-     WHERE n.deleted_at IS NULL
+     WHERE n.user_id = (SELECT auth.uid())
+       AND n.deleted_at IS NULL
        AND to_tsvector('english', regexp_replace(n.body, '\[\[task:[0-9a-f-]+\]\]', ' ', 'g')) @@ q
        AND (in_list IS NULL OR n.list_id = in_list)
      ORDER BY 2 DESC, n.updated_at DESC, n.id
-     LIMIT max_rows OFFSET skip;
+     LIMIT least(greatest(max_rows, 0), 100) OFFSET greatest(skip, 0);
   ELSE
     RAISE EXCEPTION 'unknown search kind %', kind USING ERRCODE = 'invalid_parameter_value';
   END IF;

@@ -10,6 +10,7 @@ import {
   type Task,
 } from '@pn/core';
 import { router } from 'expo-router';
+import { useMemo } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -66,13 +67,14 @@ type GroupProps<H> = { label: string; page: HitPage<H>; loading: boolean; onMore
 export function TaskGroup({ label, page, loading, onMore, places }: GroupProps<TaskHit>) {
   const { tasks, today } = useTasks();
   const onToggle = useCheckOff();
+  const byId = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
   if (page.hits.length === 0) return null;
   return (
     <View>
       <Head label={label} />
       {page.hits.map((hit, i) => {
         // The store's copy, so a check-off shows at once.
-        const task = tasks.find((t) => t.id === hit.item.id) ?? hit.item;
+        const task = byId.get(hit.item.id) ?? hit.item;
         return (
           <TaskRow
             key={task.id}
@@ -92,8 +94,8 @@ export function TaskGroup({ label, page, loading, onMore, places }: GroupProps<T
 /** Found notes, each with a snippet of where it matched. */
 export function NoteGroup({ label, page, loading, onMore, places }: GroupProps<Hit<Note>>) {
   const { tasks, today } = useTasks();
+  const byId = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
   if (page.hits.length === 0) return null;
-  const byId = new Map(tasks.map((t) => [t.id, t]));
   return (
     <View>
       <Head label={label} />

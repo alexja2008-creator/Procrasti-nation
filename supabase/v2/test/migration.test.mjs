@@ -414,6 +414,7 @@ for (const baseline of baselines) {
           const first = await find('lab', 'open', null, 2, 0);
           const second = await find('lab', 'open', null, 2, 2);
           assert.equal(new Set([...first, ...second].map((r) => r.title)).size, 4, 'pages add up without repeats');
+        assert.equal((await find('lab', 'open', null, 100000, -5)).length, 4, 'page size is capped and offsets floored');
 
           const krebs = await find('krebs', 'notes');
           assert.equal(krebs.length, 1);
@@ -430,6 +431,12 @@ for (const baseline of baselines) {
           assert.deepEqual(await find('   ', 'notes'), []);
           await assert.rejects(find('lab', 'stamps'), /unknown search kind/);
         });
+        if (schools) {
+          await as(db, U3, async () => {
+            assert.equal((await rows(db, `SELECT 1 FROM tasks WHERE id = $1`, [TASK_E])).length, 1, 'a teacher can read the assignment task');
+            assert.deepEqual(await rows(db, `SELECT id FROM search_items('essay', 'open')`), [], "but search only looks at the teacher's own");
+          });
+        }
       } finally {
         // Leave the fixtures as the rollback test expects them.
         await db.query(`DELETE FROM notes WHERE body LIKE '%Krebs%' OR body IN ('Bring goggles to lab', 'Lab notes of theirs')`);
