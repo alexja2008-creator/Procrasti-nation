@@ -139,7 +139,7 @@ src/app/(tabs)/upcoming|territories.tsx   # Placeholders
 src/components/                   # NavBar, NextStepCard, TaskRow, RowMenu, Stamp, start/*, Screen, Text, Icon, Logo
 src/theme/tokens.ts               # useTokens() / useStyles() over @pn/core palettes
 ```
-Device storage (AsyncStorage, per device): `pn.hint.<name>` (dismissed tips), `pn.stamped.first-start.<userId>`, `pn.start.active.<userId>` (Start Mode session in progress, for resume). Web keyboard shortcuts go through `useShortcuts` (`use-shortcuts.web.ts`; no-op on native).
+Device storage (AsyncStorage, per device): `pn.stamped.first-start.<userId>`, `pn.start.active.<userId>` (Start Mode session in progress, for resume). Web keyboard shortcuts go through `useShortcuts` (`use-shortcuts.web.ts`; no-op on native).
 
 ### packages/core
 `src/tokens.ts` (A2 palettes for light/"night passport", fonts, type scale, spacing, radii, motion), `src/nation.ts` (names, plain action labels, ranks, nudge tones, voice strings, citizen number + passport code lines), `src/dates.ts` (local-date helpers, day rollover, RRULE labels), `src/types.ts` (draft v2 data model), `src/agenda.ts` (Today: agenda, next step, up next, step context), `src/quick-add.ts`, `src/planning.ts`, `src/start-mode.ts` (wall-clock timer math, default minutes by style, stuck reasons, stamp kinds). Tests: `npm run core:test`.

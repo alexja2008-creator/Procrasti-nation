@@ -17,7 +17,7 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 - **Today:** real data. Timed items first; missed items roll forward without overdue styling; finished-today items show STAMPED; Customs expands inline; repeating tasks move to their next date ("Stretch · back tomorrow").
 - **Plan it:** the eval-gated Adherence Planner (prompts and models unchanged), with optional clarifying questions, a preview showing per-step estimates and dates, and steps saved as child tasks. The next step appears as the A2 "Your next small step" ticket on Today. Entry points: a pill on big-sounding tasks, and a button in quick add.
 - **Start Mode:** full-screen focus view from the next-step card or a row's menu. Wall-clock timer, the "just N minutes" contract (keep going / stop here), Pause, Done → ink stamp + haptic → "Start the next step". **I'm stuck:** one-tap reason → `/api/unstick` (Sonnet 5.5, low effort, eval-gated) → a two-minute first action, or a box-breathing breather. Sessions resume after the app is closed or the page reloads. Web: Space pauses, Esc leaves.
-- **Today extras:** "Up next" card when no plan step is due; press and hold a row (right-click on web) for Start / Plan it, with a one-time tip; step counts include steps finished on earlier days.
+- **Today extras:** "Up next" card when no plan step is due; press and hold a row (right-click on web) for Start / Plan it, with a standing hint under the agenda heading (Alex prefers press-and-hold to a visible Start button per row); step counts include steps finished on earlier days.
 - **Passport:** A2 ID page with citizen number, bilingual fields, passport code lines, real stamps ("Officially started", "Small steps N") and a rank bar counting real starts. Sign out.
 - **Navigation:** bottom tab bar on phones, sidebar at ≥900px. Day and night ("night passport") themes follow the system.
 - **iOS:** checked on the iOS Simulator through Expo Go, signed in (Today, Start Mode, Passport, row menu).
@@ -131,7 +131,7 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
   - Then the TestFlight gate with 10 students.
 - **Phase 4:** Start Mode done (timer, contract, I'm stuck, breather, Done → stamp, resume). Remaining: Live Activity (Swift add-on, needs Apple Developer + a development build), Declarations, Morning Briefing / roll-forward, server push, State of the Union, Holidays.
 - **Checked on iOS (2026-10-06, Expo Go, signed in):** Today, Start Mode (timer, resume after the app was killed, I'm stuck → `/api/unstick`, two-minute restart, Done → stamp, next step), Passport stamps and rank, and the press-and-hold row menu.
-- **Suggested next:** task detail and editing (it gives every task a visible Start button and unblocks plan step edit/reorder), then Upcoming and Territories.
+- **Suggested next:** task detail and editing (unblocks plan step edit/reorder; press-and-hold stays the way to Start or plan from a list), then Upcoming and Territories.
 
 ---
 

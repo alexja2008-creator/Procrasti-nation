@@ -25,7 +25,6 @@ import { Screen } from '@/components/screen';
 import { TaskRow, type TaskRowItem } from '@/components/task-row';
 import { Text } from '@/components/text';
 import { useTasks } from '@/data/tasks-store';
-import { useOneTimeHint } from '@/hooks/use-one-time-hint';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 /** "due today" / "due Fri" */
@@ -59,7 +58,6 @@ export default function TodayScreen() {
   const { open: capture } = useCapture();
   const [customsOpen, setCustomsOpen] = useState(false);
   const [menuFor, setMenuFor] = useState<Task | null>(null);
-  const [hintVisible, dismissHint] = useOneTimeHint('row-menu');
 
   const view = buildToday(tasks, today, rolloverHour);
   const byId = new Map<string, Task>(tasks.map((t) => [t.id, t]));
@@ -74,7 +72,6 @@ export default function TodayScreen() {
     const task = byId.get(id);
     if (!task) return;
     setMenuFor(task);
-    if (hintVisible) dismissHint(); // found it
   };
   const canPlan = (t: Task) => !t.parentId && t.source !== 'ai' && !planned.has(t.id) && !t.completedAt;
 
@@ -200,13 +197,11 @@ export default function TodayScreen() {
             </Text>
           ) : null}
 
-          {hintVisible && view.agenda.some((e) => !e.done) ? (
-            <View style={s.hint}>
-              <Text variant="meta" color={c.inkSoft} style={s.hintText}>
-                {voice.rowMenuHint(Platform.OS === 'web')}
-              </Text>
-              <Button variant="quiet" label={voice.gotIt} onPress={dismissHint} />
-            </View>
+          {/* Always shown: press and hold is the way to Start or plan any task. */}
+          {view.agenda.some((e) => !e.done) ? (
+            <Text variant="meta" color={c.muted} style={s.hint}>
+              {voice.rowMenuHint(Platform.OS === 'web')}
+            </Text>
           ) : null}
 
           {view.agenda.length === 0 && !next ? (
@@ -270,17 +265,7 @@ const makeStyles = (t: Tokens) => ({
     count: { backgroundColor: t.c.chip, borderRadius: t.radii.sm, paddingHorizontal: 7, paddingVertical: 2 },
     countText: { letterSpacing: 0 },
     list: { marginTop: -6 },
-    hint: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      paddingLeft: 14,
-      borderWidth: 1,
-      borderStyle: 'dashed',
-      borderColor: t.c.dashed,
-      borderRadius: t.radii.md,
-    },
-    hintText: { flex: 1, paddingVertical: 10 },
+    hint: { marginTop: -8 },
     empty: {
       gap: 12,
       padding: 16,

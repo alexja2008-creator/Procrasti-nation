@@ -111,12 +111,9 @@ export const voice = {
   /** The Today ticket when no plan step is due: the most pressing task. */
   upNextLabel: 'Up next',
   madeSmaller: 'Made smaller by AI',
-  /** Today's one-time tip about the row menu. */
+  /** Today's standing hint about the row menu, always shown under the agenda heading. */
   rowMenuHint: (web: boolean) =>
-    web
-      ? 'Tip: right-click any task, or press and hold it, to Start it or Plan it.'
-      : 'Tip: press and hold any task to Start it or Plan it.',
-  gotIt: 'Got it',
+    web ? 'Right-click or press and hold any task to Start it or Plan it.' : 'Press and hold any task to Start it or Plan it.',
   cancel: 'Cancel',
   /** VoiceOver's name for the row menu action. */
   rowMenuLabel: 'Start or Plan it',
