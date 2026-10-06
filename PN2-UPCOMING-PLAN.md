@@ -1,5 +1,7 @@
 # Plan: Upcoming (ProcrastiNation 2.0, `v2` branch)
 
+**Built 2026-10-06** in `c87e8a5`, `bb8aad3` and `5a4b398`; checked on web (phone and laptop widths, day and night) and the iOS Simulator.
+
 Read `PN2-HANDOFF.md` and `CLAUDE.md` first. This plan was approved for implementation in a fresh session; build all three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
 ## What it is
@@ -64,11 +66,11 @@ Laptop width (≥ 900 px, `useIsWide`): two columns, the month calendar on the l
 
 ## Done when
 
-- [ ] Tomorrow's plan step, a repeating task's next date, a due-only task, and a planned parent's deadline marker all appear on the right days; nothing from today or earlier; finished tasks hidden.
-- [ ] Tapping a day in the week strip or month calendar scrolls to it; dots match the days that have items.
-- [ ] Tap opens task detail; press-and-hold opens the row menu; checking a row completes it (a repeating one moves on and shows its next date).
-- [ ] "+" on a day captures into that day; "Move to…" reschedules from Today and Upcoming.
-- [ ] Same on iOS and web; laptop width shows two columns; light and night themes; `npm run core:test`, `npm run app:check` pass.
+- [x] Tomorrow's plan step, a repeating task's next date, a due-only task, and a planned parent's deadline marker all appear on the right days; nothing from today or earlier; finished tasks hidden.
+- [x] Tapping a day in the week strip or month calendar scrolls to it; dots match the days that have items.
+- [x] Tap opens task detail; press-and-hold opens the row menu; checking a row completes it (a repeating one moves on and shows its next date).
+- [x] "+" on a day captures into that day; "Move to…" reschedules from Today and Upcoming.
+- [x] Same on iOS and web; laptop width shows two columns; light and night themes; `npm run core:test`, `npm run app:check` pass.
 
 ## Context the implementer needs
 

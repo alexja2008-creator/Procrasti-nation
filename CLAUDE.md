@@ -134,16 +134,17 @@ src/hooks/use-start-session.ts    # Start Mode session: clock, start_sessions ro
 src/data/                         # user-settings, tasks (+ store), plans, starts, stamps, unstick, active-start, signed-in-providers
 src/lib/api.ts                    # apiPost() to apps/site with the session token
 src/app/(tabs)/_layout.tsx        # Headless expo-router/ui tabs + custom NavBar
-src/app/(tabs)/index.tsx          # Today: next step (or "Up next"), agenda, Customs; tap a row → detail, press and hold / right-click → Start / Plan it
+src/app/(tabs)/index.tsx          # Today: next step (or "Up next"), agenda, Customs; tap a row → detail, press and hold / right-click → Start / Plan it / Move to…
 src/app/(tabs)/passport.tsx       # Passport: citizen no., stamps, rank from real starts
-src/app/(tabs)/upcoming|territories.tsx   # Placeholders
-src/components/                   # NavBar, NextStepCard, TaskRow, RowMenu, Sheet, Chip, MonthCalendar, NoticeBar, Stamp, start/*, task/*, Screen, Text, Icon
+src/app/(tabs)/upcoming.tsx       # Upcoming: 7 days, then busy days to 8 weeks, then Later; DUE markers; week strip (pinned) + Month toggle on phones, month calendar beside the list at ≥900px; pick a day → scroll; "+" per day → quick add for that day
+src/app/(tabs)/territories.tsx    # Placeholder
+src/components/                   # NavBar, NextStepCard, TaskRow, RowMenu (Start / Plan it / Move to…, owns its When sheet), Sheet, Chip, MonthCalendar (optional dots), NoticeBar, Stamp, start/*, task/*, upcoming/* (day-section, week-strip), Screen (scroll ref, pinned children, laptop side column), Text, Icon
 src/theme/tokens.ts               # useTokens() / useStyles() over @pn/core palettes
 ```
 Device storage (AsyncStorage, per device): `pn.stamped.first-start.<userId>`, `pn.start.active.<userId>` (Start Mode session in progress, for resume). Web keyboard shortcuts go through `useShortcuts` (`use-shortcuts.web.ts`; no-op on native).
 
 ### packages/core
-`src/tokens.ts` (A2 palettes for light/"night passport", fonts, type scale, spacing, radii, motion), `src/nation.ts` (names, plain action labels, ranks, nudge tones, voice strings, citizen number + passport code lines), `src/dates.ts` (local-date helpers, day rollover, RRULE labels), `src/types.ts` (draft v2 data model), `src/agenda.ts` (Today: agenda, next step, up next, step context), `src/quick-add.ts`, `src/planning.ts`, `src/start-mode.ts` (wall-clock timer math, default minutes by style, stuck reasons, stamp kinds), `src/when.ts` (date/time/repeat chips, Monday-first month grid, when/due/repeat patches); `parseWhen` in `quick-add.ts` reads a schedule on its own ("fri 6pm"). Tests: `npm run core:test`.
+`src/tokens.ts` (A2 palettes for light/"night passport", fonts, type scale, spacing, radii, motion), `src/nation.ts` (names, plain action labels, ranks, nudge tones, voice strings, citizen number + passport code lines), `src/dates.ts` (local-date helpers, day rollover, RRULE labels), `src/types.ts` (draft v2 data model), `src/agenda.ts` (Today: agenda, next step, up next, step context), `src/upcoming.ts` (`buildUpcoming`: days, DUE markers, Later; calendar dot counts; section for a picked day), `src/order.ts` (internal ordering helpers shared by both), `src/quick-add.ts`, `src/planning.ts`, `src/start-mode.ts` (wall-clock timer math, default minutes by style, stuck reasons, stamp kinds), `src/when.ts` (date/time/repeat chips, Monday-first month grid and week strip, when/due/repeat patches); `parseWhen` in `quick-add.ts` reads a schedule on its own ("fri 6pm"), and `parseQuickAdd(text, now, { day })` captures into a preset day unless the text names a date. Tests: `npm run core:test`.
 
 ## Database (Supabase)
 
