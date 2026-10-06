@@ -18,11 +18,12 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 - **Plan it:** the eval-gated Adherence Planner (prompts and models unchanged), with optional clarifying questions, a preview showing per-step estimates and dates, and steps saved as child tasks. The next step appears as the A2 "Your next small step" ticket on Today. Entry points: a pill on big-sounding tasks, and a button in quick add.
 - **Start Mode:** full-screen focus view from the next-step card or a row's menu. Wall-clock timer, the "just N minutes" contract (keep going / stop here), Pause, Done → ink stamp + haptic → "Start the next step". **I'm stuck:** one-tap reason → `/api/unstick` (Sonnet 5.5, low effort, eval-gated) → a two-minute first action, or a box-breathing breather. Sessions resume after the app is closed or the page reloads. Web: Space pauses, Esc leaves.
 - **Today extras:** "Up next" card when no plan step is due; press and hold a row (right-click on web) for Start / Plan it, with a standing hint under the agenda heading (Alex prefers press-and-hold to a visible Start button per row); step counts include steps finished on earlier days.
+- **Task detail** (tap a row or the next-step card): checkbox and title, Start and Plan it, When / Due / Repeat / Estimate (one-tap chips, a month calendar, or "type it" like "fri 6pm"), notes, delete with Undo. Steps: check off, open, add your own, drag the handle to reorder (one row written per move), and "Re-plan the rest" (keeps finished steps, replaces open ones). Everything autosaves.
 - **Passport:** A2 ID page with citizen number, bilingual fields, passport code lines, real stamps ("Officially started", "Small steps N") and a rank bar counting real starts. Sign out.
 - **Navigation:** bottom tab bar on phones, sidebar at ≥900px. Day and night ("night passport") themes follow the system.
 - **iOS:** checked on the iOS Simulator through Expo Go, signed in (Today, Start Mode, Passport, row menu).
 
-**Not built yet:** Live Activity / lock-screen timer and the timer-end notification (need a development build and notifications), Town Hall, the Upcoming and Territories screens, task detail/editing, editing or reordering plan steps, notes, search, notifications, onboarding (Citizenship Application) and Settings, account deletion and export, and offline sync.
+**Not built yet:** Live Activity / lock-screen timer and the timer-end notification (need a development build and notifications), Town Hall, the Upcoming and Territories screens, capture-first notes (beyond a task's notes field), search, notifications, onboarding (Citizenship Application) and Settings, account deletion and export, and offline sync.
 
 **Commits on `v2`** (oldest first; branched from `main` at `bc120c2`):
 
@@ -43,6 +44,11 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 | `434bcf2` | This handoff |
 | `d1124c0` | Start Mode, I'm stuck (`/api/unstick`, `evals/unstick`), stamps, ranks, row menu, `ai_requests` |
 | `de588a2` | Start Mode: resume after close, full step counts, race-safe stuck cap, `useStartSession` |
+| `4dbe12e` | Sign-in callback handles a newer link after a failed one (found on iOS) |
+| `b0d27a7` | Press-and-hold hint always shown |
+| `3859eed` | Task detail: fields, date sheet, repeat, delete + Undo |
+| `35bf539` | Task detail: steps (add, open, drag to reorder) |
+| `e655e58` | Re-plan the rest, type-a-date, estimates |
 
 **Run it locally:**
 1. Start both preview servers from `.claude/launch.json`: `site` (port 3000; `apps/site/.env.development.local` points it at staging) and `app-web` (port 8081; `apps/app/.env.local` points at staging).
@@ -51,7 +57,7 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 3. For iOS: from `apps/app`, run `npx expo start --port 8082 < /dev/null`, then `xcrun simctl openurl booted exp://127.0.0.1:8082`.
 
 **Checks:**
-- `npm run core:test`: 28 tests.
+- `npm run core:test`: 35 tests.
 - `npm run db:test`: 19 migration tests, on the stand-in schema and, when the local dump exists, the real production structure.
 - `npm run app:check`: typecheck + lint.
 - `npm --prefix apps/site run build`.
@@ -119,10 +125,9 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
   - Done: monorepo restructure; `@pn/core`; Expo app scaffold; auth; data-model migration plus staging; AI service layer (done in Phase 0).
   - Remaining: **PowerSync spike** (needs Alex's account, and a development build since Expo Go can't load native modules); the `integrations` table (Phase 5).
 - **Phase 3 (core app MVP), in progress:**
-  - Done: quick add; Today; Customs (inline); Passport v1 (ID page, real stamps and rank); Plan it.
+  - Done: quick add; Today; Customs (inline); Passport v1 (ID page, real stamps and rank); Plan it; task detail (fields, steps, reorder, re-plan, delete + Undo).
   - Remaining:
     - Upcoming and Territories
-    - task detail and editing; plan step edit, reorder and delete
     - capture-first notes; search
     - local notifications (Done / Snooze / Start) and Web Push
     - Citizenship Application onboarding and Settings
@@ -131,7 +136,8 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
   - Then the TestFlight gate with 10 students.
 - **Phase 4:** Start Mode done (timer, contract, I'm stuck, breather, Done → stamp, resume). Remaining: Live Activity (Swift add-on, needs Apple Developer + a development build), Declarations, Morning Briefing / roll-forward, server push, State of the Union, Holidays.
 - **Checked on iOS (2026-10-06, Expo Go, signed in):** Today, Start Mode (timer, resume after the app was killed, I'm stuck → `/api/unstick`, two-minute restart, Done → stamp, next step), Passport stamps and rank, and the press-and-hold row menu.
-- **Suggested next:** task detail and editing (unblocks plan step edit/reorder; press-and-hold stays the way to Start or plan from a list), then Upcoming and Territories.
+- **Suggested next:** Upcoming (reuses the month calendar) and Territories, then capture-first notes and search.
+- **Known gap:** no live sync between devices yet; each device refreshes on foreground and day change (PowerSync spike pending).
 
 ---
 
