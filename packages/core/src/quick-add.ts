@@ -2,12 +2,14 @@
 // with no AI round trip and no network. The grammar is deliberately narrow so
 // ordinary titles survive ("Call Tom", "Study for May exam", "Buy sunscreen"):
 // short day names like "sat" only count with a cue ("on sat", "next sat") or
-// at the very end, and bare numbers are never times.
+// at the very end, and bare numbers are never times. "#chem" files the task in
+// a territory whose name matches; an unknown #word stays in the title.
 
 import { addDays, localDateString, occurrenceOnOrAfter, parseLocalDate } from './dates.ts';
-import type { LocalDate } from './types.ts';
+import { matchTerritory } from './territories.ts';
+import type { List, LocalDate } from './types.ts';
 
-export type QuickAddMatchKind = 'date' | 'time' | 'repeat' | 'due';
+export type QuickAddMatchKind = 'date' | 'time' | 'repeat' | 'due' | 'territory';
 
 export interface QuickAddResult {
   /** What's left once the schedule words are taken out. */
@@ -19,6 +21,8 @@ export interface QuickAddResult {
   /** Time of day; applies to `scheduledOn`, or to `dueOn` when there's no schedule. */
   time: { hour: number; minute: number } | null;
   rrule: string | null;
+  /** The territory a #tag named, when `lists` were given. */
+  listId: string | null;
   /** The understood pieces in reading order, for chips in the capture sheet. */
   matches: { kind: QuickAddMatchKind; text: string }[];
 }
@@ -194,21 +198,46 @@ function freqOf(unit: string): string {
   return 'YEARLY';
 }
 
+type TagTarget = Pick<List, 'id' | 'name' | 'sortOrder'>;
+
+/** Blanks out `[start, end)` of the working text, keeping offsets. */
+const blank = (text: string, start: number, end: number, fill = ' ') =>
+  text.slice(0, start) + fill.repeat(end - start) + text.slice(end);
+
 /**
  * Parses quick-add text. `now` is the device's current local time.
  * `scheduleOnly`: the input is only schedule words (task detail's "type it"
  * field), so there's no title to protect and everything may be understood.
  * `day`: the day quick add was opened for (Upcoming's "+"), used when the
  * text names no date of its own; a typed date or deadline wins.
+ * `lists`: the person's territories, so "#chem" can file the task.
  */
 export function parseQuickAdd(
   input: string,
   now: Date = new Date(),
-  { scheduleOnly = false, day }: { scheduleOnly?: boolean; day?: LocalDate } = {},
+  { scheduleOnly = false, day, lists = [] }: { scheduleOnly?: boolean; day?: LocalDate; lists?: TagTarget[] } = {},
 ): QuickAddResult {
   const today = localDateString(now);
   const work = { text: input };
   const spans: { kind: QuickAddMatchKind; start: number; end: number }[] = [];
+
+  // The first #tag naming a territory files the task. Other #words are hidden
+  // from the date and time rules ("#fri" stays a word) and put back afterwards.
+  let listId: string | null = null;
+  const hidden: { start: number; end: number }[] = [];
+  for (const m of input.matchAll(/(^|\s)(#[^\s#]+)/g)) {
+    const start = (m.index ?? 0) + m[1].length;
+    const end = start + m[2].length;
+    const found: TagTarget | null = listId === null ? matchTerritory(m[2].slice(1), lists) : null;
+    if (found) {
+      listId = found.id;
+      spans.push({ kind: 'territory', start, end });
+      work.text = blank(work.text, start, end);
+    } else {
+      hidden.push({ start, end });
+      work.text = blank(work.text, start, end, '\u0000');
+    }
+  }
 
   const repeat = takeRepeat(work);
   if (repeat) spans.push({ kind: 'repeat', start: repeat.start, end: repeat.end });
@@ -231,9 +260,10 @@ export function parseQuickAdd(
     }
   }
 
+  for (const h of hidden) work.text = work.text.slice(0, h.start) + input.slice(h.start, h.end) + work.text.slice(h.end);
   const title = work.text.replace(/\s+/g, ' ').replace(/^[\s,;:–—-]+|[\s,;:–—-]+$/g, '');
   if (!title && !scheduleOnly) {
-    return { title: input.trim(), scheduledOn: day ?? null, dueOn: null, time: null, rrule: null, matches: [] };
+    return { title: input.trim(), scheduledOn: day ?? null, dueOn: null, time: null, rrule: null, listId: null, matches: [] };
   }
 
   const clock = time ? { hour: time.hour, minute: time.minute } : partHour !== undefined ? { hour: partHour, minute: 0 } : null;
@@ -259,6 +289,7 @@ export function parseQuickAdd(
     dueOn: due?.date ?? null,
     time: clock,
     rrule,
+    listId,
     matches: spans.map((s) => ({ kind: s.kind, text: input.slice(s.start, s.end).trim() })),
   };
 }

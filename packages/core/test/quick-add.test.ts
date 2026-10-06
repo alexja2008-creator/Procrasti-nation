@@ -16,6 +16,7 @@ test('repeats with a time', () => {
     dueOn: null,
     time: { hour: 18, minute: 0 },
     rrule: 'FREQ=DAILY',
+    listId: null,
     matches: [{ kind: 'repeat', text: 'every day' }, { kind: 'time', text: '6pm' }],
   });
 });
@@ -89,7 +90,7 @@ test('ordinary titles are left alone', () => {
 });
 
 test('nothing left for a title keeps the text as the title', () => {
-  assert.deepEqual(parse('tomorrow 6pm'), { title: 'tomorrow 6pm', scheduledOn: null, dueOn: null, time: null, rrule: null, matches: [] });
+  assert.deepEqual(parse('tomorrow 6pm'), { title: 'tomorrow 6pm', scheduledOn: null, dueOn: null, time: null, rrule: null, listId: null, matches: [] });
 });
 
 test('parseWhen understands a schedule on its own', () => {
@@ -116,4 +117,25 @@ test('a preset day (Upcoming’s “+”) fills in when the text names no date',
   assert.equal(onThu('dentist tomorrow').scheduledOn, '2026-10-04', 'a typed date wins');
   assert.deepEqual([onThu('essay due fri').scheduledOn, onThu('essay due fri').dueOn], [null, '2026-10-09'], 'so does a typed deadline');
   assert.equal(onThu('tomorrow').scheduledOn, '2026-10-08', 'all-schedule text is the title, on that day');
+});
+
+test('#tags file into a territory; unknown ones stay in the title, untouched by the date rules', () => {
+  const lists = [
+    { id: 'chem', name: 'Chem 201', sortOrder: 1 },
+    { id: 'home', name: 'Home', sortOrder: 2 },
+    { id: 'fridays', name: 'Friday club', sortOrder: 3 },
+  ];
+  const tagged = (text: string) => parseQuickAdd(text, SAT_10AM, { lists });
+  const lab = tagged('Write lab report fri #chem');
+  assert.deepEqual([lab.title, lab.listId, lab.scheduledOn], ['Write lab report', 'chem', '2026-10-09']);
+  assert.deepEqual(lab.matches.map((m) => [m.kind, m.text]), [['date', 'fri'], ['territory', '#chem']]);
+  assert.deepEqual([tagged('#home water plants').title, tagged('#home water plants').listId], ['water plants', 'home']);
+  assert.deepEqual([tagged('Sell #textbooks tomorrow').title, tagged('Sell #textbooks tomorrow').listId], ['Sell #textbooks', null]);
+  assert.deepEqual([tagged('Plan party #sat').title, tagged('Plan party #sat').scheduledOn], ['Plan party #sat', null], 'an unknown #sat is not a date');
+  assert.equal(tagged('Lab #chem #home').listId, 'chem', 'the first territory wins');
+  assert.equal(tagged('Lab #chem #home').title, 'Lab #home');
+  assert.equal(tagged('Practice #fri').listId, 'fridays', 'a territory beats the date rules');
+  assert.equal(tagged('Email#chem').listId, null, 'a tag starts a word');
+  assert.equal(parseQuickAdd('Lab #chem', SAT_10AM).listId, null, 'no territories given: nothing to match');
+  assert.equal(parseQuickAdd('Lab #chem', SAT_10AM).title, 'Lab #chem');
 });

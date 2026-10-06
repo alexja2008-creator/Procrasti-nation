@@ -1,11 +1,11 @@
-import { sortOrderForMove, voice, type Task } from '@pn/core';
-import * as Haptics from 'expo-haptics';
+import { voice, type Task } from '@pn/core';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View, type ViewStyle } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { GestureDetector } from 'react-native-gesture-handler';
 
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/text';
+import { useDragReorder } from '@/hooks/use-drag-reorder';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.task;
@@ -20,51 +20,13 @@ type Props = {
   onAdd: (title: string) => void;
 };
 
-type Layout = { y: number; height: number };
-
 /** A task's steps: check off, open, drag the handle to reorder, add more at the end. */
 export function StepsList({ steps, onToggle, onOpen, onMove, onAdd }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
-  const [layouts, setLayouts] = useState<Record<string, Layout>>({});
-  const [drag, setDrag] = useState<{ id: string; dy: number } | null>(null);
+  const { draggingId, shift, grab, onLayout, actions } = useDragReorder(steps, onMove);
   const [draft, setDraft] = useState('');
-
-  const orders = steps.map((st) => st.sortOrder);
   const done = steps.filter((st) => st.completedAt).length;
-
-  /** Where the dragged row would land: how many other rows' middles it has passed. */
-  const landing = (id: string, dy: number) => {
-    const own = layouts[id];
-    if (!own) return steps.findIndex((st) => st.id === id);
-    const middle = own.y + own.height / 2 + dy;
-    return steps.filter((st) => st.id !== id && layouts[st.id] && layouts[st.id].y + layouts[st.id].height / 2 < middle).length;
-  };
-  const move = (from: number, to: number) => {
-    if (to !== from && to >= 0 && to < steps.length) onMove(steps[from], sortOrderForMove(orders, from, to));
-  };
-
-  const from = drag ? steps.findIndex((st) => st.id === drag.id) : -1;
-  const to = drag ? landing(drag.id, drag.dy) : -1;
-  const gap = drag ? (layouts[drag.id]?.height ?? 0) : 0;
-  const shift = (i: number) => {
-    if (!drag || i === from) return drag && i === from ? drag.dy : 0;
-    if (from < to && i > from && i <= to) return -gap;
-    if (to < from && i >= to && i < from) return gap;
-    return 0;
-  };
-
-  const grab = (id: string, index: number) =>
-    Gesture.Pan()
-      .runOnJS(true)
-      .minDistance(2)
-      .onStart(() => {
-        if (Platform.OS !== 'web') Haptics.selectionAsync();
-        setDrag({ id, dy: 0 });
-      })
-      .onUpdate((e) => setDrag({ id, dy: e.translationY }))
-      .onEnd((e) => move(index, landing(id, e.translationY)))
-      .onFinalize(() => setDrag(null));
 
   const add = () => {
     const title = draft.trim();
@@ -89,14 +51,11 @@ export function StepsList({ steps, onToggle, onOpen, onMove, onAdd }: Props) {
       <View style={s.card}>
         {steps.map((step, i) => {
           const isDone = !!step.completedAt;
-          const dragging = drag?.id === step.id;
+          const dragging = draggingId === step.id;
           return (
             <View
               key={step.id}
-              onLayout={(e) => {
-                const { y, height } = e.nativeEvent.layout;
-                setLayouts((prev) => (prev[step.id]?.y === y && prev[step.id]?.height === height ? prev : { ...prev, [step.id]: { y, height } }));
-              }}
+              onLayout={onLayout(step.id)}
               style={[s.row, { transform: [{ translateY: shift(i) }] }, dragging && s.dragging]}>
               <Pressable
                 onPress={() => onToggle(step)}
@@ -115,11 +74,7 @@ export function StepsList({ steps, onToggle, onOpen, onMove, onAdd }: Props) {
               <Pressable
                 onPress={() => onOpen(step)}
                 accessibilityRole="button"
-                accessibilityActions={[
-                  ...(i > 0 ? [{ name: 'moveUp', label: copy.moveUp }] : []),
-                  ...(i < steps.length - 1 ? [{ name: 'moveDown', label: copy.moveDown }] : []),
-                ]}
-                onAccessibilityAction={(e) => move(i, e.nativeEvent.actionName === 'moveUp' ? i - 1 : i + 1)}
+                {...actions(i)}
                 style={s.main}>
                 <Text variant="item" color={isDone ? c.muted : c.ink} style={isDone && s.struck}>
                   {step.title}

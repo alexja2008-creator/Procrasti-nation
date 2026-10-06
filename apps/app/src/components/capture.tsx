@@ -74,6 +74,8 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
   const { add, today } = useTasks();
   const { lists } = useLists();
   const territory = listId ? lists.find((l) => l.id === listId) : undefined;
+  // Where a capture is filed: a typed #tag, else the territory the sheet was opened for.
+  const filedIn = (p: QuickAddResult) => (p.listId ? lists.find((l) => l.id === p.listId) : territory);
   // What the sheet was opened for, shown before anything is typed.
   const preset: Chip | null = day
     ? { icon: 'calendar', label: voice.capture.whereDay(formatShortDate(day)) }
@@ -90,14 +92,14 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
   const onChange = (value: string) => {
     setText(value);
     setConfirmation(null);
-    setParsed(value.trim() ? parseQuickAdd(value.trim(), new Date(), { day }) : null);
+    setParsed(value.trim() ? parseQuickAdd(value.trim(), new Date(), { day, lists }) : null);
   };
 
   /** Captures the task, then opens Plan it for it. */
   const planIt = async () => {
     const p = parsed;
     if (!p) return;
-    const saved = await add(p, territory?.id);
+    const saved = await add(p, filedIn(p)?.id);
     if (!saved) return;
     onClose();
     router.push({ pathname: '/plan/[id]', params: { id: saved.id } });
@@ -110,8 +112,8 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
     setParsed(null);
     // Keep the cursor here for the next capture; web blurs inputs on submit.
     setTimeout(() => inputRef.current?.focus(), 0);
-    const saved = await add(p, territory?.id);
-    if (saved) setConfirmation(voice.capture.added(whereItWent(p, today, territory?.name)));
+    const saved = await add(p, filedIn(p)?.id);
+    if (saved) setConfirmation(voice.capture.added(whereItWent(p, today, filedIn(p)?.name)));
   };
 
   return (
@@ -149,7 +151,7 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
 
           <View style={s.chips} accessibilityLiveRegion="polite">
             {parsed
-              ? chipsFor(parsed, today, territory?.name).map((chip) => (
+              ? chipsFor(parsed, today, filedIn(parsed)?.name).map((chip) => (
                   <View key={chip.label} style={[s.chip, chip.muted && s.chipMuted]}>
                     <Icon name={chip.icon} size={13} color={chip.muted ? c.muted : c.primaryText} strokeWidth={2} />
                     <Text variant="meta" color={chip.muted ? c.muted : c.primaryText}>

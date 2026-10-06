@@ -1,6 +1,6 @@
 import { voice } from '@pn/core';
 import type { ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/components/text';
@@ -28,7 +28,8 @@ export function Sheet({ onClose, title, header, footer, children, width = 380 }:
   const insets = useSafeAreaInsets();
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-      <View style={[s.backdrop, wide && s.backdropWide]}>
+      {/* The sheet rides above the keyboard when one of its fields has focus. */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[s.backdrop, wide && s.backdropWide]}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={voice.cancel} />
         <View
           style={[s.sheet, wide ? [s.card, { width }] : { paddingBottom: Math.max(insets.bottom, 12) }]}
@@ -44,7 +45,7 @@ export function Sheet({ onClose, title, header, footer, children, width = 380 }:
           </ScrollView>
           {footer ? <View style={s.footer}>{footer}</View> : null}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
