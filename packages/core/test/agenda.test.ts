@@ -84,3 +84,16 @@ test('step context: position in the plan and the next open step', () => {
   assert.equal(at('s4')?.next?.id, 's1', 'wraps to an earlier open step');
   assert.equal(stepContext([task('only', { parentId: 'paper' })], task('only', { parentId: 'paper' }))?.next, null);
 });
+
+test('steps finished on earlier days still count toward "step i of n"', () => {
+  const view = buildToday(
+    [
+      task('paper', { title: 'History paper', dueOn: '2026-10-09' }),
+      task('s1', { parentId: 'paper', sortOrder: 1, scheduledOn: '2026-10-01', ...done(1) }),
+      task('s2', { parentId: 'paper', sortOrder: 2, scheduledOn: TODAY }),
+    ],
+    TODAY,
+  );
+  assert.deepEqual([view.nextStep?.task.id, view.nextStep?.stepIndex, view.nextStep?.stepCount], ['s2', 2, 2]);
+  assert.deepEqual(view.agenda, [], 'an earlier finish is not on today’s agenda');
+});

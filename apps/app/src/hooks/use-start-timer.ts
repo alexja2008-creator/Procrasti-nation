@@ -30,11 +30,14 @@ export function useStartTimer() {
   };
 
   return {
+    clock,
     elapsed: elapsedMs(clock, now),
     paused: !running,
     pause: () => change(pauseClock),
     resume: () => change(resumeClock),
     restart: () => change((_, at) => startClock(at)),
+    /** Picks up a clock saved earlier (resuming a session after the app was closed). */
+    restore: (saved: StartClock) => change(() => saved),
     /** Elapsed right now, for event handlers and unmount (not for rendering). */
     elapsedNow: () => elapsedMs(latest.current, Date.now()),
   };

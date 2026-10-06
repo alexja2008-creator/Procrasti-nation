@@ -54,7 +54,11 @@ const fromRow = (r: Row): Task => ({
   deletedAt: r.deleted_at,
 });
 
-/** Open tasks plus anything finished since `since` (the start of the person's day). */
+/**
+ * Open tasks plus anything finished since `since` (the start of the person's
+ * day), plus every finished step of the plans among them, so "step 4 of 10"
+ * still counts the steps done on earlier days.
+ */
 export async function fetchActiveTasks(userId: string, since: Date): Promise<Task[]> {
   const { data, error } = await supabase
     .from('tasks')
@@ -66,7 +70,20 @@ export async function fetchActiveTasks(userId: string, since: Date): Promise<Tas
     .order('created_at')
     .limit(1000);
   if (error) throw error;
-  return (data as unknown as Row[]).map(fromRow);
+  const active = (data as unknown as Row[]).map(fromRow);
+
+  const parentIds = [...new Set(active.flatMap((t) => (t.parentId ? [t.parentId] : [])))];
+  if (parentIds.length === 0) return active;
+  const { data: done, error: doneError } = await supabase
+    .from('tasks')
+    .select(COLUMNS)
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+    .in('parent_id', parentIds)
+    .lt('completed_at', since.toISOString())
+    .limit(1000);
+  if (doneError) throw doneError;
+  return [...active, ...(done as unknown as Row[]).map(fromRow)];
 }
 
 export type NewTask = Pick<Task, 'id' | 'userId' | 'title' | 'scheduledOn' | 'dueOn' | 'dueAt' | 'remindAt' | 'rrule' | 'sortOrder'>;

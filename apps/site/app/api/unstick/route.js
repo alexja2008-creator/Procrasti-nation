@@ -9,6 +9,7 @@ export const maxDuration = 30;
 // Start Mode's "I'm stuck" is free (it's the moat, not a Pro feature), with a
 // per-person daily cap so the route can't be used as an open AI proxy.
 const DAILY_LIMIT = 20;
+const DAY_MS = 24 * 60 * 60 * 1000;
 // Chosen by evals/unstick: Sonnet at low effort beat Haiku (12/16 vs 8/16) at ~2s.
 const EFFORT = 'low';
 const STYLES = new Set(['avoider', 'perfectionist', 'overwhelmed', 'boredom']);
@@ -47,9 +48,12 @@ export async function POST(request) {
       { global: { headers: { Authorization: `Bearer ${token}` } } }
     );
 
-    // Count the last 24 hours, then log this request before calling the model
-    // (RLS: insert and read own rows only, so the count can't be reset).
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    // Log this request first, then count the last 24 hours including it, so a burst
+    // of parallel requests can't all slip under the cap (RLS: insert and read own
+    // rows only, so the count can't be reset). Refused requests count too.
+    const { error: logError } = await userSupabase.from('ai_requests').insert({ user_id: user.id, kind: 'unstick' });
+    if (logError) throw logError;
+    const since = new Date(Date.now() - DAY_MS).toISOString();
     const { count, error: countError } = await userSupabase
       .from('ai_requests')
       .select('id', { count: 'exact', head: true })
@@ -57,11 +61,9 @@ export async function POST(request) {
       .eq('kind', 'unstick')
       .gte('created_at', since);
     if (countError) throw countError;
-    if (count >= DAILY_LIMIT) {
+    if (count > DAILY_LIMIT) {
       return NextResponse.json({ error: 'Daily limit reached. Try again tomorrow.' }, { status: 429 });
     }
-    const { error: logError } = await userSupabase.from('ai_requests').insert({ user_id: user.id, kind: 'unstick' });
-    if (logError) throw logError;
 
     const { action } = await callClaude({
       model: MODELS.plan,

@@ -1,21 +1,16 @@
 import {
   defaultStartMinutes,
   formatClock,
-  leftOutcome,
   relativeDayPhrase,
   stampKinds,
   stepContext,
-  STUCK_MINUTES,
   voice,
-  type StartSession,
   type StuckReason,
   type Task,
 } from '@pn/core';
-import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
-import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useEffectEvent, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -28,13 +23,12 @@ import { Stamped } from '@/components/start/stamped';
 import { StuckPanel } from '@/components/start/stuck-panel';
 import { TimerRing } from '@/components/start/timer-ring';
 import { Text } from '@/components/text';
-import { awardFirstStart, awardStamp } from '@/data/stamps';
-import { sessionWriter } from '@/data/starts';
+import { awardStamp } from '@/data/stamps';
 import { useTasks } from '@/data/tasks-store';
 import { tinyFirstAction } from '@/data/unstick';
 import { useUserSettings } from '@/data/user-settings';
 import { useShortcuts } from '@/hooks/use-shortcuts';
-import { useStartTimer } from '@/hooks/use-start-timer';
+import { useStartSession } from '@/hooks/use-start-session';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.start;
@@ -51,14 +45,6 @@ type Phase = 'running' | 'stuck' | 'breather' | 'stamped';
 
 /** Start Mode: one step, a timer and the "just five minutes" contract. Every visit is a Start. */
 function StartMode({ id }: { id: string }) {
-  // Keep the screen on. Browsers may refuse the wake lock (hidden tab, permissions), so both calls swallow errors.
-  useEffect(() => {
-    const tag = `start-${id}`;
-    activateKeepAwakeAsync(tag).catch(() => undefined);
-    return () => {
-      deactivateKeepAwake(tag).catch(() => undefined);
-    };
-  }, [id]);
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const insets = useSafeAreaInsets();
@@ -66,78 +52,20 @@ function StartMode({ id }: { id: string }) {
   const userId = session?.user.id ?? '';
   const { tasks, status, today, toggle, notify } = useTasks();
   const { settings } = useUserSettings();
-  const timer = useStartTimer();
 
   const live = tasks.find((t) => t.id === id && !t.deletedAt);
   // Done changes the store's copy (a repeating task even moves on); the stamped view keeps this one.
   const [finished, setFinished] = useState<Task | null>(null);
   const task = finished ?? live;
   const step = task ? stepContext(tasks, task) : null;
-
   const [phase, setPhase] = useState<Phase>('running');
-  const [planned, setPlanned] = useState(() => defaultStartMinutes(settings?.preferences));
-  const [keptGoing, setKeptGoing] = useState(false);
-  const [tiny, setTiny] = useState<string | null>(null);
-  const [firstStart, setFirstStart] = useState(false);
 
-  const [save] = useState(sessionWriter);
-  const current = useRef<StartSession | null>(null);
-
-  const begin = (taskId: string, minutes: number) => {
-    const row: StartSession = {
-      id: Crypto.randomUUID(),
-      userId,
-      taskId,
-      startedAt: new Date().toISOString(),
-      endedAt: null,
-      plannedMinutes: minutes,
-      outcome: null,
-    };
-    current.current = row;
-    save(row);
-    timer.restart();
-  };
-
-  const end = (outcome: NonNullable<StartSession['outcome']>) => {
-    const row = current.current;
-    if (!row || row.endedAt) return;
-    current.current = { ...row, endedAt: new Date().toISOString(), outcome };
-    save(current.current);
-  };
-
-  // Opening Start Mode is the Start. Waits for the task when the page was opened by URL.
-  const onFirstSight = useEffectEvent((taskId: string) => {
-    if (current.current) return;
-    begin(taskId, planned);
-    awardFirstStart(userId).then(setFirstStart, () => undefined);
-  });
-  useEffect(() => {
-    if (live) onFirstSight(live.id);
-  }, [live]);
-
-  /** Ends the session as "stopped" or "kept going", by the clock of the session being left. */
-  const endEarly = () => {
-    const row = current.current;
-    if (row) end(leftOutcome(timer.elapsedNow(), row.plannedMinutes));
-  };
-
-  // Leaving another way (browser back, a gesture) still ends the session. Deferred
-  // and checked against a ref, so a development double-mount doesn't end it on the spot.
-  const mounted = useRef(false);
-  const onUnmount = useEffectEvent(endEarly);
-  useEffect(() => {
-    mounted.current = true;
-    return () => {
-      mounted.current = false;
-      setTimeout(() => {
-        if (!mounted.current) onUnmount();
-      }, 0);
-    };
-  }, []);
+  const run = useStartSession({ userId, taskId: live?.id, defaultMinutes: defaultStartMinutes(settings?.preferences) });
+  const { timer, planned, tiny } = run;
 
   const plannedMs = planned * 60_000;
   const reached = timer.elapsed >= plannedMs;
-  const contract = phase === 'running' && reached && !keptGoing;
+  const contract = phase === 'running' && reached && !run.keptGoing;
 
   const onContract = useEffectEvent(() => haptic(Haptics.ImpactFeedbackStyle.Medium));
   useEffect(() => {
@@ -145,14 +73,14 @@ function StartMode({ id }: { id: string }) {
   }, [contract]);
 
   const leave = () => {
-    endEarly();
+    run.leave();
     notify(copy.leftNotice);
     close();
   };
 
   const finish = () => {
     if (!task) return;
-    end('done');
+    run.done();
     if (!task.completedAt) toggle(task);
     awardStamp({ userId, kind: stampKinds.stepDone, taskId: task.id, listId: task.listId }).catch(() => undefined);
     setFinished(task);
@@ -169,12 +97,7 @@ function StartMode({ id }: { id: string }) {
     setPhase('running');
   };
   const startTiny = (action: string) => {
-    if (!task) return;
-    end('stuck');
-    setTiny(action);
-    setPlanned(STUCK_MINUTES);
-    setKeptGoing(false);
-    begin(task.id, STUCK_MINUTES);
+    run.startTiny(action);
     setPhase('running');
   };
   const shrink = (reason: StuckReason, avoid: string[]) =>
@@ -243,7 +166,7 @@ function StartMode({ id }: { id: string }) {
             {task.notes}
           </Text>
         ) : null}
-        {firstStart ? (
+        {run.firstStart ? (
           <Text variant="meta" color={c.primaryText} style={s.centered} accessibilityLiveRegion="polite">
             {copy.firstStart}
           </Text>
@@ -293,7 +216,7 @@ function StartMode({ id }: { id: string }) {
               <View style={s.row}>
                 <View style={s.half}>
                   {contract ? (
-                    <Button variant="secondary" label={copy.keepGoing} onPress={() => setKeptGoing(true)} />
+                    <Button variant="secondary" label={copy.keepGoing} onPress={run.keepGoing} />
                   ) : (
                     <Button variant="secondary" label={copy.stuck} onPress={openStuck} />
                   )}
