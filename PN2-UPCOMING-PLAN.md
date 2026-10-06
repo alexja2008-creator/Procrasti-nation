@@ -27,15 +27,15 @@ The Upcoming tab (today a placeholder: `apps/app/src/app/(tabs)/upcoming.tsx` re
 
 Laptop width (≥ 900 px, `useIsWide`): two columns, the month calendar on the left (sticky) and the day list on the right.
 
-## Decisions (made; confirm the two marked ★ with Alex at the start)
+## Decisions (all confirmed by Alex on 2026-10-06)
 
 - **Range:** the next 7 days are always shown (empty days say "Nothing yet." with the day's "+"); after that, only days that have something, up to 8 weeks out; anything further goes in a final **Later** section, sorted by date.
 - **Repeating tasks appear once, on their next date** (their `scheduledOn`), with the repeat icon, like Apple Reminders. No expanding "every day" into every day (it floods the list); the task already moves on to its next date when done.
 - **Deadlines:** a task appears as a to-do on its `scheduledOn`, or on its `dueOn` if it has no `scheduledOn`. When its work happens elsewhere (it has plan steps, or it's scheduled before its due date), its due day also gets a **deadline marker** row: terracotta mono "DUE" label + title, tappable to open the task, no checkbox. Plan steps show on their own days with "Parent · step i of n" (use `stepContext`).
 - **Order within a day:** timed items first by time (`remindAt`, then `dueAt`), then deadline markers, then the rest by `sortOrder`. Finished items are hidden (Upcoming is forward-looking).
 - **Rows reuse `TaskRow`:** tap → task detail, press-and-hold (right-click on web) → row menu, checkbox → complete. Keep the standing hint style from Today only if the list has open rows (optional; it's already taught on Today).
-- **★ "Move to…" in the row menu:** press-and-hold gains a third item that opens the existing `DateSheet` (When) to reschedule; saves with `whenPatch`. Alex prefers press-and-hold for Start / Plan it, so confirm adding this third action before building it (it also helps Today).
-- **★ Add to a day:** the "+" on a day header opens quick add preset to that day: the capture sheet shows "for Thu 8 Oct", and if the typed text has no date, `scheduledOn` = that day. Confirm the "+" per day header (vs only the global capture button).
+- **"Move to…" in the row menu (confirmed):** press-and-hold gains a third item, after Start and Plan it, with the `calendar` stroke icon, that opens the existing `DateSheet` (When) to reschedule; saves with `whenPatch`. Works on Today and Upcoming.
+- **Add to a day (confirmed):** a "+" on each day header opens quick add preset to that day: the capture sheet shows "for Thu 8 Oct", and if the typed text has no date, `scheduledOn` = that day (a typed date still wins).
 - **No calendar events yet.** Apple Calendar / Google overlay is Phase 5 (EventKit, OAuth); design `buildUpcoming` so events can be merged in later, but don't build it now.
 - **No new data fetch or schema:** `fetchActiveTasks` already loads every open task (plus finished steps of plans on screen), so Upcoming derives from the tasks store. Online-first as today (no live cross-device sync until the PowerSync spike).
 
@@ -53,21 +53,21 @@ Laptop width (≥ 900 px, `useIsWide`): two columns, the month calendar on the l
 | App | `apps/app/src/components/month-calendar.tsx` | optional `marks?: Record<LocalDate, number>` → up to 3 dots under a day; keep current props working (the date sheet uses it) |
 | App | `apps/app/src/components/screen.tsx` | allow passing a ScrollView ref (or render Upcoming's own ScrollView) so the list can scroll to a day |
 | App | `apps/app/src/components/capture.tsx` | `open({ day?: LocalDate })`; a "for {day}" chip; apply the preset day when the parse has no date |
-| App | `apps/app/src/components/row-menu.tsx` + `app/(tabs)/index.tsx` | ★ "Move to…" item → `DateSheet` → `update(task, whenPatch(day, time))` |
+| App | `apps/app/src/components/row-menu.tsx` + `app/(tabs)/index.tsx` | "Move to…" item → `DateSheet` → `update(task, whenPatch(day, time))` |
 | Docs | `CLAUDE.md`, `PN2-HANDOFF.md` | structure lines, what works, commits, next steps |
 
 ## Phases (commit + push `v2` after each)
 
 1. **List:** `buildUpcoming` + tests; the Upcoming screen with day sections (7 fixed days, sparse to 8 weeks, Later), deadline markers, `TaskRow` tap / hold / check, empty states. Verify on web against staging.
 2. **Calendar:** week strip with dots and a Month toggle (phone), two-column layout with the month calendar (laptop width); selecting a day scrolls the list to it; `MonthCalendar` `marks`.
-3. **Add and move:** "+" per day (capture preset) and "Move to…" in the row menu (after Alex confirms both); then checks on the iOS Simulator (Expo Go; see the handoff for signing in: request the link from the simulator, open the **newest** link with `xcrun simctl openurl booted "<link>"`) and web (desktop and phone widths, light and dark); code-review checklist (`agents/code-review.md`); docs.
+3. **Add and move:** "+" per day (capture preset) and "Move to…" in the row menu; then checks on the iOS Simulator (Expo Go; see the handoff for signing in: request the link from the simulator, open the **newest** link with `xcrun simctl openurl booted "<link>"`) and web (desktop and phone widths, light and dark); code-review checklist (`agents/code-review.md`); docs.
 
 ## Done when
 
 - [ ] Tomorrow's plan step, a repeating task's next date, a due-only task, and a planned parent's deadline marker all appear on the right days; nothing from today or earlier; finished tasks hidden.
 - [ ] Tapping a day in the week strip or month calendar scrolls to it; dots match the days that have items.
 - [ ] Tap opens task detail; press-and-hold opens the row menu; checking a row completes it (a repeating one moves on and shows its next date).
-- [ ] "+" on a day captures into that day; "Move to…" reschedules (if approved).
+- [ ] "+" on a day captures into that day; "Move to…" reschedules from Today and Upcoming.
 - [ ] Same on iOS and web; laptop width shows two columns; light and night themes; `npm run core:test`, `npm run app:check` pass.
 
 ## Context the implementer needs
