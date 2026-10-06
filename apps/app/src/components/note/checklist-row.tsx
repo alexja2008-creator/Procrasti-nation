@@ -1,6 +1,6 @@
 import { formatTime, relativeDayLabel, voice, type LocalDate, type Task } from '@pn/core';
 import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import { Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
@@ -19,13 +19,15 @@ type Props = {
   onReturn: (title: string, carried: string) => void;
   /** Backspace in an empty line. */
   onBackspaceEmpty: () => void;
-  /** The line was edited and left. */
+  /** The line was edited and left (or closed while being typed in). */
   onCommit: (title: string) => void;
+  /** The words being typed, before they're saved (null once saved). */
+  onDraft: (text: string | null) => void;
   onOpen: () => void;
 };
 
 /** A live checklist line: a checkbox and a title that are a real task. */
-export function ChecklistRow({ task, today, inputRef, onFocus, onToggle, onReturn, onBackspaceEmpty, onCommit, onOpen }: Props) {
+export function ChecklistRow({ task, today, inputRef, onFocus, onToggle, onReturn, onBackspaceEmpty, onCommit, onDraft, onOpen }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   // Typing stays local until the line is left (or Return), then saves once.
@@ -37,11 +39,20 @@ export function ChecklistRow({ task, today, inputRef, onFocus, onToggle, onRetur
   const clock = task.scheduledOn ? task.remindAt : task.dueAt;
   const when = day ? `${relativeDayLabel(day, today)}${clock ? ` ${formatTime(new Date(clock))}` : ''}` : null;
 
+  const type = (text: string | null) => {
+    setDraft(text);
+    onDraft(text);
+  };
   const commit = () => {
     if (draft === null) return;
-    setDraft(null);
+    type(null);
     onCommit(draft);
   };
+  // Leaving the note mid-line (a tap on Close keeps the keyboard up, so no blur) still saves the words.
+  const onLeave = useEffectEvent(() => {
+    if (draft !== null) onCommit(draft);
+  });
+  useEffect(() => () => onLeave(), []);
 
   return (
     <View style={s.row}>
@@ -67,13 +78,13 @@ export function ChecklistRow({ task, today, inputRef, onFocus, onToggle, onRetur
         value={value}
         onChangeText={(text) => {
           const nl = text.indexOf('\n');
-          if (nl === -1) return setDraft(text);
-          setDraft(null);
+          if (nl === -1) return type(text);
+          type(null);
           grow.reset();
           onReturn(text.slice(0, nl), text.slice(nl + 1));
         }}
         onSubmitEditing={() => {
-          setDraft(null);
+          type(null);
           onReturn(value, '');
         }}
         onKeyPress={(e) => {

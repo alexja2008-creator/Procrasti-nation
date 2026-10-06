@@ -15,13 +15,13 @@ import {
 import * as Crypto from 'expo-crypto';
 import { router } from 'expo-router';
 import { useEffect, useImperativeHandle, useMemo, useRef, type Ref } from 'react';
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { Platform, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { ChecklistRow } from '@/components/note/checklist-row';
 import { useLists } from '@/data/lists-store';
+import { useTasks } from '@/data/tasks-store';
 import { useAutoHeight } from '@/hooks/use-auto-height';
 import { noFocusRing, oneRowOnWeb } from '@/lib/web-styles';
-import { useTasks } from '@/data/tasks-store';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 export type NoteEditorHandle = {
@@ -29,6 +29,8 @@ export type NoteEditorHandle = {
   focusStart: () => void;
   /** ☐: the line the cursor is on becomes a checklist line, or goes back to text. */
   toggleChecklist: () => void;
+  /** Checklist lines' words as they stand, typing included (a line saves its words when it's left). */
+  wordsOf: (taskId: string) => string | undefined;
 };
 
 type Props = {
@@ -55,6 +57,12 @@ const keyAt = (blocks: NoteBlock[], i: number) => {
   return prev?.kind === 'task' ? `x:${prev.taskId}` : 'x:start';
 };
 
+/** Puts the caret at `at` (focus alone leaves it at the end on iOS, the start on web). */
+const placeCaret = (input: TextInput, at: number) => {
+  if (Platform.OS === 'web') (input as unknown as HTMLTextAreaElement).setSelectionRange(at, at);
+  else input.setSelection(at, at);
+};
+
 /**
  * The note's body as blocks: text paragraphs and live checklist lines. A
  * checklist line is a real task (tick it here or anywhere); a new one is read
@@ -71,14 +79,25 @@ export function NoteEditor({ rest, onChange, saveNow, noteId, listId, ref }: Pro
   const inputs = useRef(new Map<string, TextInput>());
   // The block the cursor was last in (by key) and, for text, where in it.
   const focused = useRef<{ key: string; offset: number } | null>(null);
-  // After a change of structure, the block to put the cursor in once it renders.
-  const focusNext = useRef<string | null>(null);
+  // After a change of structure, where the cursor goes once it renders: a block (by key) and a place in it.
+  const focusNext = useRef<{ key: string; at: number | 'end' } | null>(null);
+  // Words being typed in checklist lines, not yet saved to their tasks.
+  const drafts = useRef(new Map<string, string>());
+  // Tasks whose lines were taken out here: a line saving its words as it goes mustn't revive them.
+  const gone = useRef(new Set<string>());
+  // Lines made checklist lines here, as typed: ☐ again (title untouched) gives the words back, "fri" and all.
+  const typed = useRef(new Map<string, { text: string; title: string }>());
 
   useEffect(() => {
-    const key = focusNext.current;
-    if (!key) return;
+    const next = focusNext.current;
+    if (!next) return;
     focusNext.current = null;
-    inputs.current.get(key)?.focus();
+    const input = inputs.current.get(next.key);
+    if (!input) return;
+    const b = blocks.find((_, j) => keyAt(blocks, j) === next.key);
+    const end = b?.kind === 'text' ? b.text.length : b ? (byId.get(b.taskId)?.title.length ?? 0) : 0;
+    input.focus();
+    placeCaret(input, next.at === 'end' ? end : next.at);
   });
 
   const emit = (next: NoteBlock[]) => {
@@ -87,19 +106,24 @@ export function NoteEditor({ rest, onChange, saveNow, noteId, listId, ref }: Pro
     return body;
   };
 
-  /** A checklist line's task, read like quick add when it has words. */
+  /** A checklist line's task, read like quick add when it has words. Returns its title. */
   const createTask = (taskId: string, text: string, body: string) => {
     const words = text.trim();
     const parsed = words ? parseQuickAdd(words, new Date(), { lists }) : null;
     const fields = parsed ? { title: parsed.title, ...scheduleOf(parsed), listId: parsed.listId ?? listId } : { title: '', listId };
     addToNote({ id: taskId, noteId, ...fields }, saveNow(body));
+    return fields.title;
   };
-  const deleteTask = (taskId: string) => setDeletedMany([taskId], new Date().toISOString()).catch(() => undefined);
+  const deleteTask = (taskId: string) => {
+    gone.current.add(taskId);
+    drafts.current.delete(taskId);
+    setDeletedMany([taskId], new Date().toISOString()).catch(() => undefined);
+  };
 
   /** A line's words saved to its task; a line's first words are read like quick add. */
   const commit = (task: Task, title: string) => {
     const words = title.trim();
-    if (words === task.title) return;
+    if (words === task.title || gone.current.has(task.id)) return;
     if (!task.title && words) {
       const p = parseQuickAdd(words, new Date(), { lists });
       update(task, { title: p.title, ...scheduleOf(p), ...(p.listId ? { listId: p.listId } : {}) });
@@ -111,8 +135,8 @@ export function NoteEditor({ rest, onChange, saveNow, noteId, listId, ref }: Pro
   const toChecklist = (i: number, line: number) => {
     const taskId = Crypto.randomUUID();
     const { blocks: next, text } = lineToChecklist(blocks, i, line, taskId);
-    createTask(taskId, text, emit(next));
-    focusNext.current = `t:${taskId}`;
+    typed.current.set(taskId, { text, title: createTask(taskId, text, emit(next)) });
+    focusNext.current = { key: `t:${taskId}`, at: 'end' };
   };
 
   /** Checklist line `i` back to text (or an empty line), its task gone. */
@@ -122,9 +146,10 @@ export function NoteEditor({ rest, onChange, saveNow, noteId, listId, ref }: Pro
     const next = checklistToLine(blocks, i, text);
     emit(next);
     deleteTask(b.taskId);
-    // The line is now in the text block that took its place (joined with the text before it, if any).
-    const at = blocks[i - 1]?.kind === 'text' ? i - 1 : i;
-    focusNext.current = keyAt(next, at);
+    // The line is now in the text block that took its place, after the text before it (if any).
+    const prev = blocks[i - 1];
+    focusNext.current =
+      prev?.kind === 'text' ? { key: keyAt(next, i - 1), at: prev.text.length + 1 + text.length } : { key: keyAt(next, i), at: text.length };
   };
 
   const onReturn = (i: number, task: Task, title: string, carried: string) => {
@@ -134,7 +159,7 @@ export function NoteEditor({ rest, onChange, saveNow, noteId, listId, ref }: Pro
     const taskId = Crypto.randomUUID();
     const next = insertChecklistLine(blocks, i, taskId);
     createTask(taskId, carried, emit(next));
-    focusNext.current = `t:${taskId}`;
+    focusNext.current = { key: `t:${taskId}`, at: 0 };
   };
 
   const onBackspaceEmpty = (i: number) => {
@@ -143,7 +168,9 @@ export function NoteEditor({ rest, onChange, saveNow, noteId, listId, ref }: Pro
     const next = removeChecklistLine(blocks, i);
     emit(next);
     deleteTask(b.taskId);
-    focusNext.current = keyAt(next, Math.max(0, i - 1));
+    // To the end of the line before (not the end of any text joined after it).
+    const prev = blocks[i - 1];
+    focusNext.current = { key: keyAt(next, Math.max(0, i - 1)), at: prev?.kind === 'text' ? prev.text.length : prev ? 'end' : 0 };
   };
 
   useImperativeHandle(ref, () => ({
@@ -153,12 +180,17 @@ export function NoteEditor({ rest, onChange, saveNow, noteId, listId, ref }: Pro
       const i = f ? blocks.findIndex((_, j) => keyAt(blocks, j) === f.key) : -1;
       const b = blocks[i];
       if (f && b?.kind === 'text') return toChecklist(i, lineAt(b.text, f.offset));
-      if (b?.kind === 'task') return toText(i, byId.get(b.taskId)?.title ?? '');
+      if (b?.kind === 'task') {
+        const title = drafts.current.get(b.taskId) ?? byId.get(b.taskId)?.title ?? '';
+        const was = typed.current.get(b.taskId);
+        return toText(i, was?.title === title ? was.text : title);
+      }
       // Nowhere in particular: a new checklist line at the end.
       const taskId = Crypto.randomUUID();
       createTask(taskId, '', emit([...blocks, { kind: 'task', taskId }]));
-      focusNext.current = `t:${taskId}`;
+      focusNext.current = { key: `t:${taskId}`, at: 0 };
     },
+    wordsOf: (taskId) => drafts.current.get(taskId) ?? byId.get(taskId)?.title,
   }));
 
   return (
@@ -184,6 +216,7 @@ export function NoteEditor({ rest, onChange, saveNow, noteId, listId, ref }: Pro
               onReturn={(title, carried) => onReturn(i, task, title, carried)}
               onBackspaceEmpty={() => onBackspaceEmpty(i)}
               onCommit={(title) => commit(task, title)}
+              onDraft={(text) => (text === null ? drafts.current.delete(task.id) : drafts.current.set(task.id, text))}
               onOpen={() => router.push({ pathname: '/task/[id]', params: { id: task.id } })}
             />
           );

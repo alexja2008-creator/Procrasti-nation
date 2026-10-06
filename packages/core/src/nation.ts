@@ -159,6 +159,12 @@ export const voice = {
     /** Captured into a territory: the chip reads "in Chem 201", the note "Added to Chem 201." */
     inTerritory: (name: string) => `in ${name}`,
     whereTerritory: (name: string) => `to ${name}`,
+    /** The switch at the top of the sheet. */
+    task: 'Task',
+    note: 'Note',
+    notePlaceholder: 'Lecture notes, a list, an idea…',
+    saveNote: 'Save note',
+    savedTo: (where: string) => `Saved to ${where}.`,
   },
   today: {
     emptyHint: 'Capture anything: “Walk Biscuit every day 6pm”, “Essay due fri”, or just “Buy stamps”.',

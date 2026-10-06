@@ -120,6 +120,8 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
   }, [notice]);
 
   const replace = (id: string, next: Task) => setTasks((prev) => prev.map((t) => (t.id === id ? next : t)));
+  /** Some fields of a task, onto the task as it stands (a caller's copy can be a render old, e.g. just deleted). */
+  const patchRow = (id: string, patch: Partial<Task>) => setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
 
   /** Shows a new task at once and saves it; takes it back out if the save fails. */
   const insert = async (fields: Partial<Task> & Pick<Task, 'title' | 'sortOrder'>, after?: Promise<unknown>) => {
@@ -232,14 +234,15 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
     });
 
   const update: Store['update'] = (task, patch) => {
-    replace(task.id, { ...task, ...patch });
+    patchRow(task.id, patch);
     afterInsert(task.id).then(() => updateTask(task.id, patch)).then(
       (saved) => {
         replace(task.id, saved);
         setError(null);
       },
       () => {
-        replace(task.id, task);
+        // Those fields back as they were.
+        patchRow(task.id, Object.fromEntries(Object.keys(patch).map((k) => [k, task[k as keyof Task]])));
         setError(voice.today.saveFailed);
       },
     );

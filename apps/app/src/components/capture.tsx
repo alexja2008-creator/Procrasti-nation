@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { Icon, type IconName } from '@/components/icon';
+import { NoteCapture } from '@/components/note/note-capture';
 import { Text } from '@/components/text';
 import { useLists } from '@/data/lists-store';
 import { useTasks } from '@/data/tasks-store';
@@ -84,6 +85,7 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
       : null;
 
   const inputRef = useRef<TextInput>(null);
+  const [mode, setMode] = useState<'task' | 'note'>('task');
   const [text, setText] = useState('');
   const [parsed, setParsed] = useState<QuickAddResult | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
@@ -129,65 +131,87 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
         />
         <View style={[s.sheet, wide ? s.dialog : { paddingBottom: insets.bottom + 16 }]} accessibilityViewIsModal>
           <View style={s.header}>
-            <Text variant="label" color={c.muted}>
+            <Text variant="label" color={c.muted} style={s.eyebrow}>
               {voice.capture.eyebrow.toUpperCase()}
             </Text>
-            <Button variant="quiet" label={actions.done} onPress={onClose} />
-          </View>
-
-          <TextInput
-            ref={inputRef}
-            value={text}
-            onChangeText={onChange}
-            onSubmitEditing={submit}
-            submitBehavior="submit"
-            autoFocus
-            placeholder={voice.capture.placeholder}
-            placeholderTextColor={c.muted}
-            returnKeyType="done"
-            accessibilityLabel={voice.capture.eyebrow}
-            style={s.input}
-          />
-
-          <View style={s.chips} accessibilityLiveRegion="polite">
-            {parsed
-              ? chipsFor(parsed, today, filedIn(parsed)?.name).map((chip) => (
-                  <View key={chip.label} style={[s.chip, chip.muted && s.chipMuted]}>
-                    <Icon name={chip.icon} size={13} color={chip.muted ? c.muted : c.primaryText} strokeWidth={2} />
-                    <Text variant="meta" color={chip.muted ? c.muted : c.primaryText}>
-                      {chip.label}
-                    </Text>
-                  </View>
-                ))
-              : confirmation ? (
-                  <Text variant="meta" color={c.primaryText}>
-                    {confirmation}
+            <View style={s.switch} accessibilityRole="tablist">
+              {(['task', 'note'] as const).map((m) => (
+                <Pressable
+                  key={m}
+                  onPress={() => setMode(m)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: mode === m }}
+                  style={[s.segment, mode === m && s.segmentOn]}>
+                  <Text variant="button" color={mode === m ? c.ink : c.muted}>
+                    {voice.capture[m]}
                   </Text>
-                ) : preset ? (
-                  <View style={s.chip}>
-                    <Icon name={preset.icon} size={13} color={c.primaryText} strokeWidth={2} />
-                    <Text variant="meta" color={c.primaryText}>
-                      {preset.label}
-                    </Text>
-                  </View>
-                ) : null}
+                </Pressable>
+              ))}
+            </View>
+            <View style={s.eyebrow}>
+              <Button variant="quiet" label={actions.done} onPress={onClose} />
+            </View>
           </View>
 
-          {/* Big-sounding tasks lead with Plan it; small ones with Add. */}
-          <View style={[s.actions, bigTask && s.actionsReversed]}>
-            <View style={s.action}>
-              <Button label={actions.add} variant={bigTask ? 'secondary' : 'primary'} disabled={!parsed} onPress={submit} />
-            </View>
-            <View style={s.action}>
-              <Button
-                label={actions.planIt}
-                variant={bigTask ? 'primary' : 'secondary'}
-                icon={<Icon name="shrink" size={16} color={bigTask ? c.onPrimary : c.ink} strokeWidth={2} />}
-                disabled={!parsed}
-                onPress={planIt}
+          {mode === 'note' ? (
+            <NoteCapture listId={territory?.id ?? null} />
+          ) : (
+            <>
+              <TextInput
+                ref={inputRef}
+                value={text}
+                onChangeText={onChange}
+                onSubmitEditing={submit}
+                submitBehavior="submit"
+                autoFocus
+                placeholder={voice.capture.placeholder}
+                placeholderTextColor={c.muted}
+                returnKeyType="done"
+                accessibilityLabel={voice.capture.eyebrow}
+                style={s.input}
               />
-            </View>
-          </View>
+
+              <View style={s.chips} accessibilityLiveRegion="polite">
+                {parsed
+                  ? chipsFor(parsed, today, filedIn(parsed)?.name).map((chip) => (
+                      <View key={chip.label} style={[s.chip, chip.muted && s.chipMuted]}>
+                        <Icon name={chip.icon} size={13} color={chip.muted ? c.muted : c.primaryText} strokeWidth={2} />
+                        <Text variant="meta" color={chip.muted ? c.muted : c.primaryText}>
+                          {chip.label}
+                        </Text>
+                      </View>
+                    ))
+                  : confirmation ? (
+                      <Text variant="meta" color={c.primaryText}>
+                        {confirmation}
+                      </Text>
+                    ) : preset ? (
+                      <View style={s.chip}>
+                        <Icon name={preset.icon} size={13} color={c.primaryText} strokeWidth={2} />
+                        <Text variant="meta" color={c.primaryText}>
+                          {preset.label}
+                        </Text>
+                      </View>
+                    ) : null}
+              </View>
+
+              {/* Big-sounding tasks lead with Plan it; small ones with Add. */}
+              <View style={[s.actions, bigTask && s.actionsReversed]}>
+                <View style={s.action}>
+                  <Button label={actions.add} variant={bigTask ? 'secondary' : 'primary'} disabled={!parsed} onPress={submit} />
+                </View>
+                <View style={s.action}>
+                  <Button
+                    label={actions.planIt}
+                    variant={bigTask ? 'primary' : 'secondary'}
+                    icon={<Icon name="shrink" size={16} color={bigTask ? c.onPrimary : c.ink} strokeWidth={2} />}
+                    disabled={!parsed}
+                    onPress={planIt}
+                  />
+                </View>
+              </View>
+            </>
+          )}
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -211,7 +235,12 @@ const makeStyles = (t: Tokens) => ({
       borderColor: t.c.rule,
     },
     dialog: { width: '100%', maxWidth: 520, borderRadius: 18, borderWidth: 1, paddingBottom: 20 },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: -8 },
+    header: { flexDirection: 'row', alignItems: 'center', marginRight: -8 },
+    // Equal sides keep the switch centered.
+    eyebrow: { flex: 1, alignItems: 'flex-end' },
+    switch: { flexDirection: 'row', padding: 3, borderRadius: t.radii.pill, backgroundColor: t.c.chip },
+    segment: { minHeight: 32, paddingHorizontal: 14, justifyContent: 'center', borderRadius: t.radii.pill },
+    segmentOn: { backgroundColor: t.c.card, borderWidth: 1, borderColor: t.c.rule },
     input: {
       minHeight: 52,
       paddingHorizontal: 14,

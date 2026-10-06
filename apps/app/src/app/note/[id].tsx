@@ -14,6 +14,7 @@ import { useLists } from '@/data/lists-store';
 import { useNotes } from '@/data/notes-store';
 import { useTasks } from '@/data/tasks-store';
 import { useAutoHeight } from '@/hooks/use-auto-height';
+import { useShortcuts } from '@/hooks/use-shortcuts';
 import { noFocusRing, oneRowOnWeb } from '@/lib/web-styles';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
@@ -94,6 +95,9 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
     editor.current?.focusStart();
   };
 
+  // ⌘⇧L toggles a checklist line, as in Apple Notes (web; iOS uses the ☐ button).
+  useShortcuts(picking ? {} : { 'Mod+Shift+L': () => editor.current?.toggleChecklist(), Escape: () => onClose() });
+
   // Leaving by swipe or back still saves what was typed.
   const onLeave = useEffectEvent(() => {
     if (timer.current) flush();
@@ -107,7 +111,9 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
       const blocks = parseNoteBody(base.rest);
       const blank = blocks.flatMap((b) => {
         const t = b.kind === 'task' ? tasks.find((x) => x.id === b.taskId) : undefined;
-        return t && !t.title.trim() && !t.completedAt ? [t.id] : [];
+        // Words still being typed count (a tap on Close leaves the line focused, unsaved).
+        const words = t ? (editor.current?.wordsOf(t.id) ?? t.title) : '';
+        return t && !words.trim() && !t.completedAt ? [t.id] : [];
       });
       if (blank.length) {
         change({ rest: serializeNoteBody(mergeText(blocks.filter((b) => !(b.kind === 'task' && blank.includes(b.taskId))))) });
