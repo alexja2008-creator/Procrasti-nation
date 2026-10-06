@@ -199,6 +199,10 @@ export const voice = {
     /** A territory card's next item: "Fri: Write lab report". */
     next: (when: string, title: string) => `${when}: ${title}`,
     newTerritory: 'New territory',
+    /** In the territory picker. */
+    newTerritoryMore: 'New territory…',
+    none: 'No territory',
+    filed: (name: string) => `Filed in ${name}.`,
     emptyLead: 'A territory holds one part of your life: a class, a job, home. Start with one.',
     /** One-tap starters while there are no territories yet. */
     starters: [
@@ -306,6 +310,9 @@ export const voice = {
     repeats: (rule: string) => `Repeats ${rule.charAt(0).toLowerCase()}${rule.slice(1)}`,
     /** Row menu: reschedule ("When") without opening the task. */
     moveTo: 'Move to…',
+    /** Row menu: file the task in a territory. */
+    fileIn: 'File in…',
+    territory: 'Territory',
     estimate: 'Estimate',
     minutes: (n: number) => (n < 60 || n % 60 ? `${n} min` : `${n / 60} ${n === 60 ? 'hour' : 'hours'}`),
   },

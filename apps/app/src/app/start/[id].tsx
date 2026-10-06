@@ -1,5 +1,6 @@
 import {
   defaultStartMinutes,
+  effectiveListId,
   formatClock,
   relativeDayPhrase,
   stampKinds,
@@ -82,7 +83,9 @@ function StartMode({ id }: { id: string }) {
     if (!task) return;
     run.done();
     if (!task.completedAt) toggle(task);
-    awardStamp({ userId, kind: stampKinds.stepDone, taskId: task.id, listId: task.listId }).catch(() => undefined);
+    // A step's stamp belongs to its plan's territory.
+    const listId = effectiveListId(task, new Map(tasks.map((t) => [t.id, t])));
+    awardStamp({ userId, kind: stampKinds.stepDone, taskId: task.id, listId }).catch(() => undefined);
     setFinished(task);
     setPhase('stamped');
   };

@@ -23,8 +23,10 @@ import { EstimateSheet } from '@/components/task/estimate-sheet';
 import { FieldRow } from '@/components/task/field-row';
 import { RepeatSheet } from '@/components/task/repeat-sheet';
 import { StepsList } from '@/components/task/steps-list';
+import { TerritorySheet } from '@/components/territory/territory-sheet';
 import { Text } from '@/components/text';
 import type { TaskPatch } from '@/data/tasks';
+import { useLists } from '@/data/lists-store';
 import { useTasks } from '@/data/tasks-store';
 import { useShortcuts } from '@/hooks/use-shortcuts';
 import { useStyles, type Tokens } from '@/theme/tokens';
@@ -38,13 +40,14 @@ export default function TaskRoute() {
   return <TaskDetail key={id} id={id} />;
 }
 
-type SheetKind = 'when' | 'due' | 'repeat' | 'estimate' | null;
+type SheetKind = 'when' | 'due' | 'repeat' | 'estimate' | 'territory' | null;
 
 /** Everything about one task, edited in place. Changes save as you make them. */
 function TaskDetail({ id }: { id: string }) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const { tasks, status, today, toggle, update, remove, addStep } = useTasks();
+  const { lists } = useLists();
   const task = tasks.find((t) => t.id === id && !t.deletedAt);
   const step = task ? stepContext(tasks, task) : null;
   const steps = tasks
@@ -209,8 +212,17 @@ function TaskDetail({ id }: { id: string }) {
             label={copy.estimate}
             value={task.estimateMinutes ? copy.minutes(task.estimateMinutes) : copy.none}
             onPress={() => setSheet('estimate')}
-            last
+            last={!!task.parentId}
           />
+          {/* A plan's steps live in their plan's territory. */}
+          {!task.parentId ? (
+            <FieldRow
+              label={copy.territory}
+              value={lists.find((l) => l.id === task.listId)?.name ?? copy.none}
+              onPress={() => setSheet('territory')}
+              last
+            />
+          ) : null}
         </View>
 
         {/* Steps belong to top-level, one-off tasks (a repeating task's steps would need resetting). */}
@@ -285,6 +297,16 @@ function TaskDetail({ id }: { id: string }) {
           minutes={task.estimateMinutes}
           onSave={(estimateMinutes) => {
             update(task, { estimateMinutes });
+            setSheet(null);
+          }}
+          onClose={() => setSheet(null)}
+        />
+      ) : null}
+      {sheet === 'territory' ? (
+        <TerritorySheet
+          selected={task.listId}
+          onPick={(listId) => {
+            update(task, { listId });
             setSheet(null);
           }}
           onClose={() => setSheet(null)}

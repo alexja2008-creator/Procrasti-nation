@@ -83,14 +83,17 @@ export function TerritoryView({ id, onDeleted }: Props) {
   const onPlan = (taskId: string) => router.push({ pathname: '/plan/[id]', params: { id: taskId } });
   const empty = view.comingUp.length === 0 && view.anytime.length === 0;
 
-  const section = (label: string, entries: TerritoryEntry[]) =>
+  // Customs is all undated, so it needs no section heading.
+  const section = (label: string | null, entries: TerritoryEntry[]) =>
     entries.length ? (
       <View>
-        <View style={s.sectionHead}>
-          <Text variant="label" color={c.inkSoft} accessibilityRole="header">
-            {label.toUpperCase()}
-          </Text>
-        </View>
+        {label ? (
+          <View style={s.sectionHead}>
+            <Text variant="label" color={c.inkSoft} accessibilityRole="header">
+              {label.toUpperCase()}
+            </Text>
+          </View>
+        ) : null}
         {entries.map((e, i) => (
           <TaskRow
             key={e.task.id}
@@ -147,7 +150,7 @@ export function TerritoryView({ id, onDeleted }: Props) {
         </Text>
       ) : null}
       {section(copy.comingUp, view.comingUp)}
-      {section(copy.anytime, view.anytime)}
+      {section(customs ? null : copy.anytime, view.anytime)}
 
       <RowMenu task={menuFor} onClose={() => setMenuFor(null)} />
       {editing && list ? <TerritoryEditSheet list={list} onClose={() => setEditing(false)} onDeleted={onDeleted} /> : null}
