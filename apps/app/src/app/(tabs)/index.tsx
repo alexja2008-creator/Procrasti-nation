@@ -75,7 +75,6 @@ export default function TodayScreen() {
     if (!task) return;
     setMenuFor(task);
   };
-  const canPlan = (t: Task) => !t.parentId && t.source !== 'ai' && !planned.has(t.id) && !t.completedAt;
 
   const firstName = personName(session?.user).first;
   // One thing to Start: the next plan step, or else the most pressing task.
@@ -209,7 +208,7 @@ export default function TodayScreen() {
               <Text variant="body" color={c.inkSoft}>
                 {voice.today.emptyHint}
               </Text>
-              <Button variant="secondary" icon={<Icon name="plus" size={18} color={c.ink} />} label={voice.today.captureCta} onPress={capture} />
+              <Button variant="secondary" icon={<Icon name="plus" size={18} color={c.ink} />} label={voice.today.captureCta} onPress={() => capture()} />
             </View>
           ) : (
             <View style={s.list}>
@@ -229,13 +228,7 @@ export default function TodayScreen() {
         </>
       ) : null}
 
-      <RowMenu
-        task={menuFor}
-        canPlan={!!menuFor && canPlan(menuFor)}
-        onStart={(t) => onStart(t.id)}
-        onPlan={(t) => onPlan(t.id)}
-        onClose={() => setMenuFor(null)}
-      />
+      <RowMenu task={menuFor} onClose={() => setMenuFor(null)} />
     </Screen>
   );
 }

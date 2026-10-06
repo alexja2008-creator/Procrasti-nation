@@ -116,7 +116,7 @@ export const voice = {
     web ? 'Right-click or press and hold any task to Start it or Plan it.' : 'Press and hold any task to Start it or Plan it.',
   cancel: 'Cancel',
   /** VoiceOver's name for the row menu action. */
-  rowMenuLabel: 'Start or Plan it',
+  rowMenuLabel: 'Start, Plan it or Move to',
   passportStatus: 'Proudly in progress',
   passportLead: 'A little proof of progress.',
   encouragement: 'Starting counts. So does coming back, and asking for help.',
@@ -183,6 +183,8 @@ export const voice = {
     week: 'Week',
     previousWeek: 'Previous week',
     nextWeek: 'Next week',
+    /** The "+" on a day's heading, read aloud: "Add to Thu 8 Oct". */
+    addTo: (day: string) => `Add to ${day}`,
   },
   start: {
     eyebrow: 'Start mode',
@@ -260,6 +262,8 @@ export const voice = {
     reorder: (title: string) => `Reorder: ${title}`,
     typeIt: 'Or type it: “fri 6pm”, “every weekday 7am”',
     repeats: (rule: string) => `Repeats ${rule.charAt(0).toLowerCase()}${rule.slice(1)}`,
+    /** Row menu: reschedule ("When") without opening the task. */
+    moveTo: 'Move to…',
     estimate: 'Estimate',
     minutes: (n: number) => (n < 60 || n % 60 ? `${n} min` : `${n / 60} ${n === 60 ? 'hour' : 'hours'}`),
   },

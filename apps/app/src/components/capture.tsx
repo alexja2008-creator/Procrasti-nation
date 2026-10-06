@@ -1,11 +1,14 @@
 import {
   actions,
   describeRRule,
+  formatShortDate,
   formatTime,
   parseQuickAdd,
   relativeDayLabel,
+  relativeDayPhrase,
   suggestsPlan,
   voice,
+  type LocalDate,
   type QuickAddResult,
 } from '@pn/core';
 import { router } from 'expo-router';
@@ -20,17 +23,20 @@ import { useTasks } from '@/data/tasks-store';
 import { useIsWide } from '@/hooks/use-is-wide';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
-const CaptureCtx = createContext<{ open: () => void }>({ open: () => {} });
+/** `day`: capture into that day unless the text names its own date (Upcoming's "+"). */
+type CaptureOptions = { day?: LocalDate };
+
+const CaptureCtx = createContext<{ open: (options?: CaptureOptions) => void }>({ open: () => {} });
 
 /** Opens the quick-add sheet from anywhere in the signed-in app. */
 export const useCapture = () => useContext(CaptureCtx);
 
 export function CaptureProvider({ children }: { children: ReactNode }) {
-  const [visible, setVisible] = useState(false);
+  const [open, setOpen] = useState<CaptureOptions | null>(null);
   return (
-    <CaptureCtx.Provider value={{ open: () => setVisible(true) }}>
+    <CaptureCtx.Provider value={{ open: (options = {}) => setOpen(options) }}>
       {children}
-      {visible ? <CaptureSheet onClose={() => setVisible(false)} /> : null}
+      {open ? <CaptureSheet day={open.day} onClose={() => setOpen(null)} /> : null}
     </CaptureCtx.Provider>
   );
 }
@@ -51,10 +57,10 @@ function whereItWent(p: QuickAddResult, today: string): string {
   const day = p.scheduledOn ?? p.dueOn;
   if (!day) return voice.capture.whereCustoms;
   if (day === today) return voice.capture.whereToday;
-  return voice.capture.whereDay(relativeDayLabel(day, today));
+  return voice.capture.whereDay(relativeDayPhrase(day, today));
 }
 
-function CaptureSheet({ onClose }: { onClose: () => void }) {
+function CaptureSheet({ day, onClose }: { day?: LocalDate; onClose: () => void }) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const wide = useIsWide();
@@ -70,7 +76,7 @@ function CaptureSheet({ onClose }: { onClose: () => void }) {
   const onChange = (value: string) => {
     setText(value);
     setConfirmation(null);
-    setParsed(value.trim() ? parseQuickAdd(value.trim(), new Date()) : null);
+    setParsed(value.trim() ? parseQuickAdd(value.trim(), new Date(), { day }) : null);
   };
 
   /** Captures the task, then opens Plan it for it. */
@@ -141,6 +147,13 @@ function CaptureSheet({ onClose }: { onClose: () => void }) {
                   <Text variant="meta" color={c.primaryText}>
                     {confirmation}
                   </Text>
+                ) : day ? (
+                  <View style={s.chip}>
+                    <Icon name="calendar" size={13} color={c.primaryText} strokeWidth={2} />
+                    <Text variant="meta" color={c.primaryText}>
+                      {voice.capture.whereDay(formatShortDate(day))}
+                    </Text>
+                  </View>
                 ) : null}
           </View>
 

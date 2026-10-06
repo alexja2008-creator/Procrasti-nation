@@ -64,7 +64,7 @@ export function CaptureButton({ wide }: { wide: boolean }) {
   if (wide) {
     return (
       <Pressable
-        onPress={open}
+        onPress={() => open()}
         accessibilityRole="button"
         style={({ pressed }) => [s.sideCapture, pressed && s.pressed]}>
         <Icon name="plus" color={t.c.onPrimary} size={18} strokeWidth={2} />
@@ -76,7 +76,7 @@ export function CaptureButton({ wide }: { wide: boolean }) {
   }
   return (
     <Pressable
-      onPress={open}
+      onPress={() => open()}
       accessibilityRole="button"
       accessibilityLabel="Capture something new"
       style={({ pressed }) => [s.capture, pressed && s.pressed]}>

@@ -194,12 +194,18 @@ function freqOf(unit: string): string {
   return 'YEARLY';
 }
 
-/** Parses quick-add text. `now` is the device's current local time. */
 /**
+ * Parses quick-add text. `now` is the device's current local time.
  * `scheduleOnly`: the input is only schedule words (task detail's "type it"
  * field), so there's no title to protect and everything may be understood.
+ * `day`: the day quick add was opened for (Upcoming's "+"), used when the
+ * text names no date of its own; a typed date or deadline wins.
  */
-export function parseQuickAdd(input: string, now: Date = new Date(), { scheduleOnly = false } = {}): QuickAddResult {
+export function parseQuickAdd(
+  input: string,
+  now: Date = new Date(),
+  { scheduleOnly = false, day }: { scheduleOnly?: boolean; day?: LocalDate } = {},
+): QuickAddResult {
   const today = localDateString(now);
   const work = { text: input };
   const spans: { kind: QuickAddMatchKind; start: number; end: number }[] = [];
@@ -227,20 +233,21 @@ export function parseQuickAdd(input: string, now: Date = new Date(), { scheduleO
 
   const title = work.text.replace(/\s+/g, ' ').replace(/^[\s,;:–—-]+|[\s,;:–—-]+$/g, '');
   if (!title && !scheduleOnly) {
-    return { title: input.trim(), scheduledOn: null, dueOn: null, time: null, rrule: null, matches: [] };
+    return { title: input.trim(), scheduledOn: day ?? null, dueOn: null, time: null, rrule: null, matches: [] };
   }
 
   const clock = time ? { hour: time.hour, minute: time.minute } : partHour !== undefined ? { hour: partHour, minute: 0 } : null;
   const minutesNow = now.getHours() * 60 + now.getMinutes();
   const passed = clock ? clock.hour * 60 + clock.minute <= minutesNow : false;
 
-  let scheduledOn: string | null = date?.date ?? null;
+  const preset = !date && !due && day ? day : null;
+  let scheduledOn: string | null = date?.date ?? preset;
   const rrule = repeat?.rrule ?? null;
   if (rrule) {
     const anchor = scheduledOn ?? today;
     scheduledOn = occurrenceOnOrAfter(rrule, anchor, anchor);
     // A daily 6pm reminder added at 8pm starts tomorrow.
-    if (!date && scheduledOn === today && passed) scheduledOn = occurrenceOnOrAfter(rrule, anchor, addDays(today, 1));
+    if (!date && !preset && scheduledOn === today && passed) scheduledOn = occurrenceOnOrAfter(rrule, anchor, addDays(today, 1));
   } else if (!scheduledOn && clock && !due) {
     scheduledOn = passed ? addDays(today, 1) : today;
   }

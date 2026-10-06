@@ -9,6 +9,7 @@ import {
 } from '@pn/core';
 import { Pressable, StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 
+import { Icon } from '@/components/icon';
 import { TaskRow, type TaskRowItem } from '@/components/task-row';
 import { Text } from '@/components/text';
 import { useStyles, type Tokens } from '@/theme/tokens';
@@ -52,10 +53,13 @@ type Props = {
   onMenu: (id: string) => void;
   onOpen: (id: string) => void;
   onLayout?: (e: LayoutChangeEvent) => void;
+  /** The heading's "+": quick add into this day. `addLabel` is read aloud. */
+  onAdd?: () => void;
+  addLabel?: string;
 };
 
 /** One day in Upcoming: its heading, then to-dos and deadline markers (or "Nothing yet."). */
-export function DaySection({ label, entries, today, planned, withDates = false, selected = false, onToggle, onPlan, onMenu, onOpen, onLayout }: Props) {
+export function DaySection({ label, entries, today, planned, withDates = false, selected = false, onToggle, onPlan, onMenu, onOpen, onLayout, onAdd, addLabel }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   return (
@@ -64,6 +68,16 @@ export function DaySection({ label, entries, today, planned, withDates = false, 
         <Text variant="label" color={selected ? c.primaryText : c.inkSoft} accessibilityRole="header" style={s.label}>
           {label.toUpperCase()}
         </Text>
+        {onAdd ? (
+          <Pressable
+            onPress={onAdd}
+            accessibilityRole="button"
+            accessibilityLabel={addLabel}
+            hitSlop={4}
+            style={({ pressed }) => [s.add, pressed && s.pressed]}>
+            <Icon name="plus" size={18} color={c.primaryText} strokeWidth={2} />
+          </Pressable>
+        ) : null}
       </View>
       {entries.length === 0 ? (
         <Text variant="meta" color={c.muted} style={s.empty}>
@@ -135,6 +149,7 @@ const makeStyles = (t: Tokens) => ({
       borderBottomColor: t.c.rule,
     },
     label: { flex: 1 },
+    add: { width: 36, height: 36, marginRight: -6, alignItems: 'center', justifyContent: 'center' },
     empty: { paddingVertical: 12, paddingLeft: t.hitTarget + 6 },
     deadline: { flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: t.hitTarget + 10, paddingVertical: 5 },
     rule: { borderBottomWidth: 1, borderBottomColor: t.c.rule },

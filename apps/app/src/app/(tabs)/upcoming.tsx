@@ -1,6 +1,7 @@
 import {
   addDays,
   buildUpcoming,
+  formatShortDate,
   upcomingCounts,
   upcomingDayLabel,
   upcomingSectionFor,
@@ -13,6 +14,7 @@ import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { useCapture } from '@/components/capture';
 import { Icon } from '@/components/icon';
 import { MonthCalendar } from '@/components/month-calendar';
 import { NoticeBar } from '@/components/notice-bar';
@@ -34,6 +36,7 @@ export default function UpcomingScreen() {
   const { c } = s.t;
   const wide = useIsWide();
   const { tasks, status, today, error, refresh, toggle, notify } = useTasks();
+  const { open: capture } = useCapture();
   const [menuFor, setMenuFor] = useState<Task | null>(null);
   const [selected, setSelected] = useState<LocalDate | null>(null);
   const [monthOpen, setMonthOpen] = useState(false);
@@ -58,7 +61,6 @@ export default function UpcomingScreen() {
   };
 
   const onPlan = (id: string) => router.push({ pathname: '/plan/[id]', params: { id } });
-  const onStart = (id: string) => router.push({ pathname: '/start/[id]', params: { id } });
   const onOpen = (id: string) => router.push({ pathname: '/task/[id]', params: { id } });
   const onMenu = (id: string) => setMenuFor(byId.get(id) ?? null);
   const onToggle = (id: string) => {
@@ -70,7 +72,6 @@ export default function UpcomingScreen() {
       notify(copy.stamped(task.title), () => toggle({ ...task, status: 'completed', completedAt: new Date().toISOString() }));
     }
   };
-  const canPlan = (t: Task) => !t.parentId && t.source !== 'ai' && !planned.has(t.id) && !t.completedAt;
 
   const rows = { today, planned, onToggle, onPlan, onMenu, onOpen };
   const month = <MonthCalendar selected={selected} today={today} onSelect={select} marks={marks} />;
@@ -141,6 +142,8 @@ export default function UpcomingScreen() {
                 entries={day.entries}
                 selected={day.date === selected}
                 onLayout={(e) => (sectionY.current[day.date] = e.nativeEvent.layout.y)}
+                onAdd={() => capture({ day: day.date })}
+                addLabel={copy.addTo(formatShortDate(day.date))}
                 {...rows}
               />
             ))}
@@ -157,13 +160,7 @@ export default function UpcomingScreen() {
         ) : null}
       </View>
 
-      <RowMenu
-        task={menuFor}
-        canPlan={!!menuFor && canPlan(menuFor)}
-        onStart={(t) => onStart(t.id)}
-        onPlan={(t) => onPlan(t.id)}
-        onClose={() => setMenuFor(null)}
-      />
+      <RowMenu task={menuFor} onClose={() => setMenuFor(null)} />
     </Screen>
   );
 }

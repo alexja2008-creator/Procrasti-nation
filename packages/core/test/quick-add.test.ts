@@ -105,3 +105,15 @@ test('parseWhen understands a schedule on its own', () => {
   assert.deepEqual(when('sat'), ['2026-10-10', null, null, null]);
   assert.deepEqual(when('gibberish'), [null, null, null, null]);
 });
+
+test('a preset day (Upcoming’s “+”) fills in when the text names no date', () => {
+  const onThu = (text: string) => parseQuickAdd(text, SAT_10AM, { day: '2026-10-08' });
+  assert.deepEqual([onThu('Buy stamps').title, onThu('Buy stamps').scheduledOn], ['Buy stamps', '2026-10-08']);
+  assert.deepEqual([onThu('call mom 5pm').scheduledOn, onThu('call mom 5pm').time], ['2026-10-08', { hour: 17, minute: 0 }], 'a time alone lands on that day');
+  assert.equal(onThu('call mom 9am').scheduledOn, '2026-10-08', 'even when that time has passed today');
+  assert.deepEqual([onThu('Gym every mon').scheduledOn, onThu('Gym every mon').rrule], ['2026-10-12', 'FREQ=WEEKLY;BYDAY=MO'], 'a repeat starts from that day');
+  assert.equal(onThu('Walk every day').scheduledOn, '2026-10-08');
+  assert.equal(onThu('dentist tomorrow').scheduledOn, '2026-10-04', 'a typed date wins');
+  assert.deepEqual([onThu('essay due fri').scheduledOn, onThu('essay due fri').dueOn], [null, '2026-10-09'], 'so does a typed deadline');
+  assert.equal(onThu('tomorrow').scheduledOn, '2026-10-08', 'all-schedule text is the title, on that day');
+});
