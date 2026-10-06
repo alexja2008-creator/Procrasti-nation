@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { CaptureProvider } from '@/components/capture';
+import { ListsProvider } from '@/data/lists-store';
 import { TasksProvider } from '@/data/tasks-store';
 import { UserSettingsProvider } from '@/data/user-settings';
 
@@ -9,7 +10,9 @@ export function SignedInProviders({ userId, children }: { userId: string; childr
   return (
     <UserSettingsProvider userId={userId}>
       <TasksProvider userId={userId}>
-        <CaptureProvider>{children}</CaptureProvider>
+        <ListsProvider userId={userId}>
+          <CaptureProvider>{children}</CaptureProvider>
+        </ListsProvider>
       </TasksProvider>
     </UserSettingsProvider>
   );

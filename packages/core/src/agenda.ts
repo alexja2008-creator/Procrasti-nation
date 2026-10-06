@@ -3,8 +3,11 @@
 // any "overdue" styling: kind, never punishing.
 
 import { logicalDateString } from './dates.ts';
-import { bySortOrder, byTimeOfDay, nullsLast, stepsByParent } from './order.ts';
-import type { ISODateTime, LocalDate, Task } from './types.ts';
+import { bySortOrder, byTimeOfDay, nullsLast, stepsByParent, timeOnItsDay } from './order.ts';
+import { isInCustoms } from './territories.ts';
+import type { LocalDate, Task } from './types.ts';
+
+export { timeOnItsDay };
 
 export interface AgendaEntry {
   task: Task;
@@ -28,13 +31,6 @@ export interface TodayView {
    */
   upNext: AgendaEntry | null;
 }
-
-/**
- * A task's time on the day it's listed: its reminder on its scheduled day, or
- * its due time when it's only due. A task scheduled for one day and due at a
- * time on another has no time on its scheduled day.
- */
-export const timeOnItsDay = (t: Task): ISODateTime | null => (t.scheduledOn ? t.remindAt : t.dueAt);
 
 function agendaOrder(a: AgendaEntry, b: AgendaEntry): number {
   if (a.done !== b.done) return a.done ? 1 : -1;
@@ -96,10 +92,7 @@ export function buildToday(tasks: Task[], today: LocalDate, rolloverHour = 0): T
 
   return {
     agenda: entries.filter((e) => e !== nextStep && e !== upNext).sort(agendaOrder),
-    customs: live
-      // A task with a plan is sorted already, even without a date.
-      .filter((t) => !t.parentId && !isDone(t) && !t.scheduledOn && !t.dueOn && !t.listId && !t.rrule && !childrenOf.has(t.id))
-      .sort(bySortOrder),
+    customs: live.filter((t) => isInCustoms(t, childrenOf.has(t.id))).sort(bySortOrder),
     nextStep,
     upNext,
   };

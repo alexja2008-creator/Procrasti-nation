@@ -71,6 +71,22 @@ const glyphs = {
       <Path d="M3.5 6.5l8.5 6.5 8.5-6.5" />
     </>
   ),
+  pencil: <Path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" />,
+  // Territory kinds.
+  book: (
+    <>
+      <Path d="M4 5.5c2.4-1 5.1-.9 8 .7 2.9-1.6 5.6-1.7 8-.7v13c-2.4-1-5.1-.9-8 .7-2.9-1.6-5.6-1.7-8-.7z" />
+      <Path d="M12 6.2v13" />
+    </>
+  ),
+  briefcase: (
+    <>
+      <Rect x={3} y={7} width={18} height={13} rx={2} />
+      <Path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 13h18" />
+    </>
+  ),
+  house: <Path d="M4 10.5L12 4l8 6.5M6 9v11h12V9M10 20v-5h4v5" />,
+  flag: <Path d="M5 21V4h11l-2 4 2 4H5" />,
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof glyphs;

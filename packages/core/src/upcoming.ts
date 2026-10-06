@@ -4,8 +4,7 @@
 // as another entry kind, merged into the same days.
 
 import { addDays, daysBetween, formatShortDate } from './dates.ts';
-import { timeOnItsDay } from './agenda.ts';
-import { bySortOrder, byTimeOfDay, stepsByParent } from './order.ts';
+import { bySortOrder, byTimeOfDay, stepsByParent, timeOnItsDay } from './order.ts';
 import type { ISODateTime, LocalDate, Task } from './types.ts';
 
 export interface UpcomingEntry {

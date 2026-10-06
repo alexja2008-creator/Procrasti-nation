@@ -13,7 +13,7 @@ import * as Crypto from 'expo-crypto';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
-import { fetchActiveTasks, insertTask, setDeleted, updateTask, type TaskPatch } from '@/data/tasks';
+import { fetchActiveTasks, insertTask, refileTasks, setDeleted, unfileTasks, updateTask, type TaskPatch } from '@/data/tasks';
 import { useUserSettings } from '@/data/user-settings';
 
 /** A short-lived note on Today, optionally with Undo. */
@@ -30,7 +30,8 @@ type Store = {
   /** Short-lived confirmation, e.g. where a repeating task moved to. */
   notice: Notice | null;
   refresh: () => void;
-  add: (parsed: QuickAddResult) => Promise<Task | null>;
+  /** Captures a task; `listId` files it in a territory. */
+  add: (parsed: QuickAddResult, listId?: string | null) => Promise<Task | null>;
   /** Adds a step (a subtask the person typed) at the end of a task's steps. */
   addStep: (parent: Task, title: string) => Promise<Task | null>;
   toggle: (task: Task) => void;
@@ -38,10 +39,15 @@ type Store = {
   merge: (saved: Task[]) => void;
   /** Shows a short-lived note (e.g. after leaving Start Mode), with Undo when given one. */
   notify: (message: string, undo?: () => void) => void;
+  clearNotice: () => void;
   /** Edits a task; applies now, rolls back if the save fails. */
   update: (task: Task, patch: TaskPatch) => void;
   /** Deletes a task with its steps, offering Undo on Today. */
   remove: (task: Task) => void;
+  /** Takes every task out of a territory (it's being deleted); resolves to their ids, or throws. */
+  unfile: (listId: string) => Promise<string[]>;
+  /** Puts those tasks back (Undo); throws if the save fails. */
+  refile: (ids: string[], listId: string) => Promise<void>;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -139,10 +145,11 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
     }
   };
 
-  const add: Store['add'] = (parsed) => {
+  const add: Store['add'] = (parsed, listId = null) => {
     const { time, scheduledOn, dueOn } = parsed;
     return insert({
       title: parsed.title,
+      listId,
       scheduledOn,
       dueOn,
       remindAt: time && scheduledOn ? atLocalTime(scheduledOn, time.hour, time.minute) : null,
@@ -244,13 +251,27 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
         : undefined,
     });
 
+  const setListOf = (ids: Set<string>, listId: string | null) =>
+    setTasks((prev) => prev.map((t) => (ids.has(t.id) ? { ...t, listId } : t)));
+
+  const unfile: Store['unfile'] = async (listId) => {
+    const ids = await unfileTasks(listId);
+    setListOf(new Set(ids), null);
+    return ids;
+  };
+
+  const refile: Store['refile'] = async (ids, listId) => {
+    await refileTasks(ids, listId);
+    setListOf(new Set(ids), listId);
+  };
+
   const refresh = () => {
     setStatus('loading');
     setReloads((n) => n + 1);
   };
 
   return (
-    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, addStep, toggle, merge, notify, update, remove }}>
+    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, addStep, toggle, merge, notify, clearNotice: () => setNotice(null), update, remove, unfile, refile }}>
       {children}
     </Ctx.Provider>
   );

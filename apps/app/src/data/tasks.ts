@@ -88,7 +88,7 @@ export async function fetchActiveTasks(userId: string, since: Date): Promise<Tas
 
 export type NewTask = Pick<
   Task,
-  'id' | 'userId' | 'parentId' | 'title' | 'scheduledOn' | 'dueOn' | 'dueAt' | 'remindAt' | 'rrule' | 'sortOrder'
+  'id' | 'userId' | 'listId' | 'parentId' | 'title' | 'scheduledOn' | 'dueOn' | 'dueAt' | 'remindAt' | 'rrule' | 'sortOrder'
 >;
 
 export async function insertTask(t: NewTask): Promise<Task> {
@@ -97,6 +97,7 @@ export async function insertTask(t: NewTask): Promise<Task> {
     .insert({
       id: t.id,
       user_id: t.userId,
+      list_id: t.listId,
       parent_id: t.parentId,
       title: t.title,
       scheduled_on: t.scheduledOn,
@@ -127,6 +128,7 @@ const PATCH_COLUMNS = {
   rrule: 'rrule',
   estimateMinutes: 'estimate_minutes',
   sortOrder: 'sort_order',
+  listId: 'list_id',
 } as const;
 
 export type TaskPatch = Partial<Pick<Task, keyof typeof PATCH_COLUMNS>>;
@@ -139,6 +141,20 @@ export async function updateTask(id: string, patch: TaskPatch): Promise<Task> {
   const { data, error } = await supabase.from('tasks').update(row).eq('id', id).select(COLUMNS).single();
   if (error) throw error;
   return fromRow(data as unknown as Row);
+}
+
+/** Takes every task out of a territory (for deleting it); returns their ids, for Undo. */
+export async function unfileTasks(listId: string): Promise<string[]> {
+  const { data, error } = await supabase.from('tasks').update({ list_id: null }).eq('list_id', listId).select('id');
+  if (error) throw error;
+  return (data as { id: string }[]).map((r) => r.id);
+}
+
+/** Files tasks in a territory again (Undo after deleting it). */
+export async function refileTasks(ids: string[], listId: string): Promise<void> {
+  if (ids.length === 0) return;
+  const { error } = await supabase.from('tasks').update({ list_id: listId }).in('id', ids);
+  if (error) throw error;
 }
 
 /** Soft delete (or, with null, restore) tasks; sync needs the tombstones. */

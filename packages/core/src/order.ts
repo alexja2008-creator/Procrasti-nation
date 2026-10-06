@@ -10,6 +10,13 @@ export const nullsLast = (a: string | null, b: string | null) =>
   a === b ? 0 : a === null ? 1 : b === null ? -1 : a.localeCompare(b);
 
 /**
+ * A task's time on the day it's listed: its reminder on its scheduled day, or
+ * its due time when it's only due. A task scheduled for one day and due at a
+ * time on another has no time on its scheduled day.
+ */
+export const timeOnItsDay = (t: Task): ISODateTime | null => (t.scheduledOn ? t.remindAt : t.dueAt);
+
+/**
  * Earlier time of day first, nulls (untimed) last. Compares the local clock,
  * not the whole timestamp: a missed item rolled forward keeps its old date.
  */

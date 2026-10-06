@@ -19,12 +19,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/button';
 import { Icon, type IconName } from '@/components/icon';
 import { Text } from '@/components/text';
+import { useLists } from '@/data/lists-store';
 import { useTasks } from '@/data/tasks-store';
 import { useIsWide } from '@/hooks/use-is-wide';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
-/** `day`: capture into that day unless the text names its own date (Upcoming's "+"). */
-type CaptureOptions = { day?: LocalDate };
+/**
+ * `day`: capture into that day unless the text names its own date (Upcoming's "+").
+ * `listId`: file captures in that territory (a territory's "+").
+ */
+type CaptureOptions = { day?: LocalDate; listId?: string };
 
 const CaptureCtx = createContext<{ open: (options?: CaptureOptions) => void }>({ open: () => {} });
 
@@ -36,36 +40,46 @@ export function CaptureProvider({ children }: { children: ReactNode }) {
   return (
     <CaptureCtx.Provider value={{ open: (options = {}) => setOpen(options) }}>
       {children}
-      {open ? <CaptureSheet day={open.day} onClose={() => setOpen(null)} /> : null}
+      {open ? <CaptureSheet day={open.day} listId={open.listId} onClose={() => setOpen(null)} /> : null}
     </CaptureCtx.Provider>
   );
 }
 
 type Chip = { icon: IconName; label: string; muted?: boolean };
 
-function chipsFor(p: QuickAddResult, today: string): Chip[] {
+/** `territory`: the name of the territory it's filed in, if any. */
+function chipsFor(p: QuickAddResult, today: string, territory?: string): Chip[] {
   const chips: Chip[] = [];
+  if (territory) chips.push({ icon: 'map', label: voice.capture.inTerritory(territory) });
   if (p.rrule) chips.push({ icon: 'repeat', label: describeRRule(p.rrule) });
   if (p.scheduledOn) chips.push({ icon: 'calendar', label: relativeDayLabel(p.scheduledOn, today) });
   if (p.dueOn) chips.push({ icon: 'calendar', label: voice.capture.due(relativeDayLabel(p.dueOn, today)) });
   if (p.time) chips.push({ icon: 'clock', label: formatTime(new Date(2000, 0, 1, p.time.hour, p.time.minute)) });
-  if (!p.scheduledOn && !p.dueOn) chips.push({ icon: 'inbox', label: voice.capture.landsInCustoms, muted: true });
+  if (!p.scheduledOn && !p.dueOn && !territory) chips.push({ icon: 'inbox', label: voice.capture.landsInCustoms, muted: true });
   return chips;
 }
 
-function whereItWent(p: QuickAddResult, today: string): string {
+function whereItWent(p: QuickAddResult, today: string, territory?: string): string {
   const day = p.scheduledOn ?? p.dueOn;
-  if (!day) return voice.capture.whereCustoms;
+  if (!day) return territory ? voice.capture.whereTerritory(territory) : voice.capture.whereCustoms;
   if (day === today) return voice.capture.whereToday;
   return voice.capture.whereDay(relativeDayPhrase(day, today));
 }
 
-function CaptureSheet({ day, onClose }: { day?: LocalDate; onClose: () => void }) {
+function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: string; onClose: () => void }) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const wide = useIsWide();
   const insets = useSafeAreaInsets();
   const { add, today } = useTasks();
+  const { lists } = useLists();
+  const territory = listId ? lists.find((l) => l.id === listId) : undefined;
+  // What the sheet was opened for, shown before anything is typed.
+  const preset: Chip | null = day
+    ? { icon: 'calendar', label: voice.capture.whereDay(formatShortDate(day)) }
+    : territory
+      ? { icon: 'map', label: voice.capture.inTerritory(territory.name) }
+      : null;
 
   const inputRef = useRef<TextInput>(null);
   const [text, setText] = useState('');
@@ -83,7 +97,7 @@ function CaptureSheet({ day, onClose }: { day?: LocalDate; onClose: () => void }
   const planIt = async () => {
     const p = parsed;
     if (!p) return;
-    const saved = await add(p);
+    const saved = await add(p, territory?.id);
     if (!saved) return;
     onClose();
     router.push({ pathname: '/plan/[id]', params: { id: saved.id } });
@@ -96,8 +110,8 @@ function CaptureSheet({ day, onClose }: { day?: LocalDate; onClose: () => void }
     setParsed(null);
     // Keep the cursor here for the next capture; web blurs inputs on submit.
     setTimeout(() => inputRef.current?.focus(), 0);
-    const saved = await add(p);
-    if (saved) setConfirmation(voice.capture.added(whereItWent(p, today)));
+    const saved = await add(p, territory?.id);
+    if (saved) setConfirmation(voice.capture.added(whereItWent(p, today, territory?.name)));
   };
 
   return (
@@ -135,7 +149,7 @@ function CaptureSheet({ day, onClose }: { day?: LocalDate; onClose: () => void }
 
           <View style={s.chips} accessibilityLiveRegion="polite">
             {parsed
-              ? chipsFor(parsed, today).map((chip) => (
+              ? chipsFor(parsed, today, territory?.name).map((chip) => (
                   <View key={chip.label} style={[s.chip, chip.muted && s.chipMuted]}>
                     <Icon name={chip.icon} size={13} color={chip.muted ? c.muted : c.primaryText} strokeWidth={2} />
                     <Text variant="meta" color={chip.muted ? c.muted : c.primaryText}>
@@ -147,11 +161,11 @@ function CaptureSheet({ day, onClose }: { day?: LocalDate; onClose: () => void }
                   <Text variant="meta" color={c.primaryText}>
                     {confirmation}
                   </Text>
-                ) : day ? (
+                ) : preset ? (
                   <View style={s.chip}>
-                    <Icon name="calendar" size={13} color={c.primaryText} strokeWidth={2} />
+                    <Icon name={preset.icon} size={13} color={c.primaryText} strokeWidth={2} />
                     <Text variant="meta" color={c.primaryText}>
-                      {voice.capture.whereDay(formatShortDate(day))}
+                      {preset.label}
                     </Text>
                   </View>
                 ) : null}

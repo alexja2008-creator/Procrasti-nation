@@ -24,6 +24,7 @@ import { Text } from '@/components/text';
 import { DaySection } from '@/components/upcoming/day-section';
 import { WeekStrip } from '@/components/upcoming/week-strip';
 import { useTasks } from '@/data/tasks-store';
+import { useCheckOff } from '@/hooks/use-check-off';
 import { useIsWide } from '@/hooks/use-is-wide';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
@@ -35,7 +36,7 @@ export default function UpcomingScreen() {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const wide = useIsWide();
-  const { tasks, status, today, error, refresh, toggle, notify } = useTasks();
+  const { tasks, status, today, error, refresh } = useTasks();
   const { open: capture } = useCapture();
   const [menuFor, setMenuFor] = useState<Task | null>(null);
   const [selected, setSelected] = useState<LocalDate | null>(null);
@@ -63,15 +64,7 @@ export default function UpcomingScreen() {
   const onPlan = (id: string) => router.push({ pathname: '/plan/[id]', params: { id } });
   const onOpen = (id: string) => router.push({ pathname: '/task/[id]', params: { id } });
   const onMenu = (id: string) => setMenuFor(byId.get(id) ?? null);
-  const onToggle = (id: string) => {
-    const task = byId.get(id);
-    if (!task) return;
-    toggle(task);
-    // A finished item leaves Upcoming, so offer a way back. (Repeats say where they moved.)
-    if (!task.rrule && !task.completedAt) {
-      notify(copy.stamped(task.title), () => toggle({ ...task, status: 'completed', completedAt: new Date().toISOString() }));
-    }
-  };
+  const onToggle = useCheckOff();
 
   const rows = { today, planned, onToggle, onPlan, onMenu, onOpen };
   const month = <MonthCalendar selected={selected} today={today} onSelect={select} marks={marks} />;
