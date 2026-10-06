@@ -250,6 +250,10 @@ export const voice = {
     placeholder: 'Write anything.',
     /** The ☐ button: the line you're on becomes a checkbox task, or back. */
     checklist: 'Checklist',
+    /** Under a note's title until they've made a line a task (or hidden the tip). */
+    checklistHint: 'To make a line a task, put the cursor on it and tap the checkbox at the top.',
+    checklistHintWeb: (keys: string) => `To make a line a task, put the cursor on it and click the checkbox at the top, or press ${keys}.`,
+    hideHint: 'Hide tip',
     openTask: (title: string) => `Open “${title}”`,
     close: 'Close',
     delete: 'Delete',

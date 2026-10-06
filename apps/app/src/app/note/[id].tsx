@@ -4,12 +4,15 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
+import { useAuth } from '@/auth/auth-provider';
 import { Icon } from '@/components/icon';
+import { ChecklistHint } from '@/components/note/checklist-hint';
 import { NoteEditor, type NoteEditorHandle } from '@/components/note/note-editor';
 import { NoticeBar } from '@/components/notice-bar';
 import { Screen } from '@/components/screen';
 import { TerritorySheet } from '@/components/territory/territory-sheet';
 import { Text } from '@/components/text';
+import { loadChecklistLearned, saveChecklistLearned } from '@/data/checklist-hint';
 import { useLists } from '@/data/lists-store';
 import { useNotes } from '@/data/notes-store';
 import { useTasks } from '@/data/tasks-store';
@@ -51,6 +54,22 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
   const saved = useRef(!isNew);
   const [picking, setPicking] = useState(false);
   const editor = useRef<NoteEditorHandle>(null);
+
+  // The tip under the title shows until they've made a line a task here (or hidden it).
+  const userId = useAuth().session?.user.id;
+  const [learned, setLearned] = useState(true);
+  useEffect(() => {
+    if (userId) loadChecklistLearned(userId).then(setLearned);
+  }, [userId]);
+  const learn = () => {
+    if (learned) return;
+    setLearned(true);
+    if (userId) saveChecklistLearned(userId);
+  };
+  const toggleChecklist = () => {
+    editor.current?.toggleChecklist();
+    learn();
+  };
 
   const flush = () => {
     clearTimeout(timer.current);
@@ -96,7 +115,7 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
   };
 
   // ⌘⇧L toggles a checklist line, as in Apple Notes (web; iOS uses the ☐ button).
-  useShortcuts(picking ? {} : { 'Mod+Shift+L': () => editor.current?.toggleChecklist(), Escape: () => onClose() });
+  useShortcuts(picking ? {} : { 'Mod+Shift+L': toggleChecklist, Escape: () => onClose() });
 
   // Leaving by swipe or back still saves what was typed.
   const onLeave = useEffectEvent(() => {
@@ -170,7 +189,7 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
             {copy.eyebrow.toUpperCase()}
           </Text>
           <Pressable
-            onPress={() => editor.current?.toggleChecklist()}
+            onPress={toggleChecklist}
             accessibilityRole="button"
             accessibilityLabel={copy.checklist}
             style={({ pressed }) => [s.iconButton, pressed && s.pressed]}>
@@ -216,6 +235,8 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
           accessibilityLabel={copy.titlePlaceholder}
           style={[s.t.text.pageTitle, s.title, noFocusRing, titleGrow.style]}
         />
+
+        {!learned && !parseNoteBody(draft.rest).some((b) => b.kind === 'task') ? <ChecklistHint onHide={learn} /> : null}
 
         <NoteEditor
           ref={editor}
