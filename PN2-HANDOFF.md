@@ -136,7 +136,7 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
   - Then the TestFlight gate with 10 students.
 - **Phase 4:** Start Mode done (timer, contract, I'm stuck, breather, Done → stamp, resume). Remaining: Live Activity (Swift add-on, needs Apple Developer + a development build), Declarations, Morning Briefing / roll-forward, server push, State of the Union, Holidays.
 - **Checked on iOS (2026-10-06, Expo Go, signed in):** Today, Start Mode (timer, resume after the app was killed, I'm stuck → `/api/unstick`, two-minute restart, Done → stamp, next step), Passport stamps and rank, and the press-and-hold row menu.
-- **Suggested next:** Upcoming (reuses the month calendar) and Territories, then capture-first notes and search.
+- **Next: Upcoming**, planned in `PN2-UPCOMING-PLAN.md` (approved; two items marked ★ to confirm with Alex first). Then Territories, capture-first notes and search.
 - **Known gap:** no live sync between devices yet; each device refreshes on foreground and day change (PowerSync spike pending).
 
 ---
