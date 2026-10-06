@@ -8,19 +8,20 @@ import { NoteRow, openNote } from '@/components/note/note-row';
 import { NoticeBar } from '@/components/notice-bar';
 import { Text } from '@/components/text';
 import { useLists } from '@/data/lists-store';
-import { useNotes } from '@/data/notes-store';
+import { useNotePages, useNotes } from '@/data/notes-store';
 import { useTasks } from '@/data/tasks-store';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.notes;
 
-/** Every note, most recently edited first, with New note. */
+/** Every note, most recently edited first, 25 at a time, with New note. */
 export function NotesView() {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const { tasks, today } = useTasks();
   const { lists } = useLists();
-  const { notes, status, error, refresh } = useNotes();
+  const { error, refresh } = useNotes();
+  const { notes, more, status, showOlder } = useNotePages('all');
   const summaries = useMemo(() => buildNotes(notes, tasks), [notes, tasks]);
   const territory = (id: string | null) => lists.find((l) => l.id === id)?.name;
 
@@ -79,9 +80,21 @@ export function NotesView() {
               last={i === summaries.length - 1}
             />
           ))}
+          <ShowOlder more={more} loading={status === 'loading' && notes.length > 0} onPress={showOlder} />
         </View>
       )}
     </>
+  );
+}
+
+/** The next 25 notes, while there are older ones. */
+export function ShowOlder({ more, loading, onPress }: { more: boolean; loading: boolean; onPress: () => void }) {
+  const s = useStyles(makeStyles);
+  if (!more) return null;
+  return (
+    <View style={s.older}>
+      {loading ? <ActivityIndicator color={s.t.c.primary} /> : <Button variant="secondary" label={copy.showOlder} onPress={onPress} />}
+    </View>
   );
 }
 
@@ -93,6 +106,7 @@ const makeStyles = (t: Tokens) => ({
     title: { flex: 1 },
     action: { width: t.hitTarget, height: t.hitTarget, alignItems: 'center', justifyContent: 'center' },
     failed: { gap: 10, alignItems: 'flex-start' },
+    older: { paddingTop: 12, minHeight: 56, alignItems: 'center', justifyContent: 'center' },
     pressed: { opacity: 0.7 },
   }),
 });

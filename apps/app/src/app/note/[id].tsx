@@ -39,10 +39,20 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
   const { c } = s.t;
   const isNew = param === 'new';
   const [id] = useState(() => (isNew ? Crypto.randomUUID() : param));
-  const { notes, status, error, save, remove } = useNotes();
+  const { notes, error, save, remove, ensure } = useNotes();
   const { lists } = useLists();
   const { tasks, error: taskError, setDeletedMany } = useTasks();
   const note = notes.find((n) => n.id === id);
+
+  // A note older than the pages loaded (opened from a link) is fetched on its own.
+  const [missing, setMissing] = useState(false);
+  const fetchNote = useEffectEvent(() => {
+    ensure(id).then((found) => setMissing(!found), () => setMissing(true));
+  });
+  const known = isNew || !!note;
+  useEffect(() => {
+    if (!known) fetchNote();
+  }, [known]);
 
   // The note as stored until the first edit; from then on, the copy edited here.
   const [edited, setEdited] = useState<Draft | null>(isNew ? { title: '', rest: '', listId: presetList } : null);
@@ -156,7 +166,7 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
     return (
       <Screen>
         <View style={s.column}>
-          {status === 'loading' ? (
+          {!missing ? (
             <ActivityIndicator color={c.primary} />
           ) : (
             <View style={s.missing}>

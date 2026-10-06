@@ -262,6 +262,15 @@ for (const baseline of baselines) {
         await db.query(`DELETE FROM notes WHERE id = $1`, [packing.id]);
         assert.equal((await one(db, `SELECT note_id FROM tasks WHERE id = $1`, [sunscreen.id])).note_id, null, 'the task outlives its note');
 
+        // Note counts per territory: only the user's own live notes.
+        await db.query(`INSERT INTO notes (user_id, body) VALUES ($1, 'Loose'), ($1, 'Also loose')`, [U1]);
+        await db.query(`INSERT INTO notes (user_id, body, deleted_at) VALUES ($1, 'Trashed', now())`, [U1]);
+        const counts = await rows(db, `SELECT list_id, notes FROM note_counts ORDER BY list_id NULLS LAST`);
+        assert.deepEqual(counts, [
+          { list_id: list.id, notes: 1 },
+          { list_id: null, notes: 2 },
+        ], "not U2's note, not the trashed one");
+
         const child = await one(db, `SELECT id FROM tasks WHERE parent_id = $1 LIMIT 1`, [TASK_A]);
         await assert.rejects(
           db.query(`INSERT INTO tasks (user_id, title, parent_id) VALUES ($1, 'grandchild', $2)`, [U1, child.id]),
@@ -372,7 +381,7 @@ for (const baseline of baselines) {
       const leftovers = await rows(
         db,
         `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'
-           AND table_name IN ('lists', 'notes', 'stamps', 'start_sessions', 'push_tokens', 'user_settings', 'plan_generations', 'ai_requests')`,
+           AND table_name IN ('lists', 'notes', 'note_counts', 'stamps', 'start_sessions', 'push_tokens', 'user_settings', 'plan_generations', 'ai_requests')`,
       );
       assert.deepEqual(leftovers, []);
 

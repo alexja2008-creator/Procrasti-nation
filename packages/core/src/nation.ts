@@ -265,6 +265,8 @@ export const voice = {
     count: (n: number) => (n === 1 ? '1 note' : `${n} notes`),
     edited: (day: string) => `Edited ${day}`,
     noTerritory: 'No territory',
+    /** Loads the next 25. */
+    showOlder: 'Show older',
   },
   start: {
     eyebrow: 'Start mode',

@@ -2,6 +2,7 @@
 // offline layer). Everything runs as the signed-in user under RLS.
 import type { Task } from '@pn/core';
 
+import { chunks, fetchAllPages } from '@/data/paging';
 import { supabase } from '@/lib/supabase';
 
 const COLUMNS =
@@ -59,34 +60,57 @@ const fromRow = (r: Row): Task => ({
 /**
  * Open tasks plus anything finished since `since` (the start of the person's
  * day), plus every finished step of the plans among them, so "step 4 of 10"
- * still counts the steps done on earlier days. Checklist lines in notes load
- * finished or not: a note shows its ticked lines.
+ * still counts the steps done on earlier days. A note's ticked checklist lines
+ * aren't here: they load with their note (`fetchNoteTasks`), so this stays the
+ * size of what's on the go however many notes pile up.
  */
 export async function fetchActiveTasks(userId: string, since: Date): Promise<Task[]> {
-  const { data, error } = await supabase
-    .from('tasks')
-    .select(COLUMNS)
-    .eq('user_id', userId)
-    .is('deleted_at', null)
-    .or(`completed_at.is.null,completed_at.gte.${since.toISOString()},note_id.not.is.null`)
-    .order('sort_order')
-    .order('created_at')
-    .limit(1000);
-  if (error) throw error;
-  const active = (data as unknown as Row[]).map(fromRow);
+  const active = (
+    await fetchAllPages<Row>((from, to) =>
+      supabase
+        .from('tasks')
+        .select(COLUMNS)
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .or(`completed_at.is.null,completed_at.gte.${since.toISOString()}`)
+        .order('sort_order')
+        .order('created_at')
+        .order('id')
+        .range(from, to)
+        .returns<Row[]>(),
+    )
+  ).map(fromRow);
 
   const parentIds = [...new Set(active.flatMap((t) => (t.parentId ? [t.parentId] : [])))];
-  if (parentIds.length === 0) return active;
-  const { data: done, error: doneError } = await supabase
-    .from('tasks')
-    .select(COLUMNS)
-    .eq('user_id', userId)
-    .is('deleted_at', null)
-    .in('parent_id', parentIds)
-    .lt('completed_at', since.toISOString())
-    .limit(1000);
-  if (doneError) throw doneError;
-  return [...active, ...(done as unknown as Row[]).map(fromRow)];
+  const done = await Promise.all(
+    chunks(parentIds).map((ids) =>
+      fetchAllPages<Row>((from, to) =>
+        supabase
+          .from('tasks')
+          .select(COLUMNS)
+          .eq('user_id', userId)
+          .is('deleted_at', null)
+          .in('parent_id', ids)
+          .lt('completed_at', since.toISOString())
+          .order('id')
+          .range(from, to)
+          .returns<Row[]>(),
+      ),
+    ),
+  );
+  return [...active, ...done.flat().map(fromRow)];
+}
+
+/** Every live checklist line (ticked or not) of these notes. */
+export async function fetchNoteTasks(noteIds: string[]): Promise<Task[]> {
+  const pages = await Promise.all(
+    chunks(noteIds).map((ids) =>
+      fetchAllPages<Row>((from, to) =>
+        supabase.from('tasks').select(COLUMNS).is('deleted_at', null).in('note_id', ids).order('id').range(from, to).returns<Row[]>(),
+      ),
+    ),
+  );
+  return pages.flat().map(fromRow);
 }
 
 export type NewTask = Pick<

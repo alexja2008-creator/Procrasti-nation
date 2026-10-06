@@ -3,7 +3,7 @@
 // its text and done state, so a line and its task can never disagree. The
 // first line is the title. Pure and shared, so iOS and web edit alike.
 
-import type { Note, Task } from './types.ts';
+import type { ISODateTime, Note, Task } from './types.ts';
 
 export type NoteBlock = { kind: 'text'; text: string } | { kind: 'task'; taskId: string };
 
@@ -138,9 +138,34 @@ export function buildNotes(notes: Note[], tasks: Task[], listId?: string | null)
   const byId = new Map(tasks.map((t) => [t.id, t]));
   return notes
     .filter((n) => !n.deletedAt && (listId === undefined || n.listId === listId))
-    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .sort(byRecency)
     .map((n) => summarizeNote(n, byId));
 }
+
+// ---------------------------------------------------------------------------
+// Paging: notes load a page at a time, most recently edited first.
+
+/** How many notes load at a time (Notes, a territory's notes, each Show older). */
+export const NOTES_PAGE = 25;
+
+/** Where the loaded pages end: the last note's edit time and id. */
+export interface NoteCursor {
+  updatedAt: ISODateTime;
+  id: string;
+}
+
+/**
+ * Most recently edited first, ties by id: the order the server pages in.
+ * Compares code units, not locale, so timestamps and ids sort as stored
+ * ("…51.65+00:00" is before "…51.650275+00:00", as in Postgres).
+ */
+export function byRecency(a: Pick<Note, 'updatedAt' | 'id'>, b: Pick<Note, 'updatedAt' | 'id'>): number {
+  if (a.updatedAt !== b.updatedAt) return a.updatedAt > b.updatedAt ? -1 : 1;
+  return a.id === b.id ? 0 : a.id > b.id ? -1 : 1;
+}
+
+/** Whether a note is within the pages loaded so far (no cursor: everything is). */
+export const withinPages = (note: Pick<Note, 'updatedAt' | 'id'>, end: NoteCursor | null) => !end || byRecency(note, end) <= 0;
 
 /** Whether a body has anything in it worth keeping (words, or a checklist line). */
 export const noteHasContent = (body: string) =>

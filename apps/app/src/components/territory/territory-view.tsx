@@ -18,6 +18,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useCapture } from '@/components/capture';
 import { Icon, type IconName } from '@/components/icon';
 import { NoteRow, openNote } from '@/components/note/note-row';
+import { ShowOlder } from '@/components/note/notes-view';
 import { NoticeBar } from '@/components/notice-bar';
 import { RowMenu } from '@/components/row-menu';
 import { TaskRow, type TaskRowItem } from '@/components/task-row';
@@ -25,7 +26,7 @@ import { kindIcon } from '@/components/territory/territory-card';
 import { TerritoryEditSheet } from '@/components/territory/territory-edit-sheet';
 import { Text } from '@/components/text';
 import { useLists } from '@/data/lists-store';
-import { useNotes } from '@/data/notes-store';
+import { useNotePages } from '@/data/notes-store';
 import { useTasks } from '@/data/tasks-store';
 import { useCheckOff } from '@/hooks/use-check-off';
 import { useStyles, type Tokens } from '@/theme/tokens';
@@ -63,17 +64,17 @@ export function TerritoryView({ id, onDeleted }: Props) {
   const { tasks, today, status, error } = useTasks();
   const { lists, status: listsStatus, error: listsError } = useLists();
   const { open: capture } = useCapture();
-  const { notes } = useNotes();
   const onToggle = useCheckOff();
   const [menuFor, setMenuFor] = useState<Task | null>(null);
   const [editing, setEditing] = useState(false);
 
   const customs = id === 'customs';
+  // Customs holds tasks only; notes without a territory live on the Notes page.
+  const notePages = useNotePages(customs ? null : id);
   const list = customs ? null : lists.find((l) => l.id === id);
   const view = useMemo(() => buildTerritory(customs ? null : id, tasks, today), [customs, id, tasks, today]);
   const planned = useMemo(() => new Set(tasks.flatMap((t) => (t.parentId ? [t.parentId] : []))), [tasks]);
-  // Customs holds tasks only; notes without a territory live on the Notes page.
-  const notesHere = useMemo(() => (customs ? [] : buildNotes(notes, tasks, id)), [customs, notes, tasks, id]);
+  const notesHere = useMemo(() => buildNotes(notePages.notes, tasks), [notePages.notes, tasks]);
 
   if (!customs && !list) {
     return listsStatus === 'ready' ? (
@@ -178,6 +179,11 @@ export function TerritoryView({ id, onDeleted }: Props) {
           {notesHere.map((summary, i) => (
             <NoteRow key={summary.note.id} summary={summary} today={today} last={i === notesHere.length - 1} />
           ))}
+          <ShowOlder
+            more={notePages.more}
+            loading={notePages.status === 'loading' && notesHere.length > 0}
+            onPress={notePages.showOlder}
+          />
         </View>
       ) : null}
 

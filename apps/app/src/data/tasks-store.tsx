@@ -14,7 +14,7 @@ import * as Crypto from 'expo-crypto';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
-import { fetchActiveTasks, fileNoteTasks, insertTask, refileTasks, setDeleted, unfileTasks, updateTask, type TaskPatch } from '@/data/tasks';
+import { fetchActiveTasks, fetchNoteTasks, fileNoteTasks, insertTask, refileTasks, setDeleted, unfileTasks, updateTask, type TaskPatch } from '@/data/tasks';
 import { useUserSettings } from '@/data/user-settings';
 
 /** A short-lived note on Today, optionally with Undo. */
@@ -58,13 +58,19 @@ type Store = {
   setDeletedMany: (ids: string[], deletedAt: string | null) => Promise<void>;
   /** A note moved territory: its checklist lines follow. */
   fileNote: (noteId: string, listId: string | null) => void;
+  /**
+   * Loads these notes' checklist lines, ticked ones included (the active
+   * tasks leave ticked lines out), and keeps them loaded through refreshes.
+   */
+  loadNoteLines: (noteIds: string[]) => void;
 };
 
 const Ctx = createContext<Store | null>(null);
 
 /**
- * Tasks for the signed-in person: open ones plus anything finished today.
- * Changes apply immediately and roll back if the save fails.
+ * Tasks for the signed-in person: open ones plus anything finished today,
+ * and every checklist line (ticked ones too) of the notes loaded. Changes
+ * apply immediately and roll back if the save fails.
  */
 export function TasksProvider({ userId, children }: { userId: string; children: ReactNode }) {
   const { settings } = useUserSettings();
@@ -80,6 +86,8 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
   const [reloads, setReloads] = useState(0);
   // Inserts still on their way, by task id: later writes to that task wait for them.
   const inserting = useRef(new Map<string, Promise<unknown>>());
+  // Notes whose checklist lines are loaded, ticked ones included: the notes on screen.
+  const noteScope = useRef(new Set<string>());
   const afterInsert = (id: string) => inserting.current.get(id)?.catch(() => undefined) ?? Promise.resolve();
 
   // Notice the day changing, and refresh when the app comes back to the foreground.
@@ -100,10 +108,19 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
     let cancelled = false;
     const dayStart = parseLocalDate(today);
     dayStart.setHours(rolloverHour, 0, 0, 0);
-    fetchActiveTasks(userId, dayStart).then(
-      (rows) => {
+    const scoped = [...noteScope.current];
+    Promise.all([fetchActiveTasks(userId, dayStart), scoped.length ? fetchNoteTasks(scoped) : Promise.resolve([])]).then(
+      ([rows, lines]) => {
         if (cancelled) return;
-        setTasks(rows);
+        const ids = new Set(rows.map((t) => t.id));
+        const fetched = [...rows, ...lines.filter((t) => !ids.has(t.id))];
+        const fetchedIds = new Set(fetched.map((t) => t.id));
+        const refreshed = new Set(scoped);
+        // Lines of notes that loaded while this was on its way stay.
+        setTasks((prev) => [
+          ...fetched,
+          ...prev.filter((t) => t.noteId && !refreshed.has(t.noteId) && noteScope.current.has(t.noteId) && !fetchedIds.has(t.id)),
+        ]);
         setStatus('ready');
       },
       () => !cancelled && setStatus((s) => (s === 'ready' ? s : 'error')),
@@ -300,13 +317,28 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
     setListOf(new Set(ids), listId);
   };
 
+  const loadNoteLines: Store['loadNoteLines'] = (noteIds) => {
+    const fresh = noteIds.filter((id) => !noteScope.current.has(id));
+    if (fresh.length === 0) return;
+    fresh.forEach((id) => noteScope.current.add(id));
+    fetchNoteTasks(fresh).then(
+      (lines) =>
+        // Only lines not here already: one shown here may have a change on its way.
+        setTasks((prev) => {
+          const have = new Set(prev.map((t) => t.id));
+          return [...prev, ...lines.filter((t) => !have.has(t.id))];
+        }),
+      () => fresh.forEach((id) => noteScope.current.delete(id)),
+    );
+  };
+
   const refresh = () => {
     setStatus('loading');
     setReloads((n) => n + 1);
   };
 
   return (
-    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, addStep, toggle, merge, notify, clearNotice: () => setNotice(null), update, remove, unfile, refile, addToNote, setDeletedMany, fileNote }}>
+    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, addStep, toggle, merge, notify, clearNotice: () => setNotice(null), update, remove, unfile, refile, addToNote, setDeletedMany, fileNote, loadNoteLines }}>
       {children}
     </Ctx.Provider>
   );

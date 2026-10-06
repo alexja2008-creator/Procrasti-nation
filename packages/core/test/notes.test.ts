@@ -3,6 +3,7 @@ import { test } from 'node:test';
 
 import {
   buildNotes,
+  byRecency,
   checklistIds,
   checklistToken,
   checklistToLine,
@@ -15,6 +16,7 @@ import {
   removeChecklistLine,
   serializeNoteBody,
   splitTitle,
+  withinPages,
   type NoteBlock,
 } from '../src/notes.ts';
 import type { Note, Task } from '../src/types.ts';
@@ -109,4 +111,18 @@ test('the title is the first line; the editor splits it off and joins it back', 
   }
   assert.equal(joinTitle(...(Object.values(splitTitle('Title\n')) as [string, string])), 'Title', 'an empty line after a lone title is dropped');
   assert.equal(joinTitle('', checklistToken(A)), `\n${checklistToken(A)}`);
+});
+
+test('notes page newest first, ties broken by id, as the server orders them', () => {
+  const at = (updatedAt: string, id: string) => ({ updatedAt, id });
+  const older = at('2026-10-06T14:10:51.65+00:00', 'b');
+  const newer = at('2026-10-06T14:10:51.650275+00:00', 'a');
+  const sameTimeLowId = at('2026-10-06T14:10:51.65+00:00', 'a');
+  assert.deepEqual([older, sameTimeLowId, newer].sort(byRecency), [newer, older, sameTimeLowId]);
+
+  assert.equal(withinPages(older, null), true, 'nothing paged yet: everything counts');
+  assert.equal(withinPages(newer, older), true);
+  assert.equal(withinPages(older, older), true, 'the last note of the page is in it');
+  assert.equal(withinPages(sameTimeLowId, older), false, 'same moment, after it in the order');
+  assert.equal(withinPages(at('2026-10-05T09:00:00+00:00', 'z'), older), false);
 });

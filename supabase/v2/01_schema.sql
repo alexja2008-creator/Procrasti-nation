@@ -252,6 +252,15 @@ CREATE TRIGGER tasks_owned_list
   BEFORE INSERT OR UPDATE OF list_id, note_id, user_id ON tasks
   FOR EACH ROW EXECUTE FUNCTION v2_check_owned_refs();
 
+-- How many live notes each territory holds (list_id NULL: notes without one),
+-- so the app can show counts while it loads notes 25 at a time. Runs as the
+-- caller (security_invoker), so RLS limits it to their own notes.
+CREATE OR REPLACE VIEW note_counts WITH (security_invoker = true) AS
+  SELECT list_id, count(*)::int AS notes
+  FROM notes
+  WHERE deleted_at IS NULL
+  GROUP BY list_id;
+
 -- ------------------------------------------------------------
 -- 5. stamps: rewards. Awarded on-device (offline-first), so clients
 --    insert them; there's nothing to gain by forging your own stamps.

@@ -22,6 +22,7 @@ DROP TABLE IF EXISTS stamps;
 -- watches it).
 DROP TRIGGER IF EXISTS tasks_owned_list ON tasks;
 ALTER TABLE tasks DROP COLUMN IF EXISTS note_id;
+DROP VIEW IF EXISTS note_counts;
 DROP TABLE IF EXISTS notes;
 
 DROP TRIGGER IF EXISTS tasks_owned_refs ON tasks;

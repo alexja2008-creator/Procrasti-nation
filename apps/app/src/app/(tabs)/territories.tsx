@@ -33,7 +33,7 @@ export default function TerritoriesScreen() {
   const wide = useIsWide();
   const { tasks, today } = useTasks();
   const { lists, status, error, add, update, refresh } = useLists();
-  const { notes } = useNotes();
+  const { count } = useNotes();
   const [creating, setCreating] = useState(false);
   // Laptop width shows one territory beside the list; phones open it as a page.
   const [selected, setSelected] = useState('customs');
@@ -42,7 +42,6 @@ export default function TerritoriesScreen() {
   const ordered = view.territories.map((t) => t.list);
   const reorder = useDragReorder(ordered, (list, sortOrder) => update(list, { sortOrder }), CARD_GAP);
   const shown = selected === 'customs' || selected === 'notes' || lists.some((l) => l.id === selected) ? selected : 'customs';
-  const notesIn = (listId: string) => notes.filter((n) => n.listId === listId).length;
   const open = (id: string) => (wide ? setSelected(id) : router.push({ pathname: '/territory/[id]', params: { id } }));
 
   const index = (
@@ -66,7 +65,7 @@ export default function TerritoriesScreen() {
       {wide ? null : <NoticeBar />}
 
       <CustomsCard count={view.customs.length} selected={wide && shown === 'customs'} onPress={() => open('customs')} />
-      <NotesCard count={notes.length} selected={wide && shown === 'notes'} onPress={() => open('notes')} />
+      <NotesCard count={count()} selected={wide && shown === 'notes'} onPress={() => open('notes')} />
 
       {status === 'loading' && lists.length === 0 ? <ActivityIndicator color={c.primary} style={s.loading} /> : null}
       {status === 'error' ? (
@@ -89,7 +88,7 @@ export default function TerritoriesScreen() {
                 style={[{ transform: [{ translateY: reorder.shift(i) }] }, reorder.draggingId === id && s.dragging]}>
                 <TerritoryCard
                   summary={summary}
-                  notes={notesIn(id)}
+                  notes={count(id)}
                   today={today}
                   selected={wide && shown === id}
                   onPress={() => open(id)}
