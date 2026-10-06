@@ -1,6 +1,6 @@
 import { actions, relativeDayLabel, voice, type LocalDate, type Task } from '@pn/core';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -39,13 +39,21 @@ async function buildPlan(task: Task, today: LocalDate, options: Parameters<typeo
 export default function PlanScreen() {
   const s = useStyles(makeStyles);
   const { c } = s.t;
-  const { id } = useLocalSearchParams<{ id: string }>();
+  // `replan=1`: a fresh plan for what's left, keeping the steps already finished.
+  const { id, replan } = useLocalSearchParams<{ id: string; replan?: string }>();
   const { tasks, today, status, merge } = useTasks();
   const { settings } = useUserSettings();
   const task = tasks.find((t) => t.id === id);
   const style = settings?.preferences.style;
+  const isReplan = replan === '1';
+  const steps = tasks.filter((t) => t.parentId === id && !t.deletedAt);
+  const finished = steps.filter((t) => t.completedAt).sort((a, b) => a.sortOrder - b.sortOrder);
+  // The planner's prompt is eval-gated, so finished work goes in as context, like a clarifying answer.
+  const replanOptions = finished.length
+    ? { questions: [copy.alreadyDone], answers: [finished.map((t) => t.title).join('; ')], style }
+    : { style };
 
-  const [phase, setPhase] = useState<Phase>({ kind: 'reading' });
+  const [phase, setPhase] = useState<Phase>({ kind: isReplan ? 'building' : 'reading' });
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<string[]>([]);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -53,10 +61,15 @@ export default function PlanScreen() {
   // Plans cost money: run once per attempt even if React runs the effect twice.
   const ranAttempt = useRef(-1);
 
-  useEffect(() => {
-    if (!task || ranAttempt.current === attempt) return;
-    ranAttempt.current = attempt;
-    clarifyingQuestions(task, today)
+  const start = useEffectEvent((t: Task) => {
+    if (isReplan) {
+      buildPlan(t, today, replanOptions).then(
+        (built) => setPhase({ kind: 'preview', ...built }),
+        (e) => setPhase({ kind: 'failed', ...failure(e) }),
+      );
+      return;
+    }
+    clarifyingQuestions(t, today)
       .then(async (asked) => {
         if (asked.length) {
           setQuestions(asked);
@@ -65,17 +78,22 @@ export default function PlanScreen() {
           return;
         }
         setPhase({ kind: 'building' });
-        setPhase({ kind: 'preview', ...(await buildPlan(task, today, { style })) });
+        setPhase({ kind: 'preview', ...(await buildPlan(t, today, { style })) });
       })
       .catch((e) => setPhase({ kind: 'failed', ...failure(e) }));
-  }, [task, today, style, attempt]);
+  });
+  useEffect(() => {
+    if (!task || ranAttempt.current === attempt) return;
+    ranAttempt.current = attempt;
+    start(task);
+  }, [task, attempt]);
 
   const build = async (withAnswers: boolean) => {
     if (!task) return;
     setSaveError(null);
     setPhase({ kind: 'building' });
     try {
-      const options = withAnswers ? { questions, answers, style } : { style };
+      const options = isReplan ? replanOptions : withAnswers ? { questions, answers, style } : { style };
       setPhase({ kind: 'preview', ...(await buildPlan(task, today, options)) });
     } catch (e) {
       setPhase({ kind: 'failed', ...failure(e) });
@@ -84,7 +102,7 @@ export default function PlanScreen() {
 
   const retry = () => {
     if (questions.length) return build(true);
-    setPhase({ kind: 'reading' });
+    setPhase({ kind: isReplan ? 'building' : 'reading' });
     setAttempt((n) => n + 1);
   };
 
@@ -93,7 +111,9 @@ export default function PlanScreen() {
     setSaveError(null);
     setPhase({ kind: 'saving', plan, dates });
     try {
-      merge(await savePlan(task, plan, dates));
+      const open = steps.filter((t) => !t.completedAt);
+      const after = Math.max(0, ...finished.map((t) => t.sortOrder));
+      merge(await savePlan(task, plan, dates, isReplan ? { replaces: open, after } : undefined));
       close();
     } catch {
       setPhase({ kind: 'preview', plan, dates });
@@ -167,6 +187,11 @@ export default function PlanScreen() {
 
             {phase.kind === 'preview' || phase.kind === 'saving' ? (
               <View style={s.preview}>
+                {isReplan ? (
+                  <Text variant="meta" color={c.primaryText}>
+                    {copy.replanLead(finished.length)}
+                  </Text>
+                ) : null}
                 <Text variant="lead" color={c.inkSoft}>
                   {phase.plan.analysis}
                 </Text>

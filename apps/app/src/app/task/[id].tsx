@@ -19,6 +19,7 @@ import { Icon } from '@/components/icon';
 import { NoticeBar } from '@/components/notice-bar';
 import { Screen } from '@/components/screen';
 import { DateSheet } from '@/components/task/date-sheet';
+import { EstimateSheet } from '@/components/task/estimate-sheet';
 import { FieldRow } from '@/components/task/field-row';
 import { RepeatSheet } from '@/components/task/repeat-sheet';
 import { StepsList } from '@/components/task/steps-list';
@@ -37,7 +38,7 @@ export default function TaskRoute() {
   return <TaskDetail key={id} id={id} />;
 }
 
-type SheetKind = 'when' | 'due' | 'repeat' | null;
+type SheetKind = 'when' | 'due' | 'repeat' | 'estimate' | null;
 
 /** Everything about one task, edited in place. Changes save as you make them. */
 function TaskDetail({ id }: { id: string }) {
@@ -189,14 +190,12 @@ function TaskDetail({ id }: { id: string }) {
             label={copy.when}
             value={task.scheduledOn ? relativeDayLabel(task.scheduledOn, today) + clock(task.remindAt) : copy.none}
             onPress={() => setSheet('when')}
-            last={!!task.parentId}
           />
           {!task.parentId ? (
             <FieldRow
               label={copy.due}
               value={task.dueOn ? relativeDayLabel(task.dueOn, today) + clock(task.dueAt) : copy.none}
               onPress={() => setSheet('due')}
-              last={hasSteps}
             />
           ) : null}
           {!task.parentId && !hasSteps ? (
@@ -204,9 +203,14 @@ function TaskDetail({ id }: { id: string }) {
               label={copy.repeat}
               value={task.rrule ? describeRRule(task.rrule) : copy.never}
               onPress={() => setSheet('repeat')}
-              last
             />
           ) : null}
+          <FieldRow
+            label={copy.estimate}
+            value={task.estimateMinutes ? copy.minutes(task.estimateMinutes) : copy.none}
+            onPress={() => setSheet('estimate')}
+            last
+          />
         </View>
 
         {/* Steps belong to top-level, one-off tasks (a repeating task's steps would need resetting). */}
@@ -218,6 +222,16 @@ function TaskDetail({ id }: { id: string }) {
             onMove={(st, sortOrder) => update(st, { sortOrder })}
             onAdd={(title) => addStep(task, title)}
           />
+        ) : null}
+        {!done && steps.some((t) => t.source === 'ai') && steps.some((t) => !t.completedAt) ? (
+          <View style={s.replan}>
+            <Button
+              variant="quiet"
+              label={voice.plan.replan}
+              icon={<Icon name="shrink" size={15} color={c.primaryText} strokeWidth={2} />}
+              onPress={() => router.push({ pathname: '/plan/[id]', params: { id: task.id, replan: '1' } })}
+            />
+          </View>
         ) : null}
 
         <View style={s.notes}>
@@ -244,8 +258,10 @@ function TaskDetail({ id }: { id: string }) {
           day={task.scheduledOn}
           time={task.remindAt ? clockOf(task.remindAt) : null}
           today={today}
-          onSave={(day, time) => {
-            update(task, whenPatch(day, time));
+          allowRepeat={!task.parentId && !hasSteps}
+          onSave={(day, time, rrule) => {
+            const when = whenPatch(day, time);
+            update(task, rrule ? { ...when, ...repeatPatch({ ...task, ...when }, rrule, today) } : when);
             setSheet(null);
           }}
           onClose={() => setSheet(null)}
@@ -259,6 +275,16 @@ function TaskDetail({ id }: { id: string }) {
           today={today}
           onSave={(day, time) => {
             update(task, duePatch(day, time));
+            setSheet(null);
+          }}
+          onClose={() => setSheet(null)}
+        />
+      ) : null}
+      {sheet === 'estimate' ? (
+        <EstimateSheet
+          minutes={task.estimateMinutes}
+          onSave={(estimateMinutes) => {
+            update(task, { estimateMinutes });
             setSheet(null);
           }}
           onClose={() => setSheet(null)}
@@ -309,6 +335,7 @@ const makeStyles = (t: Tokens) => ({
       borderRadius: t.radii.card,
       paddingHorizontal: 16,
     },
+    replan: { alignItems: 'flex-start', marginTop: -6 },
     notes: { gap: 8 },
     notesInput: {
       minHeight: 120,

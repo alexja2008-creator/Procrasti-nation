@@ -195,7 +195,11 @@ function freqOf(unit: string): string {
 }
 
 /** Parses quick-add text. `now` is the device's current local time. */
-export function parseQuickAdd(input: string, now: Date = new Date()): QuickAddResult {
+/**
+ * `scheduleOnly`: the input is only schedule words (task detail's "type it"
+ * field), so there's no title to protect and everything may be understood.
+ */
+export function parseQuickAdd(input: string, now: Date = new Date(), { scheduleOnly = false } = {}): QuickAddResult {
   const today = localDateString(now);
   const work = { text: input };
   const spans: { kind: QuickAddMatchKind; start: number; end: number }[] = [];
@@ -222,7 +226,7 @@ export function parseQuickAdd(input: string, now: Date = new Date()): QuickAddRe
   }
 
   const title = work.text.replace(/\s+/g, ' ').replace(/^[\s,;:–—-]+|[\s,;:–—-]+$/g, '');
-  if (!title) {
+  if (!title && !scheduleOnly) {
     return { title: input.trim(), scheduledOn: null, dueOn: null, time: null, rrule: null, matches: [] };
   }
 
@@ -251,3 +255,6 @@ export function parseQuickAdd(input: string, now: Date = new Date()): QuickAddRe
     matches: spans.map((s) => ({ kind: s.kind, text: input.slice(s.start, s.end).trim() })),
   };
 }
+
+/** "fri 6pm", "every weekday 7am", "oct 20": a schedule on its own, in quick add's grammar. */
+export const parseWhen = (input: string, now: Date = new Date()) => parseQuickAdd(input, now, { scheduleOnly: true });

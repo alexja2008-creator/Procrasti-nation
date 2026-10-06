@@ -241,6 +241,10 @@ export const voice = {
     moveUp: 'Move up',
     moveDown: 'Move down',
     reorder: (title: string) => `Reorder: ${title}`,
+    typeIt: 'Or type it: “fri 6pm”, “every weekday 7am”',
+    repeats: (rule: string) => `Repeats ${rule.charAt(0).toLowerCase()}${rule.slice(1)}`,
+    estimate: 'Estimate',
+    minutes: (n: number) => (n < 60 || n % 60 ? `${n} min` : `${n / 60} ${n === 60 ? 'hour' : 'hours'}`),
   },
   /** Words on the ink stamps (mono caps). */
   stampText: {
@@ -267,6 +271,14 @@ export const voice = {
     limit: 'You’ve used this month’s free plans. They refresh on the 1st.',
     failed: 'Couldn’t build a plan just now. Check your connection and try again.',
     saveFailed: 'Couldn’t save the plan. Try again.',
+    /** Re-plan: a fresh plan for what's left, keeping finished steps. */
+    replan: 'Re-plan the rest',
+    replanLead: (finished: number) =>
+      finished
+        ? `Keeping the ${finished === 1 ? 'step' : `${finished} steps`} you’ve finished. The new plan replaces the rest.`
+        : 'The new plan replaces the current steps.',
+    /** Passed to the planner as context (not shown). */
+    alreadyDone: 'Already finished:',
   },
   passport: {
     eyebrow: 'Passport · Passeport',

@@ -3,7 +3,7 @@
 import { fallbackStepDates, localTimeZone, parseMinutes, plannerStyle, type LocalDate, type Task } from '@pn/core';
 import * as Crypto from 'expo-crypto';
 
-import { insertSteps, updateTask } from '@/data/tasks';
+import { insertSteps, setDeleted, updateTask } from '@/data/tasks';
 import { apiPost } from '@/lib/api';
 
 export interface PlanStep {
@@ -70,8 +70,17 @@ export async function resolveStepDates(plan: Plan, today: LocalDate, dueOn: Loca
   return fallbackStepDates(plan.steps.length, today, dueOn);
 }
 
-/** Saves the plan: steps become child tasks; the task gets the plan's deadline if it had none. */
-export async function savePlan(task: Task, plan: Plan, dates: LocalDate[]): Promise<Task[]> {
+/**
+ * Saves the plan: steps become child tasks; the task gets the plan's deadline
+ * if it had none. A re-plan passes the open steps it `replaces` (soft-deleted,
+ * and returned marked so) and continues numbering after the finished ones.
+ */
+export async function savePlan(
+  task: Task,
+  plan: Plan,
+  dates: LocalDate[],
+  { replaces = [], after = 0 }: { replaces?: Task[]; after?: number } = {},
+): Promise<Task[]> {
   const steps = await insertSteps(
     plan.steps.map((s, i) => ({
       id: Crypto.randomUUID(),
@@ -81,9 +90,26 @@ export async function savePlan(task: Task, plan: Plan, dates: LocalDate[]): Prom
       notes: s.description.trim() || null,
       estimateMinutes: parseMinutes(s.estimatedTime),
       scheduledOn: dates[i] ?? null,
-      sortOrder: i + 1,
+      sortOrder: after + i + 1,
     })),
   );
+  if (replaces.length) {
+    const stamp = new Date().toISOString();
+    try {
+      await setDeleted(
+        replaces.map((t) => t.id),
+        stamp,
+      );
+    } catch (e) {
+      // Don't leave both plans behind: take the new steps back out, then report.
+      await setDeleted(
+        steps.map((t) => t.id),
+        stamp,
+      ).catch(() => undefined);
+      throw e;
+    }
+    steps.push(...replaces.map((t) => ({ ...t, deletedAt: stamp })));
+  }
   if (!task.dueOn && isIsoDate(plan.resolvedDueDate)) {
     try {
       return [await updateTask(task.id, { dueOn: plan.resolvedDueDate }), ...steps];

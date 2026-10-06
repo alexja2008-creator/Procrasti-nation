@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { parseQuickAdd } from '../src/quick-add.ts';
+import { parseQuickAdd, parseWhen } from '../src/quick-add.ts';
 
 // Saturday 3 October 2026, 10:00 local time.
 const SAT_10AM = new Date(2026, 9, 3, 10, 0);
@@ -90,4 +90,18 @@ test('ordinary titles are left alone', () => {
 
 test('nothing left for a title keeps the text as the title', () => {
   assert.deepEqual(parse('tomorrow 6pm'), { title: 'tomorrow 6pm', scheduledOn: null, dueOn: null, time: null, rrule: null, matches: [] });
+});
+
+test('parseWhen understands a schedule on its own', () => {
+  const now = new Date(2026, 9, 6, 9, 0); // Tue 6 Oct, 9am
+  const when = (s: string) => {
+    const p = parseWhen(s, now);
+    return [p.scheduledOn, p.dueOn, p.time && `${p.time.hour}:${p.time.minute}`, p.rrule];
+  };
+  assert.deepEqual(when('fri 6pm'), ['2026-10-09', null, '18:0', null]);
+  assert.deepEqual(when('tomorrow evening'), ['2026-10-07', null, '19:0', null]);
+  assert.deepEqual(when('every weekday 7am'), ['2026-10-07', null, '7:0', 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'], '7am has passed today');
+  assert.deepEqual(when('oct 20'), ['2026-10-20', null, null, null]);
+  assert.deepEqual(when('sat'), ['2026-10-10', null, null, null]);
+  assert.deepEqual(when('gibberish'), [null, null, null, null]);
 });
