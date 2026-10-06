@@ -63,6 +63,8 @@ type Store = {
    * tasks leave ticked lines out), and keeps them loaded through refreshes.
    */
   loadNoteLines: (noteIds: string[]) => void;
+  /** Adds tasks found elsewhere (search) that aren't loaded, so they can be checked off; leaves loaded ones alone. */
+  include: (found: Task[]) => void;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -332,13 +334,20 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
     );
   };
 
+  const include: Store['include'] = (found) =>
+    setTasks((prev) => {
+      const have = new Set(prev.map((t) => t.id));
+      const fresh = found.filter((t) => !have.has(t.id));
+      return fresh.length ? [...prev, ...fresh] : prev;
+    });
+
   const refresh = () => {
     setStatus('loading');
     setReloads((n) => n + 1);
   };
 
   return (
-    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, addStep, toggle, merge, notify, clearNotice: () => setNotice(null), update, remove, unfile, refile, addToNote, setDeletedMany, fileNote, loadNoteLines }}>
+    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, addStep, toggle, merge, notify, clearNotice: () => setNotice(null), update, remove, unfile, refile, addToNote, setDeletedMany, fileNote, loadNoteLines, include }}>
       {children}
     </Ctx.Provider>
   );

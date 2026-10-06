@@ -57,6 +57,9 @@ const fromRow = (r: Row): Task => ({
   deletedAt: r.deleted_at,
 });
 
+/** Rows as the database sends them (search returns them too). */
+export { fromRow as taskFromRow, type Row as TaskRow };
+
 /**
  * Open tasks plus anything finished since `since` (the start of the person's
  * day), plus every finished step of the plans among them, so "step 4 of 10"

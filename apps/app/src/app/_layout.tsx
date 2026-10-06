@@ -78,6 +78,7 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
         <Stack.Screen name="task/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="territory/[id]" />
         <Stack.Screen name="note/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="search" options={{ presentation: 'modal' }} />
         {/* Full screen, no swipe-to-dismiss: leaving goes through the close button, which ends the session. */}
         <Stack.Screen name="start/[id]" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
       </Stack.Protected>

@@ -268,6 +268,23 @@ export const voice = {
     /** Loads the next 25. */
     showOlder: 'Show older',
   },
+  search: {
+    title: 'Search',
+    placeholder: 'Search tasks and notes',
+    cancel: 'Cancel',
+    hint: 'Find any task or note, finished ones too. Add #name to look in one territory.',
+    hintIn: (name: string) => `Type to search in ${name}.`,
+    tasks: 'Tasks',
+    finished: 'Finished',
+    notes: 'Notes',
+    showMore: 'Show more',
+    noMatches: (words: string) => `Nothing matches “${words}”.`,
+    noMatchesIn: (words: string, name: string) => `Nothing in ${name} matches “${words}”.`,
+    failed: 'Couldn’t search. Check your connection.',
+    /** The chip for a #tag's territory; tapping it searches everywhere again. */
+    clearTerritory: (name: string) => `Searching ${name} only. Search everywhere`,
+    done: (day: string) => `Done ${day}`,
+  },
   start: {
     eyebrow: 'Start mode',
     /** Non-breaking spaces keep "step 2 of 10" on one line when the plan's title wraps. */

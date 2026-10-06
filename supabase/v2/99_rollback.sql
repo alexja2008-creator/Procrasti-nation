@@ -12,6 +12,10 @@
 -- standalone tasks once parent_id is gone, so remove them first.
 DELETE FROM tasks WHERE parent_id IS NOT NULL;
 
+DROP FUNCTION IF EXISTS search_items(TEXT, TEXT, UUID, INT, INT);
+DROP INDEX IF EXISTS tasks_search_idx;
+DROP INDEX IF EXISTS notes_search_idx;
+
 DROP TABLE IF EXISTS ai_requests;
 DROP TABLE IF EXISTS plan_generations;
 DROP TABLE IF EXISTS push_tokens;

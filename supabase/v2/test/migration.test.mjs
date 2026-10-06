@@ -357,6 +357,89 @@ for (const baseline of baselines) {
       });
     });
 
+    await t.test("search finds the signed-in user's own tasks and notes, nothing else", async () => {
+      const chem = (await one(db, `INSERT INTO lists (user_id, name) VALUES ($1, 'Chem 201') RETURNING id`, [U1])).id;
+      const add = async ({ user = U1, title, notes = null, list = null, parent = null, done = false, deleted = false }) =>
+        (
+          await one(
+            db,
+            `INSERT INTO tasks (user_id, title, notes, list_id, parent_id, status, completed_at, deleted_at)
+             VALUES ($1, $2, $3, $4, $5, $6, CASE WHEN $7 THEN now() END, CASE WHEN $8 THEN now() END) RETURNING id`,
+            [user, title, notes, list, parent, done ? 'completed' : 'in_progress', done, deleted],
+          )
+        ).id;
+      const report = await add({ title: 'Chemistry lab report', list: chem });
+      await add({ title: 'Read chapter 4', notes: 'pages 40-60, bring the handout' });
+      await add({ title: 'Print the handout' });
+      await add({ title: 'Lab notebook' });
+      await add({ title: 'Lab safety quiz', done: true });
+      await add({ title: 'Lab coat order', deleted: true });
+      await add({ user: U2, title: 'Lab partner list' });
+      const plan = await add({ title: 'Lab practical prep', list: chem });
+      await add({ title: 'Review the lab manual', parent: plan });
+      await db.query(
+        `INSERT INTO notes (user_id, list_id, body) VALUES
+           ($1, NULL, $2), ($1, $3, 'Bring goggles to lab'), ($4, NULL, 'Lab notes of theirs')`,
+        [U1, `Lecture 7\nKrebs cycle is on the midterm.\n[[task:${report}]]`, chem, U2],
+      );
+
+      try {
+        await as(db, U1, async () => {
+          const find = async (query, kind, list = null, max = 26, skip = 0) =>
+            rows(db, `SELECT item->>'title' AS title, item->>'body' AS body, snippet FROM search_items($1, $2, $3, $4, $5)`, [
+              query, kind, list, max, skip,
+            ]);
+          const titles = async (...args) => (await find(...args)).map((r) => r.title).sort();
+
+          assert.deepEqual(await titles('chem', 'open'), ['Chemistry lab report'], 'a word matches as a prefix, after stemming');
+          assert.deepEqual(await titles('read ch.', 'open'), ['Read ch. 4', 'Read chapter 4'], 'punctuation is ignored');
+          const handout = await find('handout', 'open');
+          assert.deepEqual(handout.map((r) => r.title), ['Print the handout', 'Read chapter 4'], 'a title match ranks above a Notes match');
+          assert.equal(handout[0].snippet, null);
+          assert.match(handout[1].snippet, /«handout»/, 'a Notes-field match comes with a snippet');
+
+          assert.deepEqual(
+            await titles('lab', 'open'),
+            ['Chemistry lab report', 'Lab notebook', 'Lab practical prep', 'Review the lab manual'],
+            "open only: not the finished, deleted or someone else's",
+          );
+          assert.deepEqual(await titles('lab', 'done'), ['Lab safety quiz']);
+        const step = await one(db, `SELECT item->>'parent_title' AS plan FROM search_items('manual', 'open')`);
+        assert.equal(step.plan, 'Lab practical prep', 'a step carries its plan’s title');
+          assert.deepEqual(
+            await titles('lab', 'open', chem),
+            ['Chemistry lab report', 'Lab practical prep', 'Review the lab manual'],
+            "a territory includes its plans' steps",
+          );
+          const first = await find('lab', 'open', null, 2, 0);
+          const second = await find('lab', 'open', null, 2, 2);
+          assert.equal(new Set([...first, ...second].map((r) => r.title)).size, 4, 'pages add up without repeats');
+
+          const krebs = await find('krebs', 'notes');
+          assert.equal(krebs.length, 1);
+          assert.match(krebs[0].snippet, /«Krebs»/);
+          assert.deepEqual(await find('task', 'notes'), [], 'checklist tokens are never matched');
+          assert.deepEqual(await find(report.slice(0, 8), 'notes'), []);
+          assert.deepEqual((await find('lab', 'notes')).map((r) => r.body), ['Bring goggles to lab'], "not someone else's note");
+          assert.deepEqual(await find('lab', 'notes', chem), (await find('lab', 'notes')));
+
+          assert.deepEqual(await find("'); DROP TABLE tasks; --", 'open'), [], 'typed input is only ever words');
+          assert.deepEqual(await find('the', 'open'), [], 'only stop words: nothing to search');
+          assert.deepEqual(await find('   ', 'notes'), []);
+          await assert.rejects(find('lab', 'stamps'), /unknown search kind/);
+        });
+      } finally {
+        // Leave the fixtures as the rollback test expects them.
+        await db.query(`DELETE FROM notes WHERE body LIKE '%Krebs%' OR body IN ('Bring goggles to lab', 'Lab notes of theirs')`);
+        await db.query(`DELETE FROM tasks WHERE parent_id = $1`, [plan]);
+        await db.query(
+          `DELETE FROM tasks WHERE title IN ('Chemistry lab report', 'Read chapter 4', 'Print the handout', 'Lab notebook',
+             'Lab safety quiz', 'Lab coat order', 'Lab partner list', 'Lab practical prep')`,
+        );
+        await db.query(`DELETE FROM lists WHERE id = $1`, [chem]);
+      }
+    });
+
     await t.test('rollback restores v1 exactly and can be re-applied', async () => {
       await db.exec(sql('99_rollback.sql'));
 

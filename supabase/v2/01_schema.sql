@@ -405,5 +405,89 @@ DROP POLICY IF EXISTS "Owners log their AI requests" ON ai_requests;
 CREATE POLICY "Owners log their AI requests" ON ai_requests FOR INSERT
   WITH CHECK (user_id = (SELECT auth.uid()));
 
+-- ------------------------------------------------------------
+-- 10. Search: tasks (title, then the Notes field) and notes (their text,
+--     without checklist tokens). The app keeps only what's on the go, so
+--     finding anything older happens here. The GIN indexes cover exactly
+--     the expressions search_items() matches on.
+-- ------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS tasks_search_idx ON tasks USING gin (
+  (setweight(to_tsvector('english', title), 'A') || setweight(to_tsvector('english', coalesce(notes, '')), 'B'))
+);
+CREATE INDEX IF NOT EXISTS notes_search_idx ON notes USING gin (
+  to_tsvector('english', regexp_replace(body, '\[\[task:[0-9a-f-]+\]\]', ' ', 'g'))
+);
+
+-- One group of matches for the signed-in person: 'open' or 'done' tasks, or
+-- 'notes'. Runs as the caller, so RLS keeps it to their own rows. Each word
+-- matches as a prefix after English stemming ("read ch" finds "Reading
+-- chapter 4"); everything but letters and digits is dropped first, so typed
+-- input can't break the query. `in_list` narrows to a territory (a plan's
+-- steps count as in their plan's). A snippet shows the match («like this»)
+-- for notes, and for tasks found by their Notes field. A task carries its
+-- plan's title and its note's first line (`parent_title`, `note_title`), since
+-- neither may be loaded on the device. Best match first.
+CREATE OR REPLACE FUNCTION search_items(
+  query TEXT,
+  kind TEXT,
+  in_list UUID DEFAULT NULL,
+  max_rows INT DEFAULT 26,
+  skip INT DEFAULT 0
+)
+RETURNS TABLE (id UUID, rank REAL, snippet TEXT, item JSONB)
+LANGUAGE plpgsql STABLE
+SET search_path = public, pg_temp
+AS $$
+#variable_conflict use_column
+DECLARE
+  q tsquery;
+  marks CONSTANT TEXT := 'StartSel=«, StopSel=», MaxWords=18, MinWords=6, ShortWord=2, MaxFragments=1, FragmentDelimiter=" … "';
+BEGIN
+  SELECT to_tsquery('english', string_agg(w || ':*', ' & '))
+    INTO q
+    FROM regexp_split_to_table(lower(regexp_replace(coalesce(query, ''), '[^[:alnum:]]+', ' ', 'g')), ' ') AS w
+    WHERE w <> '';
+  -- Nothing searchable (empty, or only words like "the").
+  IF q IS NULL OR numnode(q) = 0 THEN
+    RETURN;
+  END IF;
+
+  IF kind IN ('open', 'done') THEN
+    RETURN QUERY
+    SELECT t.id,
+           ts_rank(setweight(to_tsvector('english', t.title), 'A') || setweight(to_tsvector('english', coalesce(t.notes, '')), 'B'), q),
+           CASE WHEN NOT to_tsvector('english', t.title) @@ q
+                THEN ts_headline('english', coalesce(t.notes, ''), q, marks) END,
+           (SELECT to_jsonb(r) FROM (SELECT t.id, t.user_id, t.list_id, t.parent_id, t.note_id, t.title, t.notes, t.status,
+                   t.due_on, t.due_at, t.remind_at, t.rrule, t.estimate_minutes, t.scheduled_on, t.sort_order, t.source,
+                   t.external_id, t.completed_at, t.created_at, t.updated_at, t.deleted_at,
+                   p.title AS parent_title, split_part(nn.body, E'\n', 1) AS note_title) r)
+      FROM tasks t
+      LEFT JOIN tasks p ON p.id = t.parent_id
+      LEFT JOIN notes nn ON nn.id = t.note_id
+     WHERE t.deleted_at IS NULL
+       AND (setweight(to_tsvector('english', t.title), 'A') || setweight(to_tsvector('english', coalesce(t.notes, '')), 'B')) @@ q
+       AND (t.completed_at IS NOT NULL) = (kind = 'done')
+       AND (in_list IS NULL OR CASE WHEN t.parent_id IS NULL THEN t.list_id ELSE p.list_id END = in_list)
+     ORDER BY 2 DESC, t.completed_at DESC NULLS LAST, t.updated_at DESC, t.id
+     LIMIT max_rows OFFSET skip;
+  ELSIF kind = 'notes' THEN
+    RETURN QUERY
+    SELECT n.id,
+           ts_rank(to_tsvector('english', regexp_replace(n.body, '\[\[task:[0-9a-f-]+\]\]', ' ', 'g')), q),
+           ts_headline('english', regexp_replace(n.body, '\[\[task:[0-9a-f-]+\]\]', ' ', 'g'), q, marks),
+           (SELECT to_jsonb(r) FROM (SELECT n.id, n.user_id, n.list_id, n.task_id, n.body, n.created_at, n.updated_at, n.deleted_at) r)
+      FROM notes n
+     WHERE n.deleted_at IS NULL
+       AND to_tsvector('english', regexp_replace(n.body, '\[\[task:[0-9a-f-]+\]\]', ' ', 'g')) @@ q
+       AND (in_list IS NULL OR n.list_id = in_list)
+     ORDER BY 2 DESC, n.updated_at DESC, n.id
+     LIMIT max_rows OFFSET skip;
+  ELSE
+    RAISE EXCEPTION 'unknown search kind %', kind USING ERRCODE = 'invalid_parameter_value';
+  END IF;
+END;
+$$;
+
 -- Not yet: `integrations` (LMS feed URLs, encrypted with Supabase Vault)
 -- lands with Phase 5.

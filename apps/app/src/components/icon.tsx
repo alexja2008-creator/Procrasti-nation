@@ -15,6 +15,12 @@ const glyphs = {
       <Path d="M5 5h14l2 8v6H3v-6z" />
     </>
   ),
+  search: (
+    <>
+      <Circle cx={11} cy={11} r={6.5} />
+      <Path d="M16 16l4.5 4.5" />
+    </>
+  ),
   chevronRight: <Path d="M9 6l6 6-6 6" />,
   chevronLeft: <Path d="M15 6l-6 6 6 6" />,
   /** Drag handle. */

@@ -29,6 +29,9 @@ const fromRow = (r: Row): Note => ({
   deletedAt: r.deleted_at,
 });
 
+/** Rows as the database sends them (search returns them too). */
+export { fromRow as noteFromRow, type Row as NoteRow };
+
 /** Which notes: every note, or one territory's (by id). */
 export type NoteScope = 'all' | string;
 
