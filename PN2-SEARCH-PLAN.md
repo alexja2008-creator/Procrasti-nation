@@ -1,5 +1,7 @@
 # Plan: Search (ProcrastiNation 2.0, `v2` branch)
 
+**Built 2026-10-06** in `8ca3ea6`, `98b42ab` and `b5386ed`; checked on web (phone and laptop widths, day and night) and the iOS Simulator. One change from the plan: no GIN indexes (see Technical choices).
+
 Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
 ## What it is
@@ -31,7 +33,7 @@ Confirmed by Alex on 2026-10-06:
 
 Technical choices (mine; say if you disagree):
 - **Postgres full-text search, one SQL function.** `search(query, list)` runs as the signed-in person (`SECURITY INVOKER`, so RLS applies) and returns matches with their rows, a rank and a snippet. English stemming plus prefix matching on every word ("read ch" finds "Reading chapter 4"); words are cleaned server-side, so typed punctuation can't break the query. Checklist tokens (`[[task:…]]`) are stripped from note text before matching.
-- **Two GIN expression indexes**, on tasks (title + Notes field) and notes (text without tokens), so search stays fast however much piles up. No new columns. Added to `01_schema.sql` (rides the same pre-merge apply as the rest of v2), dropped by `99_rollback.sql`, covered by the PGlite tests, applied to staging.
+- ~~**Two GIN expression indexes**, on tasks (title + Notes field) and notes (text without tokens), so search stays fast however much piles up.~~ **Changed while building:** Postgres can't use a full-text index under RLS (`@@` isn't leakproof), so instead every query is bounded to the person's own rows with an explicit `user_id = auth.uid()` (served by the user indexes). Measured on staging: ~40–100 ms for a typical search in a 10,000-task account, ~300 ms for a word matching 9,000. No new columns. In `01_schema.sql`, dropped by `99_rollback.sql`, covered by the PGlite tests, applied to staging.
 - **A checklist line is a task result** showing its note's name; tapping it opens the note (where it lives). Its note also appears under Notes when the note's own text matches.
 - **Steps search with their plan:** "#chem" includes the steps of plans filed in Chem 201, and a step's row says which plan it belongs to.
 - **25 results per group, then "Show more"** (the same pattern as Notes). No silent cut-off.
@@ -67,10 +69,10 @@ Technical choices (mine; say if you disagree):
 
 ## Done when
 
-- [ ] The magnifier on Today, Upcoming and Territories (and ⌘K or / on web) opens search with the field ready to type.
-- [ ] Typing finds open and finished tasks, plan steps, words in a task's Notes field, and notes; partial words match ("chem" → "Chemistry").
-- [ ] Results are grouped (Tasks, Finished, Notes), best match first, 25 per group with Show more.
-- [ ] "#chem lab" shows only Chem 201's matches (plan steps included), with a removable territory chip.
-- [ ] Rows check off with Undo and open task detail; a checklist line opens its note; note rows show a highlighted snippet.
-- [ ] Only the person's own items ever appear; deleted ones never do.
-- [ ] Same on iOS and web; light and night; `npm run core:test`, `npm run db:test`, `npm run app:check` pass.
+- [x] The magnifier on Today, Upcoming and Territories (and ⌘K or / on web) opens search with the field ready to type.
+- [x] Typing finds open and finished tasks, plan steps, words in a task's Notes field, and notes; partial words match ("chem" → "Chemistry").
+- [x] Results are grouped (Tasks, Finished, Notes), best match first, 25 per group with Show more.
+- [x] "#chem lab" shows only Chem 201's matches (plan steps included), with a removable territory chip.
+- [x] Rows check off with Undo and open task detail; a checklist line opens its note; note rows show a highlighted snippet.
+- [x] Only the person's own items ever appear; deleted ones never do.
+- [x] Same on iOS and web; light and night; `npm run core:test`, `npm run db:test`, `npm run app:check` pass.
