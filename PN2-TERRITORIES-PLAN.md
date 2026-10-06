@@ -1,5 +1,7 @@
 # Plan: Territories (ProcrastiNation 2.0, `v2` branch)
 
+**Built 2026-10-06** in `e95600f`, `8a7937a` and `b8e72be`; checked on web (phone and laptop widths, day and night) and the iOS Simulator.
+
 Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
 ## What it is
@@ -77,8 +79,8 @@ Technical choices (mine; say if you disagree):
 
 ## Done when
 
-- [ ] Create, rename, recolor and delete a territory (its tasks return to Customs; Undo restores both).
-- [ ] Customs shows the same items as Today's Customs; filing one into a territory removes it from Customs.
-- [ ] File a task from task detail, the row menu and quick add `#tag`; a filed plan's steps follow it; the territory shows on Today / Upcoming rows.
-- [ ] A territory's page lists Coming up and Anytime correctly; "+" captures into it; checking a row hides it with Undo.
-- [ ] Same on iOS and web; laptop width shows two columns; light and night; `npm run core:test`, `npm run app:check` pass.
+- [x] Create, rename, recolor and delete a territory (its tasks return to Customs; Undo restores both).
+- [x] Customs shows the same items as Today's Customs; filing one into a territory removes it from Customs.
+- [x] File a task from task detail, the row menu and quick add `#tag`; a filed plan's steps follow it; the territory shows on Today / Upcoming rows.
+- [x] A territory's page lists Coming up and Anytime correctly; "+" captures into it; checking a row hides it with Undo.
+- [x] Same on iOS and web; laptop width shows two columns; light and night; `npm run core:test`, `npm run app:check` pass.

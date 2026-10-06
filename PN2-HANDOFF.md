@@ -17,14 +17,15 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 - **Today:** real data. Timed items first; missed items roll forward without overdue styling; finished-today items show STAMPED; Customs expands inline; repeating tasks move to their next date ("Stretch · back tomorrow").
 - **Plan it:** the eval-gated Adherence Planner (prompts and models unchanged), with optional clarifying questions, a preview showing per-step estimates and dates, and steps saved as child tasks. The next step appears as the A2 "Your next small step" ticket on Today. Entry points: a pill on big-sounding tasks, and a button in quick add.
 - **Start Mode:** full-screen focus view from the next-step card or a row's menu. Wall-clock timer, the "just N minutes" contract (keep going / stop here), Pause, Done → ink stamp + haptic → "Start the next step". **I'm stuck:** one-tap reason → `/api/unstick` (Sonnet 5.5, low effort, eval-gated) → a two-minute first action, or a box-breathing breather. Sessions resume after the app is closed or the page reloads. Web: Space pauses, Esc leaves.
-- **Today extras:** "Up next" card when no plan step is due; press and hold a row (right-click on web) for Start / Plan it / Move to… (reschedule with the When sheet), with a standing hint under the agenda heading (Alex prefers press-and-hold to a visible Start button per row); step counts include steps finished on earlier days.
+- **Today extras:** "Up next" card when no plan step is due; press and hold a row (right-click on web) for Start / Plan it / Move to… (reschedule with the When sheet) / File in… (a territory), with a standing hint under the agenda heading (Alex prefers press-and-hold to a visible Start button per row); step counts include steps finished on earlier days.
 - **Upcoming:** everything after today, by day: the next 7 days always (empty ones say "Nothing yet."), then only busy days up to 8 weeks, then Later. Repeats show once on their next date; plan steps show on their days with "step i of n"; a task's due day gets a terracotta DUE marker (tap to open) when its work happens on other days. Phones: a week strip with dots, pinned while the list scrolls, and a Month toggle. Laptop width: the month calendar sits beside the list. Picking a day scrolls to it. Each day has a "+" (quick add for that day: "for Thu 8 Oct"; a typed date still wins). Rows work like Today's (tap, press and hold, check); checking one off hides it and offers Undo.
+- **Territories:** Customs at the top (the same undated, unfiled captures Today shows), then the person's territories as cards: stamp-ink stripe, kind icon (School / Work / Home / Other), open count and next dated item ("3 open · Tomorrow: Read chapter 4"); drag the handle to reorder. New territory (name, kind, ink) or one-tap starters (School, Work, Home) when there are none. A territory's page lists Coming up, then Anytime (a plan shows "1 of 8 steps"), with "+" to capture into it and Edit (rename, kind, ink, Delete: its tasks go back to Customs or stay on their days, with Undo). Laptop width puts the list and the page side by side. Filing: task detail's Territory field, File in… in the row menu ("Filed in Chem 201." + Undo), or "#chem" in quick add; a plan's steps follow their plan. Today and Upcoming rows name the territory ("Chem 201 · due Fri").
 - **Task detail** (tap a row or the next-step card): checkbox and title, Start and Plan it, When / Due / Repeat / Estimate (one-tap chips, a month calendar, or "type it" like "fri 6pm"), notes, delete with Undo. Steps: check off, open, add your own, drag the handle to reorder (one row written per move), and "Re-plan the rest" (keeps finished steps, replaces open ones). Everything autosaves.
 - **Passport:** A2 ID page with citizen number, bilingual fields, passport code lines, real stamps ("Officially started", "Small steps N") and a rank bar counting real starts. Sign out.
 - **Navigation:** bottom tab bar on phones, sidebar at ≥900px. Day and night ("night passport") themes follow the system.
 - **iOS:** checked on the iOS Simulator through Expo Go, signed in (Today, Start Mode, Passport, row menu).
 
-**Not built yet:** Live Activity / lock-screen timer and the timer-end notification (need a development build and notifications), Town Hall, the Territories screen, capture-first notes (beyond a task's notes field), search, notifications, onboarding (Citizenship Application) and Settings, account deletion and export, and offline sync.
+**Not built yet:** Live Activity / lock-screen timer and the timer-end notification (need a development build and notifications), Town Hall, capture-first notes (beyond a task's notes field), search, notifications, onboarding (Citizenship Application) and Settings, account deletion and export, and offline sync.
 
 **Commits on `v2`** (oldest first; branched from `main` at `bc120c2`):
 
@@ -54,6 +55,9 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 | `bb8aad3` | Upcoming: week strip (pinned) + Month toggle, two columns at laptop width, scroll to a day |
 | `5a4b398` | Upcoming: "+" per day (quick add preset), Move to… in the row menu |
 | `b388a51` | Today orders timed items by time of day (missed ones too); one rule (`timeOnItsDay`) for a row's time |
+| `e95600f` | Territories: tab, territory and Customs pages, lists store, create / edit / delete with Undo, laptop columns |
+| `8a7937a` | Territories: Territory field, File in…, territory on Today / Upcoming rows, steps follow their plan |
+| `b8e72be` | Territories: `#tag` in quick add, drag to reorder (shared `useDragReorder`), sheets above the keyboard on iOS |
 
 **Run it locally:**
 1. Start both preview servers from `.claude/launch.json`: `site` (port 3000; `apps/site/.env.development.local` points it at staging) and `app-web` (port 8081; `apps/app/.env.local` points at staging).
@@ -62,7 +66,7 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 3. For iOS: from `apps/app`, run `npx expo start --port 8082 < /dev/null`, then `xcrun simctl openurl booted exp://127.0.0.1:8082`.
 
 **Checks:**
-- `npm run core:test`: 47 tests.
+- `npm run core:test`: 53 tests.
 - `npm run db:test`: 19 migration tests, on the stand-in schema and, when the local dump exists, the real production structure.
 - `npm run app:check`: typecheck + lint.
 - `npm --prefix apps/site run build`.
@@ -130,9 +134,8 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
   - Done: monorepo restructure; `@pn/core`; Expo app scaffold; auth; data-model migration plus staging; AI service layer (done in Phase 0).
   - Remaining: **PowerSync spike** (needs Alex's account, and a development build since Expo Go can't load native modules); the `integrations` table (Phase 5).
 - **Phase 3 (core app MVP), in progress:**
-  - Done: quick add; Today; Customs (inline); Passport v1 (ID page, real stamps and rank); Plan it; task detail (fields, steps, reorder, re-plan, delete + Undo); Upcoming (days, DUE markers, calendar, add to a day, Move to…).
+  - Done: quick add; Today; Customs (inline); Passport v1 (ID page, real stamps and rank); Plan it; task detail (fields, steps, reorder, re-plan, delete + Undo); Upcoming (days, DUE markers, calendar, add to a day, Move to…); Territories (Customs, territories, filing, #tags, reorder).
   - Remaining:
-    - Territories
     - capture-first notes; search
     - local notifications (Done / Snooze / Start) and Web Push
     - Citizenship Application onboarding and Settings
@@ -140,9 +143,9 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
     - a smarter "does this need a plan?" check (currently a keyword heuristic)
   - Then the TestFlight gate with 10 students.
 - **Phase 4:** Start Mode done (timer, contract, I'm stuck, breather, Done → stamp, resume). Remaining: Live Activity (Swift add-on, needs Apple Developer + a development build), Declarations, Morning Briefing / roll-forward, server push, State of the Union, Holidays.
-- **Checked on iOS (2026-10-06, Expo Go, signed in):** Today, Start Mode (timer, resume after the app was killed, I'm stuck → `/api/unstick`, two-minute restart, Done → stamp, next step), Passport stamps and rank, the press-and-hold row menu, and Upcoming (pinned week strip and scroll to a day, Move to… → When sheet, "+" → quick add for that day, day and night).
-- **Next: Territories**, planned in `PN2-TERRITORIES-PLAN.md` (Alex confirmed the four product decisions on 2026-10-06). Then capture-first notes and search.
-- **Known rough edge:** picking a day near the end of Upcoming can't lift it to the top (the list ends a few days later).
+- **Checked on iOS (2026-10-06, Expo Go, signed in):** Today, Start Mode (timer, resume after the app was killed, I'm stuck → `/api/unstick`, two-minute restart, Done → stamp, next step), Passport stamps and rank, the press-and-hold row menu, Upcoming (pinned week strip and scroll to a day, Move to… → When sheet, "+" → quick add for that day, day and night), and Territories (cards, territory page, drag to reorder with real touch, File in… → picker → New territory…, day and night).
+- **Next: capture-first notes** (they attach to tasks and territories; the territory page leaves room for a Notes section), then search.
+- **Known rough edges:** picking a day near the end of Upcoming can't lift it to the top (the list ends a few days later). The "Plan it" pill's keyword check flags small tasks like "Email Dr. Ruiz about the quiz" (the smarter check is on the roadmap). v1 boards (`localStorage['task-boards']` on procrasti-nation.work) can't be read from the v2 app's origin: bring them over from the v1 site at cutover, or let them go.
 - **Known gap:** no live sync between devices yet; each device refreshes on foreground and day change (PowerSync spike pending).
 
 ---
@@ -231,7 +234,7 @@ The production dump showed tables the plan never mentioned: `organizations`, `or
 - **Re-dump production's structure** with `supabase/v2/scripts/dump-prod-schema.sh` whenever it changes, so the migration tests keep checking against reality.
 - **Don't use the production service-role key** for exploration; ask first.
 - **Typed routes** regenerate while the Expo dev server runs; a fresh `tsc` may flag new routes until then.
-- **Browser pane viewport emulation:** with a custom size (e.g. 1100 wide in a narrow pane), clicks by coordinate and by ref miss; test laptop-width interactions at the pane's own size or check them through the DOM. The pane also can't draw (or click) while Claude's window is hidden; the iOS Simulator tools still work.
+- **Browser pane viewport emulation:** with a custom size (e.g. 1100 wide in a narrow pane), clicks by coordinate and by ref miss; test laptop-width interactions at the pane's own size or check them through the DOM. The pane also can't draw (or click) while Claude's window is hidden; the iOS Simulator tools still work. Drags (`left_click_drag`, synthetic pointer events) don't reach react-native-gesture-handler on web, so test drag-to-reorder on the iOS Simulator with `touch_path`. The simulator's `text` action types faster than a person, so a trailing newline can submit before the input's state catches up (truncated titles are a test artifact).
 - **macOS shell:** `sed` lacks `\|` alternation (use `-E`), and parallel shell calls can race on the working directory, so use absolute paths.
 - **Site ESLint** was never configured (`npm run lint` opens a setup prompt); use `npm run build` to check the site. The build prints "Dynamic server usage" logs from the friends routes; that's harmless noise.
 - **Git:** commits use the noreply author email and still auto-deploy. Pushing `main` deploys to production. Avoid interactive history rewrites.
