@@ -36,8 +36,8 @@ type Store = {
   toggle: (task: Task) => void;
   /** Adds or replaces tasks already saved elsewhere (e.g. a new plan's steps). */
   merge: (saved: Task[]) => void;
-  /** Shows a short-lived note on Today (e.g. after leaving Start Mode). */
-  notify: (message: string) => void;
+  /** Shows a short-lived note (e.g. after leaving Start Mode), with Undo when given one. */
+  notify: (message: string, undo?: () => void) => void;
   /** Edits a task; applies now, rolls back if the save fails. */
   update: (task: Task, patch: TaskPatch) => void;
   /** Deletes a task with its steps, offering Undo on Today. */
@@ -233,13 +233,24 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
     setNotice({ text: voice.task.deleted(task.title), undo });
   };
 
+  const notify: Store['notify'] = (text, undo) =>
+    setNotice({
+      text,
+      undo: undo
+        ? () => {
+            setNotice(null);
+            undo();
+          }
+        : undefined,
+    });
+
   const refresh = () => {
     setStatus('loading');
     setReloads((n) => n + 1);
   };
 
   return (
-    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, addStep, toggle, merge, notify: (text) => setNotice({ text }), update, remove }}>
+    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, addStep, toggle, merge, notify, update, remove }}>
       {children}
     </Ctx.Provider>
   );

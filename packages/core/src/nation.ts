@@ -167,6 +167,18 @@ export const voice = {
     movedOn: (title: string, day: string) => `${title} · back ${day}`,
     due: (day: string) => `due ${day}`,
   },
+  upcoming: {
+    eyebrow: 'Upcoming',
+    title: 'The week ahead.',
+    nothingYet: 'Nothing yet.',
+    later: 'Later',
+    /** The deadline marker on the day a task is due. */
+    due: 'Due',
+    dueSpoken: (title: string, day: string) => `Due ${day}: ${title}`,
+    /** Finished items leave Upcoming, so the note offers Undo. */
+    stamped: (title: string) => `Stamped “${title}”.`,
+    loadFailed: 'Couldn’t load what’s coming up. Check your connection.',
+  },
   start: {
     eyebrow: 'Start mode',
     /** Non-breaking spaces keep "step 2 of 10" on one line when the plan's title wraps. */

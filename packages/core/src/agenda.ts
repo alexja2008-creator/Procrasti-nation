@@ -3,6 +3,7 @@
 // any "overdue" styling: kind, never punishing.
 
 import { logicalDateString } from './dates.ts';
+import { bySortOrder, nullsLast, stepsByParent } from './order.ts';
 import type { LocalDate, Task } from './types.ts';
 
 export interface AgendaEntry {
@@ -28,9 +29,6 @@ export interface TodayView {
   upNext: AgendaEntry | null;
 }
 
-const bySortOrder = (a: Task, b: Task) => a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt);
-const nullsLast = (a: string | null, b: string | null) => (a === b ? 0 : a === null ? 1 : b === null ? -1 : a.localeCompare(b));
-
 function agendaOrder(a: AgendaEntry, b: AgendaEntry): number {
   if (a.done !== b.done) return a.done ? 1 : -1;
   if (a.done) return nullsLast(a.task.completedAt, b.task.completedAt);
@@ -47,14 +45,7 @@ export function buildToday(tasks: Task[], today: LocalDate, rolloverHour = 0): T
   const live = tasks.filter((t) => !t.deletedAt);
   const byId = new Map(live.map((t) => [t.id, t]));
 
-  const childrenOf = new Map<string, Task[]>();
-  for (const t of live) {
-    if (!t.parentId) continue;
-    const list = childrenOf.get(t.parentId) ?? [];
-    list.push(t);
-    childrenOf.set(t.parentId, list);
-  }
-  for (const list of childrenOf.values()) list.sort(bySortOrder);
+  const childrenOf = stepsByParent(live);
 
   const isDone = (t: Task) => t.completedAt !== null;
   const doneToday = (t: Task) => t.completedAt !== null && logicalDateString(new Date(t.completedAt), rolloverHour) === today;
