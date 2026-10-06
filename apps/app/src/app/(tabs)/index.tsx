@@ -64,6 +64,7 @@ export default function TodayScreen() {
   const planned = new Set(tasks.flatMap((t) => (t.parentId ? [t.parentId] : [])));
   const onPlan = (id: string) => router.push({ pathname: '/plan/[id]', params: { id } });
   const onStart = (id: string) => router.push({ pathname: '/start/[id]', params: { id } });
+  const onOpen = (id: string) => router.push({ pathname: '/task/[id]', params: { id } });
   const onToggle = (id: string) => {
     const task = byId.get(id);
     if (task) toggle(task);
@@ -154,6 +155,7 @@ export default function TodayScreen() {
                   onToggle={onToggle}
                   onPlan={onPlan}
                   onMenu={onMenu}
+                  onOpen={onOpen}
                 />
               ))}
             </View>
@@ -175,6 +177,7 @@ export default function TodayScreen() {
           position={isStep ? { index: next.stepIndex ?? 1, total: next.stepCount ?? 1 } : undefined}
           aiBuilt={next.task.source === 'ai'}
           onStart={() => onStart(next.task.id)}
+          onOpen={() => onOpen(next.task.id)}
         />
       ) : null}
 
@@ -192,9 +195,12 @@ export default function TodayScreen() {
           </View>
 
           {notice ? (
-            <Text variant="meta" color={c.primaryText} accessibilityLiveRegion="polite">
-              {notice}
-            </Text>
+            <View style={s.notice} accessibilityLiveRegion="polite">
+              <Text variant="meta" color={c.primaryText} style={s.noticeText}>
+                {notice.text}
+              </Text>
+              {notice.undo ? <Button variant="quiet" label={voice.task.undo} onPress={notice.undo} /> : null}
+            </View>
           ) : null}
 
           {/* Always shown: press and hold is the way to Start or plan any task. */}
@@ -221,6 +227,7 @@ export default function TodayScreen() {
                   onToggle={onToggle}
                   onPlan={onPlan}
                   onMenu={onMenu}
+                  onOpen={onOpen}
                 />
               ))}
             </View>
@@ -266,6 +273,8 @@ const makeStyles = (t: Tokens) => ({
     countText: { letterSpacing: 0 },
     list: { marginTop: -6 },
     hint: { marginTop: -8 },
+    notice: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 32 },
+    noticeText: { flex: 1 },
     empty: {
       gap: 12,
       padding: 16,

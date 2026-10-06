@@ -1,4 +1,5 @@
 import {
+  atLocalTime,
   logicalDateString,
   nextOccurrence,
   parseLocalDate,
@@ -12,15 +13,11 @@ import * as Crypto from 'expo-crypto';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
-import { fetchActiveTasks, insertTask, updateTask, type TaskPatch } from '@/data/tasks';
+import { fetchActiveTasks, insertTask, setDeleted, updateTask, type TaskPatch } from '@/data/tasks';
 import { useUserSettings } from '@/data/user-settings';
 
-/** ISO timestamp for a local calendar day at a clock time. */
-function atLocal(ymd: string, hour: number, minute: number): string {
-  const d = parseLocalDate(ymd);
-  d.setHours(hour, minute, 0, 0);
-  return d.toISOString();
-}
+/** A short-lived note on Today, optionally with Undo. */
+export type Notice = { text: string; undo?: () => void };
 
 type Store = {
   tasks: Task[];
@@ -31,7 +28,7 @@ type Store = {
   /** Last failed save, shown gently on Today. */
   error: string | null;
   /** Short-lived confirmation, e.g. where a repeating task moved to. */
-  notice: string | null;
+  notice: Notice | null;
   refresh: () => void;
   add: (parsed: QuickAddResult) => Promise<Task | null>;
   toggle: (task: Task) => void;
@@ -39,6 +36,10 @@ type Store = {
   merge: (saved: Task[]) => void;
   /** Shows a short-lived note on Today (e.g. after leaving Start Mode). */
   notify: (message: string) => void;
+  /** Edits a task; applies now, rolls back if the save fails. */
+  update: (task: Task, patch: TaskPatch) => void;
+  /** Deletes a task with its steps, offering Undo on Today. */
+  remove: (task: Task) => void;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -57,7 +58,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [status, setStatus] = useState<Store['status']>('loading');
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
   const [reloads, setReloads] = useState(0);
 
   // Notice the day changing, and refresh when the app comes back to the foreground.
@@ -93,7 +94,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
 
   useEffect(() => {
     if (!notice) return;
-    const timer = setTimeout(() => setNotice(null), 4000);
+    const timer = setTimeout(() => setNotice(null), notice.undo ? 10_000 : 4000);
     return () => clearTimeout(timer);
   }, [notice]);
 
@@ -112,8 +113,8 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
       status: 'in_progress',
       scheduledOn,
       dueOn,
-      remindAt: time && scheduledOn ? atLocal(scheduledOn, time.hour, time.minute) : null,
-      dueAt: time && !scheduledOn && dueOn ? atLocal(dueOn, time.hour, time.minute) : null,
+      remindAt: time && scheduledOn ? atLocalTime(scheduledOn, time.hour, time.minute) : null,
+      dueAt: time && !scheduledOn && dueOn ? atLocalTime(dueOn, time.hour, time.minute) : null,
       rrule: parsed.rrule,
       estimateMinutes: null,
       sortOrder: Date.now(),
@@ -147,8 +148,8 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
       const anchor = task.scheduledOn ?? today;
       const next = nextOccurrence(task.rrule, anchor, anchor > today ? anchor : today);
       const remind = task.remindAt ? new Date(task.remindAt) : null;
-      patch = { scheduledOn: next, remindAt: remind ? atLocal(next, remind.getHours(), remind.getMinutes()) : null };
-      setNotice(voice.today.movedOn(task.title, relativeDayPhrase(next, today)));
+      patch = { scheduledOn: next, remindAt: remind ? atLocalTime(next, remind.getHours(), remind.getMinutes()) : null };
+      setNotice({ text: voice.today.movedOn(task.title, relativeDayPhrase(next, today)) });
     } else {
       patch = { status: 'completed', completedAt: new Date().toISOString() };
     }
@@ -172,13 +173,54 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
       return [...byId.values()];
     });
 
+  const update: Store['update'] = (task, patch) => {
+    replace(task.id, { ...task, ...patch });
+    updateTask(task.id, patch).then(
+      (saved) => {
+        replace(task.id, saved);
+        setError(null);
+      },
+      () => {
+        replace(task.id, task);
+        setError(voice.today.saveFailed);
+      },
+    );
+  };
+
+  const remove: Store['remove'] = (task) => {
+    const ids = new Set([task.id, ...tasks.filter((t) => t.parentId === task.id).map((t) => t.id)]);
+    const mark = (deletedAt: string | null) =>
+      setTasks((prev) => prev.map((t) => (ids.has(t.id) ? { ...t, deletedAt } : t)));
+    const stamp = new Date().toISOString();
+    mark(stamp);
+    const deleting = setDeleted([...ids], stamp);
+    deleting.catch(() => {
+      mark(null);
+      setNotice(null);
+      setError(voice.today.saveFailed);
+    });
+    // Undo waits for the delete to land, so the two writes can't arrive out of order.
+    const undo = () => {
+      setNotice(null);
+      mark(null);
+      deleting.then(
+        () => setDeleted([...ids], null).catch(() => {
+          mark(stamp);
+          setError(voice.today.saveFailed);
+        }),
+        () => undefined,
+      );
+    };
+    setNotice({ text: voice.task.deleted(task.title), undo });
+  };
+
   const refresh = () => {
     setStatus('loading');
     setReloads((n) => n + 1);
   };
 
   return (
-    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, toggle, merge, notify: setNotice }}>
+    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, toggle, merge, notify: (text) => setNotice({ text }), update, remove }}>
       {children}
     </Ctx.Provider>
   );

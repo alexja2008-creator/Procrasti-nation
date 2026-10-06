@@ -48,6 +48,24 @@ export function formatDayLabel(date: Date = new Date()): string {
   return `${WEEKDAYS[date.getDay()]} · ${date.getDate()} ${MONTHS[date.getMonth()]}`;
 }
 
+/** "9 AM", "7:30 PM": `formatTime` without the ":00" on the hour. */
+export function formatTimeShort(hour: number, minute: number): string {
+  return `${hour % 12 || 12}${minute ? `:${pad(minute)}` : ''} ${hour < 12 ? 'AM' : 'PM'}`;
+}
+
+/** ISO timestamp for a local calendar day at a clock time. */
+export function atLocalTime(ymd: string, hour: number, minute: number): string {
+  const d = parseLocalDate(ymd);
+  d.setHours(hour, minute, 0, 0);
+  return d.toISOString();
+}
+
+/** The local clock time of an ISO timestamp. */
+export function clockOf(iso: string): { hour: number; minute: number } {
+  const d = new Date(iso);
+  return { hour: d.getHours(), minute: d.getMinutes() };
+}
+
 /** "14 SEP · 2026", the date on a stamp's rim. */
 export function formatStampDate(date: Date): string {
   return `${pad(date.getDate())} ${MONTHS[date.getMonth()]} · ${date.getFullYear()}`;

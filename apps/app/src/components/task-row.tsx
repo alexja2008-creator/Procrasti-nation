@@ -28,9 +28,11 @@ type Props = {
   onPlan?: (id: string) => void;
   /** Opens the row's menu (Start, Plan it): press and hold, or right-click on web. */
   onMenu?: (id: string) => void;
+  /** Opens the task's detail page (a tap). */
+  onOpen?: (id: string) => void;
 };
 
-export function TaskRow({ item, last, onToggle, onPlan, onMenu }: Props) {
+export function TaskRow({ item, last, onToggle, onPlan, onMenu, onOpen }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const done = !!item.done;
@@ -70,9 +72,11 @@ export function TaskRow({ item, last, onToggle, onPlan, onMenu }: Props) {
 
       <View style={[s.main, item.suggestPlan && s.mainTop]}>
         <Pressable
+          onPress={onOpen ? () => onOpen(item.id) : undefined}
           onLongPress={menu ? holdForMenu : undefined}
           delayLongPress={350}
-          disabled={!menu}
+          disabled={!menu && !onOpen}
+          accessibilityRole={onOpen ? 'button' : undefined}
           accessibilityActions={menu ? [{ name: 'menu', label: voice.rowMenuLabel }] : undefined}
           onAccessibilityAction={(e) => e.nativeEvent.actionName === 'menu' && menu?.()}
           style={s.text}

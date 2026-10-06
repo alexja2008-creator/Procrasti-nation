@@ -15,15 +15,17 @@ type Props = {
   position?: { index: number; total: number };
   aiBuilt?: boolean;
   onStart?: () => void;
+  /** Opens the step's detail page. */
+  onOpen?: () => void;
 };
 
 /** "Your next small step": a ticket with a perforated stub holding Start. */
-export function NextStepCard({ title, meta, label = voice.nextStepLabel, position, aiBuilt, onStart }: Props) {
+export function NextStepCard({ title, meta, label = voice.nextStepLabel, position, aiBuilt, onStart, onOpen }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   return (
     <View style={s.card} accessibilityLabel={label} accessibilityRole="summary">
-      <View style={s.body}>
+      <Pressable onPress={onOpen} disabled={!onOpen} accessibilityRole="button" accessibilityLabel={title} style={s.body}>
         <View style={s.headRow}>
           <Text variant="label" color={c.primaryText}>
             {label.toUpperCase()}
@@ -50,7 +52,7 @@ export function NextStepCard({ title, meta, label = voice.nextStepLabel, positio
             </Text>
           </View>
         )}
-      </View>
+      </Pressable>
 
       <View style={s.stub}>
         {/* Perforation: RN can't dash a single border side on iOS, so draw it. */}

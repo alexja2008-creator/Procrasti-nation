@@ -1,11 +1,10 @@
 import { actions, voice, type Task } from '@pn/core';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Pressable, StyleSheet } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Icon, type IconName } from '@/components/icon';
+import { Sheet } from '@/components/sheet';
 import { Text } from '@/components/text';
-import { useIsWide } from '@/hooks/use-is-wide';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 type Props = {
@@ -21,14 +20,13 @@ type Props = {
 export function RowMenu({ task, canPlan, onStart, onPlan, onClose }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
-  const wide = useIsWide();
-  const insets = useSafeAreaInsets();
+  if (!task) return null;
 
   const item = (icon: IconName, label: string, run: (t: Task) => void) => (
     <Pressable
       onPress={() => {
         onClose();
-        if (task) run(task);
+        run(task);
       }}
       accessibilityRole="button"
       style={({ pressed }) => [s.item, pressed && s.pressed]}>
@@ -38,36 +36,24 @@ export function RowMenu({ task, canPlan, onStart, onPlan, onClose }: Props) {
   );
 
   return (
-    <Modal visible={!!task} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={[s.backdrop, wide && s.backdropWide]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessibilityLabel={voice.cancel} />
-        <View style={[s.sheet, wide ? s.card : { paddingBottom: Math.max(insets.bottom, 12) }]} accessibilityViewIsModal>
-          <Text variant="body" color={c.inkSoft} numberOfLines={2} style={s.title}>
-            {task?.title}
-          </Text>
-          {item('play', actions.start, onStart)}
-          {canPlan ? item('shrink', actions.planIt, onPlan) : null}
-          <Button variant="quiet" label={voice.cancel} onPress={onClose} />
-        </View>
-      </View>
-    </Modal>
+    <Sheet
+      onClose={onClose}
+      width={360}
+      header={
+        <Text variant="body" color={c.inkSoft} numberOfLines={2} style={s.title}>
+          {task.title}
+        </Text>
+      }>
+      {item('play', actions.start, onStart)}
+      {canPlan ? item('shrink', actions.planIt, onPlan) : null}
+      <Button variant="quiet" label={voice.cancel} onPress={onClose} />
+    </Sheet>
   );
 }
 
 const makeStyles = (t: Tokens) => ({
   t,
   ...StyleSheet.create({
-    backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: t.c.scrim },
-    backdropWide: { justifyContent: 'center', alignItems: 'center' },
-    sheet: {
-      gap: 4,
-      paddingTop: 14,
-      paddingHorizontal: 16,
-      backgroundColor: t.c.card,
-      borderTopLeftRadius: t.radii.card,
-      borderTopRightRadius: t.radii.card,
-    },
-    card: { width: 360, borderRadius: t.radii.card, paddingBottom: 8 },
     title: { paddingHorizontal: 4, paddingBottom: 6 },
     item: {
       flexDirection: 'row',

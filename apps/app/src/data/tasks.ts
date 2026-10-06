@@ -110,18 +110,37 @@ export async function insertTask(t: NewTask): Promise<Task> {
   return fromRow(data as unknown as Row);
 }
 
-export type TaskPatch = Partial<Pick<Task, 'status' | 'completedAt' | 'scheduledOn' | 'remindAt' | 'dueOn'>>;
+/** Every field the app edits, camelCase → column. */
+const PATCH_COLUMNS = {
+  title: 'title',
+  notes: 'notes',
+  status: 'status',
+  completedAt: 'completed_at',
+  scheduledOn: 'scheduled_on',
+  remindAt: 'remind_at',
+  dueOn: 'due_on',
+  dueAt: 'due_at',
+  rrule: 'rrule',
+  estimateMinutes: 'estimate_minutes',
+  sortOrder: 'sort_order',
+} as const;
+
+export type TaskPatch = Partial<Pick<Task, keyof typeof PATCH_COLUMNS>>;
 
 export async function updateTask(id: string, patch: TaskPatch): Promise<Task> {
   const row: Record<string, unknown> = {};
-  if ('status' in patch) row.status = patch.status;
-  if ('completedAt' in patch) row.completed_at = patch.completedAt;
-  if ('scheduledOn' in patch) row.scheduled_on = patch.scheduledOn;
-  if ('remindAt' in patch) row.remind_at = patch.remindAt;
-  if ('dueOn' in patch) row.due_on = patch.dueOn;
+  for (const [key, column] of Object.entries(PATCH_COLUMNS)) {
+    if (key in patch) row[column] = patch[key as keyof TaskPatch];
+  }
   const { data, error } = await supabase.from('tasks').update(row).eq('id', id).select(COLUMNS).single();
   if (error) throw error;
   return fromRow(data as unknown as Row);
+}
+
+/** Soft delete (or, with null, restore) tasks; sync needs the tombstones. */
+export async function setDeleted(ids: string[], deletedAt: string | null): Promise<void> {
+  const { error } = await supabase.from('tasks').update({ deleted_at: deletedAt }).in('id', ids);
+  if (error) throw error;
 }
 
 export type NewStep = Pick<Task, 'id' | 'userId' | 'parentId' | 'title' | 'notes' | 'estimateMinutes' | 'scheduledOn' | 'sortOrder'>;

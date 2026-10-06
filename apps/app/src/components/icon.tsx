@@ -16,6 +16,8 @@ const glyphs = {
     </>
   ),
   chevronRight: <Path d="M9 6l6 6-6 6" />,
+  chevronLeft: <Path d="M15 6l-6 6 6 6" />,
+  trash: <Path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />,
   calendar: (
     <>
       <Rect x={3} y={5} width={18} height={16} rx={2} />
