@@ -90,6 +90,7 @@ app/
   api/
     generate-plan/route.js          # AI task planning (clarify + generate steps)
     parse-syllabus/route.js         # Syllabus file → JSON assignments
+    unstick/route.js                # v2 Start Mode "I'm stuck" → one 2-minute action (free, 20/day via ai_requests)
     resolve-step-dates/route.js     # Relative timing → absolute calendar dates
     create-room/route.js            # Whereby room creation
     cron/nudge/route.js             # Daily nudge digest (one email per user) + missed-commitment nudges
@@ -110,6 +111,7 @@ components/
 lib/
   ai.js                             # callClaude(), model constants, resolveToday()
   prompts/plan.js                   # Adherence planner prompts + JSON schemas
+  prompts/unstick.js                # "I'm stuck" prompt + schema (gated by evals/unstick)
   prompts/dates.js                  # Step "when" → calendar date prompt
   dates.js                          # Local-date helpers (localDateString, localTimeZone)
   unsubscribe.js                    # Signed unsubscribe links + List-Unsubscribe headers
@@ -126,18 +128,21 @@ src/app/auth/callback.tsx         # Where magic links / OAuth land; exchanges th
 src/auth/                         # auth-provider (session), sign-in actions, apple(.web).ts
 src/lib/supabase.ts               # Anon-key client (PKCE, AsyncStorage, foreground-only token refresh)
 src/app/plan/[id].tsx             # Plan it: clarifying questions → plan preview → saves steps as child tasks
-src/data/                         # user-settings, tasks (+ store), plans, signed-in-providers
+src/app/start/[id].tsx            # Start Mode (full-screen): timer, 5-min contract, I'm stuck, breather, Done → stamp
+src/hooks/use-start-session.ts    # Start Mode session: clock, start_sessions rows, resume after close, keep-awake
+src/data/                         # user-settings, tasks (+ store), plans, starts, stamps, unstick, active-start, signed-in-providers
 src/lib/api.ts                    # apiPost() to apps/site with the session token
 src/app/(tabs)/_layout.tsx        # Headless expo-router/ui tabs + custom NavBar
-src/app/(tabs)/index.tsx          # Today (A2 design, mock data for now)
-src/app/(tabs)/upcoming|territories|passport.tsx   # Placeholders
-src/components/                   # NavBar, NextStepCard, TaskRow, Screen, Text, Icon, Logo, SecurityLines
+src/app/(tabs)/index.tsx          # Today: next step (or "Up next"), agenda, Customs, row menu (press and hold / right-click)
+src/app/(tabs)/passport.tsx       # Passport: citizen no., stamps, rank from real starts
+src/app/(tabs)/upcoming|territories.tsx   # Placeholders
+src/components/                   # NavBar, NextStepCard, TaskRow, RowMenu, Stamp, start/*, Screen, Text, Icon, Logo
 src/theme/tokens.ts               # useTokens() / useStyles() over @pn/core palettes
-src/data/mock.ts                  # Mock profile + agenda until Supabase sync lands
 ```
+Device storage (AsyncStorage, per device): `pn.hint.<name>` (dismissed tips), `pn.stamped.first-start.<userId>`, `pn.start.active.<userId>` (Start Mode session in progress, for resume). Web keyboard shortcuts go through `useShortcuts` (`use-shortcuts.web.ts`; no-op on native).
 
 ### packages/core
-`src/tokens.ts` (A2 palettes for light/"night passport", fonts, type scale, spacing, radii, motion), `src/nation.ts` (names, plain action labels, ranks, nudge tones, voice strings, citizen number + passport code lines), `src/dates.ts` (local-date helpers, day rollover, RRULE labels), `src/types.ts` (draft v2 data model).
+`src/tokens.ts` (A2 palettes for light/"night passport", fonts, type scale, spacing, radii, motion), `src/nation.ts` (names, plain action labels, ranks, nudge tones, voice strings, citizen number + passport code lines), `src/dates.ts` (local-date helpers, day rollover, RRULE labels), `src/types.ts` (draft v2 data model), `src/agenda.ts` (Today: agenda, next step, up next, step context), `src/quick-add.ts`, `src/planning.ts`, `src/start-mode.ts` (wall-clock timer math, default minutes by style, stuck reasons, stamp kinds). Tests: `npm run core:test`.
 
 ## Database (Supabase)
 
@@ -183,6 +188,8 @@ All tables have RLS policies filtering by `user_id`.
 Additive migration with a cutover-only backfill and a tested rollback; see `supabase/v2/README.md` and run `npm test` there (real Postgres via PGlite; also runs against the real production structure when the local dump exists).
 - `user_settings` (PK `user_id`): `citizen_number` (DB-assigned in signup order, immutable), `timezone`, `day_rollover_hour`, `preferences` JSONB (Citizenship Application answers), `onboarding_completed_at`. **Owner-only; private settings never go on `profiles`, which is publicly readable.**
 - `lists` (Territories; `list_id` NULL = Customs), `notes`, `stamps`, `start_sessions`, `push_tokens`.
+- `ai_requests`: one row per metered non-plan AI call (`kind` = `'unstick'` so far); `/api/unstick` logs first, then counts the last 24h for its daily cap. Insert and read only.
+- `stamps`: `'first-start'` is unique per user (`stamps_once_idx`); `'task-done'` repeats (one per Done in Start Mode).
 - `plan_generations`: one row per AI plan built; the free tier (3/month) counts these in `/api/generate-plan` (insert and read only, so the count can't be reset). **v2's route needs this table: apply `01_schema.sql` to production before the v2 site deploys.**
 - `tasks` gains `list_id`, `parent_id` (steps/subtasks are child rows, one level deep), `notes`, `due_on`, `due_at`, `remind_at`, `rrule`, `estimate_minutes`, `scheduled_on`, `sort_order` (float), `external_id`, `deleted_at`, and widens the existing `source` to `self | assignment | ai | syllabus | lms | reminders` (backfilled steps are `ai`; parents keep theirs). v1 columns (`steps`, `step_dates`, `recurrence`, `due_date`) stay until a later contract migration.
 - Naming: `*_on` = local DATE, `*_at` = TIMESTAMPTZ; soft deletes via `deleted_at` (sync needs tombstones).
@@ -222,8 +229,8 @@ Additive migration with a cutover-only backfill and a tested rollback; see `supa
 
 ### API Communication
 - Client uses `fetch()` to `/api/*` endpoints
-- Server calls Anthropic through `callClaude()` in `lib/ai.js` (raw `fetch()`, structured JSON output). Models: `MODELS.plan` = `claude-sonnet-5-5` (plans, clarifying questions, syllabus), `MODELS.fast` = `claude-haiku-4-5` (step dates, short copy). Never build plans on Haiku.
-- Plan prompts live in `lib/prompts/plan.js`; any prompt/model change must pass `evals/plan-quality` (see its README) before shipping
+- Server calls Anthropic through `callClaude()` in `lib/ai.js` (raw `fetch()`, structured JSON output). Models: `MODELS.plan` = `claude-sonnet-5-5` (plans, clarifying questions, syllabus; "I'm stuck" at low effort), `MODELS.fast` = `claude-haiku-4-5` (step dates, short copy). Never build plans on Haiku.
+- Plan prompts live in `lib/prompts/plan.js`; any prompt/model change must pass `evals/plan-quality` (see its README) before shipping. The "I'm stuck" prompt (`lib/prompts/unstick.js`) is gated the same way by `evals/unstick`
 - Clients send `today` (local YYYY-MM-DD, from `lib/dates.js`) and `timeZone` so the AI resolves relative dates correctly; never use `toISOString()` for local calendar dates
 - Cron routes secured with `Authorization: Bearer <CRON_SECRET>`
 - Service role client created inline in cron routes to bypass RLS

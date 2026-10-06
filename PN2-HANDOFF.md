@@ -1,4 +1,4 @@
-# ProcrastiNation 2.0: Session Handoff (as of 2026-10-04)
+# ProcrastiNation 2.0: Session Handoff (as of 2026-10-06)
 
 Paste this into a new Claude Code session together with the approved plan ("ProcrastiNation 2.0: Re-envisioning & Rebuild Plan", saved at `~/.claude/plans/ProcrastiNation2.md`). Project memory lives in `~/.claude/projects/-Users-alexanderson-Desktop-Procrasti-nation/memory/` (the folder changed when the repo moved) and holds four entries: `feedback_git_workflow`, `product-direction-v2`, `plan-quality-evals` and `design-direction-a2`.
 
@@ -9,18 +9,20 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 - **Repo:** `~/Desktop/Procrasti-nation` (moved 2026-10-01 to drop the space and curly apostrophe from the path).
 - **Production (`main`, `94763ed`)** runs the v1 site with all Phase 0 fixes plus the Next 14.2.35 security patch, live on procrasti-nation.work.
 - **`v2`** is pushed to origin and up to date. Vercel shows failed preview builds for it until the Root Directory flip at merge (expected).
-- **Staging Supabase:** project `mbuakrohovzjegonrplp`. It has production's structure only (no production data) plus v2's `01_schema.sql`. Alex is signed in there as **citizen #000001**, with a few test tasks and one test plan ("Write 5-page history paper on WWI", 10 steps).
+- **Staging Supabase:** project `mbuakrohovzjegonrplp`. It has production's structure only (no production data) plus v2's `01_schema.sql` (including `ai_requests`). Alex is signed in there as **citizen #000001**, with a few test tasks and one test plan ("Write 5-page history paper on WWI", 10 steps; step 1 is done and stamped).
 
 **What works on v2 today** (verified on web in the browser pane, signed in against staging):
 - **Sign-in:** email magic link (PKCE) with a sign-in gate. Apple and Google are built but hidden behind `EXPO_PUBLIC_AUTH_PROVIDERS=email` until the providers are configured.
 - **Quick add:** natural-language capture ("walk Biscuit every day 6pm", "essay due fri", "call mom tomorrow at 5") with live chips; undated captures go to Customs.
 - **Today:** real data. Timed items first; missed items roll forward without overdue styling; finished-today items show STAMPED; Customs expands inline; repeating tasks move to their next date ("Stretch · back tomorrow").
 - **Plan it:** the eval-gated Adherence Planner (prompts and models unchanged), with optional clarifying questions, a preview showing per-step estimates and dates, and steps saved as child tasks. The next step appears as the A2 "Your next small step" ticket on Today. Entry points: a pill on big-sounding tasks, and a button in quick add.
-- **Passport:** A2 ID page with citizen number, bilingual fields, passport code lines, an empty stamps page and the rank bar. Sign out.
+- **Start Mode:** full-screen focus view from the next-step card or a row's menu. Wall-clock timer, the "just N minutes" contract (keep going / stop here), Pause, Done → ink stamp + haptic → "Start the next step". **I'm stuck:** one-tap reason → `/api/unstick` (Sonnet 5.5, low effort, eval-gated) → a two-minute first action, or a box-breathing breather. Sessions resume after the app is closed or the page reloads. Web: Space pauses, Esc leaves.
+- **Today extras:** "Up next" card when no plan step is due; press and hold a row (right-click on web) for Start / Plan it, with a one-time tip; step counts include steps finished on earlier days.
+- **Passport:** A2 ID page with citizen number, bilingual fields, passport code lines, real stamps ("Officially started", "Small steps N") and a rank bar counting real starts. Sign out.
 - **Navigation:** bottom tab bar on phones, sidebar at ≥900px. Day and night ("night passport") themes follow the system.
 - **iOS:** the pre-sign-in screens were checked on the iOS Simulator through Expo Go. The signed-in screens haven't been checked on iOS yet.
 
-**Not built yet:** Start Mode (the Start button does nothing yet), the Upcoming and Territories screens, task detail/editing, editing or reordering plan steps, notes, search, notifications, onboarding (Citizenship Application) and Settings, account deletion and export, and offline sync.
+**Not built yet:** Live Activity / lock-screen timer and the timer-end notification (need a development build and notifications), Town Hall, the Upcoming and Territories screens, task detail/editing, editing or reordering plan steps, notes, search, notifications, onboarding (Citizenship Application) and Settings, account deletion and export, and offline sync.
 
 **Commits on `v2`** (oldest first; branched from `main` at `bc120c2`):
 
@@ -38,6 +40,9 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 | `f2dc189` | Copy fix for the repeating-task notice |
 | `53fa373` | No wasted citizen numbers; capture keeps focus; dev server watch mode |
 | `20a7550` | Plan it on the v2 task model; `plan_generations`; CORS middleware |
+| `434bcf2` | This handoff |
+| `d1124c0` | Start Mode, I'm stuck (`/api/unstick`, `evals/unstick`), stamps, ranks, row menu, `ai_requests` |
+| `de588a2` | Start Mode: resume after close, full step counts, race-safe stuck cap, `useStartSession` |
 
 **Run it locally:**
 1. Start both preview servers from `.claude/launch.json`: `site` (port 3000; `apps/site/.env.development.local` points it at staging) and `app-web` (port 8081; `apps/app/.env.local` points at staging).
@@ -45,8 +50,8 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 3. For iOS: from `apps/app`, run `npx expo start --port 8082 < /dev/null`, then `xcrun simctl openurl booted exp://127.0.0.1:8082`.
 
 **Checks:**
-- `npm run core:test`: 20 tests.
-- `npm run db:test`: 15 migration tests, on the stand-in schema and, when the local dump exists, the real production structure.
+- `npm run core:test`: 28 tests.
+- `npm run db:test`: 19 migration tests, on the stand-in schema and, when the local dump exists, the real production structure.
 - `npm run app:check`: typecheck + lint.
 - `npm --prefix apps/site run build`.
 
@@ -59,7 +64,7 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 3. **PowerSync account** (free tier) for the offline-sync spike.
 4. **Confirm one real plan on the live site** (procrasti-nation.work). Still unconfirmed since Phase 0; plans have only been verified locally against staging.
 5. **Before launch:** Vercel Pro (Hobby is non-commercial only) and a **privacy policy page** (required by the App Store; the site has none).
-6. **At v2 merge (in this order):** apply `supabase/v2/01_schema.sql` to production **before** the v2 site deploys (its plan route needs `plan_generations`), then flip Vercel's Root Directory to `apps/site` at the moment `v2` merges. `02_backfill.sql` runs only at cutover, when the v1 pages retire.
+6. **At v2 merge (in this order):** apply `supabase/v2/01_schema.sql` to production **before** the v2 site deploys (its plan route needs `plan_generations`, and `/api/unstick` needs `ai_requests`), then flip Vercel's Root Directory to `apps/site` at the moment `v2` merges. `02_backfill.sql` runs only at cutover, when the v1 pages retire.
 
 Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project created; staging redirect URLs added.
 
@@ -93,6 +98,9 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
 - **`tasks.source` predates v2.** The schools feature uses `'self' | 'assignment'`, and a teacher RLS policy reads it. v2 widens it (`self, assignment, ai, syllabus, lms, reminders`) and never drops it; plan steps are `'ai'`, and parents keep their own source.
 - **Free tier counts `plan_generations`.** Counting tasks broke once quick add arrived. The table is insert-and-read only, so a count can't be reset. Clarifying-question checks stay free.
 - **Ownership triggers.** `list_id`, `task_id` and `parent_id` can't point at another user's rows; a foreign key alone would accept them. Nesting is one level deep.
+- **Start Mode records.** Opening Start Mode is a Start: a `start_sessions` row is upserted whole on every change (writes for one session run in order, so a slow begin can't wipe the end). Outcomes: `done`, `stopped`, `kept-going` (left after the timer), `stuck` (restarted on a tiny action, which is a new session and a new start). The first Start ever earns `first-start` ("Officially started", unique per user); each Done earns `task-done`. Ranks count all starts.
+- **"I'm stuck" is free** (Start Mode is the moat, not Pro) with a 20/day cap counted in `ai_requests` (insert and read only; the route logs before counting so parallel bursts can't slip under). Sonnet 5.5 at low effort beat Haiku 12/16 vs 8/16 on `evals/unstick` at ~2s, so Haiku isn't used.
+- **Town Hall footer left out** of Start Mode until Town Hall exists: no made-up "12 citizens working" count.
 - **Online-first data layer for now.** supabase-js with an optimistic store that rolls back on failure. It's written to be swapped for PowerSync if the spike succeeds.
 - **Quick-add parser in `@pn/core`** (no dependencies, not chrono-node). The grammar is deliberately narrow so titles like "Call Tom", "Study for May exam" and "Problem set 2a" survive; times without am/pm use a heuristic; repeats produce RRULEs. Recurrence math lives in core too.
 - **Core tests run with `node --test`** directly on TypeScript (Node 24), so core imports use explicit `.ts` extensions (allowed via `allowImportingTsExtensions`).
@@ -110,7 +118,7 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
   - Done: monorepo restructure; `@pn/core`; Expo app scaffold; auth; data-model migration plus staging; AI service layer (done in Phase 0).
   - Remaining: **PowerSync spike** (needs Alex's account, and a development build since Expo Go can't load native modules); the `integrations` table (Phase 5).
 - **Phase 3 (core app MVP), in progress:**
-  - Done: quick add; Today; Customs (inline); Passport v1 (ID page); Plan it.
+  - Done: quick add; Today; Customs (inline); Passport v1 (ID page, real stamps and rank); Plan it.
   - Remaining:
     - Upcoming and Territories
     - task detail and editing; plan step edit, reorder and delete
@@ -120,7 +128,9 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
     - account deletion and data export
     - a smarter "does this need a plan?" check (currently a keyword heuristic)
   - Then the TestFlight gate with 10 students.
-- **Suggested next:** **Start Mode** (Phase 4's centerpiece): a full-screen step view with a 5-minute contract, "I'm stuck" (AI re-break), a breather, and Done → stamp. Every Start writes a `start_sessions` row, which powers ranks and the North Star metric.
+- **Phase 4:** Start Mode done (timer, contract, I'm stuck, breather, Done → stamp, resume). Remaining: Live Activity (Swift add-on, needs Apple Developer + a development build), Declarations, Morning Briefing / roll-forward, server push, State of the Union, Holidays.
+- **Not yet checked:** Start Mode on the iOS Simulator while signed in (needs a magic link from Alex's inbox opened with `xcrun simctl openurl booted "<link>"`).
+- **Suggested next:** task detail and editing (it gives every task a visible Start button and unblocks plan step edit/reorder), then Upcoming and Territories.
 
 ---
 
@@ -201,6 +211,7 @@ The production dump showed tables the plan never mentioned: `organizations`, `or
 ## 10. Practical notes and gotchas
 
 - **Node** comes from nvm: `export PATH="$HOME/.nvm/versions/node/$(ls ~/.nvm/versions/node | tail -1)/bin:$PATH"` (Node 24).
+- **Stray dev servers:** previous sessions can leave Expo running on 8081/8082 (watch mode, so they serve current code). The browser pane can use them; `preview_start` refuses a port another chat holds.
 - **Expo dev server:** don't run it with `CI=1`; that disables file watching, and it serves a stale build (this showed the old "Maya" screen once). After an env change, restart the server, since `EXPO_PUBLIC_*` values are compiled in. In Expo Go, re-opening the same URL resumes the cached bundle; run `xcrun simctl terminate booted host.exp.Exponent` first.
 - **Expo Go lacks the Apple Authentication native module** on SDK 57, despite what the docs say. Apple sign-in (and PowerSync) need a development build.
 - **Staging DB work:** run SQL with `/opt/homebrew/opt/libpq/bin/psql "$STAGING_DB_URL"` after `set -a; . supabase/v2/.env.staging`. Rehearse writes inside `BEGIN … ROLLBACK`, but remember that **sequence numbers aren't rolled back**: never test `user_settings` inserts that way, or citizen numbers get burned.

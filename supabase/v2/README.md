@@ -4,7 +4,7 @@ Moves the shared Supabase database to the ProcrastiNation 2.0 data model without
 
 | File | What it does | When to run |
 |---|---|---|
-| `01_schema.sql` | Adds `user_settings`, `lists`, `notes`, `stamps`, `start_sessions`, `push_tokens`, `plan_generations` and the v2 columns on `tasks`. **Additive only**: v1 ignores all of it. Idempotent. | Staging now; production any time before cutover |
+| `01_schema.sql` | Adds `user_settings`, `lists`, `notes`, `stamps`, `start_sessions`, `push_tokens`, `plan_generations`, `ai_requests` and the v2 columns on `tasks`. **Additive only**: v1 ignores all of it. Idempotent. | Staging now; production any time before cutover |
 | `02_backfill.sql` | Turns each v1 task's `steps` JSONB into child rows and fills `due_on`/`rrule`/`source`. Idempotent; never modifies v1 columns. | **Only at cutover**, when v1 is retired (v1 would show each step as a separate task) |
 | `99_rollback.sql` | Removes everything above and restores the v1 schema exactly. Loses v2-only data (subtasks, lists, notes, stamps, settings). | If cutover has to be undone |
 
