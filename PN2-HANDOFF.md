@@ -20,7 +20,7 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 - **Today extras:** "Up next" card when no plan step is due; press and hold a row (right-click on web) for Start / Plan it, with a one-time tip; step counts include steps finished on earlier days.
 - **Passport:** A2 ID page with citizen number, bilingual fields, passport code lines, real stamps ("Officially started", "Small steps N") and a rank bar counting real starts. Sign out.
 - **Navigation:** bottom tab bar on phones, sidebar at ≥900px. Day and night ("night passport") themes follow the system.
-- **iOS:** the pre-sign-in screens were checked on the iOS Simulator through Expo Go. The signed-in screens haven't been checked on iOS yet.
+- **iOS:** checked on the iOS Simulator through Expo Go, signed in (Today, Start Mode, Passport, row menu).
 
 **Not built yet:** Live Activity / lock-screen timer and the timer-end notification (need a development build and notifications), Town Hall, the Upcoming and Territories screens, task detail/editing, editing or reordering plan steps, notes, search, notifications, onboarding (Citizenship Application) and Settings, account deletion and export, and offline sync.
 
@@ -47,6 +47,7 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 **Run it locally:**
 1. Start both preview servers from `.claude/launch.json`: `site` (port 3000; `apps/site/.env.development.local` points it at staging) and `app-web` (port 8081; `apps/app/.env.local` points at staging).
 2. Open `http://localhost:8081`. To sign in inside Claude's browser pane, Alex requests a link there and pastes it from his email into the pane's address bar (a PKCE link only works in the browser that requested it).
+   On the iOS Simulator: request the link from the simulator, then open Alex's link with `xcrun simctl openurl booted "<link>"` and tap Open. Only the **newest** link works (each request cancels the previous one), and the link must come from the device that asked for it.
 3. For iOS: from `apps/app`, run `npx expo start --port 8082 < /dev/null`, then `xcrun simctl openurl booted exp://127.0.0.1:8082`.
 
 **Checks:**
@@ -129,7 +130,7 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
     - a smarter "does this need a plan?" check (currently a keyword heuristic)
   - Then the TestFlight gate with 10 students.
 - **Phase 4:** Start Mode done (timer, contract, I'm stuck, breather, Done → stamp, resume). Remaining: Live Activity (Swift add-on, needs Apple Developer + a development build), Declarations, Morning Briefing / roll-forward, server push, State of the Union, Holidays.
-- **Not yet checked:** Start Mode on the iOS Simulator while signed in (needs a magic link from Alex's inbox opened with `xcrun simctl openurl booted "<link>"`).
+- **Checked on iOS (2026-10-06, Expo Go, signed in):** Today, Start Mode (timer, resume after the app was killed, I'm stuck → `/api/unstick`, two-minute restart, Done → stamp, next step), Passport stamps and rank, and the press-and-hold row menu.
 - **Suggested next:** task detail and editing (it gives every task a visible Start button and unblocks plan step edit/reorder), then Upcoming and Territories.
 
 ---

@@ -17,15 +17,18 @@ export default function AuthCallbackScreen() {
   const t = useTokens();
   const params = useLocalSearchParams();
   const { session } = useAuth();
-  const [error, setError] = useState<string | null>(null);
-  // A code can be exchanged only once; guard against effects running twice.
-  const started = useRef(false);
+  // Which link this is: a newer one can arrive while this screen still shows an older failure.
+  const attempt = String(params.code ?? params.error_description ?? params.error ?? '');
+  const [failure, setFailure] = useState<{ attempt: string; message: string } | null>(null);
+  const error = failure?.attempt === attempt ? failure.message : null;
+  // A code can be exchanged only once: handle each link once, even if effects run twice.
+  const handled = useRef<string | null>(null);
 
   useEffect(() => {
-    if (started.current) return;
-    started.current = true;
-    finishSignIn(params).catch((e) => setError(friendlyAuthError(e)));
-  }, [params]);
+    if (handled.current === attempt) return;
+    handled.current = attempt;
+    finishSignIn(params).catch((e) => setFailure({ attempt, message: friendlyAuthError(e) }));
+  }, [attempt, params]);
 
   if (session) return <Redirect href="/" />;
 

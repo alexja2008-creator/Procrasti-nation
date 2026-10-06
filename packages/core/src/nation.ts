@@ -172,7 +172,8 @@ export const voice = {
   },
   start: {
     eyebrow: 'Start mode',
-    step: (parent: string, index: number, count: number) => `${parent} · step ${index} of ${count}`,
+    /** Non-breaking spaces keep "step 2 of 10" on one line when the plan's title wraps. */
+    step: (parent: string, index: number, count: number) => `${parent} · step\u00A0${index}\u00A0of\u00A0${count}`,
     of: (clock: string) => `of ${clock}`,
     andCounting: 'and counting',
     paused: 'paused',
