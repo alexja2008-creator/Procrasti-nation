@@ -1,5 +1,7 @@
 # Plan: Capture-first notes (ProcrastiNation 2.0, `v2` branch)
 
+**Built 2026-10-06** in `87ae8cf`, `d7c40b5` and `33a2386`; checked on web (phone and laptop widths, day and night) and the iOS Simulator.
+
 Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
 ## What it is
@@ -67,9 +69,9 @@ Technical choices (mine; say if you disagree):
 
 ## Done when
 
-- [ ] Create a note from + or a Notes / territory page; it autosaves; it's listed newest first with its first line as the title.
-- [ ] ☐ turns the current line into a checkbox task (a typed day becomes the task's date) and back; Return / Backspace behave as above.
-- [ ] Ticking in the note completes the task; completing it on Today ticks it in the note; finished items stay ticked after a reload.
-- [ ] Checklist tasks never land in Customs; dated ones show on Today / Upcoming with the note's title.
-- [ ] Deleting a note deletes its tasks; Undo restores both. Refiling a note moves its tasks.
-- [ ] Same on iOS and web; light and night; `npm run core:test`, `npm run db:test`, `npm run app:check` pass.
+- [x] Create a note from + or a Notes / territory page; it autosaves; it's listed newest first with its first line as the title.
+- [x] ☐ turns the current line into a checkbox task (a typed day becomes the task's date) and back; Return / Backspace behave as above.
+- [x] Ticking in the note completes the task; completing it on Today ticks it in the note; finished items stay ticked after a reload.
+- [x] Checklist tasks never land in Customs; dated ones show on Today / Upcoming with the note's title.
+- [x] Deleting a note deletes its tasks; Undo restores both. Refiling a note moves its tasks.
+- [x] Same on iOS and web; light and night; `npm run core:test`, `npm run db:test`, `npm run app:check` pass.
