@@ -3,8 +3,8 @@
 // any "overdue" styling: kind, never punishing.
 
 import { logicalDateString } from './dates.ts';
-import { bySortOrder, nullsLast, stepsByParent } from './order.ts';
-import type { LocalDate, Task } from './types.ts';
+import { bySortOrder, byTimeOfDay, nullsLast, stepsByParent } from './order.ts';
+import type { ISODateTime, LocalDate, Task } from './types.ts';
 
 export interface AgendaEntry {
   task: Task;
@@ -29,12 +29,19 @@ export interface TodayView {
   upNext: AgendaEntry | null;
 }
 
+/**
+ * A task's time on the day it's listed: its reminder on its scheduled day, or
+ * its due time when it's only due. A task scheduled for one day and due at a
+ * time on another has no time on its scheduled day.
+ */
+export const timeOnItsDay = (t: Task): ISODateTime | null => (t.scheduledOn ? t.remindAt : t.dueAt);
+
 function agendaOrder(a: AgendaEntry, b: AgendaEntry): number {
   if (a.done !== b.done) return a.done ? 1 : -1;
   if (a.done) return nullsLast(a.task.completedAt, b.task.completedAt);
-  // Timed items first, by time; then by deadline; then as arranged.
+  // Timed items first, by time of day (missed ones keep their old date); then by deadline; then as arranged.
   return (
-    nullsLast(a.task.remindAt, b.task.remindAt) ||
+    byTimeOfDay(timeOnItsDay(a.task), timeOnItsDay(b.task)) ||
     nullsLast(a.task.dueOn, b.task.dueOn) ||
     bySortOrder(a.task, b.task)
   );

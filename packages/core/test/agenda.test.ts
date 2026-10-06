@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { buildToday, stepContext } from '../src/agenda.ts';
+import { buildToday, stepContext, timeOnItsDay } from '../src/agenda.ts';
 import type { Task } from '../src/types.ts';
 
 const TODAY = '2026-10-03';
@@ -96,4 +96,28 @@ test('steps finished on earlier days still count toward "step i of n"', () => {
   );
   assert.deepEqual([view.nextStep?.task.id, view.nextStep?.stepIndex, view.nextStep?.stepCount], ['s2', 2, 2]);
   assert.deepEqual(view.agenda, [], 'an earlier finish is not on today’s agenda');
+});
+
+test('timed items sort by time of day, even when missed on an earlier day', () => {
+  const view = buildToday(
+    [
+      task('walk-missed-6pm', { scheduledOn: '2026-10-01', remindAt: at(1, 18), rrule: 'FREQ=DAILY' }),
+      task('stamps-5pm', { scheduledOn: TODAY, remindAt: at(3, 17) }),
+      task('essay-due-9am', { dueOn: TODAY, dueAt: at(3, 9) }),
+      task('untimed', { scheduledOn: TODAY }),
+    ],
+    TODAY,
+  );
+  assert.equal(view.upNext?.task.id, 'untimed');
+  assert.deepEqual(view.agenda.map((e) => e.task.id), ['essay-due-9am', 'stamps-5pm', 'walk-missed-6pm']);
+});
+
+test('a task’s time on its day: the reminder when scheduled, the due time when only due', () => {
+  assert.equal(timeOnItsDay(task('a', { scheduledOn: TODAY, remindAt: at(3, 17) })), at(3, 17));
+  assert.equal(timeOnItsDay(task('b', { dueOn: TODAY, dueAt: at(3, 9) })), at(3, 9));
+  assert.equal(
+    timeOnItsDay(task('c', { scheduledOn: TODAY, dueOn: '2026-10-09', dueAt: at(9, 17) })),
+    null,
+    'worked on today, due Friday at 5: no time today',
+  );
 });

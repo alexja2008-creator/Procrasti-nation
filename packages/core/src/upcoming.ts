@@ -4,7 +4,8 @@
 // as another entry kind, merged into the same days.
 
 import { addDays, daysBetween, formatShortDate } from './dates.ts';
-import { bySortOrder, nullsLast, stepsByParent } from './order.ts';
+import { timeOnItsDay } from './agenda.ts';
+import { bySortOrder, byTimeOfDay, stepsByParent } from './order.ts';
 import type { ISODateTime, LocalDate, Task } from './types.ts';
 
 export interface UpcomingEntry {
@@ -43,7 +44,7 @@ function entryOrder(a: UpcomingEntry, b: UpcomingEntry): number {
   return (
     a.date.localeCompare(b.date) ||
     rank(a) - rank(b) ||
-    nullsLast(a.at, b.at) ||
+    byTimeOfDay(a.at, b.at) ||
     bySortOrder(a.task, b.task)
   );
 }
@@ -62,7 +63,7 @@ export function buildUpcoming(tasks: Task[], today: LocalDate, { weeks = 8 } = {
 
     const day = t.scheduledOn ?? t.dueOn;
     if (!planned && day && day > today) {
-      const entry: UpcomingEntry = { task: t, kind: 'task', date: day, at: t.scheduledOn ? t.remindAt : t.dueAt };
+      const entry: UpcomingEntry = { task: t, kind: 'task', date: day, at: timeOnItsDay(t) };
       if (t.parentId) {
         const siblings = steps.get(t.parentId) ?? [t];
         entry.parentTitle = byId.get(t.parentId)?.title;

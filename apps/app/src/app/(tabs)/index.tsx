@@ -6,6 +6,7 @@ import {
   parseLocalDate,
   relativeDayPhrase,
   suggestsPlan,
+  timeOnItsDay,
   voice,
   type AgendaEntry,
   type Task,
@@ -38,7 +39,7 @@ function rowFor(entry: AgendaEntry, today: string, planned: Set<string>): TaskRo
   if (entry.parentTitle) meta.push(`${entry.parentTitle} · step ${entry.stepIndex} of ${entry.stepCount}`);
   else if (t.dueOn) meta.push(dueLabel(t.dueOn, today));
   if (entry.done && t.completedAt) meta.push(formatTime(new Date(t.completedAt)));
-  const clock = t.remindAt ?? t.dueAt;
+  const clock = timeOnItsDay(t);
   return {
     id: t.id,
     title: t.title,
