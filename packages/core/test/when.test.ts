@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { atLocalTime, clockOf } from '../src/dates.ts';
-import { dayChips, duePatch, monthGrid, repeatChips, repeatPatch, shiftMonth, timeSlots, whenPatch } from '../src/when.ts';
+import { dayChips, duePatch, monthGrid, repeatChips, repeatPatch, shiftMonth, shiftWeek, timeSlots, weekStrip, whenPatch } from '../src/when.ts';
 
 const chipDates = (today: string) => Object.fromEntries(dayChips(today).map((c) => [c.id, c.date]));
 
@@ -46,4 +46,14 @@ test('a repeat moves the task to its first day in the series, keeping the time',
   assert.equal(repeatPatch(unscheduled, 'FREQ=DAILY', '2026-10-06').scheduledOn, '2026-10-06', 'starts today');
   assert.deepEqual(repeatPatch(saturday6pm, null, '2026-10-06'), { rrule: null });
   assert.deepEqual(repeatChips('2026-10-06').map((c) => c.label), ['Every day', 'Every weekday', 'Every week on Tue', 'Every month']);
+});
+
+test('week strip: Monday first, containing the day', () => {
+  const week = ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11'];
+  assert.deepEqual(weekStrip('2026-10-07'), week, 'Wednesday');
+  assert.deepEqual(weekStrip('2026-10-05'), week, 'Monday');
+  assert.deepEqual(weekStrip('2026-10-11'), week, 'Sunday belongs to the week before');
+  assert.deepEqual(weekStrip('2026-12-30').at(-1), '2027-01-03', 'across the new year');
+  assert.equal(shiftWeek('2026-10-07', 1), '2026-10-14');
+  assert.equal(shiftWeek('2026-10-07', -2), '2026-09-23');
 });

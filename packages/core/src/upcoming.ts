@@ -99,3 +99,20 @@ export function buildUpcoming(tasks: Task[], today: LocalDate, { weeks = 8 } = {
 export function upcomingDayLabel(date: LocalDate, today: LocalDate): string {
   return date === addDays(today, 1) ? `Tomorrow · ${formatShortDate(date)}` : formatShortDate(date);
 }
+
+/** How many entries fall on each day, Later included: the calendar's dots. */
+export function upcomingCounts(view: UpcomingView): Record<LocalDate, number> {
+  const counts: Record<LocalDate, number> = {};
+  for (const e of [...view.days.flatMap((d) => d.entries), ...view.later]) counts[e.date] = (counts[e.date] ?? 0) + 1;
+  return counts;
+}
+
+/**
+ * The section to show for a day picked on the calendar: that day, else the
+ * next one listed, else Later. Today and earlier land on the first day.
+ */
+export function upcomingSectionFor(view: UpcomingView, date: LocalDate): LocalDate | 'later' {
+  const day = view.days.find((d) => d.date >= date);
+  if (day) return day.date;
+  return view.later.length ? 'later' : view.days.at(-1)!.date;
+}

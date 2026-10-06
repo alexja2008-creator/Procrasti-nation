@@ -77,6 +77,14 @@ export function longDateLabel(ymd: LocalDate): string {
   return `${WEEKDAY_NAMES[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`;
 }
 
+/** The Monday-first week containing `day`. */
+export function weekStrip(day: LocalDate): LocalDate[] {
+  const monday = addDays(day, -((parseLocalDate(day).getDay() + 6) % 7));
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+}
+
+export const shiftWeek = (day: LocalDate, delta: number) => addDays(day, 7 * delta);
+
 export function shiftMonth(year: number, month: number, delta: number): { year: number; month: number } {
   const total = year * 12 + month + delta;
   return { year: Math.floor(total / 12), month: ((total % 12) + 12) % 12 };

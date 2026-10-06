@@ -178,6 +178,11 @@ export const voice = {
     /** Finished items leave Upcoming, so the note offers Undo. */
     stamped: (title: string) => `Stamped “${title}”.`,
     loadFailed: 'Couldn’t load what’s coming up. Check your connection.',
+    /** The calendar toggle on phones: the week strip expands to the month. */
+    month: 'Month',
+    week: 'Week',
+    previousWeek: 'Previous week',
+    nextWeek: 'Next week',
   },
   start: {
     eyebrow: 'Start mode',

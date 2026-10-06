@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import type { Task } from '../src/types.ts';
-import { buildUpcoming, upcomingDayLabel, type UpcomingEntry } from '../src/upcoming.ts';
+import { buildUpcoming, upcomingCounts, upcomingDayLabel, upcomingSectionFor, type UpcomingEntry } from '../src/upcoming.ts';
 
 const TODAY = '2026-10-06'; // a Tuesday
 const at = (day: number, hour: number, month = 10) => new Date(2026, month - 1, day, hour, 0).toISOString();
@@ -140,4 +140,22 @@ test('day labels spell out tomorrow', () => {
   assert.equal(upcomingDayLabel('2026-10-07', TODAY), 'Tomorrow · Wed 7 Oct');
   assert.equal(upcomingDayLabel('2026-10-08', TODAY), 'Thu 8 Oct');
   assert.equal(upcomingDayLabel('2026-11-02', TODAY), 'Mon 2 Nov');
+});
+
+test('calendar: dots count every entry; a picked day finds its section', () => {
+  const view = buildUpcoming(
+    [
+      task('a', { scheduledOn: '2026-10-08' }),
+      task('b', { scheduledOn: '2026-10-08', dueOn: '2026-10-09' }),
+      task('c', { scheduledOn: '2026-10-20' }),
+      task('d', { scheduledOn: '2027-01-15' }),
+    ],
+    TODAY,
+  );
+  assert.deepEqual(upcomingCounts(view), { '2026-10-08': 2, '2026-10-09': 1, '2026-10-20': 1, '2027-01-15': 1 });
+  assert.equal(upcomingSectionFor(view, '2026-10-09'), '2026-10-09');
+  assert.equal(upcomingSectionFor(view, '2026-10-15'), '2026-10-20', 'an empty later day finds the next one listed');
+  assert.equal(upcomingSectionFor(view, '2026-11-30'), 'later');
+  assert.equal(upcomingSectionFor(view, TODAY), '2026-10-07', 'today lands on tomorrow');
+  assert.equal(upcomingSectionFor(buildUpcoming([], TODAY), '2026-11-30'), '2026-10-13', 'nothing later: the last day');
 });

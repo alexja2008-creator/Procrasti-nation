@@ -1,28 +1,61 @@
-import { buildUpcoming, upcomingDayLabel, voice, type Task } from '@pn/core';
+import {
+  addDays,
+  buildUpcoming,
+  upcomingCounts,
+  upcomingDayLabel,
+  upcomingSectionFor,
+  voice,
+  type LocalDate,
+  type Task,
+} from '@pn/core';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { Icon } from '@/components/icon';
+import { MonthCalendar } from '@/components/month-calendar';
 import { NoticeBar } from '@/components/notice-bar';
 import { RowMenu } from '@/components/row-menu';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { DaySection } from '@/components/upcoming/day-section';
+import { WeekStrip } from '@/components/upcoming/week-strip';
 import { useTasks } from '@/data/tasks-store';
+import { useIsWide } from '@/hooks/use-is-wide';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.upcoming;
+/** Breathing room above a day scrolled to the top. */
+const SCROLL_MARGIN = 8;
 
 export default function UpcomingScreen() {
   const s = useStyles(makeStyles);
   const { c } = s.t;
+  const wide = useIsWide();
   const { tasks, status, today, error, refresh, toggle, notify } = useTasks();
   const [menuFor, setMenuFor] = useState<Task | null>(null);
+  const [selected, setSelected] = useState<LocalDate | null>(null);
+  const [monthOpen, setMonthOpen] = useState(false);
 
   const view = useMemo(() => buildUpcoming(tasks, today), [tasks, today]);
+  const marks = useMemo(() => upcomingCounts(view), [view]);
   const byId = useMemo(() => new Map<string, Task>(tasks.map((t) => [t.id, t])), [tasks]);
   const planned = useMemo(() => new Set(tasks.flatMap((t) => (t.parentId ? [t.parentId] : []))), [tasks]);
+
+  // Where each day sits in the list, for scrolling to a day picked on the calendar.
+  const scrollRef = useRef<ScrollView>(null);
+  const listY = useRef(0);
+  const sectionY = useRef<Record<string, number>>({});
+  const pinnedHeight = useRef(0);
+  // On phones the week strip stays pinned while the list scrolls; the open month scrolls away.
+  const pinned = !wide && !monthOpen;
+
+  const select = (day: LocalDate) => {
+    setSelected(day);
+    const y = listY.current + (sectionY.current[upcomingSectionFor(view, day)] ?? 0);
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - (pinned ? pinnedHeight.current : 0) - SCROLL_MARGIN), animated: true });
+  };
 
   const onPlan = (id: string) => router.push({ pathname: '/plan/[id]', params: { id } });
   const onStart = (id: string) => router.push({ pathname: '/start/[id]', params: { id } });
@@ -40,9 +73,13 @@ export default function UpcomingScreen() {
   const canPlan = (t: Task) => !t.parentId && t.source !== 'ai' && !planned.has(t.id) && !t.completedAt;
 
   const rows = { today, planned, onToggle, onPlan, onMenu, onOpen };
+  const month = <MonthCalendar selected={selected} today={today} onSelect={select} marks={marks} />;
 
   return (
-    <Screen>
+    <Screen
+      scrollRef={scrollRef}
+      stickyHeaderIndices={wide ? undefined : pinned ? [1] : []}
+      aside={<View style={[s.card, s.asideCard]}>{month}</View>}>
       <View style={s.head}>
         <Text variant="label" color={c.muted}>
           {copy.eyebrow.toUpperCase()}
@@ -52,32 +89,73 @@ export default function UpcomingScreen() {
         </Text>
       </View>
 
-      {error ? (
-        <Text variant="meta" color={c.error} accessibilityLiveRegion="polite">
-          {error}
-        </Text>
-      ) : null}
-
-      {status === 'loading' && tasks.length === 0 ? <ActivityIndicator color={c.primary} style={s.loading} /> : null}
-
-      {status === 'error' ? (
-        <View style={s.failed}>
-          <Text variant="body" color={c.inkSoft}>
-            {copy.loadFailed}
-          </Text>
-          <Button variant="secondary" label={voice.today.retry} onPress={refresh} />
+      {wide ? null : (
+        <View style={s.pinned} onLayout={(e) => (pinnedHeight.current = e.nativeEvent.layout.height)}>
+          <View style={s.card}>
+            {monthOpen ? (
+              month
+            ) : (
+              <WeekStrip start={selected ?? addDays(today, 1)} today={today} selected={selected} marks={marks} onSelect={select} />
+            )}
+            <Pressable
+              onPress={() => setMonthOpen((v) => !v)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: monthOpen }}
+              style={({ pressed }) => [s.toggle, pressed && s.pressed]}>
+              <Text variant="button" color={c.primaryText}>
+                {monthOpen ? copy.week : copy.month}
+              </Text>
+              <View style={monthOpen ? s.chevronUp : s.chevronDown}>
+                <Icon name="chevronRight" size={14} color={c.primaryText} strokeWidth={2} />
+              </View>
+            </Pressable>
+          </View>
         </View>
-      ) : null}
+      )}
 
-      {status === 'ready' ? (
-        <>
-          <NoticeBar />
-          {view.days.map((day) => (
-            <DaySection key={day.date} label={upcomingDayLabel(day.date, today)} entries={day.entries} {...rows} />
-          ))}
-          {view.later.length > 0 ? <DaySection label={copy.later} entries={view.later} withDates {...rows} /> : null}
-        </>
-      ) : null}
+      <View style={s.list} onLayout={(e) => (listY.current = e.nativeEvent.layout.y)}>
+        {error ? (
+          <Text variant="meta" color={c.error} accessibilityLiveRegion="polite">
+            {error}
+          </Text>
+        ) : null}
+
+        {status === 'loading' && tasks.length === 0 ? <ActivityIndicator color={c.primary} style={s.loading} /> : null}
+
+        {status === 'error' ? (
+          <View style={s.failed}>
+            <Text variant="body" color={c.inkSoft}>
+              {copy.loadFailed}
+            </Text>
+            <Button variant="secondary" label={voice.today.retry} onPress={refresh} />
+          </View>
+        ) : null}
+
+        {status === 'ready' ? (
+          <>
+            <NoticeBar />
+            {view.days.map((day) => (
+              <DaySection
+                key={day.date}
+                label={upcomingDayLabel(day.date, today)}
+                entries={day.entries}
+                selected={day.date === selected}
+                onLayout={(e) => (sectionY.current[day.date] = e.nativeEvent.layout.y)}
+                {...rows}
+              />
+            ))}
+            {view.later.length > 0 ? (
+              <DaySection
+                label={copy.later}
+                entries={view.later}
+                withDates
+                onLayout={(e) => (sectionY.current.later = e.nativeEvent.layout.y)}
+                {...rows}
+              />
+            ) : null}
+          </>
+        ) : null}
+      </View>
 
       <RowMenu
         task={menuFor}
@@ -94,7 +172,29 @@ const makeStyles = (t: Tokens) => ({
   t,
   ...StyleSheet.create({
     head: { gap: 6 },
+    // Opaque, so rows scroll out of sight beneath the pinned strip.
+    pinned: { backgroundColor: t.c.bg, paddingVertical: 4 },
+    card: {
+      paddingHorizontal: 6,
+      paddingTop: 2,
+      borderRadius: t.radii.card,
+      borderWidth: 1,
+      borderColor: t.c.rule,
+      backgroundColor: t.c.card,
+    },
+    asideCard: { paddingBottom: 6 },
+    toggle: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 4,
+      minHeight: t.hitTarget,
+    },
+    chevronDown: { transform: [{ rotate: '90deg' }] },
+    chevronUp: { transform: [{ rotate: '-90deg' }] },
+    list: { gap: 14 },
     loading: { marginTop: 24 },
     failed: { gap: 10, alignItems: 'flex-start' },
+    pressed: { opacity: 0.7 },
   }),
 });

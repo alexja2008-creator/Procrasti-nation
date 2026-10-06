@@ -45,6 +45,8 @@ type Props = {
   /** Ids of tasks that already have plan steps. */
   planned: Set<string>;
   withDates?: boolean;
+  /** The day picked on the calendar. */
+  selected?: boolean;
   onToggle: (id: string) => void;
   onPlan: (id: string) => void;
   onMenu: (id: string) => void;
@@ -53,13 +55,13 @@ type Props = {
 };
 
 /** One day in Upcoming: its heading, then to-dos and deadline markers (or "Nothing yet."). */
-export function DaySection({ label, entries, today, planned, withDates = false, onToggle, onPlan, onMenu, onOpen, onLayout }: Props) {
+export function DaySection({ label, entries, today, planned, withDates = false, selected = false, onToggle, onPlan, onMenu, onOpen, onLayout }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   return (
     <View onLayout={onLayout}>
       <View style={s.head}>
-        <Text variant="label" color={c.inkSoft} accessibilityRole="header" style={s.label}>
+        <Text variant="label" color={selected ? c.primaryText : c.inkSoft} accessibilityRole="header" style={s.label}>
           {label.toUpperCase()}
         </Text>
       </View>
