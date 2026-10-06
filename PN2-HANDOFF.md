@@ -53,6 +53,7 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 | `c87e8a5` | Upcoming: `buildUpcoming`, day sections, DUE markers, Undo on check-off |
 | `bb8aad3` | Upcoming: week strip (pinned) + Month toggle, two columns at laptop width, scroll to a day |
 | `5a4b398` | Upcoming: "+" per day (quick add preset), Move to… in the row menu |
+| `b388a51` | Today orders timed items by time of day (missed ones too); one rule (`timeOnItsDay`) for a row's time |
 
 **Run it locally:**
 1. Start both preview servers from `.claude/launch.json`: `site` (port 3000; `apps/site/.env.development.local` points it at staging) and `app-web` (port 8081; `apps/app/.env.local` points at staging).
@@ -61,7 +62,7 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 3. For iOS: from `apps/app`, run `npx expo start --port 8082 < /dev/null`, then `xcrun simctl openurl booted exp://127.0.0.1:8082`.
 
 **Checks:**
-- `npm run core:test`: 45 tests.
+- `npm run core:test`: 47 tests.
 - `npm run db:test`: 19 migration tests, on the stand-in schema and, when the local dump exists, the real production structure.
 - `npm run app:check`: typecheck + lint.
 - `npm --prefix apps/site run build`.
@@ -141,7 +142,7 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
 - **Phase 4:** Start Mode done (timer, contract, I'm stuck, breather, Done → stamp, resume). Remaining: Live Activity (Swift add-on, needs Apple Developer + a development build), Declarations, Morning Briefing / roll-forward, server push, State of the Union, Holidays.
 - **Checked on iOS (2026-10-06, Expo Go, signed in):** Today, Start Mode (timer, resume after the app was killed, I'm stuck → `/api/unstick`, two-minute restart, Done → stamp, next step), Passport stamps and rank, the press-and-hold row menu, and Upcoming (pinned week strip and scroll to a day, Move to… → When sheet, "+" → quick add for that day, day and night).
 - **Next: Territories.** Then capture-first notes and search.
-- **Known rough edges:** picking a day near the end of Upcoming can't lift it to the top (the list ends a few days later); Today orders a missed timed item by its original date rather than its time of day (Walk Biscuit from Sunday at 6 PM sorts above today's 5 PM item).
+- **Known rough edge:** picking a day near the end of Upcoming can't lift it to the top (the list ends a few days later).
 - **Known gap:** no live sync between devices yet; each device refreshes on foreground and day change (PowerSync spike pending).
 
 ---
