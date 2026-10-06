@@ -5,7 +5,7 @@ import type { Task } from '@pn/core';
 import { supabase } from '@/lib/supabase';
 
 const COLUMNS =
-  'id,user_id,list_id,parent_id,title,notes,status,due_on,due_at,remind_at,rrule,estimate_minutes,' +
+  'id,user_id,list_id,parent_id,note_id,title,notes,status,due_on,due_at,remind_at,rrule,estimate_minutes,' +
   'scheduled_on,sort_order,source,external_id,completed_at,created_at,updated_at,deleted_at';
 
 type Row = {
@@ -13,6 +13,7 @@ type Row = {
   user_id: string;
   list_id: string | null;
   parent_id: string | null;
+  note_id: string | null;
   title: string;
   notes: string | null;
   status: string | null;
@@ -36,6 +37,7 @@ const fromRow = (r: Row): Task => ({
   userId: r.user_id,
   listId: r.list_id,
   parentId: r.parent_id,
+  noteId: r.note_id,
   title: r.title,
   notes: r.notes,
   status: r.status === 'completed' ? 'completed' : 'in_progress',
@@ -57,7 +59,8 @@ const fromRow = (r: Row): Task => ({
 /**
  * Open tasks plus anything finished since `since` (the start of the person's
  * day), plus every finished step of the plans among them, so "step 4 of 10"
- * still counts the steps done on earlier days.
+ * still counts the steps done on earlier days. Checklist lines in notes load
+ * finished or not: a note shows its ticked lines.
  */
 export async function fetchActiveTasks(userId: string, since: Date): Promise<Task[]> {
   const { data, error } = await supabase
@@ -65,7 +68,7 @@ export async function fetchActiveTasks(userId: string, since: Date): Promise<Tas
     .select(COLUMNS)
     .eq('user_id', userId)
     .is('deleted_at', null)
-    .or(`completed_at.is.null,completed_at.gte.${since.toISOString()}`)
+    .or(`completed_at.is.null,completed_at.gte.${since.toISOString()},note_id.not.is.null`)
     .order('sort_order')
     .order('created_at')
     .limit(1000);
@@ -88,7 +91,7 @@ export async function fetchActiveTasks(userId: string, since: Date): Promise<Tas
 
 export type NewTask = Pick<
   Task,
-  'id' | 'userId' | 'listId' | 'parentId' | 'title' | 'scheduledOn' | 'dueOn' | 'dueAt' | 'remindAt' | 'rrule' | 'sortOrder'
+  'id' | 'userId' | 'listId' | 'parentId' | 'noteId' | 'title' | 'scheduledOn' | 'dueOn' | 'dueAt' | 'remindAt' | 'rrule' | 'sortOrder'
 >;
 
 export async function insertTask(t: NewTask): Promise<Task> {
@@ -99,6 +102,7 @@ export async function insertTask(t: NewTask): Promise<Task> {
       user_id: t.userId,
       list_id: t.listId,
       parent_id: t.parentId,
+      note_id: t.noteId,
       title: t.title,
       scheduled_on: t.scheduledOn,
       due_on: t.dueOn,

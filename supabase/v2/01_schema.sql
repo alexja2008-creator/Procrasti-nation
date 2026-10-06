@@ -23,7 +23,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Rejects list_id / task_id references to rows the writer doesn't own.
+-- Rejects list_id / task_id / note_id references to rows the writer doesn't own.
 -- Runs as the invoking user, so RLS hides other users' rows and the
 -- EXISTS check fails for them. FKs alone would accept a foreign id.
 CREATE OR REPLACE FUNCTION v2_check_owned_refs()
@@ -40,6 +40,11 @@ BEGIN
     SELECT 1 FROM tasks WHERE id = (r->>'task_id')::uuid AND user_id = NEW.user_id
   ) THEN
     RAISE EXCEPTION 'task % not found', r->>'task_id' USING ERRCODE = 'foreign_key_violation';
+  END IF;
+  IF r->>'note_id' IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM notes WHERE id = (r->>'note_id')::uuid AND user_id = NEW.user_id
+  ) THEN
+    RAISE EXCEPTION 'note % not found', r->>'note_id' USING ERRCODE = 'foreign_key_violation';
   END IF;
   RETURN NEW;
 END;
@@ -200,10 +205,8 @@ CREATE TRIGGER tasks_owned_refs
   BEFORE INSERT OR UPDATE OF parent_id, list_id, user_id ON tasks
   FOR EACH ROW EXECUTE FUNCTION tasks_check_owned_refs();
 
-DROP TRIGGER IF EXISTS tasks_owned_list ON tasks;
-CREATE TRIGGER tasks_owned_list
-  BEFORE INSERT OR UPDATE OF list_id, user_id ON tasks
-  FOR EACH ROW EXECUTE FUNCTION v2_check_owned_refs();
+-- (tasks_owned_list, which checks list_id and note_id, is created in section 4
+-- once the notes table exists.)
 
 -- ------------------------------------------------------------
 -- 4. notes: capture-first notes, optionally attached to a task or list.
@@ -238,6 +241,16 @@ DROP POLICY IF EXISTS "Owners manage their notes" ON notes;
 CREATE POLICY "Owners manage their notes" ON notes FOR ALL
   USING (user_id = (SELECT auth.uid()))
   WITH CHECK (user_id = (SELECT auth.uid()));
+
+-- Live checklist lines: a task can be a checkbox in a note. The note's body
+-- holds the line's place; the task holds its text and done state.
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS note_id UUID REFERENCES notes(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS tasks_note_idx ON tasks (note_id) WHERE note_id IS NOT NULL;
+
+DROP TRIGGER IF EXISTS tasks_owned_list ON tasks;
+CREATE TRIGGER tasks_owned_list
+  BEFORE INSERT OR UPDATE OF list_id, note_id, user_id ON tasks
+  FOR EACH ROW EXECUTE FUNCTION v2_check_owned_refs();
 
 -- ------------------------------------------------------------
 -- 5. stamps: rewards. Awarded on-device (offline-first), so clients

@@ -53,6 +53,7 @@ const TASK_B = '0000000b-0000-0000-0000-000000000000';
 const TASK_C = '0000000c-0000-0000-0000-000000000000';
 const TASK_D = '0000000d-0000-0000-0000-000000000000';
 const TASK_E = '0000000e-0000-0000-0000-000000000000'; // assignment task (schools)
+const OTHERS_NOTE = '000000f0-0000-0000-0000-000000000000'; // U2's note
 
 // Shapes seen in production (prod-stats.sql, 2026-10-03): steps carry
 // completedAt, some have no `completed` flag, estimates include "N-N min".
@@ -216,6 +217,7 @@ for (const baseline of baselines) {
     });
 
     await t.test('RLS and ownership checks hold for a signed-in user', async () => {
+      await db.query(`INSERT INTO notes (id, user_id, body) VALUES ($1, $2, 'Theirs')`, [OTHERS_NOTE, U2]);
       await as(db, U1, async () => {
         const visible = await rows(db, `SELECT user_id FROM tasks`);
         assert.equal(visible.length, 6); // A, B and A's four steps
@@ -242,6 +244,23 @@ for (const baseline of baselines) {
           /task .* not found/,
         );
         await db.query(`INSERT INTO notes (user_id, task_id, list_id, body) VALUES ($1, $2, $3, 'pages 40-60')`, [U1, task.id, list.id]);
+
+        // Live checklist lines: a task can belong to the user's own note, never someone else's.
+        const packing = await one(db, `INSERT INTO notes (user_id, body) VALUES ($1, 'Packing') RETURNING id`, [U1]);
+        const sunscreen = await one(
+          db,
+          `INSERT INTO tasks (user_id, title, note_id) VALUES ($1, 'Sunscreen', $2) RETURNING id, note_id`,
+          [U1, packing.id],
+        );
+        assert.equal(sunscreen.note_id, packing.id);
+        await assert.rejects(
+          db.query(`INSERT INTO tasks (user_id, title, note_id) VALUES ($1, 'sneaky', $2)`, [U1, OTHERS_NOTE]),
+          /note .* not found/,
+          "can't put a checklist line in another user's note",
+        );
+        await assert.rejects(db.query(`UPDATE tasks SET note_id = $1 WHERE id = $2`, [OTHERS_NOTE, sunscreen.id]), /note .* not found/);
+        await db.query(`DELETE FROM notes WHERE id = $1`, [packing.id]);
+        assert.equal((await one(db, `SELECT note_id FROM tasks WHERE id = $1`, [sunscreen.id])).note_id, null, 'the task outlives its note');
 
         const child = await one(db, `SELECT id FROM tasks WHERE parent_id = $1 LIMIT 1`, [TASK_A]);
         await assert.rejects(
@@ -341,6 +360,7 @@ for (const baseline of baselines) {
         { title: 'No steps', source: 'self' },
         { title: 'Odd steps', source: 'self' },
         { title: 'Read ch. 4', source: 'self' }, // v2-only source mapped back
+        { title: 'Sunscreen', source: 'self' }, // a checklist task stays a task
       ];
       assert.deepEqual(remaining, expected);
       assert.deepEqual((await one(db, `SELECT steps FROM tasks WHERE id = $1`, [TASK_A])).steps, STEPS_A);
@@ -358,7 +378,7 @@ for (const baseline of baselines) {
 
       await applyV2(db);
       const result = (await db.exec(sql('02_backfill.sql'))).at(-1).rows[0];
-      assert.deepEqual(result, { tasks_converted: v1Tasks + 1, steps_created: v1Steps });
+      assert.deepEqual(result, { tasks_converted: v1Tasks + 2, steps_created: v1Steps });
     });
 
     await db.close();

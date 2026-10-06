@@ -18,6 +18,8 @@ export function whenLabel(date: LocalDate, at: string | null, today: LocalDate):
 
 type Props = {
   summary: TerritorySummary;
+  /** How many notes are filed here. */
+  notes?: number;
   today: LocalDate;
   selected?: boolean;
   onPress: () => void;
@@ -28,12 +30,16 @@ type Props = {
 };
 
 /** A territory on the Territories tab: its ink, name, open count and next dated item. */
-export function TerritoryCard({ summary, today, selected, onPress, handle, actions }: Props) {
+export function TerritoryCard({ summary, notes = 0, today, selected, onPress, handle, actions }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const { list, open, next } = summary;
   const ink = c.stamp[list.ink];
-  const meta = [copy.open(open), next?.date ? copy.next(whenLabel(next.date, next.at, today), next.task.title) : null]
+  const meta = [
+    copy.open(open),
+    notes ? voice.notes.count(notes) : null,
+    next?.date ? copy.next(whenLabel(next.date, next.at, today), next.task.title) : null,
+  ]
     .filter(Boolean)
     .join(' · ');
   return (

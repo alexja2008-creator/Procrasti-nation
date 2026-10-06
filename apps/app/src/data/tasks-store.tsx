@@ -116,6 +116,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
       userId,
       listId: null,
       parentId: null,
+      noteId: null,
       notes: null,
       status: 'in_progress',
       scheduledOn: null,

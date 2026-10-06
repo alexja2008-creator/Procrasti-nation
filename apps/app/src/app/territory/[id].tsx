@@ -3,6 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Pressable, StyleSheet } from 'react-native';
 
 import { Icon } from '@/components/icon';
+import { NotesView } from '@/components/note/notes-view';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { TerritoryView } from '@/components/territory/territory-view';
@@ -10,7 +11,7 @@ import { useStyles, type Tokens } from '@/theme/tokens';
 
 const back = () => (router.canGoBack() ? router.back() : router.replace('/territories'));
 
-/** A territory (or Customs, as `customs`) as its own page, opened from the Territories tab on phones. */
+/** A territory (or Customs, as `customs`, or every note, as `notes`) as its own page, opened from the Territories tab on phones. */
 export default function TerritoryRoute() {
   const s = useStyles(makeStyles);
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -22,7 +23,7 @@ export default function TerritoryRoute() {
           {voice.territories.back}
         </Text>
       </Pressable>
-      <TerritoryView key={id} id={id} onDeleted={back} />
+      {id === 'notes' ? <NotesView /> : <TerritoryView key={id} id={id} onDeleted={back} />}
     </Screen>
   );
 }

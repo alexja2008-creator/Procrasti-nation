@@ -69,6 +69,8 @@ export interface Task {
   userId: string;
   listId: string | null;
   parentId: string | null;
+  /** Set when the task is a live checklist line in a note. */
+  noteId: string | null;
   title: string;
   notes: string | null;
   /** `status` is v1's column, kept: 'completed' iff `completedAt` is set. */

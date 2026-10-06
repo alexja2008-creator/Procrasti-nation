@@ -17,6 +17,11 @@ DROP TABLE IF EXISTS plan_generations;
 DROP TABLE IF EXISTS push_tokens;
 DROP TABLE IF EXISTS start_sessions;
 DROP TABLE IF EXISTS stamps;
+-- Checklist tasks stay as ordinary tasks; only their link to a note goes
+-- (before the notes table, which it references, and after the trigger that
+-- watches it).
+DROP TRIGGER IF EXISTS tasks_owned_list ON tasks;
+ALTER TABLE tasks DROP COLUMN IF EXISTS note_id;
 DROP TABLE IF EXISTS notes;
 
 DROP TRIGGER IF EXISTS tasks_owned_refs ON tasks;

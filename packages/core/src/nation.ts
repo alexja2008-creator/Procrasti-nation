@@ -232,6 +232,29 @@ export const voice = {
     saveFailed: 'Couldn’t save that change to your territories. Try again.',
     notFound: 'That territory isn’t here anymore.',
   },
+  notes: {
+    title: 'Notes',
+    lead: 'Lecture notes, lists, ideas. Any line can become a checkbox that’s a real task.',
+    newNote: 'New note',
+    /** A note with no words yet. */
+    untitled: 'New note',
+    empty: 'No notes yet. Capture one with +, or start one here.',
+    eyebrow: 'Note',
+    titlePlaceholder: 'Title',
+    placeholder: 'Write anything.',
+    /** The ☐ button: the line you're on becomes a checkbox task, or back. */
+    checklist: 'Checklist',
+    close: 'Close',
+    delete: 'Delete',
+    deleted: (title: string) => `Deleted “${title}”.`,
+    saveFailed: 'Couldn’t save your note. It’s still here; check your connection.',
+    loadFailed: 'Couldn’t load your notes. Check your connection.',
+    notFound: 'That note isn’t here anymore.',
+    progress: (done: number, total: number) => `${done} of ${total}`,
+    count: (n: number) => (n === 1 ? '1 note' : `${n} notes`),
+    edited: (day: string) => `Edited ${day}`,
+    noTerritory: 'No territory',
+  },
   start: {
     eyebrow: 'Start mode',
     /** Non-breaking spaces keep "step 2 of 10" on one line when the plan's title wraps. */

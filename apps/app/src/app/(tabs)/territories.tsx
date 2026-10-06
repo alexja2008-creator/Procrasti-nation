@@ -7,6 +7,8 @@ import { GestureDetector } from 'react-native-gesture-handler';
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
 import { Icon } from '@/components/icon';
+import { NotesCard } from '@/components/note/notes-card';
+import { NotesView } from '@/components/note/notes-view';
 import { NoticeBar } from '@/components/notice-bar';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
@@ -15,6 +17,7 @@ import { TerritoryCard } from '@/components/territory/territory-card';
 import { TerritoryEditSheet } from '@/components/territory/territory-edit-sheet';
 import { TerritoryView } from '@/components/territory/territory-view';
 import { useLists } from '@/data/lists-store';
+import { useNotes } from '@/data/notes-store';
 import { useTasks } from '@/data/tasks-store';
 import { useDragReorder } from '@/hooks/use-drag-reorder';
 import { useIsWide } from '@/hooks/use-is-wide';
@@ -30,6 +33,7 @@ export default function TerritoriesScreen() {
   const wide = useIsWide();
   const { tasks, today } = useTasks();
   const { lists, status, error, add, update, refresh } = useLists();
+  const { notes } = useNotes();
   const [creating, setCreating] = useState(false);
   // Laptop width shows one territory beside the list; phones open it as a page.
   const [selected, setSelected] = useState('customs');
@@ -37,7 +41,8 @@ export default function TerritoriesScreen() {
   const view = useMemo(() => buildTerritories(lists, tasks, today), [lists, tasks, today]);
   const ordered = view.territories.map((t) => t.list);
   const reorder = useDragReorder(ordered, (list, sortOrder) => update(list, { sortOrder }), CARD_GAP);
-  const shown = selected === 'customs' || lists.some((l) => l.id === selected) ? selected : 'customs';
+  const shown = selected === 'customs' || selected === 'notes' || lists.some((l) => l.id === selected) ? selected : 'customs';
+  const notesIn = (listId: string) => notes.filter((n) => n.listId === listId).length;
   const open = (id: string) => (wide ? setSelected(id) : router.push({ pathname: '/territory/[id]', params: { id } }));
 
   const index = (
@@ -61,6 +66,7 @@ export default function TerritoriesScreen() {
       {wide ? null : <NoticeBar />}
 
       <CustomsCard count={view.customs.length} selected={wide && shown === 'customs'} onPress={() => open('customs')} />
+      <NotesCard count={notes.length} selected={wide && shown === 'notes'} onPress={() => open('notes')} />
 
       {status === 'loading' && lists.length === 0 ? <ActivityIndicator color={c.primary} style={s.loading} /> : null}
       {status === 'error' ? (
@@ -83,6 +89,7 @@ export default function TerritoriesScreen() {
                 style={[{ transform: [{ translateY: reorder.shift(i) }] }, reorder.draggingId === id && s.dragging]}>
                 <TerritoryCard
                   summary={summary}
+                  notes={notesIn(id)}
                   today={today}
                   selected={wide && shown === id}
                   onPress={() => open(id)}
@@ -137,7 +144,7 @@ export default function TerritoriesScreen() {
   }
   return (
     <Screen aside={<ScrollView contentContainerStyle={s.aside}>{index}</ScrollView>}>
-      <TerritoryView key={shown} id={shown} onDeleted={() => setSelected('customs')} />
+      {shown === 'notes' ? <NotesView /> : <TerritoryView key={shown} id={shown} onDeleted={() => setSelected('customs')} />}
       {sheet}
     </Screen>
   );
