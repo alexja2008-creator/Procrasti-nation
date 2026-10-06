@@ -128,21 +128,22 @@ src/app/auth/callback.tsx         # Where magic links / OAuth land; exchanges th
 src/auth/                         # auth-provider (session), sign-in actions, apple(.web).ts
 src/lib/supabase.ts               # Anon-key client (PKCE, AsyncStorage, foreground-only token refresh)
 src/app/plan/[id].tsx             # Plan it: clarifying questions → plan preview → saves steps as child tasks
+src/app/task/[id].tsx             # Task detail (tap a row): title, When/Due/Repeat/Estimate, steps (add, drag to reorder), notes, delete + Undo; autosaves
 src/app/start/[id].tsx            # Start Mode (full-screen): timer, 5-min contract, I'm stuck, breather, Done → stamp
 src/hooks/use-start-session.ts    # Start Mode session: clock, start_sessions rows, resume after close, keep-awake
 src/data/                         # user-settings, tasks (+ store), plans, starts, stamps, unstick, active-start, signed-in-providers
 src/lib/api.ts                    # apiPost() to apps/site with the session token
 src/app/(tabs)/_layout.tsx        # Headless expo-router/ui tabs + custom NavBar
-src/app/(tabs)/index.tsx          # Today: next step (or "Up next"), agenda, Customs, row menu (press and hold / right-click)
+src/app/(tabs)/index.tsx          # Today: next step (or "Up next"), agenda, Customs; tap a row → detail, press and hold / right-click → Start / Plan it
 src/app/(tabs)/passport.tsx       # Passport: citizen no., stamps, rank from real starts
 src/app/(tabs)/upcoming|territories.tsx   # Placeholders
-src/components/                   # NavBar, NextStepCard, TaskRow, RowMenu, Stamp, start/*, Screen, Text, Icon, Logo
+src/components/                   # NavBar, NextStepCard, TaskRow, RowMenu, Sheet, Chip, MonthCalendar, NoticeBar, Stamp, start/*, task/*, Screen, Text, Icon
 src/theme/tokens.ts               # useTokens() / useStyles() over @pn/core palettes
 ```
 Device storage (AsyncStorage, per device): `pn.stamped.first-start.<userId>`, `pn.start.active.<userId>` (Start Mode session in progress, for resume). Web keyboard shortcuts go through `useShortcuts` (`use-shortcuts.web.ts`; no-op on native).
 
 ### packages/core
-`src/tokens.ts` (A2 palettes for light/"night passport", fonts, type scale, spacing, radii, motion), `src/nation.ts` (names, plain action labels, ranks, nudge tones, voice strings, citizen number + passport code lines), `src/dates.ts` (local-date helpers, day rollover, RRULE labels), `src/types.ts` (draft v2 data model), `src/agenda.ts` (Today: agenda, next step, up next, step context), `src/quick-add.ts`, `src/planning.ts`, `src/start-mode.ts` (wall-clock timer math, default minutes by style, stuck reasons, stamp kinds). Tests: `npm run core:test`.
+`src/tokens.ts` (A2 palettes for light/"night passport", fonts, type scale, spacing, radii, motion), `src/nation.ts` (names, plain action labels, ranks, nudge tones, voice strings, citizen number + passport code lines), `src/dates.ts` (local-date helpers, day rollover, RRULE labels), `src/types.ts` (draft v2 data model), `src/agenda.ts` (Today: agenda, next step, up next, step context), `src/quick-add.ts`, `src/planning.ts`, `src/start-mode.ts` (wall-clock timer math, default minutes by style, stuck reasons, stamp kinds), `src/when.ts` (date/time/repeat chips, Monday-first month grid, when/due/repeat patches); `parseWhen` in `quick-add.ts` reads a schedule on its own ("fri 6pm"). Tests: `npm run core:test`.
 
 ## Database (Supabase)
 
