@@ -144,7 +144,7 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
   - Then the TestFlight gate with 10 students.
 - **Phase 4:** Start Mode done (timer, contract, I'm stuck, breather, Done → stamp, resume). Remaining: Live Activity (Swift add-on, needs Apple Developer + a development build), Declarations, Morning Briefing / roll-forward, server push, State of the Union, Holidays.
 - **Checked on iOS (2026-10-06, Expo Go, signed in):** Today, Start Mode (timer, resume after the app was killed, I'm stuck → `/api/unstick`, two-minute restart, Done → stamp, next step), Passport stamps and rank, the press-and-hold row menu, Upcoming (pinned week strip and scroll to a day, Move to… → When sheet, "+" → quick add for that day, day and night), and Territories (cards, territory page, drag to reorder with real touch, File in… → picker → New territory…, day and night).
-- **Next: capture-first notes** (they attach to tasks and territories; the territory page leaves room for a Notes section), then search.
+- **Next: capture-first notes**, planned in `PN2-NOTES-PLAN.md` (Alex chose live checklist lines; one additive column, `tasks.note_id`). Then search.
 - **Known rough edges:** picking a day near the end of Upcoming can't lift it to the top (the list ends a few days later). The "Plan it" pill's keyword check flags small tasks like "Email Dr. Ruiz about the quiz" (the smarter check is on the roadmap). v1 boards (`localStorage['task-boards']` on procrasti-nation.work) can't be read from the v2 app's origin: bring them over from the v1 site at cutover, or let them go.
 - **Known gap:** no live sync between devices yet; each device refreshes on foreground and day change (PowerSync spike pending).
 
