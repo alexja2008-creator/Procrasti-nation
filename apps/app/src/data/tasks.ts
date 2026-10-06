@@ -154,6 +154,12 @@ export async function unfileTasks(listId: string): Promise<string[]> {
   return (data as { id: string }[]).map((r) => r.id);
 }
 
+/** A note's checklist lines follow it to another territory (or none). */
+export async function fileNoteTasks(noteId: string, listId: string | null): Promise<void> {
+  const { error } = await supabase.from('tasks').update({ list_id: listId }).eq('note_id', noteId);
+  if (error) throw error;
+}
+
 /** Files tasks in a territory again (Undo after deleting it). */
 export async function refileTasks(ids: string[], listId: string): Promise<void> {
   if (ids.length === 0) return;

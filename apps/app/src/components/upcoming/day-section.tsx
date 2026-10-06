@@ -16,14 +16,15 @@ import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.upcoming;
 
-/** `withDate`: rows in Later say which day they're on. `territories` maps list ids to names. */
-function rowFor(entry: UpcomingEntry, today: LocalDate, planned: Set<string>, territories: Map<string, string>, withDate: boolean): TaskRowItem {
+/** `withDate`: rows in Later say which day they're on. `places` names territories and notes by id. */
+function rowFor(entry: UpcomingEntry, today: LocalDate, planned: Set<string>, places: Map<string, string>, withDate: boolean): TaskRowItem {
   const t = entry.task;
   const meta: string[] = [];
   if (entry.parentTitle) meta.push(`${entry.parentTitle} · step ${entry.stepIndex} of ${entry.stepCount}`);
   else {
-    const territory = t.listId ? territories.get(t.listId) : undefined;
-    if (territory) meta.push(territory);
+    // A checklist line names its note; anything else its territory.
+    const place = t.noteId ? places.get(t.noteId) : t.listId ? places.get(t.listId) : undefined;
+    if (place) meta.push(place);
   }
   if (withDate) {
     if (t.scheduledOn) meta.push(formatShortDate(entry.date));
@@ -49,8 +50,8 @@ type Props = {
   today: LocalDate;
   /** Ids of tasks that already have plan steps. */
   planned: Set<string>;
-  /** Territory names by list id, for the rows' meta line. */
-  territories: Map<string, string>;
+  /** Territory names and note titles by id, for the rows' meta line. */
+  places: Map<string, string>;
   withDates?: boolean;
   /** The day picked on the calendar. */
   selected?: boolean;
@@ -65,7 +66,7 @@ type Props = {
 };
 
 /** One day in Upcoming: its heading, then to-dos and deadline markers (or "Nothing yet."). */
-export function DaySection({ label, entries, today, planned, territories, withDates = false, selected = false, onToggle, onPlan, onMenu, onOpen, onLayout, onAdd, addLabel }: Props) {
+export function DaySection({ label, entries, today, planned, places, withDates = false, selected = false, onToggle, onPlan, onMenu, onOpen, onLayout, onAdd, addLabel }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   return (
@@ -102,7 +103,7 @@ export function DaySection({ label, entries, today, planned, territories, withDa
           ) : (
             <TaskRow
               key={entry.task.id}
-              item={rowFor(entry, today, planned, territories, withDates)}
+              item={rowFor(entry, today, planned, places, withDates)}
               last={i === entries.length - 1}
               onToggle={onToggle}
               onPlan={onPlan}

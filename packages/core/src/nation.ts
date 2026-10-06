@@ -244,6 +244,7 @@ export const voice = {
     placeholder: 'Write anything.',
     /** The ☐ button: the line you're on becomes a checkbox task, or back. */
     checklist: 'Checklist',
+    openTask: (title: string) => `Open “${title}”`,
     close: 'Close',
     delete: 'Delete',
     deleted: (title: string) => `Deleted “${title}”.`,

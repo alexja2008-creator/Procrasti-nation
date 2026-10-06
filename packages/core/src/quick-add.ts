@@ -5,7 +5,7 @@
 // at the very end, and bare numbers are never times. "#chem" files the task in
 // a territory whose name matches; an unknown #word stays in the title.
 
-import { addDays, localDateString, occurrenceOnOrAfter, parseLocalDate } from './dates.ts';
+import { addDays, atLocalTime, localDateString, occurrenceOnOrAfter, parseLocalDate } from './dates.ts';
 import { matchTerritory } from './territories.ts';
 import type { List, LocalDate } from './types.ts';
 
@@ -291,6 +291,21 @@ export function parseQuickAdd(
     rrule,
     listId,
     matches: spans.map((s) => ({ kind: s.kind, text: input.slice(s.start, s.end).trim() })),
+  };
+}
+
+/**
+ * A parse's schedule as task fields: the time goes on the scheduled day
+ * (`remindAt`), or on the due day when there's only a deadline (`dueAt`).
+ */
+export function scheduleOf(p: QuickAddResult): { scheduledOn: LocalDate | null; dueOn: LocalDate | null; remindAt: string | null; dueAt: string | null; rrule: string | null } {
+  const { time, scheduledOn, dueOn } = p;
+  return {
+    scheduledOn,
+    dueOn,
+    remindAt: time && scheduledOn ? atLocalTime(scheduledOn, time.hour, time.minute) : null,
+    dueAt: time && !scheduledOn && dueOn ? atLocalTime(dueOn, time.hour, time.minute) : null,
+    rrule: p.rrule,
   };
 }
 

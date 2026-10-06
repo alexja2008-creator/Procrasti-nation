@@ -1,6 +1,7 @@
 import {
   atLocalTime,
   logicalDateString,
+  scheduleOf,
   nextOccurrence,
   parseLocalDate,
   relativeDayPhrase,
@@ -10,10 +11,10 @@ import {
   type Task,
 } from '@pn/core';
 import * as Crypto from 'expo-crypto';
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
-import { fetchActiveTasks, insertTask, refileTasks, setDeleted, unfileTasks, updateTask, type TaskPatch } from '@/data/tasks';
+import { fetchActiveTasks, fileNoteTasks, insertTask, refileTasks, setDeleted, unfileTasks, updateTask, type TaskPatch } from '@/data/tasks';
 import { useUserSettings } from '@/data/user-settings';
 
 /** A short-lived note on Today, optionally with Undo. */
@@ -48,6 +49,15 @@ type Store = {
   unfile: (listId: string) => Promise<string[]>;
   /** Puts those tasks back (Undo); throws if the save fails. */
   refile: (ids: string[], listId: string) => Promise<void>;
+  /**
+   * Adds a checklist line's task to a note. Shows at once; the save waits for
+   * `noteSaved` (the note must exist first). Resolves false if it failed.
+   */
+  addToNote: (fields: Pick<Task, 'id' | 'noteId' | 'listId' | 'title'> & Partial<TaskPatch>, noteSaved: Promise<unknown>) => Promise<boolean>;
+  /** Deletes (or, with null, restores) several tasks at once, quietly; throws if the save fails. */
+  setDeletedMany: (ids: string[], deletedAt: string | null) => Promise<void>;
+  /** A note moved territory: its checklist lines follow. */
+  fileNote: (noteId: string, listId: string | null) => void;
 };
 
 const Ctx = createContext<Store | null>(null);
@@ -68,6 +78,9 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [reloads, setReloads] = useState(0);
+  // Inserts still on their way, by task id: later writes to that task wait for them.
+  const inserting = useRef(new Map<string, Promise<unknown>>());
+  const afterInsert = (id: string) => inserting.current.get(id)?.catch(() => undefined) ?? Promise.resolve();
 
   // Notice the day changing, and refresh when the app comes back to the foreground.
   useEffect(() => {
@@ -109,7 +122,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
   const replace = (id: string, next: Task) => setTasks((prev) => prev.map((t) => (t.id === id ? next : t)));
 
   /** Shows a new task at once and saves it; takes it back out if the save fails. */
-  const insert = async (fields: Partial<Task> & Pick<Task, 'title' | 'sortOrder'>) => {
+  const insert = async (fields: Partial<Task> & Pick<Task, 'title' | 'sortOrder'>, after?: Promise<unknown>) => {
     const stamp = new Date().toISOString();
     const draft: Task = {
       id: Crypto.randomUUID(),
@@ -134,8 +147,13 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
       ...fields,
     };
     setTasks((prev) => [...prev, draft]);
+    const write = (async () => {
+      await after;
+      return insertTask(draft);
+    })();
+    inserting.current.set(draft.id, write);
     try {
-      const saved = await insertTask(draft);
+      const saved = await write;
       replace(draft.id, saved);
       setError(null);
       return saved;
@@ -143,21 +161,34 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
       setTasks((prev) => prev.filter((t) => t.id !== draft.id));
       setError(voice.today.saveFailed);
       return null;
+    } finally {
+      inserting.current.delete(draft.id);
     }
   };
 
-  const add: Store['add'] = (parsed, listId = null) => {
-    const { time, scheduledOn, dueOn } = parsed;
-    return insert({
-      title: parsed.title,
-      listId,
-      scheduledOn,
-      dueOn,
-      remindAt: time && scheduledOn ? atLocalTime(scheduledOn, time.hour, time.minute) : null,
-      dueAt: time && !scheduledOn && dueOn ? atLocalTime(dueOn, time.hour, time.minute) : null,
-      rrule: parsed.rrule,
-      sortOrder: Date.now(),
-    });
+  const add: Store['add'] = (parsed, listId = null) =>
+    insert({ title: parsed.title, listId, ...scheduleOf(parsed), sortOrder: Date.now() });
+
+  const addToNote: Store['addToNote'] = async (fields, noteSaved) =>
+    (await insert({ ...fields, sortOrder: Date.now() }, noteSaved)) !== null;
+
+  const setDeletedMany: Store['setDeletedMany'] = async (ids, deletedAt) => {
+    if (ids.length === 0) return;
+    const set = new Set(ids);
+    const mark = (at: string | null) => setTasks((prev) => prev.map((t) => (set.has(t.id) ? { ...t, deletedAt: at } : t)));
+    mark(deletedAt);
+    try {
+      await Promise.all(ids.map(afterInsert));
+      await setDeleted(ids, deletedAt);
+    } catch (e) {
+      mark(deletedAt ? null : new Date().toISOString());
+      throw e;
+    }
+  };
+
+  const fileNote: Store['fileNote'] = (noteId, listId) => {
+    setTasks((prev) => prev.map((t) => (t.noteId === noteId ? { ...t, listId } : t)));
+    fileNoteTasks(noteId, listId).catch(() => setError(voice.today.saveFailed));
   };
 
   const addStep: Store['addStep'] = (parent, title) => {
@@ -181,7 +212,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
       patch = { status: 'completed', completedAt: new Date().toISOString() };
     }
     replace(task.id, { ...task, ...patch });
-    updateTask(task.id, patch).then(
+    afterInsert(task.id).then(() => updateTask(task.id, patch)).then(
       (saved) => {
         replace(task.id, saved);
         setError(null);
@@ -202,7 +233,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
 
   const update: Store['update'] = (task, patch) => {
     replace(task.id, { ...task, ...patch });
-    updateTask(task.id, patch).then(
+    afterInsert(task.id).then(() => updateTask(task.id, patch)).then(
       (saved) => {
         replace(task.id, saved);
         setError(null);
@@ -272,7 +303,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
   };
 
   return (
-    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, addStep, toggle, merge, notify, clearNotice: () => setNotice(null), update, remove, unfile, refile }}>
+    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, addStep, toggle, merge, notify, clearNotice: () => setNotice(null), update, remove, unfile, refile, addToNote, setDeletedMany, fileNote }}>
       {children}
     </Ctx.Provider>
   );

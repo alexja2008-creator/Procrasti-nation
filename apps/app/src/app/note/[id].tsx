@@ -1,24 +1,26 @@
-import { joinTitle, noteHasContent, splitTitle, voice } from '@pn/core';
+import { joinTitle, mergeText, noteHasContent, parseNoteBody, serializeNoteBody, splitTitle, voice } from '@pn/core';
 import * as Crypto from 'expo-crypto';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
+import { NoteEditor, type NoteEditorHandle } from '@/components/note/note-editor';
 import { NoticeBar } from '@/components/notice-bar';
 import { Screen } from '@/components/screen';
 import { TerritorySheet } from '@/components/territory/territory-sheet';
 import { Text } from '@/components/text';
 import { useLists } from '@/data/lists-store';
 import { useNotes } from '@/data/notes-store';
+import { useTasks } from '@/data/tasks-store';
+import { useAutoHeight } from '@/hooks/use-auto-height';
+import { noFocusRing, oneRowOnWeb } from '@/lib/web-styles';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.notes;
 /** Saves land this long after the last keystroke. */
 const SAVE_DELAY = 600;
 const close = () => (router.canGoBack() ? router.back() : router.replace('/territories'));
-// Web textareas start two rows tall; a title starts as one (RN's types don't know `rows`).
-const oneRowOnWeb = Platform.OS === 'web' ? ({ rows: 1 } as object) : {};
 
 type Draft = { title: string; rest: string; listId: string | null };
 
@@ -35,19 +37,19 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
   const [id] = useState(() => (isNew ? Crypto.randomUUID() : param));
   const { notes, status, error, save, remove } = useNotes();
   const { lists } = useLists();
+  const { tasks, error: taskError, setDeletedMany } = useTasks();
   const note = notes.find((n) => n.id === id);
 
   // The note as stored until the first edit; from then on, the copy edited here.
   const [edited, setEdited] = useState<Draft | null>(isNew ? { title: '', rest: '', listId: presetList } : null);
   const draft = edited ?? (note ? { ...splitTitle(note.body), listId: note.listId } : null);
+  const titleGrow = useAutoHeight(draft?.title ?? '');
   const latest = useRef(edited);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // A new note is created by its first save with words in it.
   const saved = useRef(!isNew);
   const [picking, setPicking] = useState(false);
-  const [titleHeight, setTitleHeight] = useState(0);
-  const [bodyHeight, setBodyHeight] = useState(0);
-  const bodyRef = useRef<TextInput>(null);
+  const editor = useRef<NoteEditorHandle>(null);
 
   const flush = () => {
     clearTimeout(timer.current);
@@ -57,7 +59,17 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
     const body = joinTitle(d.title, d.rest);
     if (!saved.current && !noteHasContent(body)) return;
     saved.current = true;
-    save(id, { body, listId: d.listId });
+    save(id, { body, listId: d.listId }).catch(() => undefined);
+  };
+  /** Saves now with this body under the title; settles once the note exists. */
+  const saveNow = (rest: string) => {
+    clearTimeout(timer.current);
+    timer.current = undefined;
+    const base = latest.current ?? draft;
+    const next = { title: base?.title ?? '', rest, listId: base?.listId ?? null };
+    latest.current = next;
+    saved.current = true;
+    return save(id, { body: joinTitle(next.title, rest), listId: next.listId });
   };
   const change = (patch: Partial<Draft>, delay = SAVE_DELAY) => {
     const base = latest.current ?? draft;
@@ -78,7 +90,8 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
     const carried = text.slice(nl + 1);
     const rest = base?.rest ?? '';
     change({ title: text.slice(0, nl), rest: carried ? (rest ? `${carried}\n${rest}` : carried) : rest });
-    bodyRef.current?.focus();
+    titleGrow.reset();
+    editor.current?.focusStart();
   };
 
   // Leaving by swipe or back still saves what was typed.
@@ -88,6 +101,19 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
   useEffect(() => () => onLeave(), []);
 
   const onClose = () => {
+    // Checklist lines left without words go, with their tasks.
+    const base = latest.current ?? draft;
+    if (base) {
+      const blocks = parseNoteBody(base.rest);
+      const blank = blocks.flatMap((b) => {
+        const t = b.kind === 'task' ? tasks.find((x) => x.id === b.taskId) : undefined;
+        return t && !t.title.trim() && !t.completedAt ? [t.id] : [];
+      });
+      if (blank.length) {
+        change({ rest: serializeNoteBody(mergeText(blocks.filter((b) => !(b.kind === 'task' && blank.includes(b.taskId))))) });
+        setDeletedMany(blank, new Date().toISOString()).catch(() => undefined);
+      }
+    }
     flush();
     const d = latest.current ?? draft;
     // An emptied note goes away quietly, like a blank page.
@@ -127,23 +153,33 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
   const territory = lists.find((l) => l.id === draft.listId);
 
   return (
-    <Screen>
-      <View style={s.column}>
+    // The top bar (with ☐) stays put while a long note scrolls.
+    <Screen stickyHeaderIndices={[0]}>
+      <View style={s.bar}>
         <View style={s.topBar}>
           <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel={copy.close} style={s.iconButton}>
             <Icon name="close" color={c.ink} />
           </Pressable>
-          <Text variant="label" color={c.muted}>
+          <Text variant="label" color={c.muted} style={s.eyebrow}>
             {copy.eyebrow.toUpperCase()}
           </Text>
+          <Pressable
+            onPress={() => editor.current?.toggleChecklist()}
+            accessibilityRole="button"
+            accessibilityLabel={copy.checklist}
+            style={({ pressed }) => [s.iconButton, pressed && s.pressed]}>
+            <Icon name="checkbox" color={c.primaryText} strokeWidth={1.9} />
+          </Pressable>
           <Pressable onPress={onDelete} accessibilityRole="button" accessibilityLabel={copy.delete} style={s.iconButton}>
             <Icon name="trash" color={c.muted} />
           </Pressable>
         </View>
+      </View>
 
-        {error ? (
+      <View style={s.column}>
+        {error || taskError ? (
           <Text variant="meta" color={c.error} accessibilityLiveRegion="polite">
-            {error}
+            {error ?? taskError}
           </Text>
         ) : null}
         <NoticeBar />
@@ -162,8 +198,8 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
         <TextInput
           value={draft.title}
           onChangeText={onTitle}
-          onSubmitEditing={() => bodyRef.current?.focus()}
-          onContentSizeChange={(e) => setTitleHeight(e.nativeEvent.contentSize.height)}
+          onSubmitEditing={() => editor.current?.focusStart()}
+          onContentSizeChange={titleGrow.onContentSizeChange}
           multiline
           {...oneRowOnWeb}
           submitBehavior="blurAndSubmit"
@@ -172,20 +208,16 @@ function NoteDetail({ param, presetList }: { param: string; presetList: string |
           placeholder={copy.titlePlaceholder}
           placeholderTextColor={c.muted}
           accessibilityLabel={copy.titlePlaceholder}
-          style={[s.t.text.pageTitle, s.title, titleHeight ? { height: titleHeight + 6 } : null]}
+          style={[s.t.text.pageTitle, s.title, noFocusRing, titleGrow.style]}
         />
 
-        <TextInput
-          ref={bodyRef}
-          value={draft.rest}
-          onChangeText={(rest) => change({ rest })}
-          onContentSizeChange={(e) => setBodyHeight(e.nativeEvent.contentSize.height)}
-          multiline
-          scrollEnabled={false}
-          placeholder={copy.placeholder}
-          placeholderTextColor={c.muted}
-          accessibilityLabel={copy.title}
-          style={[s.t.text.lead, s.body, bodyHeight ? { height: Math.max(200, bodyHeight + 12) } : null]}
+        <NoteEditor
+          ref={editor}
+          rest={draft.rest}
+          onChange={(rest) => change({ rest })}
+          saveNow={saveNow}
+          noteId={id}
+          listId={draft.listId}
         />
       </View>
 
@@ -207,13 +239,14 @@ const makeStyles = (t: Tokens) => ({
   t,
   ...StyleSheet.create({
     column: { width: '100%', maxWidth: 560, alignSelf: 'center', gap: 12 },
-    topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: -12 },
+    // Opaque, so the writing scrolls out of sight beneath it.
+    bar: { backgroundColor: t.c.bg },
+    topBar: { width: '100%', maxWidth: 560 + 24, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', marginHorizontal: -12 },
+    eyebrow: { flex: 1, textAlign: 'center' },
     iconButton: { width: t.hitTarget, height: t.hitTarget, alignItems: 'center', justifyContent: 'center' },
     missing: { gap: 12, alignItems: 'flex-start', paddingTop: 48 },
     territory: { flexDirection: 'row', alignItems: 'center', gap: 6, alignSelf: 'flex-start', minHeight: 32 },
-    // The page is the paper: no box or focus ring around the writing.
-    title: { color: t.c.ink, padding: 0, outlineWidth: 0 },
-    body: { color: t.c.ink, padding: 0, minHeight: 200, textAlignVertical: 'top', outlineWidth: 0 },
+    title: { color: t.c.ink, padding: 0 },
     pressed: { opacity: 0.7 },
   }),
 });

@@ -6,12 +6,13 @@ import { bySortOrder, byTimeOfDay, nullsLast, stepsByParent, timeOnItsDay } from
 import type { ISODateTime, List, LocalDate, Task } from './types.ts';
 
 /**
- * Customs: undated, unfiled captures waiting to be sorted. A repeat or a task
- * with a plan (`hasSteps`) counts as sorted already, even without a date.
+ * Customs: undated, unfiled captures waiting to be sorted. A repeat, a task
+ * with a plan (`hasSteps`) or a checklist line in a note counts as sorted
+ * already, even without a date.
  */
 export function isInCustoms(t: Task, hasSteps: boolean): boolean {
   return (
-    !t.parentId && !t.completedAt && !t.deletedAt && !t.scheduledOn && !t.dueOn && !t.listId && !t.rrule && !hasSteps
+    !t.parentId && !t.noteId && !t.completedAt && !t.deletedAt && !t.scheduledOn && !t.dueOn && !t.listId && !t.rrule && !hasSteps
   );
 }
 
@@ -58,7 +59,8 @@ export function buildTerritories(lists: List[], tasks: Task[], today: LocalDate)
   const open = new Map<string, number>();
   const next = new Map<string, TerritoryItem>();
   for (const t of live) {
-    if (t.completedAt) continue;
+    // A note's checklist lines live in the note (which shows its own progress).
+    if (t.completedAt || t.noteId) continue;
     const listId = effectiveListId(t, byId);
     if (!listId) continue;
     if (!t.parentId) open.set(listId, (open.get(listId) ?? 0) + 1);
@@ -97,7 +99,7 @@ export function buildTerritory(listId: string | null, tasks: Task[], today: Loca
   const live = tasks.filter((t) => !t.deletedAt);
   const steps = stepsByParent(live);
   const here = live.filter((t) =>
-    listId === null ? isInCustoms(t, steps.has(t.id)) : !t.parentId && !t.completedAt && t.listId === listId,
+    listId === null ? isInCustoms(t, steps.has(t.id)) : !t.parentId && !t.noteId && !t.completedAt && t.listId === listId,
   );
 
   const entries: TerritoryEntry[] = here.map((t) => {

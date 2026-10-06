@@ -1,4 +1,4 @@
-import { summarizeNote, voice, type Note } from '@pn/core';
+import { checklistIds, summarizeNote, voice, type Note } from '@pn/core';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
 
@@ -16,10 +16,15 @@ type Store = {
   refresh: () => void;
   /**
    * Saves a note, creating it on its first save. Shows at once; writes for
-   * one note go out in order. A failed save keeps the text and says so.
+   * one note go out in order (the promise settles when this one lands). A
+   * failed save keeps the text and says so. Moving territory moves its
+   * checklist lines too.
    */
-  save: (id: string, fields: Pick<Note, 'body' | 'listId'>) => void;
-  /** Deletes a note, offering Undo (unless `quiet`: an emptied note going away). */
+  save: (id: string, fields: Pick<Note, 'body' | 'listId'>) => Promise<void>;
+  /**
+   * Deletes a note and its checklist lines' tasks, offering Undo for both
+   * (unless `quiet`: an emptied note going away).
+   */
   remove: (note: Note, options?: { quiet?: boolean }) => void;
 };
 
@@ -27,7 +32,7 @@ const Ctx = createContext<Store | null>(null);
 
 /** The signed-in person's notes. Lives inside `TasksProvider` (its notices, and checklist tasks). */
 export function NotesProvider({ userId, children }: { userId: string; children: ReactNode }) {
-  const { tasks, notify, clearNotice } = useTasks();
+  const { tasks, notify, clearNotice, setDeletedMany, fileNote } = useTasks();
   const [all, setAll] = useState<Note[]>([]);
   const [status, setStatus] = useState<Store['status']>('loading');
   const [error, setError] = useState<string | null>(null);
@@ -73,18 +78,23 @@ export function NotesProvider({ userId, children }: { userId: string; children: 
 
   const save: Store['save'] = (id, fields) => {
     const stamp = new Date().toISOString();
+    const before = all.find((n) => n.id === id);
+    if (before && before.listId !== fields.listId) fileNote(id, fields.listId);
     setAll((prev) => {
       const existing = prev.find((n) => n.id === id);
       if (existing) return prev.map((n) => (n.id === id ? { ...n, ...fields, updatedAt: stamp } : n));
       return [...prev, { id, userId, taskId: null, ...fields, createdAt: stamp, updatedAt: stamp, deletedAt: null }];
     });
-    queue(id, () => saveNote({ id, userId, ...fields })).then(
+    return queue(id, () => saveNote({ id, userId, ...fields })).then(
       (saved) => {
         // The text on screen may be newer than this write; take only the server's timestamps.
         setAll((prev) => prev.map((n) => (n.id === id ? { ...n, createdAt: saved.createdAt, updatedAt: saved.updatedAt } : n)));
         setError(null);
       },
-      () => setError(copy.saveFailed),
+      (e) => {
+        setError(copy.saveFailed);
+        throw e;
+      },
     );
   };
 
@@ -92,7 +102,12 @@ export function NotesProvider({ userId, children }: { userId: string; children: 
     const stamp = new Date().toISOString();
     const mark = (deletedAt: string | null) => setAll((prev) => prev.map((n) => (n.id === note.id ? { ...n, deletedAt } : n)));
     mark(stamp);
-    const deleting = queue(note.id, () => setNoteDeleted(note.id, stamp));
+    // Its checklist lines go with it (only the ones still here, so Undo brings back just those).
+    const lines = checklistIds(note.body).filter((id) => tasks.some((t) => t.id === id && !t.deletedAt));
+    const deleting = queue(note.id, async () => {
+      await setNoteDeleted(note.id, stamp);
+      await setDeletedMany(lines, stamp);
+    });
     deleting.catch(() => {
       mark(null);
       clearNotice();
@@ -102,7 +117,10 @@ export function NotesProvider({ userId, children }: { userId: string; children: 
     const title = summarizeNote(note, new Map(tasks.map((t) => [t.id, t]))).title || copy.untitled;
     notify(copy.deleted(title), () => {
       mark(null);
-      queue(note.id, () => setNoteDeleted(note.id, null)).catch(() => {
+      queue(note.id, async () => {
+        await setNoteDeleted(note.id, null);
+        await setDeletedMany(lines, null);
+      }).catch(() => {
         mark(stamp);
         setError(copy.saveFailed);
       });

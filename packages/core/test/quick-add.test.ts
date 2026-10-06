@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { parseQuickAdd, parseWhen } from '../src/quick-add.ts';
+import { clockOf } from '../src/dates.ts';
+import { parseQuickAdd, parseWhen, scheduleOf } from '../src/quick-add.ts';
 
 // Saturday 3 October 2026, 10:00 local time.
 const SAT_10AM = new Date(2026, 9, 3, 10, 0);
@@ -138,4 +139,14 @@ test('#tags file into a territory; unknown ones stay in the title, untouched by 
   assert.equal(tagged('Email#chem').listId, null, 'a tag starts a word');
   assert.equal(parseQuickAdd('Lab #chem', SAT_10AM).listId, null, 'no territories given: nothing to match');
   assert.equal(parseQuickAdd('Lab #chem', SAT_10AM).title, 'Lab #chem');
+});
+
+test('a parse’s schedule as task fields: the time goes with the scheduled day, else the deadline', () => {
+  const walk = scheduleOf(parse('Walk Biscuit every day 6pm'));
+  assert.deepEqual([walk.scheduledOn, walk.rrule, walk.dueAt], ['2026-10-03', 'FREQ=DAILY', null]);
+  assert.deepEqual(clockOf(walk.remindAt!), { hour: 18, minute: 0 });
+  const essay = scheduleOf(parse('Essay due fri 5pm'));
+  assert.deepEqual([essay.scheduledOn, essay.remindAt, essay.dueOn], [null, null, '2026-10-09']);
+  assert.deepEqual(clockOf(essay.dueAt!), { hour: 17, minute: 0 });
+  assert.deepEqual(scheduleOf(parse('Buy stamps')), { scheduledOn: null, dueOn: null, remindAt: null, dueAt: null, rrule: null });
 });

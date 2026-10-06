@@ -27,20 +27,25 @@ import { Screen } from '@/components/screen';
 import { TaskRow, type TaskRowItem } from '@/components/task-row';
 import { Text } from '@/components/text';
 import { useLists } from '@/data/lists-store';
+import { noteTitles } from '@/data/note-titles';
+import { useNotes } from '@/data/notes-store';
 import { useTasks } from '@/data/tasks-store';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 /** "due today" / "due Fri" */
 const dueLabel = (dueOn: string, today: string) => voice.today.due(relativeDayPhrase(dueOn, today));
 
-/** `planned` holds ids of tasks that already have plan steps; `territories` maps list ids to names. */
-function rowFor(entry: AgendaEntry, today: string, planned: Set<string>, territories: Map<string, string>): TaskRowItem {
+/**
+ * `planned` holds ids of tasks that already have plan steps; `places` names
+ * territories and notes by id (a checklist line names its note).
+ */
+function rowFor(entry: AgendaEntry, today: string, planned: Set<string>, places: Map<string, string>): TaskRowItem {
   const t = entry.task;
   const meta: string[] = [];
   if (entry.parentTitle) meta.push(`${entry.parentTitle} · step ${entry.stepIndex} of ${entry.stepCount}`);
   else {
-    const territory = t.listId ? territories.get(t.listId) : undefined;
-    if (territory) meta.push(territory);
+    const place = t.noteId ? places.get(t.noteId) : t.listId ? places.get(t.listId) : undefined;
+    if (place) meta.push(place);
     if (t.dueOn) meta.push(dueLabel(t.dueOn, today));
   }
   if (entry.done && t.completedAt) meta.push(formatTime(new Date(t.completedAt)));
@@ -63,6 +68,7 @@ export default function TodayScreen() {
   const { session } = useAuth();
   const { tasks, status, today, rolloverHour, error, refresh, toggle } = useTasks();
   const { lists } = useLists();
+  const { notes } = useNotes();
   const { open: capture } = useCapture();
   const [customsOpen, setCustomsOpen] = useState(false);
   const [menuFor, setMenuFor] = useState<Task | null>(null);
@@ -70,7 +76,7 @@ export default function TodayScreen() {
   const view = buildToday(tasks, today, rolloverHour);
   const byId = new Map<string, Task>(tasks.map((t) => [t.id, t]));
   const planned = new Set(tasks.flatMap((t) => (t.parentId ? [t.parentId] : [])));
-  const territories = new Map(lists.map((l) => [l.id, l.name]));
+  const places = new Map([...lists.map((l) => [l.id, l.name] as const), ...noteTitles(notes, tasks)]);
   const onPlan = (id: string) => router.push({ pathname: '/plan/[id]', params: { id } });
   const onStart = (id: string) => router.push({ pathname: '/start/[id]', params: { id } });
   const onOpen = (id: string) => router.push({ pathname: '/task/[id]', params: { id } });
@@ -158,7 +164,7 @@ export default function TodayScreen() {
               {view.customs.map((t, i) => (
                 <TaskRow
                   key={t.id}
-                  item={rowFor({ task: t, done: false }, today, planned, territories)}
+                  item={rowFor({ task: t, done: false }, today, planned, places)}
                   last={i === view.customs.length - 1}
                   onToggle={onToggle}
                   onPlan={onPlan}
@@ -223,7 +229,7 @@ export default function TodayScreen() {
               {view.agenda.map((entry, i) => (
                 <TaskRow
                   key={entry.task.id}
-                  item={rowFor(entry, today, planned, territories)}
+                  item={rowFor(entry, today, planned, places)}
                   last={i === view.agenda.length - 1}
                   onToggle={onToggle}
                   onPlan={onPlan}

@@ -10,7 +10,7 @@ const at = (day: number, hour: number) => new Date(2026, 9, day, hour, 0).toISOS
 
 function task(id: string, fields: Partial<Task> = {}): Task {
   return {
-    id, userId: 'u1', listId: null, parentId: null, title: id, notes: null, status: 'in_progress',
+    id, userId: 'u1', listId: null, parentId: null, noteId: null, title: id, notes: null, status: 'in_progress',
     dueOn: null, dueAt: null, remindAt: null, rrule: null, estimateMinutes: null, scheduledOn: null,
     sortOrder: 0, source: 'self', externalId: null, completedAt: null,
     createdAt: at(1, 9), updatedAt: at(1, 9), deletedAt: null, ...fields,
@@ -36,6 +36,7 @@ test('Customs: undated, unfiled, not a repeat, no plan; the same items Today sho
     task('paper'),
     task('s1', { parentId: 'paper' }),
     task('finished', done),
+    task('checklist-line', { noteId: 'n1' }),
   ];
   const customs = buildTerritories(LISTS, tasks, TODAY).customs.map((t) => t.id);
   assert.deepEqual(customs, ['stamps']);
@@ -56,11 +57,12 @@ test('territory summaries: in order, open counts, the most pressing dated item; 
       task('walk', { listId: 'home', scheduledOn: '2026-10-04', remindAt: at(4, 18), rrule: 'FREQ=DAILY' }),
       task('bins', { listId: 'home', scheduledOn: TODAY, remindAt: at(6, 7) }),
       task('done-here', { listId: 'home', scheduledOn: TODAY, ...done }),
+      task('in-a-note', { listId: 'home', noteId: 'n1', scheduledOn: TODAY, remindAt: at(6, 6) }),
     ],
     TODAY,
   );
   assert.deepEqual(view.territories.map((s) => s.list.id), ['chem', 'home']);
-  assert.deepEqual(view.territories.map((s) => s.open), [4, 2], 'a plan counts once; finished tasks don’t count');
+  assert.deepEqual(view.territories.map((s) => s.open), [4, 2], 'a plan counts once; finished tasks and checklist lines don’t count');
   assert.equal(view.territories[0].next?.task.id, 'p1', 'a plan’s step is its next item');
   assert.deepEqual(
     [view.territories[1].next?.task.id, view.territories[1].next?.date],
@@ -91,6 +93,7 @@ test('a territory’s page: coming up by day and time, then anytime as arranged;
       task('s2', { parentId: 'paper', scheduledOn: '2026-10-07', sortOrder: 2 }),
       task('finished', { listId: 'chem', ...done }),
       task('elsewhere', { listId: 'home' }),
+      task('checklist-line', { listId: 'chem', noteId: 'n1' }),
     ],
     TODAY,
   );

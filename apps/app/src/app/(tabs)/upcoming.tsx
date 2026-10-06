@@ -24,6 +24,8 @@ import { Text } from '@/components/text';
 import { DaySection } from '@/components/upcoming/day-section';
 import { WeekStrip } from '@/components/upcoming/week-strip';
 import { useLists } from '@/data/lists-store';
+import { noteTitles } from '@/data/note-titles';
+import { useNotes } from '@/data/notes-store';
 import { useTasks } from '@/data/tasks-store';
 import { useCheckOff } from '@/hooks/use-check-off';
 import { useIsWide } from '@/hooks/use-is-wide';
@@ -40,6 +42,7 @@ export default function UpcomingScreen() {
   const { tasks, status, today, error, refresh } = useTasks();
   const { open: capture } = useCapture();
   const { lists } = useLists();
+  const { notes } = useNotes();
   const [menuFor, setMenuFor] = useState<Task | null>(null);
   const [selected, setSelected] = useState<LocalDate | null>(null);
   const [monthOpen, setMonthOpen] = useState(false);
@@ -68,8 +71,11 @@ export default function UpcomingScreen() {
   const onMenu = (id: string) => setMenuFor(byId.get(id) ?? null);
   const onToggle = useCheckOff();
 
-  const territories = useMemo(() => new Map(lists.map((l) => [l.id, l.name])), [lists]);
-  const rows = { today, planned, territories, onToggle, onPlan, onMenu, onOpen };
+  const places = useMemo(
+    () => new Map([...lists.map((l) => [l.id, l.name] as const), ...noteTitles(notes, tasks)]),
+    [lists, notes, tasks],
+  );
+  const rows = { today, planned, places, onToggle, onPlan, onMenu, onOpen };
   const month = <MonthCalendar selected={selected} today={today} onSelect={select} marks={marks} />;
 
   return (

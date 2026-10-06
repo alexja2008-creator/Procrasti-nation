@@ -72,6 +72,13 @@ const glyphs = {
     </>
   ),
   pencil: <Path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" />,
+  /** ☐: a note's line becomes a checklist line. */
+  checkbox: (
+    <>
+      <Rect x={4} y={4} width={16} height={16} rx={4} />
+      <Path d="M8.5 12.5l2.5 2.5 4.5-5.5" />
+    </>
+  ),
   // Territory kinds.
   book: (
     <>
