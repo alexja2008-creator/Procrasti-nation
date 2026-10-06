@@ -16,10 +16,12 @@ import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react
 
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
+import { NoticeBar } from '@/components/notice-bar';
 import { Screen } from '@/components/screen';
 import { DateSheet } from '@/components/task/date-sheet';
 import { FieldRow } from '@/components/task/field-row';
 import { RepeatSheet } from '@/components/task/repeat-sheet';
+import { StepsList } from '@/components/task/steps-list';
 import { Text } from '@/components/text';
 import type { TaskPatch } from '@/data/tasks';
 import { useTasks } from '@/data/tasks-store';
@@ -41,14 +43,20 @@ type SheetKind = 'when' | 'due' | 'repeat' | null;
 function TaskDetail({ id }: { id: string }) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
-  const { tasks, status, today, toggle, update, remove } = useTasks();
+  const { tasks, status, today, toggle, update, remove, addStep } = useTasks();
   const task = tasks.find((t) => t.id === id && !t.deletedAt);
   const step = task ? stepContext(tasks, task) : null;
-  const hasSteps = tasks.some((t) => t.parentId === id && !t.deletedAt);
+  const steps = tasks
+    .filter((t) => t.parentId === id && !t.deletedAt)
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt));
+  const hasSteps = steps.length > 0;
 
   const [sheet, setSheet] = useState<SheetKind>(null);
   const [titleDraft, setTitleDraft] = useState<string | null>(null);
   const [notesDraft, setNotesDraft] = useState<string | null>(null);
+  // Multiline inputs don't grow by themselves on web; size them to their text.
+  const [titleHeight, setTitleHeight] = useState(0);
+  const [notesHeight, setNotesHeight] = useState(0);
   const deleted = useRef(false);
 
   /** Saves typed text that differs from what's stored. */
@@ -115,6 +123,8 @@ function TaskDetail({ id }: { id: string }) {
           </Pressable>
         </View>
 
+        <NoticeBar />
+
         {step?.parent ? (
           <Pressable
             onPress={() => router.push({ pathname: '/task/[id]', params: { id: step.parent!.id } })}
@@ -145,13 +155,14 @@ function TaskDetail({ id }: { id: string }) {
             value={titleDraft ?? task.title}
             onChangeText={setTitleDraft}
             onBlur={saveText}
+            onContentSizeChange={(e) => setTitleHeight(e.nativeEvent.contentSize.height)}
             multiline
             submitBehavior="blurAndSubmit"
             returnKeyType="done"
             placeholder={copy.titlePlaceholder}
             placeholderTextColor={c.muted}
             accessibilityLabel={copy.titlePlaceholder}
-            style={[s.t.text.pageTitle, s.title, done && s.titleDone]}
+            style={[s.t.text.pageTitle, s.title, done && s.titleDone, titleHeight ? { height: titleHeight + 10 } : null]}
           />
         </View>
 
@@ -198,6 +209,17 @@ function TaskDetail({ id }: { id: string }) {
           ) : null}
         </View>
 
+        {/* Steps belong to top-level, one-off tasks (a repeating task's steps would need resetting). */}
+        {!task.parentId && !task.rrule && (hasSteps || !done) ? (
+          <StepsList
+            steps={steps}
+            onToggle={toggle}
+            onOpen={(st) => router.push({ pathname: '/task/[id]', params: { id: st.id } })}
+            onMove={(st, sortOrder) => update(st, { sortOrder })}
+            onAdd={(title) => addStep(task, title)}
+          />
+        ) : null}
+
         <View style={s.notes}>
           <Text variant="label" color={c.muted}>
             {copy.notes.toUpperCase()}
@@ -206,11 +228,12 @@ function TaskDetail({ id }: { id: string }) {
             value={notesDraft ?? task.notes ?? ''}
             onChangeText={setNotesDraft}
             onBlur={saveText}
+            onContentSizeChange={(e) => setNotesHeight(e.nativeEvent.contentSize.height)}
             multiline
             placeholder={copy.notesPlaceholder}
             placeholderTextColor={c.muted}
             accessibilityLabel={copy.notes}
-            style={[s.t.text.body, s.notesInput]}
+            style={[s.t.text.body, s.notesInput, notesHeight ? { height: Math.max(120, notesHeight + 28) } : null]}
           />
         </View>
       </View>

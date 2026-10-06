@@ -235,6 +235,12 @@ export const voice = {
     deleted: (title: string) => `Deleted “${title}”.`,
     undo: 'Undo',
     notFound: 'That task isn’t here anymore.',
+    steps: 'Steps',
+    stepsDone: (done: number, total: number) => `${done} of ${total} done`,
+    addStep: 'Add a step',
+    moveUp: 'Move up',
+    moveDown: 'Move down',
+    reorder: (title: string) => `Reorder: ${title}`,
   },
   /** Words on the ink stamps (mono caps). */
   stampText: {

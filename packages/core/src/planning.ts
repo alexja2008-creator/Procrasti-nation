@@ -54,3 +54,18 @@ export function fallbackStepDates(count: number, today: LocalDate, dueOn: LocalD
 export function plannerStyle(style: string | undefined): string | undefined {
   return ({ avoid: 'avoider', perfectionist: 'perfectionist', overwhelmed: 'overwhelmed', bored: 'boredom' } as Record<string, string>)[style ?? ''];
 }
+
+/**
+ * The new `sortOrder` for the item moved from index `from` to `to` in a list
+ * sorted by `orders`: halfway between its new neighbours, so only the moved
+ * row is written.
+ */
+export function sortOrderForMove(orders: number[], from: number, to: number): number {
+  const rest = orders.filter((_, i) => i !== from);
+  const before = rest[to - 1];
+  const after = rest[to];
+  if (before === undefined && after === undefined) return orders[from];
+  if (before === undefined) return after - 1;
+  if (after === undefined) return before + 1;
+  return (before + after) / 2;
+}

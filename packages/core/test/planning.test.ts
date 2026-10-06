@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { buildToday } from '../src/agenda.ts';
-import { fallbackStepDates, parseMinutes, suggestsPlan } from '../src/planning.ts';
+import { fallbackStepDates, parseMinutes, sortOrderForMove, suggestsPlan } from '../src/planning.ts';
 import type { Task } from '../src/types.ts';
 
 test('estimates become minutes (same rules as the database backfill)', () => {
@@ -37,4 +37,16 @@ test('a planned task leaves Customs even without a date', () => {
     { ...base, id: 'loose', parentId: null, title: 'Buy stamps', scheduledOn: null },
   ];
   assert.deepEqual(buildToday(tasks, '2026-10-03').customs.map((t) => t.id), ['loose']);
+});
+
+test('moving a step writes one sort order, halfway between its new neighbours', () => {
+  const orders = [1, 2, 3, 4];
+  const reorder = (from: number, to: number) => {
+    const moved = orders.map((o, i) => (i === from ? sortOrderForMove(orders, from, to) : o));
+    return moved.map((o, i) => ({ o, i })).sort((a, b) => a.o - b.o).map((x) => x.i);
+  };
+  assert.deepEqual(reorder(0, 2), [1, 2, 0, 3], 'down');
+  assert.deepEqual(reorder(3, 0), [3, 0, 1, 2], 'to the top');
+  assert.deepEqual(reorder(1, 3), [0, 2, 3, 1], 'to the bottom');
+  assert.equal(sortOrderForMove([5], 0, 0), 5, 'alone, nothing moves');
 });

@@ -86,7 +86,10 @@ export async function fetchActiveTasks(userId: string, since: Date): Promise<Tas
   return [...active, ...(done as unknown as Row[]).map(fromRow)];
 }
 
-export type NewTask = Pick<Task, 'id' | 'userId' | 'title' | 'scheduledOn' | 'dueOn' | 'dueAt' | 'remindAt' | 'rrule' | 'sortOrder'>;
+export type NewTask = Pick<
+  Task,
+  'id' | 'userId' | 'parentId' | 'title' | 'scheduledOn' | 'dueOn' | 'dueAt' | 'remindAt' | 'rrule' | 'sortOrder'
+>;
 
 export async function insertTask(t: NewTask): Promise<Task> {
   const { data, error } = await supabase
@@ -94,6 +97,7 @@ export async function insertTask(t: NewTask): Promise<Task> {
     .insert({
       id: t.id,
       user_id: t.userId,
+      parent_id: t.parentId,
       title: t.title,
       scheduled_on: t.scheduledOn,
       due_on: t.dueOn,

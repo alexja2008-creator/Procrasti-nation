@@ -31,6 +31,8 @@ type Store = {
   notice: Notice | null;
   refresh: () => void;
   add: (parsed: QuickAddResult) => Promise<Task | null>;
+  /** Adds a step (a subtask the person typed) at the end of a task's steps. */
+  addStep: (parent: Task, title: string) => Promise<Task | null>;
   toggle: (task: Task) => void;
   /** Adds or replaces tasks already saved elsewhere (e.g. a new plan's steps). */
   merge: (saved: Task[]) => void;
@@ -100,30 +102,29 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
 
   const replace = (id: string, next: Task) => setTasks((prev) => prev.map((t) => (t.id === id ? next : t)));
 
-  const add: Store['add'] = async (parsed) => {
-    const { time, scheduledOn, dueOn } = parsed;
+  /** Shows a new task at once and saves it; takes it back out if the save fails. */
+  const insert = async (fields: Partial<Task> & Pick<Task, 'title' | 'sortOrder'>) => {
     const stamp = new Date().toISOString();
     const draft: Task = {
       id: Crypto.randomUUID(),
       userId,
       listId: null,
       parentId: null,
-      title: parsed.title,
       notes: null,
       status: 'in_progress',
-      scheduledOn,
-      dueOn,
-      remindAt: time && scheduledOn ? atLocalTime(scheduledOn, time.hour, time.minute) : null,
-      dueAt: time && !scheduledOn && dueOn ? atLocalTime(dueOn, time.hour, time.minute) : null,
-      rrule: parsed.rrule,
+      scheduledOn: null,
+      dueOn: null,
+      remindAt: null,
+      dueAt: null,
+      rrule: null,
       estimateMinutes: null,
-      sortOrder: Date.now(),
       source: 'self',
       externalId: null,
       completedAt: null,
       createdAt: stamp,
       updatedAt: stamp,
       deletedAt: null,
+      ...fields,
     };
     setTasks((prev) => [...prev, draft]);
     try {
@@ -136,6 +137,24 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
       setError(voice.today.saveFailed);
       return null;
     }
+  };
+
+  const add: Store['add'] = (parsed) => {
+    const { time, scheduledOn, dueOn } = parsed;
+    return insert({
+      title: parsed.title,
+      scheduledOn,
+      dueOn,
+      remindAt: time && scheduledOn ? atLocalTime(scheduledOn, time.hour, time.minute) : null,
+      dueAt: time && !scheduledOn && dueOn ? atLocalTime(dueOn, time.hour, time.minute) : null,
+      rrule: parsed.rrule,
+      sortOrder: Date.now(),
+    });
+  };
+
+  const addStep: Store['addStep'] = (parent, title) => {
+    const siblings = tasks.filter((t) => t.parentId === parent.id && !t.deletedAt);
+    return insert({ parentId: parent.id, title, sortOrder: Math.max(0, ...siblings.map((t) => t.sortOrder)) + 1 });
   };
 
   const toggle: Store['toggle'] = (task) => {
@@ -220,7 +239,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
   };
 
   return (
-    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, toggle, merge, notify: (text) => setNotice({ text }), update, remove }}>
+    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, addStep, toggle, merge, notify: (text) => setNotice({ text }), update, remove }}>
       {children}
     </Ctx.Provider>
   );

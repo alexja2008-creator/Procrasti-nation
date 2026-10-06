@@ -20,6 +20,7 @@ import { Button } from '@/components/button';
 import { useCapture } from '@/components/capture';
 import { Icon } from '@/components/icon';
 import { NextStepCard } from '@/components/next-step-card';
+import { NoticeBar } from '@/components/notice-bar';
 import { RowMenu } from '@/components/row-menu';
 import { Screen } from '@/components/screen';
 import { TaskRow, type TaskRowItem } from '@/components/task-row';
@@ -54,7 +55,7 @@ export default function TodayScreen() {
   const s = useStyles(makeStyles);
   const { c, fonts } = s.t;
   const { session } = useAuth();
-  const { tasks, status, today, rolloverHour, error, notice, refresh, toggle } = useTasks();
+  const { tasks, status, today, rolloverHour, error, refresh, toggle } = useTasks();
   const { open: capture } = useCapture();
   const [customsOpen, setCustomsOpen] = useState(false);
   const [menuFor, setMenuFor] = useState<Task | null>(null);
@@ -194,14 +195,7 @@ export default function TodayScreen() {
             </View>
           </View>
 
-          {notice ? (
-            <View style={s.notice} accessibilityLiveRegion="polite">
-              <Text variant="meta" color={c.primaryText} style={s.noticeText}>
-                {notice.text}
-              </Text>
-              {notice.undo ? <Button variant="quiet" label={voice.task.undo} onPress={notice.undo} /> : null}
-            </View>
-          ) : null}
+          <NoticeBar />
 
           {/* Always shown: press and hold is the way to Start or plan any task. */}
           {view.agenda.some((e) => !e.done) ? (
@@ -273,8 +267,6 @@ const makeStyles = (t: Tokens) => ({
     countText: { letterSpacing: 0 },
     list: { marginTop: -6 },
     hint: { marginTop: -8 },
-    notice: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 32 },
-    noticeText: { flex: 1 },
     empty: {
       gap: 12,
       padding: 16,
