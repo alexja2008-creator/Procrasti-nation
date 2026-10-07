@@ -330,7 +330,9 @@ CREATE POLICY "Owners manage their start sessions" ON start_sessions FOR ALL
 
 -- ------------------------------------------------------------
 -- 7. push_tokens: Expo push tokens (iOS) and Web Push subscriptions
---    (JSON in `token`). The app deletes its row on sign-out.
+--    (the browser's push endpoint in `token`, its encryption keys in
+--    `keys`). The app deletes its row on sign-out. A browser belongs to
+--    one account at a time (save_web_push, below).
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS push_tokens (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -352,6 +354,46 @@ DROP POLICY IF EXISTS "Owners manage their push tokens" ON push_tokens;
 CREATE POLICY "Owners manage their push tokens" ON push_tokens FOR ALL
   USING (user_id = (SELECT auth.uid()))
   WITH CHECK (user_id = (SELECT auth.uid()));
+
+ALTER TABLE push_tokens ADD COLUMN IF NOT EXISTS keys JSONB;
+ALTER TABLE push_tokens DROP CONSTRAINT IF EXISTS push_tokens_web_keys;
+ALTER TABLE push_tokens ADD CONSTRAINT push_tokens_web_keys CHECK (
+  -- coalesce: a CHECK that comes out NULL (no keys at all) would pass.
+  platform <> 'web' OR coalesce(jsonb_typeof(keys->'p256dh') = 'string' AND jsonb_typeof(keys->'auth') = 'string', false)
+);
+-- One account per browser, and the sender's lookup by platform.
+CREATE UNIQUE INDEX IF NOT EXISTS push_tokens_web_endpoint_idx ON push_tokens (token) WHERE platform = 'web';
+CREATE INDEX IF NOT EXISTS push_tokens_platform_idx ON push_tokens (platform, user_id);
+
+-- Saves this browser's Web Push subscription for the signed-in person. If
+-- someone else used this browser before and their sign-out never reached
+-- the server, their row goes, so their reminders stop ringing here (RLS
+-- would hide it from a plain delete; hence SECURITY DEFINER).
+CREATE OR REPLACE FUNCTION save_web_push(endpoint TEXT, key_p256dh TEXT, key_auth TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  me UUID := auth.uid();
+BEGIN
+  IF me IS NULL THEN
+    RAISE EXCEPTION 'not signed in' USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  IF endpoint IS NULL OR endpoint !~ '^https://' OR length(endpoint) > 2000
+     OR coalesce(length(key_p256dh), 0) NOT BETWEEN 1 AND 200 OR coalesce(length(key_auth), 0) NOT BETWEEN 1 AND 200 THEN
+    RAISE EXCEPTION 'not a push subscription' USING ERRCODE = 'invalid_parameter_value';
+  END IF;
+  DELETE FROM push_tokens WHERE platform = 'web' AND token = endpoint AND user_id <> me;
+  INSERT INTO push_tokens (user_id, platform, token, keys)
+  VALUES (me, 'web', endpoint, jsonb_build_object('p256dh', key_p256dh, 'auth', key_auth))
+  ON CONFLICT (user_id, token) DO UPDATE SET keys = EXCLUDED.keys, updated_at = now();
+END;
+$$;
+
+REVOKE ALL ON FUNCTION save_web_push(TEXT, TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION save_web_push(TEXT, TEXT, TEXT) TO authenticated;
 
 -- ------------------------------------------------------------
 -- 8. plan_generations: one row per AI plan built. The free tier's
@@ -499,6 +541,47 @@ BEGIN
   END IF;
 END;
 $$;
+
+-- ------------------------------------------------------------
+-- 11. push_sends: every reminder the Web Push sender has sent, so none
+--     rings twice (it runs every minute and looks back a few minutes in
+--     case a run was missed). Server only: RLS on and no policies, so only
+--     the service role reaches it. The sender prunes rows after 2 days.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS push_sends (
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  -- core's reminder id: task:<id>:<ms>, due:<id>:<ms>, morning:<day>, snooze:<id>:<ms>
+  reminder_id TEXT NOT NULL,
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, reminder_id)
+);
+
+CREATE INDEX IF NOT EXISTS push_sends_sent_idx ON push_sends (sent_at);
+
+ALTER TABLE push_sends ENABLE ROW LEVEL SECURITY;
+
+-- ------------------------------------------------------------
+-- 12. push_snoozes: Snooze 10 min pressed on a web reminder. The sender
+--     rings it at ring_at with the same words (while the task is still
+--     open), then deletes it. Server only, like push_sends.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS push_snoozes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  ring_at TIMESTAMPTZ NOT NULL,
+  -- The occurrence it's for (a repeat's day).
+  day DATE,
+  title TEXT NOT NULL CHECK (length(title) <= 500),
+  body TEXT NOT NULL DEFAULT '' CHECK (length(body) <= 500),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS push_snoozes_ring_idx ON push_snoozes (ring_at);
+CREATE INDEX IF NOT EXISTS push_snoozes_task_idx ON push_snoozes (task_id);
+CREATE INDEX IF NOT EXISTS push_snoozes_user_idx ON push_snoozes (user_id);
+
+ALTER TABLE push_snoozes ENABLE ROW LEVEL SECURITY;
 
 -- Not yet: `integrations` (LMS feed URLs, encrypted with Supabase Vault)
 -- lands with Phase 5.

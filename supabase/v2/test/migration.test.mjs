@@ -357,6 +357,55 @@ for (const baseline of baselines) {
       });
     });
 
+    await t.test('web push: a browser belongs to one account; the send log and snoozes are server only', async () => {
+      const endpoint = 'https://fcm.googleapis.com/fcm/send/browser-1';
+      const owners = async () =>
+        (await rows(db, `SELECT user_id, keys FROM push_tokens WHERE token = $1`, [endpoint])).map((r) => [r.user_id, r.keys.auth]);
+
+      await as(db, U1, async () => {
+        await db.query(`SELECT save_web_push($1, 'p1', 'a1')`, [endpoint]);
+        await db.query(`SELECT save_web_push($1, 'p1', 'a2')`, [endpoint]); // keys refreshed, still one row
+        await assert.rejects(db.query(`SELECT save_web_push('http://insecure.test/x', 'p', 'a')`), /not a push subscription/);
+        await assert.rejects(db.query(`SELECT save_web_push($1, '', 'a')`, [endpoint]), /not a push subscription/);
+        await assert.rejects(
+          db.query(`INSERT INTO push_tokens (user_id, platform, token) VALUES ($1, 'web', 'https://x.test/no-keys')`, [U1]),
+          /push_tokens_web_keys/,
+          'a web subscription needs its keys',
+        );
+        await db.query(`INSERT INTO push_tokens (user_id, platform, token) VALUES ($1, 'ios', 'ExponentPushToken[x]')`, [U1]);
+      });
+      assert.deepEqual(await owners(), [[U1, 'a2']]);
+
+      await as(db, U2, async () => {
+        assert.equal((await one(db, `SELECT count(*)::int AS n FROM push_tokens`)).n, 0, "others' browsers are invisible");
+        await assert.rejects(
+          db.query(`INSERT INTO push_tokens (user_id, platform, token, keys) VALUES ($1, 'web', $2, '{"p256dh":"p","auth":"a"}')`, [U2, endpoint]),
+          /push_tokens_web_endpoint_idx/,
+          'a plain insert cannot take a browser another account holds',
+        );
+        // Signing in on the same browser takes it over: U1's reminders stop ringing here.
+        await db.query(`SELECT save_web_push($1, 'p2', 'b1')`, [endpoint]);
+      });
+      assert.deepEqual(await owners(), [[U2, 'b1']]);
+      assert.equal((await one(db, `SELECT count(*)::int AS n FROM push_tokens WHERE user_id = $1`, [U1])).n, 1, "U1's iPhone token stays");
+
+      await as(db, '', async () => {
+        await assert.rejects(db.query(`SELECT save_web_push($1, 'p', 'a')`, [endpoint]), /not signed in/);
+      });
+      await as(db, U1, async () => {
+        await assert.rejects(db.query(`INSERT INTO push_sends (user_id, reminder_id) VALUES ($1, 'task:x:1')`, [U1]), /row-level security/);
+        await assert.rejects(
+          db.query(`INSERT INTO push_snoozes (user_id, task_id, ring_at, title) VALUES ($1, $2, now(), 'x')`, [U1, TASK_A]),
+          /row-level security/,
+        );
+      });
+      // The sender (service role, here the table owner) logs each send once.
+      await db.query(`INSERT INTO push_sends (user_id, reminder_id) VALUES ($1, 'task:x:1')`, [U1]);
+      const again = await db.query(`INSERT INTO push_sends (user_id, reminder_id) VALUES ($1, 'task:x:1') ON CONFLICT DO NOTHING RETURNING reminder_id`, [U1]);
+      assert.equal(again.rows.length, 0, 'a second claim of the same reminder gets nothing');
+      await db.query(`INSERT INTO push_snoozes (user_id, task_id, ring_at, day, title) VALUES ($1, $2, now(), '2026-10-07', 'History paper')`, [U1, TASK_A]);
+    });
+
     await t.test("search finds the signed-in user's own tasks and notes, nothing else", async () => {
       const chem = (await one(db, `INSERT INTO lists (user_id, name) VALUES ($1, 'Chem 201') RETURNING id`, [U1])).id;
       const add = async ({ user = U1, title, notes = null, list = null, parent = null, done = false, deleted = false }) =>
@@ -473,7 +522,8 @@ for (const baseline of baselines) {
       const leftovers = await rows(
         db,
         `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'
-           AND table_name IN ('lists', 'notes', 'note_counts', 'stamps', 'start_sessions', 'push_tokens', 'user_settings', 'plan_generations', 'ai_requests')`,
+           AND table_name IN ('lists', 'notes', 'note_counts', 'stamps', 'start_sessions', 'push_tokens', 'push_sends', 'push_snoozes',
+                              'user_settings', 'plan_generations', 'ai_requests')`,
       );
       assert.deepEqual(leftovers, []);
 

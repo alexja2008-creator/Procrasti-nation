@@ -13,7 +13,10 @@
 DELETE FROM tasks WHERE parent_id IS NOT NULL;
 
 DROP FUNCTION IF EXISTS search_items(TEXT, TEXT, UUID, INT, INT);
+DROP FUNCTION IF EXISTS save_web_push(TEXT, TEXT, TEXT);
 
+DROP TABLE IF EXISTS push_snoozes;
+DROP TABLE IF EXISTS push_sends;
 DROP TABLE IF EXISTS ai_requests;
 DROP TABLE IF EXISTS plan_generations;
 DROP TABLE IF EXISTS push_tokens;

@@ -12,7 +12,7 @@ You are a security specialist for ProcrastiNation, a Next.js 14 productivity app
 
 ## Attack Surface — This Project
 
-### API Routes (13 endpoints)
+### API Routes (v1 endpoints plus v2's; not exhaustive)
 | Route | Auth Required | Risk Area |
 |-------|--------------|-----------|
 | /api/generate-plan | Yes (user) | AI prompt injection, rate limiting (5/mo free) |
@@ -28,6 +28,8 @@ You are a security specialist for ProcrastiNation, a Next.js 14 productivity app
 | /api/friends/unread | Yes (user) | Data leakage |
 | /api/cron/nudge | CRON_SECRET | Service role DB access, email sending |
 | /api/cron/weekly-report | CRON_SECRET | Service role DB access, email sending |
+| /api/cron/push | CRON_SECRET | Service role DB access; sends Web Push reminders (task titles) to each person's own browsers only |
+| /api/push/action | Signed snooze token (no session) | Service role, but only for the one task the HMAC token names; 7-day expiry; 20 pending snoozes per person |
 
 ### High-Risk Areas
 1. **Supabase RLS** — All user data protected by Row Level Security. If bypassed, full data exposure.

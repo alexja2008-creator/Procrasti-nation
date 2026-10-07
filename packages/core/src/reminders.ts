@@ -1,8 +1,9 @@
 // Reminders: what should ring, and when. Planned here, scheduled on the
 // device: the app compares this plan with what the phone has pending and
 // changes only the difference, so finishing, re-timing, retitling or deleting
-// a task needs no special case. Pure and shared, so iOS (now), Web Push (next)
-// and the tests agree.
+// a task needs no special case. Pure and shared, so iOS (the phone schedules
+// it), Web Push (the server sends what `remindersDue` says each minute) and
+// the tests agree.
 //
 // What rings: a task's time on its day (each time a repeat comes round), a
 // deadline with a time, and the optional morning list.
@@ -53,6 +54,8 @@ export interface ReminderOptions {
   rolloverHour?: number;
   /** How many to keep, soonest first. */
   limit?: number;
+  /** Plan only up to here instead of 14 days on (a sender's run). */
+  until?: Date;
 }
 
 const open = (t: Task) => !t.deletedAt && !t.completedAt;
@@ -73,9 +76,9 @@ function ringDays(t: Task & { scheduledOn: LocalDate }, from: LocalDate, until: 
 
 /** Everything that should ring in the next two weeks, soonest first, up to `limit`. */
 export function planReminders(tasks: Task[], now: Date, options: ReminderOptions = {}): Reminder[] {
-  const { lists = [], morning = null, rolloverHour = 0, limit = MAX_PENDING } = options;
+  const { lists = [], morning = null, rolloverHour = 0, limit = MAX_PENDING, until } = options;
   const start = now.getTime();
-  const end = start + REMINDER_DAYS * 86_400_000;
+  const end = Math.min(start + REMINDER_DAYS * 86_400_000, until ? until.getTime() : Infinity);
   const inWindow = (at: number) => at > start && at <= end;
   const firstDay = localDateString(now);
   const lastDay = localDateString(new Date(end));
@@ -158,6 +161,15 @@ export function planReminders(tasks: Task[], now: Date, options: ReminderOptions
   }
 
   return planned.sort((a, b) => a.at - b.at || a.id.localeCompare(b.id)).slice(0, Math.max(0, limit));
+}
+
+/**
+ * What came due after `since`, up to and including `now`: what a server
+ * sender rings on each run, however many. Runs in the person's own timezone
+ * (the caller sees to that), like everything here.
+ */
+export function remindersDue(tasks: Task[], since: Date, now: Date, options: Omit<ReminderOptions, 'limit' | 'until'> = {}): Reminder[] {
+  return planReminders(tasks, since, { ...options, until: now, limit: Infinity });
 }
 
 /** The kind and task of one of our reminder ids; null for anyone else's (e.g. a future timer-end alert). */

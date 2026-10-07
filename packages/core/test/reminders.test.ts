@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { MAX_PENDING, parseReminderId, planReminders, reminderChanges, snoozeOf } from '../src/reminders.ts';
+import { MAX_PENDING, parseReminderId, planReminders, reminderChanges, remindersDue, snoozeOf } from '../src/reminders.ts';
 import { checkOff } from '../src/tasks.ts';
 import type { List, Task } from '../src/types.ts';
 
@@ -193,4 +193,52 @@ test('checking off: a one-off finishes, a repeat moves on with its time', () => 
   });
   const ahead = task('ahead', { scheduledOn: '2026-10-08', rrule: 'FREQ=WEEKLY;BYDAY=TH' });
   assert.deepEqual(checkOff(ahead, TODAY, NOW).movedTo, '2026-10-15', 'checked off early: the next one after it');
+});
+
+test('due in a window: what a sender rings on one run, start exclusive, end inclusive', () => {
+  const tasks = [
+    task('call', { title: 'Call mom', scheduledOn: TODAY, remindAt: at(6, 18) }),
+    task('essay', { title: 'Essay', dueOn: TODAY, dueAt: at(6, 18, 5) }),
+    task('later', { scheduledOn: TODAY, remindAt: at(6, 19) }),
+  ];
+  const ids = (since: Date, now: Date) => remindersDue(tasks, since, now).map((r) => r.id);
+  assert.deepEqual(ids(new Date(ms(6, 17, 55)), new Date(ms(6, 18))), [`task:call:${ms(6, 18)}`]);
+  assert.deepEqual(ids(new Date(ms(6, 18)), new Date(ms(6, 18, 1))), [], 'the run that sent it already looked at 18:00');
+  assert.deepEqual(ids(new Date(ms(6, 17, 50)), new Date(ms(6, 18, 10))), [`task:call:${ms(6, 18)}`, `due:essay:${ms(6, 18, 5)}`]);
+
+  const morning = remindersDue(tasks, new Date(ms(7, 7, 59)), new Date(ms(7, 8)), { morning: { on: true, hour: 8, minute: 0 } });
+  assert.deepEqual(morning.map((r) => r.id), ['morning:2026-10-07'], 'only the morning inside the window, not two weeks of them');
+});
+
+/** Runs `fn` with the process in another timezone, as the site's sender does per person. */
+function inZone<T>(tz: string, fn: () => T): T {
+  const before = process.env.TZ;
+  process.env.TZ = tz;
+  try {
+    return fn();
+  } finally {
+    if (before === undefined) delete process.env.TZ;
+    else process.env.TZ = before;
+  }
+}
+
+test("due in the person's own timezone, across the end of daylight saving", () => {
+  // Made on a phone in New York: every day at 9:00 AM from Friday 30 October (13:00 UTC, still on EDT).
+  const walk = task('walk', { scheduledOn: '2026-10-30', remindAt: '2026-10-30T13:00:00.000Z', rrule: 'FREQ=DAILY' });
+  const due = (since: string, now: string) => remindersDue([walk], new Date(since), new Date(now)).map((r) => new Date(r.at).toISOString());
+
+  inZone('America/New_York', () => {
+    assert.deepEqual(due('2026-10-31T12:55:00Z', '2026-10-31T13:00:00Z'), ['2026-10-31T13:00:00.000Z'], 'Saturday 9:00 EDT');
+    // Clocks go back on Sunday 1 November: 9:00 AM is now 14:00 UTC.
+    assert.deepEqual(due('2026-11-02T12:55:00Z', '2026-11-02T13:00:00Z'), [], 'not at the old UTC time');
+    assert.deepEqual(due('2026-11-02T13:55:00Z', '2026-11-02T14:00:00Z'), ['2026-11-02T14:00:00.000Z'], 'Monday 9:00 EST');
+  });
+  inZone('UTC', () => {
+    // The same task planned in the wrong zone would ring an hour early after the change; the sender must switch.
+    assert.deepEqual(due('2026-11-02T12:55:00Z', '2026-11-02T13:00:00Z'), ['2026-11-02T13:00:00.000Z']);
+  });
+  inZone('Asia/Tokyo', () => {
+    // 13:00 UTC is 10 PM in Tokyo: the same instant reads as a 10 PM task there.
+    assert.deepEqual(due('2026-10-31T12:55:00Z', '2026-10-31T13:00:00Z'), ['2026-10-31T13:00:00.000Z']);
+  });
 });

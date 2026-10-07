@@ -11,6 +11,7 @@
     "app:check": "cd apps/app && npx tsc --noEmit && npx expo lint",
     "evals": "cd apps/site && node --no-warnings evals/plan-quality/run.mjs",
     "core:test": "node --test packages/core/test/*.test.ts",
-    "db:test": "npm --prefix supabase/v2 test"
+    "db:test": "npm --prefix supabase/v2 test",
+    "site:test": "npm --prefix apps/site test"
   }
 }
