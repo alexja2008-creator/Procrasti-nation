@@ -1,47 +1,67 @@
-import { voice } from '@pn/core';
+import { authErrorKind, isLongEnoughPassword, isValidUsername, MIN_PASSWORD_LENGTH, voice } from '@pn/core';
 import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text as RNText, TextInput, View } from 'react-native';
 
 import { isAppleSignInAvailable, signInWithApple } from '@/auth/apple';
 import {
+  createAccount,
   enabledMethods,
   friendlyAuthError,
   isValidEmail,
+  resendConfirmation,
   sendMagicLink,
+  sendPasswordReset,
   signInWithGoogle,
   signInWithPassword,
 } from '@/auth/sign-in';
 import { AppleButton } from '@/components/apple-button';
 import { GoogleMark } from '@/components/brand-marks';
 import { Button } from '@/components/button';
-import { Icon } from '@/components/icon';
 import { Logo } from '@/components/logo';
 import { PasswordField } from '@/components/password-field';
 import { Screen } from '@/components/screen';
+import { SentPanel } from '@/components/sign-in/sent-panel';
 import { Text } from '@/components/text';
+import { UsernameField } from '@/components/username-field';
+import { isUsernameTaken } from '@/data/profile';
+import { useUsernameCheck } from '@/hooks/use-username-check';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.signIn;
-/** Supabase allows one magic link per address per minute. */
+/** Supabase allows one email per address per minute. */
 const RESEND_SECONDS = 60;
+
+/** What was emailed: a sign-in link, a sign-up confirmation, or a password reset. */
+type Sent = 'link' | 'confirm' | 'reset';
+const SEND: Record<Sent, (email: string) => Promise<void>> = {
+  link: sendMagicLink,
+  confirm: resendConfirmation,
+  reset: sendPasswordReset,
+};
 
 export default function SignInScreen() {
   const s = useStyles(makeStyles);
   const { c, fonts } = s.t;
 
-  // A password is the way in; a magic link is one tap away.
-  const [mode, setMode] = useState<'password' | 'link'>('password');
+  // A password is the way in; a magic link is one tap away; new people create an account.
+  const [mode, setMode] = useState<'password' | 'link' | 'create'>('password');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const [focused, setFocused] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sentTo, setSentTo] = useState<string | null>(null);
+  // Signing in before confirming: offer the confirmation again.
+  const [unconfirmed, setUnconfirmed] = useState(false);
+  const [sent, setSent] = useState<{ kind: Sent; email: string } | null>(null);
   const [resendAt, setResendAt] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [appleAvailable, setAppleAvailable] = useState(false);
+  const usernameStatus = useUsernameCheck(mode === 'create' ? username : '');
 
+  const creating = mode === 'create';
   const showEmail = enabledMethods.has('email');
   const showApple = enabledMethods.has('apple') && appleAvailable;
   const showGoogle = enabledMethods.has('google');
@@ -61,64 +81,82 @@ export default function SignInScreen() {
     return () => clearInterval(id);
   }, [resendAt]);
 
-  const send = async (address: string) => {
-    if (!isValidEmail(address)) {
-      setError(copy.invalidEmail);
-      return;
-    }
+  /** Runs one request with the form busy; a failure shows as the error line. */
+  const attempt = async (work: () => Promise<void>) => {
     setError(null);
+    setUnconfirmed(false);
     setBusy(true);
     try {
-      await sendMagicLink(address);
-      setSentTo(address);
-      setResendAt(Date.now() + RESEND_SECONDS * 1000);
+      await work();
     } catch (e) {
       setError(friendlyAuthError(e));
+      setUnconfirmed(authErrorKind(e instanceof Error ? e : null) === 'unconfirmed');
     } finally {
       setBusy(false);
     }
   };
 
-  // On success the session changes and the root layout swaps this screen for Today.
-  const signIn = async () => {
-    const address = email.trim();
+  const emailed = (kind: Sent, address: string) => {
+    setSent({ kind, email: address });
+    setResendAt(Date.now() + RESEND_SECONDS * 1000);
+  };
+
+  /** Validates the address, then emails a link of that kind. */
+  const send = (kind: Sent, address: string) => {
     if (!isValidEmail(address)) {
-      setError(copy.invalidEmail);
+      setError(kind === 'reset' ? copy.forgotNeedsEmail : copy.invalidEmail);
       return;
     }
-    if (!password) {
-      setError(copy.needPassword);
-      return;
-    }
-    setError(null);
-    setBusy(true);
-    try {
-      await signInWithPassword(address, password);
-    } catch (e) {
-      setError(friendlyAuthError(e));
-      setBusy(false);
-    }
+    return attempt(async () => {
+      await SEND[kind](address);
+      emailed(kind, address);
+    });
   };
 
-  const switchMode = () => {
-    setMode((m) => (m === 'password' ? 'link' : 'password'));
-    setError(null);
+  // On success the session changes and the root layout swaps this screen for the Application or Today.
+  const signIn = () => {
+    const address = email.trim();
+    if (!isValidEmail(address)) return setError(copy.invalidEmail);
+    if (!password) return setError(copy.needPassword);
+    return attempt(() => signInWithPassword(address, password));
   };
 
-  const social = (signIn: () => Promise<boolean>) => async () => {
-    setError(null);
-    try {
-      await signIn();
-    } catch (e) {
-      setError(friendlyAuthError(e));
-    }
+  const create = () => {
+    const address = email.trim();
+    if (!isValidUsername(username)) return setError(copy.usernameHint);
+    if (!isValidEmail(address)) return setError(copy.invalidEmail);
+    if (!isLongEnoughPassword(password)) return setError(voice.authErrors.tooShort(MIN_PASSWORD_LENGTH));
+    return attempt(async () => {
+      // Checked again here: the hint under the field may be a moment old.
+      if (await isUsernameTaken(username).catch(() => false)) {
+        setError(copy.usernameTaken(username));
+        return;
+      }
+      const signedIn = await createAccount({ email: address, password, username });
+      if (!signedIn) emailed('confirm', address);
+    });
   };
+
+  const switchTo = (next: typeof mode) => {
+    setMode(next);
+    setError(null);
+    setUnconfirmed(false);
+  };
+
+  // On success the session changes and the root layout swaps this screen for Today.
+  const social = (signInWith: () => Promise<boolean>) => () => attempt(async () => void (await signInWith()));
 
   const errorText = error ? (
     <Text variant="meta" color={c.error} accessibilityLiveRegion="polite" style={s.error}>
       {error}
     </Text>
   ) : null;
+
+  const fieldLabel = (label: string) => (
+    <Text variant="labelSmall" color={c.muted} aria-hidden style={s.fieldLabel}>
+      {label.toUpperCase()}
+    </Text>
+  );
 
   return (
     <Screen>
@@ -130,42 +168,39 @@ export default function SignInScreen() {
             {copy.eyebrow.toUpperCase()}
           </Text>
           <Text variant="title" accessibilityRole="header">
-            {copy.titleLead}{' '}
-            <RNText style={{ fontFamily: fonts.displayItalic, color: c.primary }}>{copy.titleAccent}</RNText>
+            {creating ? copy.createTitleLead : copy.titleLead}{' '}
+            <RNText style={{ fontFamily: fonts.displayItalic, color: c.primary }}>
+              {creating ? copy.createTitleAccent : copy.titleAccent}
+            </RNText>
           </Text>
           <Text variant="lead" color={c.muted}>
-            {copy.lead}
+            {creating ? copy.createLead : copy.lead}
           </Text>
         </View>
 
         <View style={s.page}>
-          {sentTo ? (
-            <View style={s.sent} accessibilityLiveRegion="polite">
-              <Icon name="mail" size={28} color={c.primary} />
-              <Text variant="section" accessibilityRole="header">
-                {copy.sentTitle}
-              </Text>
-              <Text variant="body" color={c.inkSoft}>
-                {copy.sentBody(sentTo)}
-              </Text>
-              {errorText}
-              <View style={s.sentActions}>
-                <Button
-                  variant="quiet"
-                  label={secondsLeft > 0 ? copy.resendIn(secondsLeft) : copy.resend}
-                  disabled={busy || secondsLeft > 0}
-                  onPress={() => send(sentTo)}
-                />
-                <Button
-                  variant="quiet"
-                  label={copy.differentEmail}
-                  onPress={() => {
-                    setSentTo(null);
-                    setError(null);
-                  }}
-                />
-              </View>
-            </View>
+          {sent ? (
+            <SentPanel
+              body={
+                sent.kind === 'confirm'
+                  ? copy.confirmBody(sent.email)
+                  : sent.kind === 'reset'
+                    ? copy.resetBody(sent.email)
+                    : copy.sentBody(sent.email)
+              }
+              aside={sent.kind === 'confirm' ? copy.confirmAlready : undefined}
+              error={errorText}
+              secondsLeft={secondsLeft}
+              busy={busy}
+              onResend={() => send(sent.kind, sent.email)}
+              resendLabel={sent.kind === 'confirm' ? copy.resendConfirm : undefined}
+              backLabel={sent.kind === 'link' ? copy.differentEmail : copy.backToSignIn}
+              onBack={() => {
+                if (sent.kind !== 'link') switchTo('password');
+                setSent(null);
+                setError(null);
+              }}
+            />
           ) : (
             <>
               {showApple ? <AppleButton onPress={social(signInWithApple)} /> : null}
@@ -188,64 +223,91 @@ export default function SignInScreen() {
               ) : null}
               {showEmail ? (
                 <View style={s.emailBlock}>
-                  <Text variant="labelSmall" color={c.muted} aria-hidden>
-                    {copy.emailLabel.toUpperCase()}
-                  </Text>
+                  {creating ? (
+                    <>
+                      {fieldLabel(copy.usernameLabel)}
+                      <UsernameField
+                        value={username}
+                        onChange={setUsername}
+                        status={usernameStatus}
+                        returnKeyType="next"
+                        submitBehavior="submit"
+                        onSubmitEditing={() => emailRef.current?.focus()}
+                        editable={!busy}
+                      />
+                    </>
+                  ) : null}
+                  {fieldLabel(copy.emailLabel)}
                   <TextInput
+                    ref={emailRef}
                     value={email}
                     onChangeText={setEmail}
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
-                    onSubmitEditing={mode === 'password' ? () => passwordRef.current?.focus() : () => send(email.trim())}
-                    submitBehavior={mode === 'password' ? 'submit' : 'blurAndSubmit'}
+                    onSubmitEditing={mode === 'link' ? () => send('link', email.trim()) : () => passwordRef.current?.focus()}
+                    submitBehavior={mode === 'link' ? 'blurAndSubmit' : 'submit'}
                     placeholder={copy.emailPlaceholder}
                     placeholderTextColor={c.muted}
                     keyboardType="email-address"
-                    // "username" pairs it with the password for iOS AutoFill.
+                    // "username" pairs it with the password for iOS AutoFill (they sign in with the email).
                     textContentType="username"
                     autoComplete="email"
                     autoCapitalize="none"
                     autoCorrect={false}
-                    returnKeyType={mode === 'password' ? 'next' : 'send'}
+                    returnKeyType={mode === 'link' ? 'send' : 'next'}
                     editable={!busy}
                     accessibilityLabel={copy.emailLabelSpoken}
                     style={[s.input, focused && s.inputFocused]}
                   />
-                  {mode === 'password' ? (
+                  {mode !== 'link' ? (
                     <>
-                      <Text variant="labelSmall" color={c.muted} aria-hidden style={s.fieldLabel}>
-                        {copy.passwordLabel.toUpperCase()}
-                      </Text>
+                      {fieldLabel(copy.passwordLabel)}
                       <PasswordField
                         ref={passwordRef}
                         value={password}
                         onChangeText={setPassword}
                         label={copy.passwordLabelSpoken}
-                        onSubmitEditing={signIn}
+                        isNew={creating}
+                        onSubmitEditing={creating ? create : signIn}
                         returnKeyType="go"
                         editable={!busy}
                       />
+                      {creating ? (
+                        <Text variant="meta" color={c.muted}>
+                          {copy.newPasswordHint(MIN_PASSWORD_LENGTH)}
+                        </Text>
+                      ) : null}
                     </>
                   ) : null}
                   {errorText}
-                  {mode === 'password' ? (
+                  {creating ? (
+                    <Button label={busy ? copy.creating : copy.createAccount} disabled={busy} onPress={create} />
+                  ) : mode === 'password' ? (
                     <Button label={busy ? copy.signingIn : copy.signIn} disabled={busy} onPress={signIn} />
                   ) : (
                     <>
-                      <Button label={busy ? copy.sending : copy.sendLink} disabled={busy} onPress={() => send(email.trim())} />
+                      <Button label={busy ? copy.sending : copy.sendLink} disabled={busy} onPress={() => send('link', email.trim())} />
                       <Text variant="meta" color={c.muted}>
                         {copy.hint}
                       </Text>
                     </>
                   )}
-                  <View style={s.switchMode}>
-                    <Button
-                      variant="quiet"
-                      label={mode === 'password' ? copy.useLink : copy.usePassword}
-                      disabled={busy}
-                      onPress={switchMode}
-                    />
-                  </View>
+                  {!creating ? (
+                    <View style={s.quietLinks}>
+                      {unconfirmed ? (
+                        <Button variant="quiet" label={copy.resendConfirm} disabled={busy} onPress={() => send('confirm', email.trim())} />
+                      ) : null}
+                      {mode === 'password' ? (
+                        <Button variant="quiet" label={copy.forgot} disabled={busy} onPress={() => send('reset', email.trim())} />
+                      ) : null}
+                      <Button
+                        variant="quiet"
+                        label={mode === 'password' ? copy.useLink : copy.usePassword}
+                        disabled={busy}
+                        onPress={() => switchTo(mode === 'password' ? 'link' : 'password')}
+                      />
+                    </View>
+                  ) : null}
                 </View>
               ) : (
                 errorText
@@ -253,6 +315,17 @@ export default function SignInScreen() {
             </>
           )}
         </View>
+
+        {showEmail && !sent ? (
+          <View style={s.quietLinks}>
+            <Button
+              variant="quiet"
+              label={creating ? copy.haveAccount : copy.newHere}
+              disabled={busy}
+              onPress={() => switchTo(creating ? 'password' : 'create')}
+            />
+          </View>
+        ) : null}
       </View>
     </Screen>
   );
@@ -275,7 +348,6 @@ const makeStyles = (t: Tokens) => ({
     rule: { flex: 1, height: 1, backgroundColor: t.c.rule },
     emailBlock: { gap: 10 },
     fieldLabel: { marginTop: 4 },
-    switchMode: { alignItems: 'flex-start', marginLeft: -8 },
     input: {
       minHeight: 50,
       paddingHorizontal: 14,
@@ -290,7 +362,6 @@ const makeStyles = (t: Tokens) => ({
     },
     inputFocused: { borderColor: t.c.primary, borderWidth: 1.5 },
     error: { fontSize: 13.5 },
-    sent: { gap: 10, alignItems: 'flex-start' },
-    sentActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginLeft: -8 },
+    quietLinks: { alignItems: 'flex-start', marginLeft: -8, marginTop: -6 },
   }),
 });

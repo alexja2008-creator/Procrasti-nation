@@ -111,9 +111,10 @@ function AppStack({ signedIn }: { signedIn: boolean }) {
       <Stack.Protected guard={applying}>
         <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
       </Stack.Protected>
-      {/* The Application's Oath plans a task too. */}
+      {/* Signed in, Application or not: the Oath plans a task, and a reset link chooses a new password. */}
       <Stack.Protected guard={signedIn}>
         <Stack.Screen name="plan/[id]" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="auth/new-password" options={{ gestureEnabled: false }} />
       </Stack.Protected>
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="sign-in" />

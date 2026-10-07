@@ -1,4 +1,4 @@
-import { authErrorKind, MIN_PASSWORD_LENGTH, voice } from '@pn/core';
+import { authErrorKind, MIN_PASSWORD_LENGTH, TRIAL_DAYS, voice } from '@pn/core';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
@@ -21,11 +21,42 @@ export const authRedirectUrl = () => Linking.createURL('auth/callback');
 
 export const isValidEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+/**
+ * A sign-in link for an existing account. New accounts pick a username, so the link never
+ * creates one; an unknown address gets the same "on its way" as a known one (no telling which exist).
+ */
 export async function sendMagicLink(email: string) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: authRedirectUrl() },
+    options: { emailRedirectTo: authRedirectUrl(), shouldCreateUser: false },
   });
+  if (error && error.code !== 'otp_disabled') throw error;
+}
+
+/**
+ * A new account. The username waits in `pending_username` until the email is confirmed
+ * (`ensureProfile` makes the profile then), and the trial is set as v1 does. True if signed in
+ * at once (Supabase's "Confirm email" off); otherwise a confirmation link is on its way.
+ */
+export async function createAccount({ email, password, username }: { email: string; password: string; username: string }) {
+  const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 86_400_000).toISOString();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { emailRedirectTo: authRedirectUrl(), data: { pending_username: username, trial_ends_at: trialEndsAt } },
+  });
+  if (error) throw error;
+  return !!data.session;
+}
+
+export async function resendConfirmation(email: string) {
+  const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: authRedirectUrl() } });
+  if (error) throw error;
+}
+
+/** A link to choose a new password; it lands on auth/callback, which sends it on to auth/new-password. */
+export async function sendPasswordReset(email: string) {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: authRedirectUrl() });
   if (error) throw error;
 }
 

@@ -11,7 +11,7 @@ import {
   type StartMinutes,
 } from '@pn/core';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
@@ -25,8 +25,10 @@ import { Screen } from '@/components/screen';
 import { PasswordSheet } from '@/components/settings/password-sheet';
 import { SettingRow } from '@/components/settings/setting-row';
 import { SettingsCard } from '@/components/settings/settings-card';
+import { UsernameSheet } from '@/components/settings/username-sheet';
 import { Sheet } from '@/components/sheet';
 import { Text } from '@/components/text';
+import { fetchUsername } from '@/data/profile';
 import { useUserSettings } from '@/data/user-settings';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
@@ -43,7 +45,7 @@ const tones: Choice<NudgeToneId>[] = (Object.keys(nudgeTones) as NudgeToneId[]).
 const TIMERS: StartMinutes[] = [2, 5, 10, 25];
 const DAY_ENDS = [0, 1, 2, 3, 4, 5, 6];
 
-type Picking = 'purpose' | 'hours' | 'style' | 'tone' | 'timer' | 'dayEnds' | 'password' | null;
+type Picking = 'purpose' | 'hours' | 'style' | 'tone' | 'timer' | 'dayEnds' | 'username' | 'password' | null;
 
 const labelOf = <T extends string>(choices: readonly { id: T; label: string }[], id: T | undefined) =>
   choices.find((c) => c.id === id)?.label ?? copy.notSet;
@@ -59,6 +61,20 @@ export default function SettingsScreen() {
   const prefs: Partial<Preferences> = settings?.preferences ?? {};
   const [picking, setPicking] = useState<Picking>(null);
   const [error, setError] = useState<string | null>(null);
+  const userId = session?.user.id;
+  const [username, setUsername] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    fetchUsername(userId).then(
+      (name) => !cancelled && setUsername(name),
+      () => undefined, // the row shows "Choose one"; saving still works
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   /** Applies at once (the stores roll back if the save fails). */
   const save = (work: () => Promise<unknown>) => {
@@ -116,6 +132,7 @@ export default function SettingsScreen() {
       <RemindersCard />
 
       <SettingsCard label={copy.accountLabel}>
+        <SettingRow label={copy.username} value={username ?? copy.usernameNone} onPress={() => setPicking('username')} />
         <SettingRow label={copy.password} value={copy.passwordValue} onPress={() => setPicking('password')} />
         <View style={s.account}>
           {session?.user.email ? (
@@ -182,6 +199,8 @@ export default function SettingsScreen() {
             ))}
           </View>
         </Sheet>
+      ) : picking === 'username' && userId ? (
+        <UsernameSheet userId={userId} current={username} onSaved={setUsername} onClose={() => setPicking(null)} />
       ) : picking === 'password' ? (
         <PasswordSheet onClose={() => setPicking(null)} />
       ) : picking === 'dayEnds' ? (

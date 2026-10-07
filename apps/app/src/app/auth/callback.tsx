@@ -16,7 +16,7 @@ const copy = voice.signIn;
 export default function AuthCallbackScreen() {
   const t = useTokens();
   const params = useLocalSearchParams();
-  const { session } = useAuth();
+  const { session, recovering } = useAuth();
   // Which link this is: a newer one can arrive while this screen still shows an older failure.
   const attempt = String(params.code ?? params.error_description ?? params.error ?? '');
   const [failure, setFailure] = useState<{ attempt: string; message: string } | null>(null);
@@ -30,7 +30,8 @@ export default function AuthCallbackScreen() {
     finishSignIn(params).catch((e) => setFailure({ attempt, message: friendlyAuthError(e) }));
   }, [attempt, params]);
 
-  if (session) return <Redirect href="/" />;
+  // A password-reset link signs them in to choose a new password first.
+  if (session) return <Redirect href={recovering ? '/auth/new-password' : '/'} />;
 
   return (
     <Screen>
