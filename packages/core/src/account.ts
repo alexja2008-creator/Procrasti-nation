@@ -16,6 +16,35 @@ export const cleanUsername = (typed: string) =>
     .replace(/[^a-z0-9_]/g, '')
     .slice(0, USERNAME_MAX);
 
+/**
+ * A US or Canadian mobile number as typed ("(555) 234-5678", "+1 555 234 5678") in E.164
+ * ("+15552345678"), or null. Texted codes go to those two countries only at first (SMS fraud).
+ */
+export function normalizePhone(typed: string): string | null {
+  let digits = typed.replace(/\D/g, '');
+  if (digits.length === 11 && digits.startsWith('1')) digits = digits.slice(1);
+  // North American numbers: neither the area code nor the exchange starts with 0 or 1.
+  return /^[2-9]\d{2}[2-9]\d{6}$/.test(digits) ? `+1${digits}` : null;
+}
+
+/** "+15552345678" → "(555) 234-5678". */
+export function formatPhone(e164: string): string {
+  const d = e164.replace(/^\+1/, '');
+  return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : e164;
+}
+
+/** The free tier: this many AI plans in each window, the windows counted from when the account was made. */
+export const FREE_PLANS_PER_WINDOW = 2;
+const PLAN_WINDOW_MS = 30.5 * 86_400_000;
+
+/** The free-plan window `now` falls in, for an account created at `createdAt` (ISO). */
+export function planWindow(createdAt: string, now: Date = new Date()): { start: Date; end: Date } {
+  const born = Date.parse(createdAt);
+  const k = Number.isFinite(born) ? Math.max(0, Math.floor((now.getTime() - born) / PLAN_WINDOW_MS)) : 0;
+  const start = Number.isFinite(born) ? born + k * PLAN_WINDOW_MS : now.getTime();
+  return { start: new Date(start), end: new Date(start + PLAN_WINDOW_MS) };
+}
+
 /** The keys of `voice.authErrors`. */
 export type AuthErrorKind =
   | 'rateLimited'

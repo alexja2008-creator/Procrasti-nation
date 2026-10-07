@@ -51,3 +51,30 @@ test('anything else is generic, never a crash', () => {
   assert.equal(authErrorKind(null), 'generic');
   assert.equal(authErrorKind(undefined), 'generic');
 });
+
+test('texted codes go to US and Canadian numbers', async () => {
+  const { normalizePhone, formatPhone } = await import('../src/account.ts');
+  assert.equal(normalizePhone('(555) 234-5678'), '+15552345678');
+  assert.equal(normalizePhone('+1 555 234 5678'), '+15552345678');
+  assert.equal(normalizePhone('1-555-234-5678'), '+15552345678');
+  assert.equal(normalizePhone('555 234 567'), null, 'too short');
+  assert.equal(normalizePhone('155 234 5678'), null, 'no area code starts with 1');
+  assert.equal(normalizePhone('555 134 5678'), null, 'no exchange starts with 1');
+  assert.equal(normalizePhone('+44 7700 900123'), null, 'other countries later');
+  assert.equal(formatPhone('+15552345678'), '(555) 234-5678');
+});
+
+test('free plans come in 30.5-day windows from when the account was made', async () => {
+  const { planWindow, FREE_PLANS_PER_WINDOW } = await import('../src/account.ts');
+  assert.equal(FREE_PLANS_PER_WINDOW, 2);
+  const born = '2026-01-01T00:00:00.000Z';
+  const first = planWindow(born, new Date('2026-01-20T00:00:00Z'));
+  assert.equal(first.start.toISOString(), born);
+  assert.equal(first.end.toISOString(), '2026-01-31T12:00:00.000Z', 'half a day past the 30th');
+  const second = planWindow(born, new Date('2026-01-31T12:00:00Z'));
+  assert.equal(second.start.toISOString(), '2026-01-31T12:00:00.000Z', 'a window starts the moment the last ends');
+  const later = planWindow(born, new Date('2026-07-01T00:00:00Z'));
+  assert.equal(later.start.toISOString(), '2026-06-02T12:00:00.000Z', 'the sixth window (5 × 30.5 days in)');
+  assert.equal(later.end.toISOString(), '2026-07-03T00:00:00.000Z');
+  assert.equal(planWindow('not a date', new Date('2026-07-01T00:00:00Z')).start.toISOString(), '2026-07-01T00:00:00.000Z', 'no creation time: a window from now');
+});
