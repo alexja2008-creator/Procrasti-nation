@@ -1,5 +1,7 @@
 # Plan: Local notifications (ProcrastiNation 2.0, `v2` branch)
 
+**Built 2026-10-06** in `ceddb0e`, `464c0b4` and `6ff0be2`. Changes from the plan: Expo Go can't schedule local notifications on iOS 27, so the iPhone side runs in a development build (`apps/app/scripts/ios-dev-build.sh`, with a scene-life-cycle config plugin iOS 27 requires and a placeholder bundle id until the real one is chosen); and Done and Snooze with the app closed go through a small Swift add-on (`apps/app/modules/reminder-actions`), because on iOS 27 JavaScript never starts for a button that doesn't open the app. Checked on the Simulator signed out with a test reminder and in Expo Go signed in; the signed-in pass on the development build is still to do (see the handoff).
+
 Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
 ## What it is
