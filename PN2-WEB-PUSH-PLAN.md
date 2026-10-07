@@ -1,6 +1,6 @@
 # Plan: Web Push (ProcrastiNation 2.0, `v2` branch)
 
-**Status: approved 2026-10-07** (decisions below confirmed by Alex). **Built** in `da8692b` (server) and `9a1d37c` (browser, cron schedule, dev script); the live end-to-end check in a real browser waits on the staging service-role key (see the handoff).
+**Status: approved 2026-10-07** (decisions below confirmed by Alex). **Built** in `da8692b` (server) and `9a1d37c` (browser, cron schedule, dev script), and **checked end to end on 2026-10-07** in Google Chrome against staging (real pushes through Google's push service; see the handoff). Not exercised: the browser's own permission prompt and the first-time ask on web (the test granted permission directly), Firefox and Safari.
 
 Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with screenshots.
 
