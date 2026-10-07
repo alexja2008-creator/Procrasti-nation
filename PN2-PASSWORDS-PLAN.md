@@ -4,7 +4,9 @@
 
 **Checked:** core tests (the password and username rules; error codes and messages → words, unknown codes generic); on web (signed out, at `127.0.0.1:8081`, which has its own storage): the form in each mode, autofill hints (`current-password` / `new-password`), show / hide, Enter moving to the password, every local check (bad email, no password, too short, Forgot with no email), the username cleaned as typed and checked free against staging, switching modes keeps the email; on iOS: sign in and create account, day theme.
 
-**Still to check live** (each needs Alex, since Claude doesn't type real passwords or create accounts): set a password in Settings, then sign in with it on another device; a wrong password; create an account with a throwaway address (one email) → confirm → Application with a `profiles` row; a taken username; Forgot → reset link → Choose a new password; Settings → Username. **Phase 3** (password managers on web, night theme pass) follows those checks.
+**Checked live (Alex, iPhone):** Settings → Password set one; Settings → Username made the first `profiles` row (alex).
+
+**Still to check live** (each needs Alex, since Claude doesn't type real passwords or create accounts): sign in with the password on another device; a wrong password; create an account with a throwaway address (one email) → confirm → Application with a `profiles` row; a taken username; Forgot → reset link → Choose a new password. **Phase 3** (password managers on web, night theme pass) follows those checks.
 
 Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 

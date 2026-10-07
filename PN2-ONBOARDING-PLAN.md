@@ -10,7 +10,7 @@
 - The Oath: creating the task, opening Plan it, and coming back without a plan.
 - Settings: on the iPhone, it showed and changed the answers.
 
-**Still to check with a live session** (the test session died partway): accepting a plan from the Oath, Settings saves landing, the focused Today, and the tone lines in Start Mode.
+**Checked with a live session (2026-10-07):** on web, accepting a plan from the Oath, Settings saves landing, the focused Today (its notices fixed in `87c6ce9`) and the tone lines in Start Mode; on the iPhone, Alex's own run through the Application, the Approved stamp and Passport's stamps (layout fixes in `87c6ce9`, `bca5ef6`, `8890c13`). Details in `PN2-HANDOFF.md`, section 5.
 
 Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
