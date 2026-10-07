@@ -82,20 +82,50 @@ async function applyDone(entry: DoneEntry): Promise<void> {
   saved.forEach((listener) => listener(row));
 }
 
+/**
+ * The server answered and turned the save down (bad data, a rule): trying
+ * again won't help. Offline, signed out or an expired session (PGRST3xx) has
+ * no code or is worth another try.
+ */
+const refused = (e: unknown) => {
+  const code = (e as { code?: unknown } | null)?.code;
+  return typeof code === 'string' && code !== '' && !code.startsWith('PGRST3');
+};
+
+/**
+ * A save iOS suspended mid-request (the app went back to sleep after a button)
+ * may never answer. Giving up on it unblocks the queue; if it lands later, the
+ * next pass finds the task finished and does nothing.
+ */
+const SAVE_TIMEOUT_MS = 15_000;
+
+function withTimeout<T>(work: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('Timed out')), SAVE_TIMEOUT_MS);
+  });
+  return Promise.race([work, timeout]).finally(() => clearTimeout(timer));
+}
+
 let saving: Promise<void> | null = null;
 let saveAgain = false;
 
-/** Saves every Done waiting, oldest first; stops at the first that can't be saved yet (offline, signed out). */
+/**
+ * Saves every Done waiting, oldest first. Stops at the first that can't be
+ * saved yet (offline, signed out) and tries again on the next foreground or
+ * sign-in, or straight away if one was asked for meanwhile (coming back to
+ * the app while a suspended save fails).
+ */
 export function saveDones(): Promise<void> {
   saveAgain = true;
   saving ??= (async () => {
-    while (saveAgain) {
+    pass: while (saveAgain) {
       saveAgain = false;
       for (const entry of await outbox.list()) {
         try {
-          await applyDone(entry);
-        } catch {
-          return; // the next foreground or sign-in tries again
+          await withTimeout(applyDone(entry));
+        } catch (e) {
+          if (!refused(e)) continue pass;
         }
         await outbox.remove(entry.key);
       }
