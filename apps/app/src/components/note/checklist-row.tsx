@@ -63,6 +63,8 @@ export function ChecklistRow({ task, today, inputRef, onFocus, onToggle, onRetur
         }}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: done }}
+        // React Native Web only exposes done through aria-checked.
+        aria-checked={done}
         accessibilityLabel={(done ? voice.task.markNotDone : voice.task.markDone)(value)}
         style={s.check}>
         {done ? (

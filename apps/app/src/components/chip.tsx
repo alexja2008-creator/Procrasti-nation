@@ -14,6 +14,8 @@ export function Chip({ label, selected, onPress, accessibilityLabel }: Props) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected }}
+      // React Native Web only exposes the picked chip through aria-selected.
+      aria-selected={!!selected}
       accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => [s.chip, selected && s.selected, pressed && s.pressed]}>
       <Text variant="button" color={selected ? c.onPrimary : c.ink}>

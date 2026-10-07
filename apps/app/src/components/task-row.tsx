@@ -62,6 +62,8 @@ export function TaskRow({ item, last, onToggle, onPlan, onMenu, onOpen, detail }
         onPress={toggle}
         accessibilityRole="checkbox"
         accessibilityState={{ checked: done }}
+        // React Native Web only exposes done through aria-checked.
+        aria-checked={done}
         accessibilityLabel={`${done ? 'Mark not done' : 'Complete'}: ${item.title}`}
         style={s.check}>
         {done ? (

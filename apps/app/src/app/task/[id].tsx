@@ -145,6 +145,8 @@ function TaskDetail({ id }: { id: string }) {
             onPress={() => toggle(task)}
             accessibilityRole="checkbox"
             accessibilityState={{ checked: done }}
+            // React Native Web only exposes done through aria-checked.
+            aria-checked={done}
             accessibilityLabel={(done ? copy.markNotDone : copy.markDone)(task.title)}
             style={s.check}>
             {done ? (

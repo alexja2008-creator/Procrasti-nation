@@ -49,6 +49,8 @@ export function TerritoryCard({ summary, notes = 0, today, selected, onPress, ha
         onPress={onPress}
         accessibilityRole="button"
         accessibilityState={{ selected: !!selected }}
+        // React Native Web only exposes the open card through aria-selected.
+        aria-selected={!!selected}
         accessibilityLabel={`${list.name}, ${meta}`}
         {...actions}
         style={({ pressed }) => [s.main, pressed && s.pressed]}>

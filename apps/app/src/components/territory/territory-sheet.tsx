@@ -36,6 +36,8 @@ export function TerritorySheet({ selected, onPick, onClose }: Props) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: chosen }}
+      // React Native Web only exposes the current territory through aria-selected.
+      aria-selected={chosen}
       style={({ pressed }) => [s.row, pressed && s.pressed]}>
       <Icon name={icon} size={20} color={color} strokeWidth={1.9} />
       <Text variant="item" style={s.label} numberOfLines={1}>

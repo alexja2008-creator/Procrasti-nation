@@ -96,6 +96,8 @@ export function DayCell({ day, today, selected, count = 0, onSelect }: DayProps)
       accessibilityRole="button"
       accessibilityLabel={count ? `${longDateLabel(day)}, ${voice.things(count)}` : longDateLabel(day)}
       accessibilityState={{ selected: chosen }}
+      // React Native Web only exposes the picked day through aria-selected.
+      aria-selected={chosen}
       style={s.cell}>
       <View style={[s.circle, day === today && s.today, chosen && s.chosen]}>
         <Text variant="body" color={chosen ? c.onPrimary : day < today ? c.muted : c.ink}>

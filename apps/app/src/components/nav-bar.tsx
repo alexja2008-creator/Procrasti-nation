@@ -44,6 +44,8 @@ export function NavItem({ icon, label, wide, isFocused, ...props }: NavItemProps
       {...props}
       accessibilityRole="tab"
       accessibilityState={{ selected: isFocused }}
+      // React Native Web only exposes the current tab through aria-selected.
+      aria-selected={isFocused}
       style={({ pressed }) => [wide ? s.sideItem : s.tabItem, wide && isFocused && s.sideItemActive, pressed && s.pressed]}>
       <Icon name={icon} color={color} strokeWidth={isFocused ? 1.8 : 1.7} />
       <Text

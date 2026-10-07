@@ -87,6 +87,8 @@ export function TerritoryEditSheet({ list, onClose, onCreated, onDeleted }: Prop
             accessibilityRole="button"
             accessibilityLabel={copy.inks[i]}
             accessibilityState={{ selected: ink === i }}
+            // React Native Web only exposes the picked ink through aria-selected.
+            aria-selected={ink === i}
             style={({ pressed }) => [s.ink, ink === i && s.inkChosen, pressed && s.pressed]}>
             <View style={[s.swatch, { backgroundColor: c.stamp[i] }]} />
             <Text variant="button">{copy.inks[i]}</Text>

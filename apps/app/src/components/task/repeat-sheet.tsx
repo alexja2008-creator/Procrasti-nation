@@ -29,6 +29,8 @@ export function RepeatSheet({ rrule, anchor, onSave, onClose }: Props) {
             onPress={() => onSave(o.rrule)}
             accessibilityRole="button"
             accessibilityState={{ selected: chosen }}
+            // React Native Web only exposes the current repeat through aria-selected.
+            aria-selected={chosen}
             style={({ pressed }) => [s.option, pressed && s.pressed]}>
             <Text variant="item" style={s.label}>
               {o.label}

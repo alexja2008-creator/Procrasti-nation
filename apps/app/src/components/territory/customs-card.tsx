@@ -17,6 +17,8 @@ export function CustomsCard({ count, selected, onPress }: Props) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected }}
+      // React Native Web only exposes the open card through aria-selected.
+      aria-selected={!!selected}
       accessibilityLabel={`${names.customs}, ${waiting}`}
       style={({ pressed }) => [s.card, selected && s.selected, pressed && s.pressed]}>
       <Icon name="inbox" size={20} color={c.ink} />

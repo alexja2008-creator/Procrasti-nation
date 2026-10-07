@@ -61,6 +61,8 @@ export function StepsList({ steps, onToggle, onOpen, onMove, onAdd }: Props) {
                 onPress={() => onToggle(step)}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: isDone }}
+                // React Native Web only exposes done through aria-checked.
+                aria-checked={isDone}
                 accessibilityLabel={(isDone ? copy.markNotDone : copy.markDone)(step.title)}
                 style={s.check}>
                 {isDone ? (

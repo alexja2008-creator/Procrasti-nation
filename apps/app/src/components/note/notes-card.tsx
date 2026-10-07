@@ -16,6 +16,8 @@ export function NotesCard({ count, selected, onPress }: Props) {
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected }}
+      // React Native Web only exposes the open card through aria-selected.
+      aria-selected={!!selected}
       accessibilityLabel={`${voice.notes.title}, ${voice.notes.count(count)}`}
       style={({ pressed }) => [s.card, selected && s.selected, pressed && s.pressed]}>
       <Icon name="pencil" size={20} color={c.ink} strokeWidth={1.8} />

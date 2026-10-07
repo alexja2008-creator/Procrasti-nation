@@ -141,6 +141,8 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
                   onPress={() => setMode(m)}
                   accessibilityRole="tab"
                   accessibilityState={{ selected: mode === m }}
+                  // React Native Web only exposes the current mode through aria-selected.
+                  aria-selected={mode === m}
                   style={[s.segment, mode === m && s.segmentOn]}>
                   <Text variant="button" color={mode === m ? c.ink : c.muted}>
                     {voice.capture[m]}
