@@ -107,6 +107,7 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
 | Platform | **An App Store app is mandatory:** Expo (React Native) + Swift add-ons |
 | Web | **100% feature parity with iOS.** Layout can adapt to the laptop, but every core feature exists on both |
 | Notes | Capture-first notes, not a full Apple Notes clone |
+| Schools / teachers | A relic of an idea to turn PN into an LMS; **not the path.** Ignore it (2026-10-06): no new work for teachers, classes or assignments. The priority is making the app production-ready for individual users |
 | Theme | Logo stays. **Lean harder** into the nation theme (Passport, Stamps, Territories, Customs, Declarations, State of the Union, Residency, Holidays, Town Hall, Allies) |
 | Rollout | Rebuild the UI on the `v2` branch; critical fixes go on `main` |
 | Design | **A2 · Vintage Passport, refined** (section 7) |
@@ -229,9 +230,9 @@ Commits on `main`: `df426dd`, `e79f893`, `6acd10b`, `7623c37`, `bc120c2`, plus `
 
 ---
 
-## 9. Open product question: the schools feature
+## 9. The schools feature (decided: ignore)
 
-The production dump showed tables the plan never mentioned: `organizations`, `org_memberships`, `classes`, `enrollments`, `class_invites`, `assignment_templates` and `assignments`, plus `reset_sessions`. Teachers can see students' assignment tasks through an RLS policy. v2 keeps all of it working (the migration tests check teacher visibility), but how it fits into v2's product and UI is undecided.
+The production dump showed tables the plan never mentioned: `organizations`, `org_memberships`, `classes`, `enrollments`, `class_invites`, `assignment_templates` and `assignments`, plus `reset_sessions`, and an RLS policy letting teachers see students' assignment tasks. Alex decided on 2026-10-06 that this LMS direction is a relic and not the path forward: build for individual users and spend no effort on it. The v2 migration still leaves those tables and the policy untouched (dropping them would be a separate, deliberate decision).
 
 ---
 
