@@ -1,6 +1,6 @@
 # Plan: Onboarding that converts (ProcrastiNation 2.0, `v2` branch)
 
-**Status: proposed 2026-10-07.** Decisions 1–6 confirmed by Alex; the open ones are at the end.
+**Status: approved 2026-10-07** (decisions below confirmed by Alex; prices stay v1's for now, a semester plan comes up later).
 
 Read `PN2-HANDOFF.md`, `CLAUDE.md` and `PN2-ONBOARDING-PLAN.md` (the Citizenship Application this builds on) first.
 
@@ -35,7 +35,7 @@ The Application tailors the app, but nothing in it sells the app, and v2 has no 
 - **The growth plan is organic** (`business-marketing-plan.md`: TikTok, Reddit, word of mouth, $20–40 per user). Free users are what spreads; Prayer Lock's paid funnel doesn't need them.
 - **The voice.** Guilt works for Prayer Lock's audience; it backfires on procrastination.
 
-**The hybrid (required trial to get in, free tier on the way out):** it captures most of a hard paywall's conversion while keeping people who cancel as free users who keep their data, can convert later and can still recommend the app. Its weak spots, and the fix for each:
+**The hybrid (required trial to get in, free tier on the way out):** it captures most of a hard paywall's conversion while keeping people who cancel as free users who keep their data, can convert later and can still recommend the app. Its weak spots, and the fix for each (**all four adopted by Alex**; the semester plan's price comes later):
 1. **The free tier is reachable only by starting the trial and cancelling,** which feels like a trick if found out. *Fix:* say it on the trial page: "Cancel anytime before it ends. You keep the free version."
 2. **People who'd never add a payment method are lost at the door,** including the free users who'd have spread the app. *Fix:* measure trial starts page by page from day one; if they're low, test a reverse trial (Pro for 7 days with no payment method, then free; v1's model) against it with RevenueCat's paywall experiments.
 3. **Ask to Buy and pending purchases.** *Fix:* let them in on the free tier while it's pending.
@@ -47,36 +47,46 @@ The Application tailors the app, but nothing in it sells the app, and v2 has no 
 2. **Cancelling keeps the free tier.** Someone who cancels the trial keeps the app (Today, quick add, notes, reminders, Start Mode, territories) with the free tier's plans.
 3. **Free tier: 2 AI plans per 30.5 days,** counted in windows from the account's creation (not calendar months). Was 3 per calendar month. The Oath is the first plan of the first window.
 4. **Existing accounts** (v1 users, anyone signed up before this ships) are **offered** the trial once and can skip it; they keep the free tier.
-5. **The account is made mid-quiz, before the Oath.** The questions, the result and "how PN helps" run before sign-up (answers kept on the device); "Save your passport" asks for the account just before the AI plan, so the costly call always has an account behind it.
+5. **An anonymous passport through the funnel; saved later.** Begin creates a real but anonymous account (Supabase anonymous sign-in), so nothing waits on an email: answers, the Oath's plan (metered like any account's), the trial. **Save your passport** (username, then Apple / Google in one tap once available, or email + password) comes after the trial starts, at moments with a reason, and keeps the same account and data. (Revised from "account mid-quiz": every email step before the Oath meant leaving the app for Mail.)
 6. **Relief, not shame,** everywhere in the funnel; true numbers only.
 
 ## The flow
 
-Pages marked **new**; the rest exist today.
+Pages marked **new**; the rest exist today. Everything before 15 runs on the anonymous passport.
 
-| # | Page | Signed in? | What it does |
-|---|---|---|---|
-| 1 | Welcome | no | "Citizenship Application" + **Begin**, and "Already a citizen? Sign in" |
-| 2 | Purpose of visit | no | as now (territories made after sign-up) |
-| 3 | Your hours | no | as now |
-| 4 | What usually stops you? | no | as now |
-| 5 | First, you're not broken | no | as now: the loop named kindly, then the relief (PN's "pain screen") |
-| 6 | How should we nudge you? | no | as now |
-| 7 | **Your result** | no | Their answers read back as a fixable mechanism, with one true, normalizing fact. Draft: "You're in good company: most college students put things off, and about half say it's a real problem for them (Steel, 2007). Yours is *it feels too big*: when the first step isn't visible, starting feels impossible. That's fixable." One version per style |
-| 8 | **How PN helps you** | no | 2–3 cards picked by the answer, each a small real piece of the app: too big → **Plan it** (a task becoming steps); avoid → **Start Mode** ("just 5 minutes"); perfect → the timer + "done beats perfect"; bored → stamps, ranks and their nudge tone's sample line |
-| 9 | **Where did you hear about us?** | no | TikTok / Instagram / YouTube / A friend / App Store / Other. One tap; for marketing |
-| 10 | **Save your passport** | → yes | Create account (username, email, password) or sign in; then the answers kept on the device are saved and territories made |
-| 11 | The Oath | yes | as now; the planner's wait is staged as "Processing your application…" |
-| 12 | **Your first week** | yes | The Oath's plan laid out by day ("Thu: List the midterm chapters · 15 min"), not a template |
-| 13 | **A nudge for step 1** | yes | Primed ask: "Want a nudge each morning with your next step?" → turns on the morning list at their hours' time → the system prompt (iOS) or browser prompt (web). "Not now" is fine |
-| 14 | Approved | yes | the stamp, as now |
-| 15 | **The trial** | yes | 7 days free, then the price; "We'll remind you the day before it ends"; Restore purchases; terms and privacy links (Apple requires them). Required for new accounts; existing ones get "Not now" |
+| # | Page | What it does |
+|---|---|---|
+| 1 | Welcome | "Citizenship Application" + **Begin** (creates the anonymous passport), and "Already a citizen? Sign in" |
+| 2 | Purpose of visit | as now |
+| 3 | Your hours | as now |
+| 4 | What usually stops you? | as now |
+| 5 | First, you're not broken | as now: the loop named kindly, then the relief (PN's "pain screen") |
+| 6 | How should we nudge you? | as now |
+| 7 | **Your result** | Their answers read back as a fixable mechanism, with one true, normalizing fact. Draft: "You're in good company: most college students put things off, and about half say it's a real problem for them (Steel, 2007). Yours is *it feels too big*: when the first step isn't visible, starting feels impossible. That's fixable." One version per style |
+| 8 | **How PN helps you** | 2–3 cards picked by the answer, each a small real piece of the app: too big → **Plan it** (a task becoming steps); avoid → **Start Mode** ("just 5 minutes"); perfect → the timer + "done beats perfect"; bored → stamps, ranks and their nudge tone's sample line |
+| 9 | **Where did you hear about us?** | TikTok / Instagram / YouTube / A friend / App Store / Other. One tap; for marketing |
+| 10 | The Oath | as now; the planner's wait is staged as "Processing your application…" |
+| 11 | **Your first week** | The Oath's plan laid out by day ("Thu: List the midterm chapters · 15 min"), not a template |
+| 12 | **A nudge for step 1** | Primed ask: "Want a nudge each morning with your next step?" → turns on the morning list at their hours' time → the system prompt (iOS) or browser prompt (web). "Not now" is fine |
+| 13 | Approved | the stamp, as now |
+| 14 | **The trial** | 7 days free, then the price; "Cancel anytime before it ends. You keep the free version."; "We'll remind you the day before it ends"; Restore purchases; terms and privacy links (Apple requires them). Required for new accounts; existing ones get "Not now"; a pending Ask to Buy goes in on the free tier |
+| 15 | **Save your passport** | "Keep your passport: sign in on your laptop, never lose it." Username, then Apple / Google, or email + password. "Later" is allowed; it comes back (below) |
 
-Existing accounts that haven't done the Application start at 1 signed in and skip 9–10. Anyone who has done it sees only page 15, once.
+Existing accounts that haven't done the Application start at 1 already signed in and skip 15. Anyone who has done it sees only page 14, once.
+
+**When "Save your passport" comes back** (until it's saved): when they open PN on another device or the web ("Already a citizen? Sign in" explains a passport needs saving first, from the phone), as a quiet card on Passport, the day before the trial ends (with the trial reminder), and as a warning before signing out of an unsaved passport ("This passport isn't saved. Signing out loses it.").
 
 ## How it works
 
-**Signed-out quiz.** The gate today sends anyone signed out to sign-in; it will send them to the Application instead, with "Already a citizen? Sign in" on Welcome. Answers go to device storage (`pn.application.draft`) and are written to `user_settings` at "Save your passport" (the same saves as today, then cleared). The citizen number shows after sign-up (it's assigned then).
+**The anonymous passport.** The gate today sends anyone signed out to sign-in; it will send them to the Application instead, with "Already a citizen? Sign in" on Welcome. **Begin** calls `signInAnonymously()`: a real user (`is_anonymous` in its token, the `authenticated` role), so `user_settings`, the citizen number, tasks, RLS and the plan meter all work as they do today, with no device-only draft.
+- **Saving it** keeps the same user id and everything in it:
+  - Apple / Google: link the identity (one tap; needs the developer account and the Google client).
+  - Email + password: the username is saved to `profiles` at once; `updateUser({ email })` sends a confirmation they can open whenever, on any device, while they keep using the app (Supabase attaches an email only once it's confirmed, so nobody can claim someone else's); then **Choose a password** (the existing `auth/new-password` screen).
+- **Signing in to an existing account** from an anonymous passport replaces it (a warning first if the passport has tasks).
+- **The sign-in screen** keeps Sign in, Forgot and the link (`PN2-PASSWORDS-PLAN.md`); its Create account form becomes Save your passport's, and "New here?" starts the Application instead.
+- **Abuse:** anonymous sign-ins are free to create, and each can make the Oath's plan. Supabase caps them per IP (default 30 an hour); add Cloudflare Turnstile on the web, and Apple's App Attest on iOS if abuse shows up. A plan costs cents, so the exposure is bounded.
+- **Cleanup:** a scheduled job deletes anonymous passports untouched for 30 days with no subscription (database review: what cascades).
+- **Restore purchases** on a reinstalled, unsaved passport: RevenueCat moves the subscription to the new passport; the old data is gone, which is why saving keeps coming back.
 
 **Entitlement.** One server-side truth for "Pro right now" (in trial or subscribed), from **RevenueCat**, which handles Apple's in-app purchases on iPhone and Stripe on the web:
 - A webhook (`/api/billing/webhook`, signed) writes a server-only `entitlements` row (user, product, trial / active / expired, period end); RLS: the owner can read, nobody can write.
@@ -84,28 +94,31 @@ Existing accounts that haven't done the Application start at 1 signed in and ski
 - The 10-day no-card trial (counted from `created_at` since the free-tier fix) ends for new accounts; the required trial replaces it.
 - The app reads entitlement through RevenueCat's SDK (and the row, for the web).
 
-**Paywall gate.** A signed-in new account without an entitlement that has finished the Application sees page 15 until the trial starts. It's a client gate (the server only meters AI plans), which is how paywalled apps work.
+**Paywall gate.** A new account (anonymous or saved) without an entitlement that has finished the Application sees page 14 until the trial starts. It's a client gate (the server only meters AI plans), which is how paywalled apps work.
 
 **Trial reminder.** A notification the day before the trial ends (iOS local, Web Push on the web), from the entitlement's period end. Apple's own emails don't cover it everywhere.
 
 ## Phases (commit + push `v2` after each)
 
 1. **The funnel, before payments** (no Apple account needed):
-   - signed-out quiz with the device draft, Save your passport, Your result, How PN helps, Where did you hear, Your first week, the primed nudge, the staged wait;
+   - the anonymous passport (Begin, the gate, signing in from it, the sign-out warning), Your result, How PN helps, Where did you hear, Your first week, the primed nudge, the staged wait;
+   - Save your passport with email + password (confirmation in the background, then Choose a password) and its reminders; Apple / Google join in phase 2;
    - the free tier at 2 plans per 30.5-day window (site route + core window math, tested);
-   - verify on iPhone and web: a new account through every page; an existing account; answers landing.
+   - verify on iPhone and web: a new passport through every page; saving it; an existing account; answers landing.
+   - Alex, in Supabase (staging now, production at launch): turn on **Anonymous sign-ins**; Turnstile for the web.
 2. **Payments** (needs the Apple Developer account, App Store Connect products, RevenueCat and a privacy policy page):
-   - `entitlements` + webhook (database review + security review), the trial page with Apple's purchase sheet and Stripe on the web, Restore purchases, the trial reminder, Settings → Subscription (manage / restore);
+   - `entitlements` + webhook (database review + security review), the trial page with Apple's purchase sheet and Stripe on the web, Restore purchases, Ask to Buy, the trial reminder, Settings → Subscription (manage / restore);
+   - Save your passport with Apple / Google; the anonymous-passport cleanup job;
    - the plan route reads entitlements; the created-at trial goes.
 3. **Polish and measure:**
    - funnel analytics: where people stop, page by page (Vercel Analytics only covers the web; iOS needs PostHog or our own events table);
    - App Store rating prompt after the first stamp (not during onboarding);
-   - real testimonials once the TestFlight students give them.
+   - real testimonials once the TestFlight students give them;
+   - if trial starts run low: test a reverse trial (7 days of Pro, no payment method, then free) against the required one.
 
 ## Open (Alex)
 
-- **The confirmation email mid-funnel.** With "Confirm email" on, Save your passport sends people to their inbox right before the Oath. Options: (a) a **6-digit code** instead of a link: they type it (iOS offers it from Mail), never leaving the app; (b) sign in at once and confirm the email later (softer, but someone could register an address they don't own); (c) keep the link. Sign in with Apple, once the developer account exists, needs none of this. Recommended: (a).
-- **Prices.** v1: $7.99/month or $72/year on Stripe. Needed for App Store Connect in phase 2.
+- **A semester plan's price** (6 months), beside v1's $7.99/month and $72/year.
 - **Is the yearly plan the default?** Most trial funnels lead with yearly.
 
 ## Out of scope
