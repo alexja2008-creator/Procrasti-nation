@@ -1,6 +1,10 @@
 # Plan: Passwords (ProcrastiNation 2.0, `v2` branch)
 
-**Status: approved 2026-10-07** (decisions below confirmed by Alex).
+**Status: approved 2026-10-07** (decisions below confirmed by Alex). **Phases 1 and 2 built 2026-10-07** in `9e5f83e` (password sign-in, Settings → Password) and `a78ba7c` (create account with a username, forgot password, sign-in link for existing accounts only, Settings → Username).
+
+**Checked:** core tests (the password and username rules; error codes and messages → words, unknown codes generic); on web (signed out, at `127.0.0.1:8081`, which has its own storage): the form in each mode, autofill hints (`current-password` / `new-password`), show / hide, Enter moving to the password, every local check (bad email, no password, too short, Forgot with no email), the username cleaned as typed and checked free against staging, switching modes keeps the email; on iOS: sign in and create account, day theme.
+
+**Still to check live** (each needs Alex, since Claude doesn't type real passwords or create accounts): set a password in Settings, then sign in with it on another device; a wrong password; create an account with a throwaway address (one email) → confirm → Application with a `profiles` row; a taken username; Forgot → reset link → Choose a new password; Settings → Username. **Phase 3** (password managers on web, night theme pass) follows those checks.
 
 Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
