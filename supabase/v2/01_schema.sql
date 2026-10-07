@@ -279,7 +279,8 @@ CREATE INDEX IF NOT EXISTS stamps_task_idx ON stamps (task_id) WHERE task_id IS 
 CREATE INDEX IF NOT EXISTS stamps_list_idx ON stamps (list_id) WHERE list_id IS NOT NULL;
 -- Milestone stamps are earned once. Two devices racing to award the first
 -- one get a unique violation, which the app treats as "already earned".
-CREATE UNIQUE INDEX IF NOT EXISTS stamps_once_idx ON stamps (user_id, kind) WHERE kind IN ('first-start');
+DROP INDEX IF EXISTS stamps_once_idx;
+CREATE UNIQUE INDEX stamps_once_idx ON stamps (user_id, kind) WHERE kind IN ('first-start', 'citizenship');
 
 DROP TRIGGER IF EXISTS stamps_owned_refs ON stamps;
 CREATE TRIGGER stamps_owned_refs

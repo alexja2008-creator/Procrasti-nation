@@ -73,6 +73,8 @@ export const stampKinds = {
   firstStart: 'first-start',
   /** Done in Start Mode. */
   stepDone: 'task-done',
+  /** The Citizenship Application, answered (not skipped). Once only. */
+  citizenship: 'citizenship',
 } as const;
 
 // ---------------------------------------------------------------------------

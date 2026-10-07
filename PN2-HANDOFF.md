@@ -190,6 +190,11 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
   - Settings saves landing in staging.
   - The focused Today for "It feels too big".
   - Start Mode's lines in Drill Sergeant and Roast.
+  - The APPLICATION / APPROVED stamp (Alex's last tweak, built blind):
+    - It's 270pt on Approved, earned once on Go to Today only when all four questions were answered (`citizenship` in `stamps_once_idx`, applied on staging).
+    - It shows at normal size on Passport, first of up to three overlapping stamps.
+    - The stamp's middle words now shrink to fit their line, which also slightly shrinks STARTED on the existing stamp.
+    - Check it fits on both screens.
 
   Alex's staging account is reset to a fresh Application (17 live tasks, no territories), so he can go through it himself.
 - **Next:** account deletion and data export (in Settings; the App Store requires deletion), then a smarter "does this need a plan?" check.

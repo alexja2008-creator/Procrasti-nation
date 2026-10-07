@@ -31,6 +31,7 @@ import { LandingStamp } from '@/components/landing-stamp';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { useLists } from '@/data/lists-store';
+import { awardCitizenship } from '@/data/stamps';
 import { useTasks } from '@/data/tasks-store';
 import { useUserSettings } from '@/data/user-settings';
 import { useStyles, type Tokens } from '@/theme/tokens';
@@ -142,6 +143,9 @@ export default function ApplicationScreen() {
       if (!skipped && prefs.persona && listsStatus === 'ready' && lists.length === 0) {
         for (const territory of territoriesFor(prefs.persona)) await add(territory);
       }
+      // The stamp is for answering it: Skip earns nothing. A failure to stamp never blocks Today.
+      const answered = !!(prefs.persona && prefs.hours && prefs.style && prefs.nudgeTone);
+      if (!skipped && answered && session) await awardCitizenship(session.user.id).catch(() => undefined);
       await saveSettings({ onboardingCompletedAt: new Date().toISOString() }, { confirmFirst: true });
     } catch {
       setError(copy.saveFailed);
@@ -270,7 +274,7 @@ export default function ApplicationScreen() {
           </ApplicationForm>
         ) : (
           <View style={s.approved} accessibilityLiveRegion="polite">
-            <LandingStamp ink={c.stamp.terracotta} lines={copy.approvedStamp} style={s.stamp} />
+            <LandingStamp ink={c.stamp.forest} lines={voice.stampText.approved} size={270} style={s.stamp} />
             <Text variant="pageTitle" accessibilityRole="header" style={s.centered}>
               {copy.approvedTitle(personName(session?.user).first)}
             </Text>

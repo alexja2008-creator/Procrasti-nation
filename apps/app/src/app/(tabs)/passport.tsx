@@ -52,8 +52,31 @@ export default function PassportScreen() {
   const starts = record?.starts ?? 0;
   const { next, startsToNext } = rankFor(starts);
   const progress = next ? starts / next.minStarts : 1;
+  const approvedAt = record?.stamps.approvedAt;
   const firstStartAt = record?.stamps.firstStartAt;
   const stepsDone = record?.stamps.stepsDone ?? 0;
+  // Earned in this order, laid down left to right, overlapping a little like a real passport page.
+  const stamps = [
+    approvedAt ? (
+      <RoundStamp
+        ink={c.stamp.forest}
+        rim={voice.stampText.rim}
+        lines={voice.stampText.approved}
+        date={formatStampDate(new Date(approvedAt))}
+      />
+    ) : null,
+    firstStartAt ? (
+      <RoundStamp
+        ink={c.stamp.terracotta}
+        rim={voice.stampText.rim}
+        lines={voice.stampText.started}
+        date={formatStampDate(new Date(firstStartAt))}
+      />
+    ) : null,
+    stepsDone > 0 ? (
+      <CountStamp ink={c.stamp.violet} top={voice.stampText.smallSteps[0]} value={stepsDone} bottom={voice.stampText.smallSteps[1]} />
+    ) : null,
+  ].filter((stamp) => stamp !== null);
 
   return (
     <Screen>
@@ -131,28 +154,13 @@ export default function PassportScreen() {
         <Text variant="label" color={c.muted} style={s.stampsLabel}>
           {copy.stampsLabel.toUpperCase()}
         </Text>
-        {firstStartAt || stepsDone > 0 ? (
-          <View style={s.stampPage} accessible accessibilityLabel={copy.stampsSpoken(!!firstStartAt, stepsDone)}>
-            {firstStartAt ? (
-              <View style={s.started}>
-                <RoundStamp
-                  ink={c.stamp.terracotta}
-                  rim={voice.stampText.rim}
-                  lines={voice.stampText.started}
-                  date={formatStampDate(new Date(firstStartAt))}
-                />
+        {stamps.length > 0 ? (
+          <View style={s.stampPage} accessible accessibilityLabel={copy.stampsSpoken(!!approvedAt, !!firstStartAt, stepsDone)}>
+            {stamps.map((stamp, i) => (
+              <View key={i} style={[s.slot, SLOTS[i]]}>
+                {stamp}
               </View>
-            ) : null}
-            {stepsDone > 0 ? (
-              <View style={[s.counted, !firstStartAt && s.countedAlone]}>
-                <CountStamp
-                  ink={c.stamp.violet}
-                  top={voice.stampText.smallSteps[0]}
-                  value={stepsDone}
-                  bottom={voice.stampText.smallSteps[1]}
-                />
-              </View>
-            ) : null}
+            ))}
           </View>
         ) : (
           <Text variant="body" color={c.inkSoft}>
@@ -182,6 +190,13 @@ export default function PassportScreen() {
     </Screen>
   );
 }
+
+/** Where the stamps land on the page, in the order they're earned. */
+const SLOTS = [
+  { left: 0, top: 2, transform: [{ rotate: '-10deg' }] },
+  { left: 96, top: 32, transform: [{ rotate: '6deg' }] },
+  { left: 176, top: 6, transform: [{ rotate: '-5deg' }] },
+];
 
 const makeStyles = (t: Tokens) => ({
   t,
@@ -228,10 +243,8 @@ const makeStyles = (t: Tokens) => ({
       borderRadius: t.radii.card,
     },
     stampsLabel: { letterSpacing: 1.5 },
-    stampPage: { height: 150, marginVertical: 4 },
-    started: { position: 'absolute', left: 0, top: 0, transform: [{ rotate: '-10deg' }] },
-    counted: { position: 'absolute', left: 124, top: 30, transform: [{ rotate: '-6deg' }] },
-    countedAlone: { left: 8, top: 14 },
+    stampPage: { height: 158, marginVertical: 4 },
+    slot: { position: 'absolute' },
     progress: { gap: 6, marginTop: 2 },
     progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
     progressLabel: { fontFamily: t.fonts.bodySemibold, flex: 1 },

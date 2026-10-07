@@ -32,7 +32,14 @@ export async function awardFirstStart(userId: string): Promise<boolean> {
   return result === 'awarded';
 }
 
+/** "Application approved": once, and only for answering the Application (Skip earns nothing). */
+export async function awardCitizenship(userId: string): Promise<void> {
+  await awardStamp({ userId, kind: stampKinds.citizenship });
+}
+
 export interface PassportStamps {
+  /** When the Citizenship Application was approved, if it was answered. */
+  approvedAt: string | null;
   /** When "Officially started" was earned, if it has been. */
   firstStartAt: string | null;
   /** Steps and tasks finished in Start Mode ("Small steps and counting"). */
@@ -40,11 +47,15 @@ export interface PassportStamps {
 }
 
 export async function fetchPassportStamps(userId: string): Promise<PassportStamps> {
-  const [first, done] = await Promise.all([
-    supabase.from('stamps').select('earned_at').eq('user_id', userId).eq('kind', stampKinds.firstStart).maybeSingle(),
+  const once = (kind: string) => supabase.from('stamps').select('earned_at').eq('user_id', userId).eq('kind', kind).maybeSingle();
+  const [approved, first, done] = await Promise.all([
+    once(stampKinds.citizenship),
+    once(stampKinds.firstStart),
     supabase.from('stamps').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('kind', stampKinds.stepDone),
   ]);
+  if (approved.error) throw approved.error;
   if (first.error) throw first.error;
   if (done.error) throw done.error;
-  return { firstStartAt: (first.data as { earned_at: string } | null)?.earned_at ?? null, stepsDone: done.count ?? 0 };
+  const at = (row: unknown) => (row as { earned_at: string } | null)?.earned_at ?? null;
+  return { approvedAt: at(approved.data), firstStartAt: at(first.data), stepsDone: done.count ?? 0 };
 }

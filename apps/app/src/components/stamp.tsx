@@ -17,12 +17,20 @@ type RoundProps = {
   size?: number;
 };
 
+// The middle words, in the stamp's 120-unit box: the top line has the inner
+// ring's width; the bottom one sits between the ends of the date on the rim.
+const WORD_SIZE = 12.5;
+const LETTER = 0.6;
+const TOP_WIDTH = 84;
+const BOTTOM_WIDTH = 56;
+/** IBM Plex Mono: every glyph is 0.6 em wide. */
+const fit = (word: string, width: number) => Math.min(WORD_SIZE, (width / word.length - LETTER) / 0.6);
+
 /** The round ink stamp from the A2 Passport: rim text on both arcs, two words in the middle. */
 export function RoundStamp({ ink, rim, lines, date, size = 116 }: RoundProps) {
   // TextPath needs document-unique ids; useId's colons aren't safe in every renderer.
   const id = `stamp${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-  // A long bottom word ("APPROVED") sits a little smaller so it clears the date on the rim.
-  const wordSize = lines[1].length > 7 ? 11.3 : 12.5;
+  const [top, bottom] = [fit(lines[0], TOP_WIDTH), fit(lines[1], BOTTOM_WIDTH)];
   return (
     <Svg width={size} height={size} viewBox="0 0 120 120" aria-hidden>
       <Defs>
@@ -36,10 +44,10 @@ export function RoundStamp({ ink, rim, lines, date, size = 116 }: RoundProps) {
           {rim}
         </TextPath>
       </SvgText>
-      <SvgText x={60} y={59} fill={ink} textAnchor="middle" fontFamily={fonts.monoMedium} fontSize={wordSize} letterSpacing={0.6}>
+      <SvgText x={60} y={59} fill={ink} textAnchor="middle" fontFamily={fonts.monoMedium} fontSize={top} letterSpacing={LETTER}>
         {lines[0]}
       </SvgText>
-      <SvgText x={60} y={74} fill={ink} textAnchor="middle" fontFamily={fonts.monoMedium} fontSize={wordSize} letterSpacing={0.6}>
+      <SvgText x={60} y={74} fill={ink} textAnchor="middle" fontFamily={fonts.monoMedium} fontSize={bottom} letterSpacing={LETTER}>
         {lines[1]}
       </SvgText>
       <SvgText fill={ink} fontFamily={fonts.mono} fontSize={8} letterSpacing={1.4} textAnchor="middle">

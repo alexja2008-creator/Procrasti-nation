@@ -346,10 +346,16 @@ for (const baseline of baselines) {
         );
         await db.query(`INSERT INTO stamps (user_id, kind) VALUES ($1, 'first-start')`, [U1]);
         await assert.rejects(db.query(`INSERT INTO stamps (user_id, kind) VALUES ($1, 'first-start')`, [U1]), /stamps_once_idx/);
+        await db.query(`INSERT INTO stamps (user_id, kind) VALUES ($1, 'citizenship')`, [U1]);
+        await assert.rejects(db.query(`INSERT INTO stamps (user_id, kind) VALUES ($1, 'citizenship')`, [U1]), /stamps_once_idx/, 'the Application is approved once');
         await db.query(`INSERT INTO stamps (user_id, task_id, kind) VALUES ($1, $2, 'task-done')`, [U1, TASK_A]);
         await db.query(`INSERT INTO stamps (user_id, task_id, kind) VALUES ($1, $2, 'task-done')`, [U1, TASK_A]);
         const kinds = await rows(db, `SELECT kind, count(*)::int AS n FROM stamps GROUP BY kind ORDER BY kind`);
-        assert.deepEqual(kinds, [{ kind: 'first-start', n: 1 }, { kind: 'task-done', n: 2 }], 'done stamps repeat; milestones do not');
+        assert.deepEqual(
+          kinds,
+          [{ kind: 'citizenship', n: 1 }, { kind: 'first-start', n: 1 }, { kind: 'task-done', n: 2 }],
+          'done stamps repeat; milestones do not',
+        );
       });
       await as(db, U2, async () => {
         await db.query(`INSERT INTO stamps (user_id, kind) VALUES ($1, 'first-start')`, [U2]);

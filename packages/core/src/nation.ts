@@ -411,6 +411,7 @@ export const voice = {
     rim: 'PROCRASTINATION',
     started: ['OFFICIALLY', 'STARTED'],
     done: ['OFFICIALLY', 'DONE'],
+    approved: ['APPLICATION', 'APPROVED'],
     smallSteps: ['SMALL STEPS', 'AND COUNTING'],
   },
   plan: {
@@ -450,8 +451,12 @@ export const voice = {
     stampsLabel: 'Visas & stamps',
     noStamps: 'Your first stamp lands the first time you start something.',
     /** The stamp page, read aloud. */
-    stampsSpoken: (started: boolean, stepsDone: number) =>
-      [started ? 'Officially started' : null, stepsDone > 0 ? `${stepsDone} small ${stepsDone === 1 ? 'step' : 'steps'} done` : null]
+    stampsSpoken: (approved: boolean, started: boolean, stepsDone: number) =>
+      [
+        approved ? 'Application approved' : null,
+        started ? 'Officially started' : null,
+        stepsDone > 0 ? `${stepsDone} small ${stepsDone === 1 ? 'step' : 'steps'} done` : null,
+      ]
         .filter(Boolean)
         .join('. '),
     toNextRank: (n: number, rank: string) => `${n} more ${n === 1 ? 'start' : 'starts'} to ${rank}`,
@@ -516,7 +521,6 @@ export const voice = {
     approvedTitle: (firstName?: string | null) => (firstName ? `Welcome, ${firstName}.` : 'Welcome, citizen.'),
     approvedBody: (citizenNo: string) => `Citizen No. ${citizenNo}. Your passport is ready, and Today is waiting.`,
     approvedBodyOath: (citizenNo: string) => `Citizen No. ${citizenNo}. Your first small step is waiting on Today.`,
-    approvedStamp: ['CITIZEN', 'APPROVED'] as const,
     goToToday: 'Go to Today',
     saveFailed: 'Couldn’t save that. Check your connection and try again.',
   },
