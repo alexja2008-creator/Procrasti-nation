@@ -420,8 +420,8 @@ CREATE POLICY "Owners log their AI requests" ON ai_requests FOR INSERT
 -- ------------------------------------------------------------
 
 -- One group of matches for the signed-in person: 'open' or 'done' tasks, or
--- 'notes'. Runs as the caller under RLS, and only ever looks at their own
--- rows (a teacher's search doesn't wander into students' tasks). Each word
+-- 'notes'. Runs as the caller under RLS, and filters to their own rows
+-- explicitly so each query only reads that person's rows. Each word
 -- matches as a prefix after English stemming ("read ch" finds "Reading
 -- chapter 4"); everything but letters and digits is dropped first, so typed
 -- input can't break the query, and only its first 200 characters count.
