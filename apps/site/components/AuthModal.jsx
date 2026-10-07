@@ -43,11 +43,11 @@ export default function AuthModal({ onClose }) {
         return;
       }
 
-      const trialEndsAt = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString();
+      // The 10-day trial counts from the account's created_at (lib/trial.js), not metadata.
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { trial_ends_at: trialEndsAt, onboarding_seen: false, pending_username: trimmedUsername } },
+        options: { data: { onboarding_seen: false, pending_username: trimmedUsername } },
       });
       if (error) {
         setError(error.message);

@@ -123,6 +123,7 @@ lib/
   prompts/unstick.js                # "I'm stuck" prompt + schema (gated by evals/unstick)
   prompts/dates.js                  # Step "when" → calendar date prompt
   dates.js                          # Local-date helpers (localDateString, localTimeZone)
+  trial.js                          # trialDaysRemaining(user): 10 days from auth created_at
   unsubscribe.js                    # Signed unsubscribe links + List-Unsubscribe headers
   core.js                           # Re-exports @pn/core (packages/core TS; Next compiles it), so the server plans exactly as the app does
   push.js                           # Web Push: send (web-push + VAPID), payloads (Start 5 min / Snooze 10 min, never Done), withTimeZone, snooze tokens
@@ -207,6 +208,10 @@ Device storage (AsyncStorage, per device): `pn.stamped.first-start.<userId>`, `p
 ### `profiles` email preferences
 `email_reminders_enabled`, `email_reports_enabled` (BOOLEAN, default true) — set false by `/api/unsubscribe`; crons skip opted-out users.
 
+### `profiles` billing and visibility
+- `stripe_customer_id`, `stripe_subscription_status` are written only by the Stripe routes (service role); a trigger rejects users setting them (`supabase/migrations/profiles_billing_1_before_deploy.sql`).
+- API callers can read only `id, user_id, username, display_name, created_at` (`profiles_billing_2_after_deploy.sql`). The signed-in user reads their own status with `supabase.rpc('my_subscription_status')`. A new profiles column is hidden from the API until it's granted there.
+
 ### `streaks` table
 id, user_id, current_streak, highest_streak, last_completed_date, updated_at
 
@@ -243,7 +248,7 @@ Additive migration with a cutover-only backfill and a tested rollback; see `supa
 - `useAuth()` from `app/providers.jsx` — exposes `{ user, loading, trialStatus, trialDaysLeft, signOut }`
 - `trialStatus`: `'trial'` | `'free'` | `'pro'`
 - Free tier: 3 AI plans per calendar month
-- Trial: 10 days of Pro on signup (stored in `user_metadata.trial_ends_at`)
+- Trial: 10 days of Pro from sign-up, counted from `user.created_at` by `trialDaysRemaining()` in `lib/trial.js` (both the plan route and `AuthProvider`). Never decide access from `user_metadata`: users can write it themselves
 
 ### Styling
 - All styling via Tailwind utility classes
