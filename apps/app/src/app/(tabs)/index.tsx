@@ -205,6 +205,9 @@ export default function TodayScreen() {
         />
       ) : null}
 
+      {/* The agenda below carries it otherwise; focused, it would never show ("You started", Undo). */}
+      {focused ? <NoticeBar /> : null}
+
       {focused && hidden > 0 ? (
         <Pressable
           onPress={() => setShowAll(true)}

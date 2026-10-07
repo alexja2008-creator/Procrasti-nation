@@ -24,6 +24,7 @@ export default function PassportScreen() {
   const { settings, status } = useUserSettings();
   const userId = session?.user.id;
   const [record, setRecord] = useState<{ starts: number; stamps: PassportStamps } | null>(null);
+  const [stampPageWidth, setStampPageWidth] = useState(0);
 
   // Refresh on every visit: a Start or a stamp may have happened since.
   useFocusEffect(
@@ -77,6 +78,9 @@ export default function PassportScreen() {
       <CountStamp ink={c.stamp.violet} top={voice.stampText.smallSteps[0]} value={stepsDone} bottom={voice.stampText.smallSteps[1]} />
     ) : null,
   ].filter((stamp) => stamp !== null);
+  // A card narrower than the stamps shrinks them to fit instead of spilling past its edge.
+  const stampsWidth = stamps.length > 0 ? SLOTS[stamps.length - 1].left + STAMP_REACH : 0;
+  const stampScale = stampPageWidth > 0 ? Math.min(1, stampPageWidth / stampsWidth) : 1;
 
   return (
     <Screen>
@@ -155,12 +159,20 @@ export default function PassportScreen() {
           {copy.stampsLabel.toUpperCase()}
         </Text>
         {stamps.length > 0 ? (
-          <View style={s.stampPage} accessible accessibilityLabel={copy.stampsSpoken(!!approvedAt, !!firstStartAt, stepsDone)}>
-            {stamps.map((stamp, i) => (
-              <View key={i} style={[s.slot, SLOTS[i]]}>
-                {stamp}
+          <View
+            style={[s.stampPage, { height: STAMP_PAGE_HEIGHT * stampScale }]}
+            onLayout={(e) => setStampPageWidth(e.nativeEvent.layout.width)}
+            accessible
+            accessibilityLabel={copy.stampsSpoken(!!approvedAt, !!firstStartAt, stepsDone)}>
+            {stampPageWidth > 0 ? (
+              <View style={[s.stampSlots, { transform: [{ scale: stampScale }] }]}>
+                {stamps.map((stamp, i) => (
+                  <View key={i} style={[s.slot, SLOTS[i]]}>
+                    {stamp}
+                  </View>
+                ))}
               </View>
-            ))}
+            ) : null}
           </View>
         ) : (
           <Text variant="body" color={c.inkSoft}>
@@ -191,12 +203,15 @@ export default function PassportScreen() {
   );
 }
 
-/** Where the stamps land on the page, in the order they're earned. */
+/** Where the stamps land on the page, in the order they're earned: rims overlap, words never do. */
 const SLOTS = [
   { left: 0, top: 2, transform: [{ rotate: '-10deg' }] },
-  { left: 96, top: 32, transform: [{ rotate: '6deg' }] },
-  { left: 176, top: 6, transform: [{ rotate: '-5deg' }] },
+  { left: 90, top: 38, transform: [{ rotate: '6deg' }] },
+  { left: 192, top: 4, transform: [{ rotate: '-5deg' }] },
 ];
+/** How far a stamp reaches right of its slot (the tilted count stamp is the widest). */
+const STAMP_REACH = 120;
+const STAMP_PAGE_HEIGHT = 158;
 
 const makeStyles = (t: Tokens) => ({
   t,
@@ -243,7 +258,8 @@ const makeStyles = (t: Tokens) => ({
       borderRadius: t.radii.card,
     },
     stampsLabel: { letterSpacing: 1.5 },
-    stampPage: { height: 158, marginVertical: 4 },
+    stampPage: { marginVertical: 4 },
+    stampSlots: { height: STAMP_PAGE_HEIGHT, transformOrigin: 'left top' },
     slot: { position: 'absolute' },
     progress: { gap: 6, marginTop: 2 },
     progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },

@@ -4,7 +4,6 @@ import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, Path, Text as SvgText, TextPath } from 'react-native-svg';
 
 import { Text } from '@/components/text';
-import { useStyles, type Tokens } from '@/theme/tokens';
 
 type RoundProps = {
   ink: string;
@@ -63,17 +62,16 @@ type CountProps = { ink: string; top: string; value: number; bottom: string };
 
 /** The rectangular count stamp ("SMALL STEPS · 17 · AND COUNTING"), double-ruled. */
 export function CountStamp({ ink, top, value, bottom }: CountProps) {
-  const s = useStyles(makeStyles);
   return (
-    <View style={[s.outer, { borderColor: ink }]} aria-hidden>
-      <View style={[s.inner, { borderColor: ink }]}>
-        <Text variant="labelSmall" color={ink} style={s.caption}>
+    <View style={[styles.outer, { borderColor: ink }]} aria-hidden>
+      <View style={[styles.inner, { borderColor: ink }]}>
+        <Text variant="labelSmall" color={ink} style={styles.caption}>
           {top}
         </Text>
-        <Text variant="title" color={ink} style={s.value}>
+        <Text variant="title" color={ink} style={styles.value}>
           {value}
         </Text>
-        <Text variant="labelSmall" color={ink} style={s.caption}>
+        <Text variant="labelSmall" color={ink} style={styles.caption}>
           {bottom}
         </Text>
       </View>
@@ -81,18 +79,18 @@ export function CountStamp({ ink, top, value, bottom }: CountProps) {
   );
 }
 
-const makeStyles = (t: Tokens) =>
-  StyleSheet.create({
-    outer: { borderWidth: 1, padding: 3, backgroundColor: t.c.card },
-    inner: {
-      width: 102,
-      minHeight: 92,
-      borderWidth: 1.8,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 2,
-      paddingVertical: 6,
-    },
-    caption: { letterSpacing: 1.1 },
-    value: { fontSize: 30, lineHeight: 34 },
-  });
+const styles = StyleSheet.create({
+  // No fill: like ink, a stamp laid over another lets it show through.
+  outer: { borderWidth: 1, padding: 3 },
+  inner: {
+    width: 102,
+    minHeight: 92,
+    borderWidth: 1.8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    paddingVertical: 6,
+  },
+  caption: { letterSpacing: 1.1 },
+  value: { fontSize: 30, lineHeight: 34 },
+});
