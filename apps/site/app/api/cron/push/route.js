@@ -185,6 +185,7 @@ async function run(request) {
                 lists: listsOf.get(userId) ?? [],
                 morning: morningListOf(s.preferences),
                 rolloverHour: s.day_rollover_hour ?? 0,
+                tone: s.preferences?.nudgeTone,
               }),
             );
           } catch (err) {

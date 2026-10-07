@@ -11,8 +11,8 @@ import {
   type AgendaEntry,
   type Task,
 } from '@pn/core';
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text as RNText, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
@@ -31,6 +31,7 @@ import { useLists } from '@/data/lists-store';
 import { noteTitles } from '@/data/note-titles';
 import { useNotes } from '@/data/notes-store';
 import { useTasks } from '@/data/tasks-store';
+import { useUserSettings } from '@/data/user-settings';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 /** "due today" / "due Fri" */
@@ -73,6 +74,10 @@ export default function TodayScreen() {
   const { open: capture } = useCapture();
   const [customsOpen, setCustomsOpen] = useState(false);
   const [menuFor, setMenuFor] = useState<Task | null>(null);
+  const { settings } = useUserSettings();
+  const [showAll, setShowAll] = useState(false);
+  // "Show everything" lasts for this visit.
+  useFocusEffect(useCallback(() => () => setShowAll(false), []));
 
   const view = buildToday(tasks, today, rolloverHour);
   const byId = new Map<string, Task>(tasks.map((t) => [t.id, t]));
@@ -98,6 +103,9 @@ export default function TodayScreen() {
   const openCount = view.agenda.filter((e) => !e.done).length + (next ? 1 : 0);
   const nextParent = next?.task.parentId ? byId.get(next.task.parentId) : undefined;
   const nextDueOn = isStep ? nextParent?.dueOn : next?.task.dueOn;
+  // "It feels too big": just the next step, the rest a tap away.
+  const focused = settings?.preferences.style === 'overwhelmed' && !!next && !showAll;
+  const hidden = openCount - 1 + view.customs.length;
 
   return (
     <Screen>
@@ -122,7 +130,7 @@ export default function TodayScreen() {
         </Text>
         {status === 'ready' ? (
           <Text variant="lead" color={c.muted}>
-            {voice.todaySubtitle(openCount)}
+            {focused ? voice.today.focusedSubtitle : voice.todaySubtitle(openCount)}
           </Text>
         ) : null}
       </View>
@@ -144,7 +152,7 @@ export default function TodayScreen() {
         </View>
       ) : null}
 
-      {view.customs.length > 0 ? (
+      {!focused && view.customs.length > 0 ? (
         <View>
           <Pressable
             onPress={() => setCustomsOpen((v) => !v)}
@@ -197,7 +205,18 @@ export default function TodayScreen() {
         />
       ) : null}
 
-      {status === 'ready' ? (
+      {focused && hidden > 0 ? (
+        <Pressable
+          onPress={() => setShowAll(true)}
+          accessibilityRole="button"
+          style={({ pressed }) => [s.showAll, pressed && s.pressed]}>
+          <Text variant="button" color={c.primaryText}>
+            {voice.today.showEverything(hidden)}
+          </Text>
+        </Pressable>
+      ) : null}
+
+      {status === 'ready' && !focused ? (
         <>
           <View style={s.agendaHead}>
             <Text variant="section" accessibilityRole="header">
@@ -256,6 +275,7 @@ const makeStyles = (t: Tokens) => ({
     dateText: { fontSize: 12 },
     greeting: { gap: 6 },
     loading: { marginTop: 24 },
+    showAll: { alignSelf: 'flex-start', minHeight: t.hitTarget, justifyContent: 'center' },
     failed: { gap: 10, alignItems: 'flex-start' },
     customs: {
       flexDirection: 'row',

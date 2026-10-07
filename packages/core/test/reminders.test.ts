@@ -242,3 +242,20 @@ test("due in the person's own timezone, across the end of daylight saving", () =
     assert.deepEqual(due('2026-10-31T12:55:00Z', '2026-10-31T13:00:00Z'), ['2026-10-31T13:00:00.000Z']);
   });
 });
+
+test('the morning list speaks in their nudge tone', () => {
+  const early = new Date(2026, 9, 6, 6, 0);
+  const tasks = [
+    task('a', { title: 'Read chapter 4', scheduledOn: TODAY }),
+    task('b', { title: 'Email Dr. Ruiz', scheduledOn: TODAY }),
+    task('c', { title: 'Stretch', scheduledOn: TODAY }),
+  ];
+  const morningOf = (tone?: 'diplomat' | 'drill' | 'roast') =>
+    planReminders(tasks, early, { morning: { on: true, hour: 8, minute: 0 }, tone, limit: 1 })[0];
+  const plain = morningOf();
+  assert.equal(morningOf('diplomat').title, plain.title, 'Diplomat is the everyday voice');
+  assert.equal(morningOf('drill').title, 'Three orders today');
+  assert.equal(morningOf('roast').title, 'Three things today. Bold of them.');
+  assert.match(morningOf('roast').body, /has been waiting very politely/);
+  assert.equal(morningOf('roast').id, plain.id, 'same reminder, other words: reconciling replaces it');
+});

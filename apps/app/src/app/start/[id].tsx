@@ -2,6 +2,7 @@ import {
   defaultStartMinutes,
   effectiveListId,
   formatClock,
+  linesFor,
   relativeDayPhrase,
   stampKinds,
   stepContext,
@@ -67,6 +68,7 @@ function StartMode({ id, minutes }: { id: string; minutes?: number }) {
 
   const run = useStartSession({ userId, taskId: live?.id, defaultMinutes: minutes ?? defaultStartMinutes(settings?.preferences) });
   const { timer, planned, tiny } = run;
+  const lines = linesFor(settings?.preferences.nudgeTone);
 
   const plannedMs = planned * 60_000;
   const reached = timer.elapsed >= plannedMs;
@@ -79,7 +81,7 @@ function StartMode({ id, minutes }: { id: string; minutes?: number }) {
 
   const leave = () => {
     run.leave();
-    notify(copy.leftNotice);
+    notify(lines.leftNotice);
     close();
   };
 
@@ -200,15 +202,15 @@ function StartMode({ id, minutes }: { id: string; minutes?: number }) {
             {contract ? (
               <View style={s.contract} accessibilityLiveRegion="polite">
                 <Text variant="section" style={s.centered}>
-                  {copy.contractTitle(planned)}
+                  {lines.contractTitle(planned)}
                 </Text>
                 <Text variant="body" color={c.inkSoft} style={s.centered}>
-                  {copy.contractBody}
+                  {lines.contractBody}
                 </Text>
               </View>
             ) : (
               <Text variant="lead" color={c.inkSoft} style={s.centered}>
-                {copy.lead(planned)}
+                {lines.startLead(planned)}
               </Text>
             )}
             <View style={s.actions}>

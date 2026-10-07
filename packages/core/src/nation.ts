@@ -176,6 +176,9 @@ export const voice = {
     /** A repeating task moved on: "Walk Biscuit · back tomorrow". */
     movedOn: (title: string, day: string) => `${title} · back ${day}`,
     due: (day: string) => `due ${day}`,
+    /** "What stops you: it feels too big": Today shows just the next step. */
+    focusedSubtitle: 'Just this one for now. The rest can wait.',
+    showEverything: (n: number) => `Show everything (${n} more)`,
   },
   upcoming: {
     eyebrow: 'Upcoming',
@@ -305,7 +308,7 @@ export const voice = {
     contractBody: 'That was the hard part. Keep going, or stop here with a clear conscience.',
     keepGoing: 'Keep going',
     stopHere: 'Stop here',
-    /** Shown on Today after leaving without Done. */
+    /** Shown on Today after leaving without Done (Diplomat; see toneLines). */
     leftNotice: 'You started. That counts.',
     stuckTitle: 'What’s in the way?',
     stuckLead: 'Pick one and we’ll make this step smaller.',
@@ -549,6 +552,55 @@ export const voice = {
     generic: 'Something went wrong signing you in. Please try again.',
   },
 } as const;
+
+// ---------------------------------------------------------------------------
+// The nudge tone (asked in the Citizenship Application): the few lines that
+// nudge. Diplomat is the everyday voice; Drill Sergeant is firm; Roast jokes
+// about the task or the situation, never the person (shame feeds
+// procrastination). Reminder titles stay the task's own words.
+
+export interface ToneLines {
+  /** Start Mode, under the timer. */
+  startLead: (minutes: number) => string;
+  /** When the timer ends. */
+  contractTitle: (minutes: number) => string;
+  contractBody: string;
+  /** On Today after leaving Start Mode without Done. */
+  leftNotice: string;
+  /** The morning list notification. */
+  morningTitle: (count: number) => string;
+  startWith: (title: string) => string;
+}
+
+export const toneLines: Record<NudgeTone, ToneLines> = {
+  diplomat: {
+    startLead: voice.start.lead,
+    contractTitle: voice.start.contractTitle,
+    contractBody: voice.start.contractBody,
+    leftNotice: voice.start.leftNotice,
+    morningTitle: voice.reminders.morningTitle,
+    startWith: voice.reminders.startWith,
+  },
+  drill: {
+    startLead: (m) => `${capitalize(minutesWord(m))} minutes. One task. The timer’s running: begin.`,
+    contractTitle: (m) => `${capitalize(minutesWord(m))} minutes. Mission started.`,
+    contractBody: 'Hard part done. Keep going, or stand down with a clean record.',
+    leftNotice: 'You started. Logged.',
+    morningTitle: (n) => (n === 1 ? 'One order today' : `${spell(n)} orders today`),
+    startWith: (title) => `First up: “${title}”. Move.`,
+  },
+  roast: {
+    startLead: (m) => `Just ${minutesWord(m)} minutes. The task is more scared of you than you are of it.`,
+    contractTitle: (m) => `${capitalize(minutesWord(m))} minutes. Who even are you?`,
+    contractBody: 'Look at you, doing things. Keep going, or quit while you’re legendary.',
+    leftNotice: 'You started. Frame it.',
+    morningTitle: (n) => (n === 1 ? 'One thing today. Just one. Easy.' : `${spell(n)} things today. Bold of them.`),
+    startWith: (title) => `“${title}” has been waiting very politely.`,
+  },
+};
+
+/** The lines for their tone (Diplomat until they've picked one). */
+export const linesFor = (tone?: NudgeTone | null): ToneLines => toneLines[tone ?? 'diplomat'];
 
 // ---------------------------------------------------------------------------
 // Passport identity: citizen numbers and the machine-readable code lines.

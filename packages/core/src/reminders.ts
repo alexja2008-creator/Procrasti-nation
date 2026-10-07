@@ -10,7 +10,7 @@
 
 import { buildToday } from './agenda.ts';
 import { addDays, atLocalTime, clockOf, describeRRule, formatTime, localDateString, logicalDateString, nextOccurrence, occurrenceOnOrAfter } from './dates.ts';
-import { voice } from './nation.ts';
+import { linesFor, voice, type NudgeTone } from './nation.ts';
 import { stepsByParent } from './order.ts';
 import { effectiveListId } from './territories.ts';
 import type { List, LocalDate, MorningList, Preferences, Task } from './types.ts';
@@ -56,6 +56,8 @@ export interface ReminderOptions {
   limit?: number;
   /** Plan only up to here instead of 14 days on (a sender's run). */
   until?: Date;
+  /** Their nudge tone: the morning list's words. */
+  tone?: NudgeTone | null;
 }
 
 const open = (t: Task) => !t.deletedAt && !t.completedAt;
@@ -76,7 +78,8 @@ function ringDays(t: Task & { scheduledOn: LocalDate }, from: LocalDate, until: 
 
 /** Everything that should ring in the next two weeks, soonest first, up to `limit`. */
 export function planReminders(tasks: Task[], now: Date, options: ReminderOptions = {}): Reminder[] {
-  const { lists = [], morning = null, rolloverHour = 0, limit = MAX_PENDING, until } = options;
+  const { lists = [], morning = null, rolloverHour = 0, limit = MAX_PENDING, until, tone } = options;
+  const lines = linesFor(tone);
   const start = now.getTime();
   const end = Math.min(start + REMINDER_DAYS * 86_400_000, until ? until.getTime() : Infinity);
   const inWindow = (at: number) => at > start && at <= end;
@@ -151,8 +154,8 @@ export function planReminders(tasks: Task[], now: Date, options: ReminderOptions
             taskId: null,
             at,
             day,
-            title: voice.reminders.morningTitle(count),
-            body: voice.reminders.startWith(first.task.title),
+            title: lines.morningTitle(count),
+            body: lines.startWith(first.task.title),
           });
         }
       }

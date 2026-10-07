@@ -73,12 +73,13 @@ export function RemindersProvider({ userId, children }: { userId: string; childr
   // Line reminders up after a pause in changes. Coming back to the app refreshes the tasks, which lands here too.
   const ready = permission === 'granted' && status === 'ready' && listsStatus !== 'loading' && settingsStatus !== 'loading';
   const morning = morningListOf(settings?.preferences);
-  const sync = useEffectEvent(() => syncReminders(tasks, { lists, rolloverHour, morning }));
+  const tone = settings?.preferences.nudgeTone;
+  const sync = useEffectEvent(() => syncReminders(tasks, { lists, rolloverHour, morning, tone }));
   useEffect(() => {
     if (!ready) return;
     const timer = setTimeout(sync, SYNC_PAUSE_MS);
     return () => clearTimeout(timer);
-  }, [ready, tasks, lists, rolloverHour, morning.on, morning.hour, morning.minute]);
+  }, [ready, tasks, lists, rolloverHour, morning.on, morning.hour, morning.minute, tone]);
 
   // Unmounting means they signed out.
   useEffect(() => () => void clearReminders(), []);
