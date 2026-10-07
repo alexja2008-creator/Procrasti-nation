@@ -1,14 +1,22 @@
 import { voice } from '@pn/core';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text as RNText, TextInput, View } from 'react-native';
 
 import { isAppleSignInAvailable, signInWithApple } from '@/auth/apple';
-import { enabledMethods, friendlyAuthError, isValidEmail, sendMagicLink, signInWithGoogle } from '@/auth/sign-in';
+import {
+  enabledMethods,
+  friendlyAuthError,
+  isValidEmail,
+  sendMagicLink,
+  signInWithGoogle,
+  signInWithPassword,
+} from '@/auth/sign-in';
 import { AppleButton } from '@/components/apple-button';
 import { GoogleMark } from '@/components/brand-marks';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { Logo } from '@/components/logo';
+import { PasswordField } from '@/components/password-field';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { useStyles, type Tokens } from '@/theme/tokens';
@@ -21,7 +29,11 @@ export default function SignInScreen() {
   const s = useStyles(makeStyles);
   const { c, fonts } = s.t;
 
+  // A password is the way in; a magic link is one tap away.
+  const [mode, setMode] = useState<'password' | 'link'>('password');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const passwordRef = useRef<TextInput>(null);
   const [focused, setFocused] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +80,31 @@ export default function SignInScreen() {
   };
 
   // On success the session changes and the root layout swaps this screen for Today.
+  const signIn = async () => {
+    const address = email.trim();
+    if (!isValidEmail(address)) {
+      setError(copy.invalidEmail);
+      return;
+    }
+    if (!password) {
+      setError(copy.needPassword);
+      return;
+    }
+    setError(null);
+    setBusy(true);
+    try {
+      await signInWithPassword(address, password);
+    } catch (e) {
+      setError(friendlyAuthError(e));
+      setBusy(false);
+    }
+  };
+
+  const switchMode = () => {
+    setMode((m) => (m === 'password' ? 'link' : 'password'));
+    setError(null);
+  };
+
   const social = (signIn: () => Promise<boolean>) => async () => {
     setError(null);
     try {
@@ -159,24 +196,56 @@ export default function SignInScreen() {
                     onChangeText={setEmail}
                     onFocus={() => setFocused(true)}
                     onBlur={() => setFocused(false)}
-                    onSubmitEditing={() => send(email.trim())}
+                    onSubmitEditing={mode === 'password' ? () => passwordRef.current?.focus() : () => send(email.trim())}
+                    submitBehavior={mode === 'password' ? 'submit' : 'blurAndSubmit'}
                     placeholder={copy.emailPlaceholder}
                     placeholderTextColor={c.muted}
                     keyboardType="email-address"
-                    textContentType="emailAddress"
+                    // "username" pairs it with the password for iOS AutoFill.
+                    textContentType="username"
                     autoComplete="email"
                     autoCapitalize="none"
                     autoCorrect={false}
-                    returnKeyType="send"
+                    returnKeyType={mode === 'password' ? 'next' : 'send'}
                     editable={!busy}
                     accessibilityLabel={copy.emailLabelSpoken}
                     style={[s.input, focused && s.inputFocused]}
                   />
+                  {mode === 'password' ? (
+                    <>
+                      <Text variant="labelSmall" color={c.muted} aria-hidden style={s.fieldLabel}>
+                        {copy.passwordLabel.toUpperCase()}
+                      </Text>
+                      <PasswordField
+                        ref={passwordRef}
+                        value={password}
+                        onChangeText={setPassword}
+                        label={copy.passwordLabelSpoken}
+                        onSubmitEditing={signIn}
+                        returnKeyType="go"
+                        editable={!busy}
+                      />
+                    </>
+                  ) : null}
                   {errorText}
-                  <Button label={busy ? copy.sending : copy.sendLink} disabled={busy} onPress={() => send(email.trim())} />
-                  <Text variant="meta" color={c.muted}>
-                    {copy.hint}
-                  </Text>
+                  {mode === 'password' ? (
+                    <Button label={busy ? copy.signingIn : copy.signIn} disabled={busy} onPress={signIn} />
+                  ) : (
+                    <>
+                      <Button label={busy ? copy.sending : copy.sendLink} disabled={busy} onPress={() => send(email.trim())} />
+                      <Text variant="meta" color={c.muted}>
+                        {copy.hint}
+                      </Text>
+                    </>
+                  )}
+                  <View style={s.switchMode}>
+                    <Button
+                      variant="quiet"
+                      label={mode === 'password' ? copy.useLink : copy.usePassword}
+                      disabled={busy}
+                      onPress={switchMode}
+                    />
+                  </View>
                 </View>
               ) : (
                 errorText
@@ -205,6 +274,8 @@ const makeStyles = (t: Tokens) => ({
     divider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 2 },
     rule: { flex: 1, height: 1, backgroundColor: t.c.rule },
     emailBlock: { gap: 10 },
+    fieldLabel: { marginTop: 4 },
+    switchMode: { alignItems: 'flex-start', marginLeft: -8 },
     input: {
       minHeight: 50,
       paddingHorizontal: 14,

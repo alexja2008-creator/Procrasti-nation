@@ -22,6 +22,7 @@ import { Chip } from '@/components/chip';
 import { Icon } from '@/components/icon';
 import { RemindersCard } from '@/components/reminders-card';
 import { Screen } from '@/components/screen';
+import { PasswordSheet } from '@/components/settings/password-sheet';
 import { SettingRow } from '@/components/settings/setting-row';
 import { SettingsCard } from '@/components/settings/settings-card';
 import { Sheet } from '@/components/sheet';
@@ -42,7 +43,7 @@ const tones: Choice<NudgeToneId>[] = (Object.keys(nudgeTones) as NudgeToneId[]).
 const TIMERS: StartMinutes[] = [2, 5, 10, 25];
 const DAY_ENDS = [0, 1, 2, 3, 4, 5, 6];
 
-type Picking = 'purpose' | 'hours' | 'style' | 'tone' | 'timer' | 'dayEnds' | null;
+type Picking = 'purpose' | 'hours' | 'style' | 'tone' | 'timer' | 'dayEnds' | 'password' | null;
 
 const labelOf = <T extends string>(choices: readonly { id: T; label: string }[], id: T | undefined) =>
   choices.find((c) => c.id === id)?.label ?? copy.notSet;
@@ -115,6 +116,7 @@ export default function SettingsScreen() {
       <RemindersCard />
 
       <SettingsCard label={copy.accountLabel}>
+        <SettingRow label={copy.password} value={copy.passwordValue} onPress={() => setPicking('password')} />
         <View style={s.account}>
           {session?.user.email ? (
             <Text variant="meta" color={c.muted}>
@@ -180,6 +182,8 @@ export default function SettingsScreen() {
             ))}
           </View>
         </Sheet>
+      ) : picking === 'password' ? (
+        <PasswordSheet onClose={() => setPicking(null)} />
       ) : picking === 'dayEnds' ? (
         <Sheet title={copy.dayEnds} onClose={() => setPicking(null)}>
           <Text variant="meta" color={c.muted} style={s.note}>

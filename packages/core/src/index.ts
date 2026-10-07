@@ -14,3 +14,4 @@ export * from './search.ts';
 export * from './tasks.ts';
 export * from './reminders.ts';
 export * from './onboarding.ts';
+export * from './account.ts';

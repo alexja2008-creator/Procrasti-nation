@@ -1,4 +1,4 @@
-import { voice } from '@pn/core';
+import { authErrorKind, MIN_PASSWORD_LENGTH, voice } from '@pn/core';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { Platform } from 'react-native';
@@ -26,6 +26,17 @@ export async function sendMagicLink(email: string) {
     email,
     options: { emailRedirectTo: authRedirectUrl() },
   });
+  if (error) throw error;
+}
+
+export async function signInWithPassword(email: string, password: string) {
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+}
+
+/** Sets or changes the signed-in person's password; an account made by magic link gets its first one this way. */
+export async function setPassword(password: string) {
+  const { error } = await supabase.auth.updateUser({ password });
   if (error) throw error;
 }
 
@@ -62,11 +73,10 @@ export async function signInWithGoogle(): Promise<boolean> {
   return true;
 }
 
-/** Turns Supabase/network errors into the gentle copy in @pn/core. */
-export function friendlyAuthError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error ?? '');
-  if (/rate limit|security purposes|too many/i.test(message)) return voice.authErrors.rateLimited;
-  if (/network|failed to fetch|timed? ?out/i.test(message)) return voice.authErrors.offline;
-  if (/expired|invalid.*(grant|flow|code)|code verifier|otp/i.test(message)) return voice.authErrors.staleLink;
-  return voice.authErrors.generic;
+/** Turns Supabase/network errors into the gentle copy in @pn/core; `fallback` replaces the generic line. */
+export function friendlyAuthError(error: unknown, fallback: string = voice.authErrors.generic): string {
+  const kind = authErrorKind(error instanceof Error ? error : { message: String(error ?? '') });
+  if (kind === 'generic') return fallback;
+  if (kind === 'tooShort') return voice.authErrors.tooShort(MIN_PASSWORD_LENGTH);
+  return voice.authErrors[kind];
 }
