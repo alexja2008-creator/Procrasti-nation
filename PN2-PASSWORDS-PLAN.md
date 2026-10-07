@@ -54,7 +54,7 @@ Confirmed by Alex on 2026-10-07:
 - An account that hasn't confirmed its email gets "Confirm your email first. Want a fresh link?"
 
 **Create an account.** Username, email and a new password.
-- The username is checked as it's typed ("alex_j is taken"). Sign-up also sets `trial_ends_at` (10 days) like v1, so v2 citizens get the trial too, until the separate free-tier fix moves it somewhere users can't edit.
+- The username is checked as it's typed ("alex_j is taken"). Every account gets the 10-day trial from its `created_at` (the free-tier fix, 2026-10-07: `apps/site/lib/trial.js`); sign-up no longer writes `trial_ends_at`.
 - With confirmation on: "Check your email to confirm your passport." The link goes through `auth/callback` as now and signs them in on that device. Opened on another device, the email is still confirmed; the callback then says "Email confirmed. Sign in with your password."
 - If the address already has an account, Supabase sends nothing and doesn't say so. The confirmation screen covers it: "Already have an account? Sign in or reset your password."
 
@@ -114,7 +114,7 @@ No database or site changes: `profiles` and its policies already exist (v1).
 
 ## Related, separate
 
-- **Free-tier bypasses (found while planning this; spun off as its own task):** the plan route trusts `user_metadata.trial_ends_at`, which any user can rewrite, and `profiles.stripe_subscription_status`, which any user can update on their own row. Both are on production now. That fix also decides how v2 sign-ups get the 10-day trial (they currently get none).
+- **Free-tier bypasses (found while planning this; spun off as its own task):** the plan route trusts `user_metadata.trial_ends_at`, which any user can rewrite, and `profiles.stripe_subscription_status`, which any user can update on their own row. Both are on production now. **Fixed 2026-10-07** on `v2` and in a draft PR to `main`: the trial counts from `created_at`, a trigger makes the Stripe columns server-only, and the API reads only the public profile columns (`supabase/migrations/profiles_billing_*.sql`; the runbook is the handoff's open item 1). The username reads and writes here only touch public columns, so they keep working.
 - Sign in with Apple and Google stay hidden until their accounts exist. Once Google is shown, Apple must be too (App Store rule 4.8); email and password alone don't need either.
 
 ## Done when

@@ -16,9 +16,6 @@ export const cleanUsername = (typed: string) =>
     .replace(/[^a-z0-9_]/g, '')
     .slice(0, USERNAME_MAX);
 
-/** How long a new account's Pro trial runs (v1: `trial_ends_at` set at sign-up). */
-export const TRIAL_DAYS = 10;
-
 /** The keys of `voice.authErrors`. */
 export type AuthErrorKind =
   | 'rateLimited'
