@@ -104,6 +104,13 @@ export async function fetchActiveTasks(userId: string, since: Date): Promise<Tas
   return [...active, ...done.flat().map(fromRow)];
 }
 
+/** One live task, or null when it's gone or isn't theirs (a reminder's Done, with nothing else loaded). */
+export async function fetchTask(id: string): Promise<Task | null> {
+  const { data, error } = await supabase.from('tasks').select(COLUMNS).eq('id', id).is('deleted_at', null).maybeSingle();
+  if (error) throw error;
+  return data ? fromRow(data as unknown as Row) : null;
+}
+
 /** Every live checklist line (ticked or not) of these notes. */
 export async function fetchNoteTasks(noteIds: string[]): Promise<Task[]> {
   const pages = await Promise.all(

@@ -36,16 +36,20 @@ const copy = voice.start;
 const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 const haptic = (style: Haptics.ImpactFeedbackStyle) => Platform.OS !== 'web' && Haptics.impactAsync(style);
 
+/** Timer lengths a link can ask for ("Start 5 min" on a reminder). */
+const LINK_MINUTES = [2, 5, 10, 25];
+
 export default function StartRoute() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, minutes } = useLocalSearchParams<{ id: string; minutes?: string }>();
+  const asked = LINK_MINUTES.includes(Number(minutes)) ? Number(minutes) : undefined;
   // A fresh session and clock for every task, including "Start the next step".
-  return <StartMode key={id} id={id} />;
+  return <StartMode key={id} id={id} minutes={asked} />;
 }
 
 type Phase = 'running' | 'stuck' | 'breather' | 'stamped';
 
-/** Start Mode: one step, a timer and the "just five minutes" contract. Every visit is a Start. */
-function StartMode({ id }: { id: string }) {
+/** Start Mode: one step, a timer and the "just five minutes" contract. Every visit is a Start. `minutes` overrides their default. */
+function StartMode({ id, minutes }: { id: string; minutes?: number }) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const insets = useSafeAreaInsets();
@@ -61,7 +65,7 @@ function StartMode({ id }: { id: string }) {
   const step = task ? stepContext(tasks, task) : null;
   const [phase, setPhase] = useState<Phase>('running');
 
-  const run = useStartSession({ userId, taskId: live?.id, defaultMinutes: defaultStartMinutes(settings?.preferences) });
+  const run = useStartSession({ userId, taskId: live?.id, defaultMinutes: minutes ?? defaultStartMinutes(settings?.preferences) });
   const { timer, planned, tiny } = run;
 
   const plannedMs = planned * 60_000;

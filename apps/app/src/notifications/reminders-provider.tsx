@@ -1,6 +1,7 @@
+import type { Task } from '@pn/core';
+import { router, usePathname, useRootNavigationState } from 'expo-router';
 import { createContext, useContext, useEffect, useEffectEvent, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
-import { usePathname } from 'expo-router';
 
 import { useCapture } from '@/components/capture';
 import { ReminderPrompt } from '@/components/reminder-prompt';
@@ -8,6 +9,7 @@ import { useLists } from '@/data/lists-store';
 import { loadNotNow, saveNotNow } from '@/data/reminder-ask';
 import { useTasks } from '@/data/tasks-store';
 import { getPermission, requestPermission, type Permission } from '@/notifications/permission';
+import { onDestination, onDoneSaved, saveDones, type Destination } from '@/notifications/responses';
 import { clearReminders, syncReminders } from '@/notifications/scheduler';
 import { onTimeGiven } from '@/notifications/time-given';
 
@@ -23,16 +25,26 @@ const Ctx = createContext<Reminders>({ permission: null, allow: async () => unde
 /** Waiting a moment after the last change saves a pass per keystroke-sized edit. */
 const SYNC_PAUSE_MS = 1500;
 
+/** "Start 5 min" on a reminder. */
+const START_MINUTES = 5;
+
+function open(d: Destination) {
+  if (d.to === 'today') router.navigate('/');
+  else if (d.to === 'task') router.push({ pathname: '/task/[id]', params: { id: d.taskId } });
+  else router.push({ pathname: '/start/[id]', params: { id: d.taskId, minutes: String(START_MINUTES) } });
+}
+
 /** Screens a sheet can open over: the tabs and a territory's page (not a modal, nor over the capture sheet). */
 const isBaseRoute = (path: string) => path === '/' || /^\/(upcoming|territories|passport|territory)(\/|$)/.test(path);
 
 /**
  * Reminders on this iPhone: keeps what's scheduled in step with the person's
- * tasks, and asks for notifications the first time a task gets a time (never
- * on launch). Clears everything on sign-out. On web it schedules nothing.
+ * tasks, asks for notifications the first time a task gets a time (never on
+ * launch), and opens what a reminder's tap or Start 5 min asks for. Clears
+ * everything on sign-out. On web it schedules nothing.
  */
 export function RemindersProvider({ userId, children }: { userId: string; children: ReactNode }) {
-  const { tasks, status, rolloverHour } = useTasks();
+  const { tasks, status, rolloverHour, merge } = useTasks();
   const { lists, status: listsStatus } = useLists();
   const capture = useCapture();
   const pathname = usePathname();
@@ -64,6 +76,17 @@ export function RemindersProvider({ userId, children }: { userId: string; childr
 
   // Unmounting means they signed out.
   useEffect(() => () => void clearReminders(), []);
+
+  // A reminder's Done saved while the app runs: show it. Dones waiting from before sign-in (or with the app closed) save now.
+  const takeSaved = useEffectEvent((task: Task) => merge([task]));
+  useEffect(() => onDoneSaved(takeSaved), []);
+  useEffect(() => {
+    saveDones();
+  }, [userId]);
+
+  // A tap or Start 5 min, once the screens can be navigated (one may have launched the app).
+  const navigable = !!useRootNavigationState()?.key;
+  useEffect(() => (navigable ? onDestination(open) : undefined), [navigable]);
 
   // The first time a task gets a time while notifications are undecided.
   useEffect(() => {
