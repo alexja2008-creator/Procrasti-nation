@@ -90,6 +90,7 @@ lib/
   prompts/plan.js                   # Adherence planner prompts + JSON schemas
   prompts/dates.js                  # Step "when" → calendar date prompt
   dates.js                          # Local-date helpers (localDateString, localTimeZone)
+  trial.js                          # trialDaysRemaining(user): 10 days from auth created_at
   unsubscribe.js                    # Signed unsubscribe links + List-Unsubscribe headers
   supabase.js                       # Supabase client (anon key)
   storage.js                        # localStorage wrapper (legacy, still used for boards/resets)
@@ -122,6 +123,10 @@ lib/
 ### `profiles` email preferences
 `email_reminders_enabled`, `email_reports_enabled` (BOOLEAN, default true) — set false by `/api/unsubscribe`; crons skip opted-out users.
 
+### `profiles` billing and visibility
+- `stripe_customer_id`, `stripe_subscription_status` are written only by the Stripe routes (service role); a trigger rejects users setting them (`supabase/migrations/profiles_billing_1_before_deploy.sql`).
+- API callers can read only `id, user_id, username, display_name, created_at` (`profiles_billing_2_after_deploy.sql`). The signed-in user reads their own status with `supabase.rpc('my_subscription_status')`. A new profiles column is hidden from the API until it's granted there.
+
 ### `streaks` table
 id, user_id, current_streak, highest_streak, last_completed_date, updated_at
 
@@ -141,7 +146,7 @@ All tables have RLS policies filtering by `user_id`.
 - `useAuth()` from `app/providers.jsx` — exposes `{ user, loading, trialStatus, trialDaysLeft, signOut }`
 - `trialStatus`: `'trial'` | `'free'` | `'pro'`
 - Free tier: 3 AI plans per calendar month
-- Trial: 10 days of Pro on signup (stored in `user_metadata.trial_ends_at`)
+- Trial: 10 days of Pro from sign-up, counted from `user.created_at` by `trialDaysRemaining()` in `lib/trial.js` (both the plan route and `AuthProvider`). Never decide access from `user_metadata`: users can write it themselves
 
 ### Styling
 - All styling via Tailwind utility classes

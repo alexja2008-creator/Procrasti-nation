@@ -53,6 +53,8 @@ ADD COLUMN IF NOT EXISTS start_commitment TIMESTAMPTZ DEFAULT NULL;
 -- 4. Profiles table for usernames + public display
 --    Needed for the social/friends feature and user profile pages.
 --    RLS: anyone can read profiles, users can only insert/update their own.
+--    The Stripe columns added later are the server's: see
+--    supabase/migrations/profiles_billing_1_before_deploy.sql and _2_after_deploy.sql.
 
 CREATE TABLE IF NOT EXISTS profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { requireAuth } from '../../../lib/authMiddleware';
 import { callClaude, AIError, MODELS, PLAN_EFFORT, resolveToday } from '../../../lib/ai';
 import { CLARIFY_SCHEMA, PLAN_SCHEMA, buildClarificationPrompt, buildPlanPrompt } from '../../../lib/prompts/plan';
+import { trialDaysRemaining } from '../../../lib/trial';
 
 export const maxDuration = 60;
 
@@ -50,15 +51,11 @@ export async function POST(request) {
     );
 
     // Enforce monthly plan limit for free users (not in trial, not subscribed)
-    const trialEndsAt = user.user_metadata?.trial_ends_at;
-    const inTrial = trialEndsAt && new Date(trialEndsAt) > new Date();
+    const inTrial = trialDaysRemaining(user) > 0;
     if (!inTrial) {
-      const { data: profile } = await userSupabase
-        .from('profiles')
-        .select('stripe_subscription_status')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      const isPro = profile?.stripe_subscription_status === 'active';
+      const { data: subscriptionStatus, error: statusError } = await userSupabase.rpc('my_subscription_status');
+      if (statusError) console.error('generate-plan: could not read subscription status', statusError.code);
+      const isPro = subscriptionStatus === 'active';
 
       if (!isPro) {
         const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
