@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { trialDaysRemaining } from '../lib/trial';
 
 const ThemeContext = createContext({
   darkMode: false,
@@ -57,16 +58,9 @@ export function ThemeProvider({ children }) {
   );
 }
 
+// Same rule as /api/generate-plan: 10 days from sign-up (lib/trial.js).
 function computeTrialStatus(user) {
-  if (!user) return { trialStatus: 'free', trialDaysLeft: 0 };
-  // Future: check 'pro' flag in user metadata when billing is wired up
-  const trialEndsAt = user.user_metadata?.trial_ends_at;
-  if (!trialEndsAt) {
-    // Existing users who signed up before this feature — give them a trial too
-    return { trialStatus: 'trial', trialDaysLeft: 10 };
-  }
-  const msLeft = new Date(trialEndsAt).getTime() - Date.now();
-  const daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+  const daysLeft = trialDaysRemaining(user);
   if (daysLeft > 0) {
     return { trialStatus: 'trial', trialDaysLeft: daysLeft };
   }
@@ -82,13 +76,17 @@ export function AuthProvider({ children }) {
 
   const fetchProfile = async (userId) => {
     if (!userId) { setProfile(null); return; }
-    const { data } = await supabase
-      .from('profiles')
-      .select('username, display_name, stripe_subscription_status')
-      .eq('user_id', userId)
-      .maybeSingle();
+    // Subscription status is private: profiles only exposes the public columns.
+    const [{ data }, { data: subscriptionStatus }] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('username, display_name')
+        .eq('user_id', userId)
+        .maybeSingle(),
+      supabase.rpc('my_subscription_status'),
+    ]);
     setProfile(data || null);
-    if (data?.stripe_subscription_status === 'active') {
+    if (subscriptionStatus === 'active') {
       setTrialStatus('pro');
       setTrialDaysLeft(0);
     }
