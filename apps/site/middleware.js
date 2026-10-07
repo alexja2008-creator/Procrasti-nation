@@ -6,7 +6,8 @@ import { NextResponse } from 'next/server';
 const ALLOWED_ORIGINS = new Set([
   process.env.NEXT_PUBLIC_BASE_URL || 'https://procrasti-nation.work',
   'https://app.procrasti-nation.work',
-  ...(process.env.NODE_ENV === 'development' ? ['http://localhost:8081'] : []),
+  // 127.0.0.1 is the same Expo web server under its own storage: a signed-out window for testing.
+  ...(process.env.NODE_ENV === 'development' ? ['http://localhost:8081', 'http://127.0.0.1:8081'] : []),
 ]);
 
 function withCors(response, origin) {
