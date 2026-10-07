@@ -21,6 +21,8 @@ type RoundProps = {
 export function RoundStamp({ ink, rim, lines, date, size = 116 }: RoundProps) {
   // TextPath needs document-unique ids; useId's colons aren't safe in every renderer.
   const id = `stamp${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
+  // A long bottom word ("APPROVED") sits a little smaller so it clears the date on the rim.
+  const wordSize = lines[1].length > 7 ? 11.3 : 12.5;
   return (
     <Svg width={size} height={size} viewBox="0 0 120 120" aria-hidden>
       <Defs>
@@ -34,10 +36,10 @@ export function RoundStamp({ ink, rim, lines, date, size = 116 }: RoundProps) {
           {rim}
         </TextPath>
       </SvgText>
-      <SvgText x={60} y={59} fill={ink} textAnchor="middle" fontFamily={fonts.monoMedium} fontSize={12.5} letterSpacing={0.6}>
+      <SvgText x={60} y={59} fill={ink} textAnchor="middle" fontFamily={fonts.monoMedium} fontSize={wordSize} letterSpacing={0.6}>
         {lines[0]}
       </SvgText>
-      <SvgText x={60} y={74} fill={ink} textAnchor="middle" fontFamily={fonts.monoMedium} fontSize={12.5} letterSpacing={0.6}>
+      <SvgText x={60} y={74} fill={ink} textAnchor="middle" fontFamily={fonts.monoMedium} fontSize={wordSize} letterSpacing={0.6}>
         {lines[1]}
       </SvgText>
       <SvgText fill={ink} fontFamily={fonts.mono} fontSize={8} letterSpacing={1.4} textAnchor="middle">

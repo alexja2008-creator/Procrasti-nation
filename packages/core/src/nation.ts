@@ -78,8 +78,9 @@ export const nudgeTones: Record<NudgeTone, { name: string; blurb: string; sample
     name: 'Roast',
     blurb: 'Brutal. Funny enough to screenshot.',
     samples: [
-      'Your history paper has been "tomorrow" since Tuesday. Bold strategy.',
-      'Your future self called. Not mad, just disappointed. Five minutes?',
+      'Your history paper has been ‘tomorrow’ since Tuesday. Bold strategy.',
+      // Jokes about the task, never the person: shame feeds procrastination.
+      'Your history paper has started leaving you voicemails. Five minutes?',
     ],
   },
 };
@@ -452,6 +453,53 @@ export const voice = {
         .join('. '),
     toNextRank: (n: number, rank: string) => `${n} more ${n === 1 ? 'start' : 'starts'} to ${rank}`,
     loadFailed: 'Couldn’t load your passport. Check your connection.',
+  },
+  /** The Citizenship Application (first-run onboarding). */
+  application: {
+    eyebrow: 'Citizenship Application',
+    page: (n: number, of: number) => `Page ${n} of ${of}`,
+    welcomeTitle: 'Welcome to the nation.',
+    welcomeBody: 'A few quick questions so ProcrastiNation fits how you work. About a minute and a half, and you can change any answer later in Settings.',
+    reserved: (citizenNo: string) => `Citizen No. ${citizenNo} is reserved for you.`,
+    begin: 'Begin',
+    skip: 'Skip for now',
+    back: 'Back',
+    next: 'Continue',
+    pickOne: 'Pick the closest. You can change it later.',
+    purposeTitle: 'Purpose of visit',
+    purposes: [
+      { id: 'school', label: 'School', hint: 'Classes, assignments, exams' },
+      { id: 'work', label: 'Work', hint: 'Projects and deadlines' },
+      { id: 'both', label: 'Both', hint: 'School and a job' },
+      { id: 'life', label: 'Life admin', hint: 'Errands, bills, everything else' },
+    ],
+    hoursTitle: 'When do you get things done?',
+    hours: [
+      { id: 'early', label: 'Early bird', hint: 'Mornings are best' },
+      { id: 'day', label: 'Daytime', hint: 'Roughly nine to five' },
+      { id: 'night', label: 'Night owl', hint: 'Late nights. Your day ends at 3 AM, so they still count as today.' },
+    ],
+    styleTitle: 'What usually stops you?',
+    styles: [
+      { id: 'avoid', label: 'I avoid it', hint: 'I know what to do. I just don’t start.' },
+      { id: 'perfectionist', label: 'It has to be perfect', hint: 'If it can’t be great, I’d rather not begin.' },
+      { id: 'overwhelmed', label: 'It feels too big', hint: 'I don’t know where to start.' },
+      { id: 'bored', label: 'It’s boring', hint: 'I can’t make myself care.' },
+    ],
+    /** After "What stops you": procrastination is mood repair, and shame feeds it (Alex, 2026-10-07). */
+    notBrokenTitle: 'First, you’re not broken.',
+    notBroken: [
+      'Putting things off isn’t a character flaw. It’s mostly mood repair: a task feels bad, so avoiding it feels better, for a while. Then the bad feeling comes back bigger.',
+      'Beating yourself up feeds that loop. In one study, students who forgave themselves for putting off studying for an exam put off studying less for the next one.',
+      'So go easy on yourself. Not as a reward for changing: it’s how the change happens. We’ll help with the rest, one small step at a time.',
+    ],
+    notBrokenSource: 'Based on research by Tim Pychyl and Fuschia Sirois, and Wohl, Pychyl & Bennett (2010).',
+    toneTitle: 'How should we nudge you?',
+    approvedTitle: (firstName?: string | null) => (firstName ? `Welcome, ${firstName}.` : 'Welcome, citizen.'),
+    approvedBody: (citizenNo: string) => `Citizen No. ${citizenNo}. Your passport is ready, and Today is waiting.`,
+    approvedStamp: ['CITIZEN', 'APPROVED'] as const,
+    goToToday: 'Go to Today',
+    saveFailed: 'Couldn’t save that. Check your connection and try again.',
   },
   authErrors: {
     rateLimited: 'Too many tries. Give it a minute, then try again.',

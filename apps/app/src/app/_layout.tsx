@@ -18,6 +18,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@/auth/auth-provider';
 import { SignedInProviders } from '@/data/signed-in-providers';
+import { useUserSettings } from '@/data/user-settings';
 import { useTokens } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -71,9 +72,32 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
     },
   };
 
-  const stack = (
+  return (
+    <ThemeProvider value={navTheme}>
+      <StatusBar style={night ? 'light' : 'dark'} />
+      {session ? (
+        <SignedInProviders userId={session.user.id}>
+          <AppStack signedIn />
+        </SignedInProviders>
+      ) : (
+        <AppStack signedIn={false} />
+      )}
+    </ThemeProvider>
+  );
+}
+
+/**
+ * The screens each state allows. Signed in, the Citizenship Application comes
+ * first until it's done or skipped (an error loading settings never traps
+ * anyone in it); signed out, only sign-in.
+ */
+function AppStack({ signedIn }: { signedIn: boolean }) {
+  const { settings, status } = useUserSettings();
+  const applying = signedIn && status === 'ready' && !settings?.onboardingCompletedAt;
+
+  return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={!!session}>
+      <Stack.Protected guard={signedIn && !applying}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="plan/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="task/[id]" options={{ presentation: 'modal' }} />
@@ -84,18 +108,14 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
         {/* Full screen, no swipe-to-dismiss: leaving goes through the close button, which ends the session. */}
         <Stack.Screen name="start/[id]" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
       </Stack.Protected>
-      <Stack.Protected guard={!session}>
+      <Stack.Protected guard={applying}>
+        <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
+      </Stack.Protected>
+      <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="sign-in" />
       </Stack.Protected>
       {/* Open in both states: it's where magic links and OAuth land. */}
       <Stack.Screen name="auth/callback" />
     </Stack>
-  );
-
-  return (
-    <ThemeProvider value={navTheme}>
-      <StatusBar style={night ? 'light' : 'dark'} />
-      {session ? <SignedInProviders userId={session.user.id}>{stack}</SignedInProviders> : stack}
-    </ThemeProvider>
   );
 }

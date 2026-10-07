@@ -69,12 +69,22 @@ function loadUserSettings(userId: string): Promise<UserSettings> {
 
 type State = { settings: UserSettings | null; status: 'loading' | 'ready' | 'error' };
 
+/** The columns besides preferences that the person changes (the Application, Settings). */
+export type SettingsPatch = Partial<Pick<UserSettings, 'dayRolloverHour' | 'onboardingCompletedAt'>>;
+
 type Settings = State & {
   /** Merges into their preferences (the Reminders card's morning list, …); applies now, rolls back and throws if the save fails. */
   savePreferences: (patch: Partial<Preferences>) => Promise<void>;
+  /** When their day ends, or that the Application is done; applies now, rolls back and throws if the save fails. */
+  saveSettings: (patch: SettingsPatch) => Promise<void>;
 };
 
-const Ctx = createContext<Settings>({ settings: null, status: 'loading', savePreferences: async () => undefined });
+const Ctx = createContext<Settings>({
+  settings: null,
+  status: 'loading',
+  savePreferences: async () => undefined,
+  saveSettings: async () => undefined,
+});
 
 export function UserSettingsProvider({ userId, children }: { userId: string; children: ReactNode }) {
   const [state, setState] = useState<State>({ settings: null, status: 'loading' });
@@ -113,7 +123,22 @@ export function UserSettingsProvider({ userId, children }: { userId: string; chi
     }
   };
 
-  return <Ctx.Provider value={{ ...state, savePreferences }}>{children}</Ctx.Provider>;
+  const saveSettings: Settings['saveSettings'] = async (patch) => {
+    const before = state.settings;
+    if (!before) return;
+    const apply = (fields: SettingsPatch) => setState((s) => (s.settings ? { ...s, settings: { ...s.settings, ...fields } } : s));
+    apply(patch);
+    const row: Partial<Pick<Row, 'day_rollover_hour' | 'onboarding_completed_at'>> = {};
+    if (patch.dayRolloverHour !== undefined) row.day_rollover_hour = patch.dayRolloverHour;
+    if (patch.onboardingCompletedAt !== undefined) row.onboarding_completed_at = patch.onboardingCompletedAt;
+    const { error } = await supabase.from('user_settings').update(row).eq('user_id', userId);
+    if (error) {
+      apply({ dayRolloverHour: before.dayRolloverHour, onboardingCompletedAt: before.onboardingCompletedAt });
+      throw error;
+    }
+  };
+
+  return <Ctx.Provider value={{ ...state, savePreferences, saveSettings }}>{children}</Ctx.Provider>;
 }
 
 export function useUserSettings() {
