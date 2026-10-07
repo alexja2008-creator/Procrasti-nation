@@ -49,6 +49,7 @@ The Application tailors the app, but nothing in it sells the app, and v2 has no 
 4. **Existing accounts** (v1 users, anyone signed up before this ships) are **offered** the trial once and can skip it; they keep the free tier.
 5. **An anonymous passport through the funnel; saved later.** Begin creates a real but anonymous account (Supabase anonymous sign-in), so nothing waits on an email: answers, the Oath's plan (metered like any account's), the trial. **Save your passport** (username, then Apple / Google in one tap once available, or email + password) comes after the trial starts, at moments with a reason, and keeps the same account and data. (Revised from "account mid-quiz": every email step before the Oath meant leaving the app for Mail.)
 6. **Relief, not shame,** everywhere in the funnel; true numbers only.
+7. **"Text me a code" saves the passport and signs in** (phase 1, US and Canada first). A texted code autofills over the keyboard in seconds (and in Safari on a Mac with Text Message Forwarding), and students live in their texts. Order offered: on iPhone, Apple (once it exists), then phone, then email + password; on the web, phone, then email + password, then Apple / Google.
 
 ## The flow
 
@@ -70,7 +71,7 @@ Pages marked **new**; the rest exist today. Everything before 15 runs on the ano
 | 12 | **A nudge for step 1** | Primed ask: "Want a nudge each morning with your next step?" → turns on the morning list at their hours' time → the system prompt (iOS) or browser prompt (web). "Not now" is fine |
 | 13 | Approved | the stamp, as now |
 | 14 | **The trial** | 7 days free, then the price; "Cancel anytime before it ends. You keep the free version."; "We'll remind you the day before it ends"; Restore purchases; terms and privacy links (Apple requires them). Required for new accounts; existing ones get "Not now"; a pending Ask to Buy goes in on the free tier |
-| 15 | **Save your passport** | "Keep your passport: sign in on your laptop, never lose it." Username, then Apple / Google, or email + password. "Later" is allowed; it comes back (below) |
+| 15 | **Save your passport** | "Keep your passport: sign in on your laptop, never lose it." Username, then Apple (once available), **text me a code**, or email + password. "Later" is allowed; it comes back (below) |
 
 Existing accounts that haven't done the Application start at 1 already signed in and skip 15. Anyone who has done it sees only page 14, once.
 
@@ -81,9 +82,11 @@ Existing accounts that haven't done the Application start at 1 already signed in
 **The anonymous passport.** The gate today sends anyone signed out to sign-in; it will send them to the Application instead, with "Already a citizen? Sign in" on Welcome. **Begin** calls `signInAnonymously()`: a real user (`is_anonymous` in its token, the `authenticated` role), so `user_settings`, the citizen number, tasks, RLS and the plan meter all work as they do today, with no device-only draft.
 - **Saving it** keeps the same user id and everything in it:
   - Apple / Google: link the identity (one tap; needs the developer account and the Google client).
+  - Phone: `updateUser({ phone })` texts a code; `verifyOtp({ phone, token, type: 'phone_change' })` attaches the number. The code field is `oneTimeCode` (iOS) / `one-time-code` (web), so it autofills. Then a gentle nudge to add a second way back (email or Apple), since carriers recycle numbers.
   - Email + password: the username is saved to `profiles` at once; `updateUser({ email })` sends a confirmation they can open whenever, on any device, while they keep using the app (Supabase attaches an email only once it's confirmed, so nobody can claim someone else's); then **Choose a password** (the existing `auth/new-password` screen).
 - **Signing in to an existing account** from an anonymous passport replaces it (a warning first if the passport has tasks).
-- **The sign-in screen** keeps Sign in, Forgot and the link (`PN2-PASSWORDS-PLAN.md`); its Create account form becomes Save your passport's, and "New here?" starts the Application instead.
+- **The sign-in screen** keeps Sign in, Forgot and the link (`PN2-PASSWORDS-PLAN.md`) and gains **Text me a code** (`signInWithOtp({ phone, options: { shouldCreateUser: false } })`, then `verifyOtp` with `type: 'sms'`; an unknown number hears the same "on its way"); its Create account form becomes Save your passport's, and "New here?" starts the Application instead.
+- **Texted codes: cost and fraud.** Supabase sends them through **Twilio Verify**: about $0.058 per successful US verification (a failed attempt still costs the ~$0.008 text). Sessions last, so it's mostly once per device. SMS pumping (codes triggered to premium numbers abroad) is the risk: only US and Canada numbers at first, Twilio's fraud guard, limits per number and per IP, and Turnstile on the web. Phone numbers also go in the privacy policy and the App Store privacy label.
 - **Abuse:** anonymous sign-ins are free to create, and each can make the Oath's plan. Supabase caps them per IP (default 30 an hour); add Cloudflare Turnstile on the web, and Apple's App Attest on iOS if abuse shows up. A plan costs cents, so the exposure is bounded.
 - **Cleanup:** a scheduled job deletes anonymous passports untouched for 30 days with no subscription (database review: what cascades).
 - **Restore purchases** on a reinstalled, unsaved passport: RevenueCat moves the subscription to the new passport; the old data is gone, which is why saving keeps coming back.
@@ -102,10 +105,10 @@ Existing accounts that haven't done the Application start at 1 already signed in
 
 1. **The funnel, before payments** (no Apple account needed):
    - the anonymous passport (Begin, the gate, signing in from it, the sign-out warning), Your result, How PN helps, Where did you hear, Your first week, the primed nudge, the staged wait;
-   - Save your passport with email + password (confirmation in the background, then Choose a password) and its reminders; Apple / Google join in phase 2;
+   - Save your passport with a texted code or email + password (confirmation in the background, then Choose a password) and its reminders; Text me a code on the sign-in screen; Apple / Google join in phase 2;
    - the free tier at 2 plans per 30.5-day window (site route + core window math, tested);
    - verify on iPhone and web: a new passport through every page; saving it; an existing account; answers landing.
-   - Alex, in Supabase (staging now, production at launch): turn on **Anonymous sign-ins**; Turnstile for the web.
+   - Alex, in Supabase (staging now, production at launch): turn on **Anonymous sign-ins**; Turnstile for the web; a **Twilio account with a Verify service**, its keys under Authentication → Providers → Phone, and US / Canada only in Twilio's geo permissions.
 2. **Payments** (needs the Apple Developer account, App Store Connect products, RevenueCat and a privacy policy page):
    - `entitlements` + webhook (database review + security review), the trial page with Apple's purchase sheet and Stripe on the web, Restore purchases, Ask to Buy, the trial reminder, Settings → Subscription (manage / restore);
    - Save your passport with Apple / Google; the anonymous-passport cleanup job;
