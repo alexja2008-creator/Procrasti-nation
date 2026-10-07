@@ -71,7 +71,8 @@ const makeStyles = (t: Tokens) => ({
       borderColor: t.c.pageBorder,
       borderRadius: t.radii.card,
     },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+    // At narrow widths the page number drops under the title whole, instead of breaking its words.
+    header: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 8, rowGap: 4 },
     rule: { height: 1, backgroundColor: t.c.outline },
     footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   }),

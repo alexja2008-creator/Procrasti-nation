@@ -2,15 +2,61 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { voice } from '../src/nation.ts';
-import { APPLICATION_PAGES, hoursChange, morningTimeFor, oathTask, pageNumber, resumePage, rolloverFor, territoriesFor } from '../src/onboarding.ts';
+import {
+  APPLICATION_PAGES,
+  firstWeekOf,
+  helpCardsFor,
+  hoursChange,
+  morningTimeFor,
+  oathTask,
+  pageNumber,
+  resultAudience,
+  resumePage,
+  rolloverFor,
+  territoriesFor,
+} from '../src/onboarding.ts';
 import { parseQuickAdd } from '../src/quick-add.ts';
 
-test('the questions are numbered; welcome and approved are not', () => {
+test('the questions are numbered through the Oath; the rest are not', () => {
   assert.deepEqual(
     APPLICATION_PAGES.map((p) => pageNumber(p)?.n ?? null),
-    [null, 1, 2, 3, 4, 5, 6, null],
+    [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, null, null, null, null],
   );
-  assert.equal(pageNumber('oath')?.of, 6);
+  assert.equal(pageNumber('oath')?.of, 9);
+});
+
+test('how PN helps: what answers their reason comes first', () => {
+  assert.equal(helpCardsFor('overwhelmed')[0], 'planIt');
+  assert.equal(helpCardsFor('avoid')[0], 'startMode');
+  assert.equal(helpCardsFor('perfectionist')[0], 'roughFirst');
+  assert.equal(helpCardsFor('bored')[0], 'stamps');
+  assert.equal(helpCardsFor(undefined).length, 3);
+  assert.equal(resultAudience('school'), 'students');
+  assert.equal(resultAudience('both'), 'students');
+  assert.equal(resultAudience('work'), 'adults');
+  assert.equal(resultAudience('life'), 'adults');
+});
+
+test("your first week: the Oath's steps on their days, today through six days on", () => {
+  const step = (id: string, scheduledOn: string | null, sortOrder: number, extra: object = {}) =>
+    ({ id, parentId: 'oath', scheduledOn, sortOrder, deletedAt: null, ...extra }) as never;
+  const tasks = [
+    step('b', '2026-10-08', 2),
+    step('a', '2026-10-07', 1),
+    step('c', '2026-10-08', 3),
+    step('late', '2026-10-14', 4),
+    step('undated', null, 5),
+    step('gone', '2026-10-09', 6, { deletedAt: '2026-10-07T00:00:00Z' }),
+    { id: 'other', parentId: 'elsewhere', scheduledOn: '2026-10-07', sortOrder: 0, deletedAt: null } as never,
+  ];
+  const week = firstWeekOf(tasks, 'oath', '2026-10-07');
+  assert.deepEqual(
+    week.map((d) => [d.day, d.steps.map((t: { id: string }) => t.id)]),
+    [
+      ['2026-10-07', ['a']],
+      ['2026-10-08', ['b', 'c']],
+    ],
+  );
 });
 
 test('coming back picks up at the first page not done', () => {
@@ -19,7 +65,8 @@ test('coming back picks up at the first page not done', () => {
   assert.equal(resumePage({ persona: 'school' }), 'hours');
   assert.equal(resumePage({ persona: 'school', hours: 'night' }), 'style');
   assert.equal(resumePage({ persona: 'school', hours: 'night', style: 'avoid' }), 'notBroken', 'the self-forgiveness page is seen before the tone');
-  assert.equal(resumePage({ persona: 'school', hours: 'night', style: 'avoid', nudgeTone: 'roast' }), 'oath');
+  assert.equal(resumePage({ persona: 'school', hours: 'night', style: 'avoid', nudgeTone: 'roast' }), 'result', 'then the result and how PN helps');
+  assert.equal(resumePage({ persona: 'school', hours: 'night', style: 'avoid', nudgeTone: 'roast', heardFrom: 'tiktok' }), 'oath');
   assert.equal(resumePage({ hours: 'day' }), 'purpose');
 });
 

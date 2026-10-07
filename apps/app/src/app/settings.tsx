@@ -1,5 +1,6 @@
 import {
   defaultStartMinutes,
+  formatPhone,
   hoursChange,
   nudgeTones,
   voice,
@@ -15,12 +16,14 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
+import { isUnsaved } from '@/auth/passport';
 import { signOut } from '@/auth/sign-out';
 import { ChoiceCards, type Choice } from '@/components/application/choice-cards';
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
 import { Icon } from '@/components/icon';
 import { RemindersCard } from '@/components/reminders-card';
+import { SavePassport } from '@/components/save-passport';
 import { Screen } from '@/components/screen';
 import { PasswordSheet } from '@/components/settings/password-sheet';
 import { SettingRow } from '@/components/settings/setting-row';
@@ -33,6 +36,7 @@ import { useUserSettings } from '@/data/user-settings';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.settings;
+const passport = voice.application;
 const answers = voice.application;
 
 const tones: Choice<NudgeToneId>[] = (Object.keys(nudgeTones) as NudgeToneId[]).map((id) => ({
@@ -45,7 +49,7 @@ const tones: Choice<NudgeToneId>[] = (Object.keys(nudgeTones) as NudgeToneId[]).
 const TIMERS: StartMinutes[] = [2, 5, 10, 25];
 const DAY_ENDS = [0, 1, 2, 3, 4, 5, 6];
 
-type Picking = 'purpose' | 'hours' | 'style' | 'tone' | 'timer' | 'dayEnds' | 'username' | 'password' | null;
+type Picking = 'purpose' | 'hours' | 'style' | 'tone' | 'timer' | 'dayEnds' | 'username' | 'password' | 'save' | 'signOut' | null;
 
 const labelOf = <T extends string>(choices: readonly { id: T; label: string }[], id: T | undefined) =>
   choices.find((c) => c.id === id)?.label ?? copy.notSet;
@@ -57,6 +61,9 @@ export default function SettingsScreen() {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const { session } = useAuth();
+  const unsaved = isUnsaved(session?.user);
+  // Signed in with an email, or a texted code (a passport saved by phone has no email).
+  const signedInAs = session?.user.email || (session?.user.phone ? formatPhone(`+${session.user.phone.replace(/^\+/, '')}`) : null);
   const { settings, savePreferences, saveSettings } = useUserSettings();
   const prefs: Partial<Preferences> = settings?.preferences ?? {};
   const [picking, setPicking] = useState<Picking>(null);
@@ -132,15 +139,22 @@ export default function SettingsScreen() {
       <RemindersCard />
 
       <SettingsCard label={copy.accountLabel}>
-        <SettingRow label={copy.username} value={username ?? copy.usernameNone} onPress={() => setPicking('username')} />
-        <SettingRow label={copy.password} value={copy.passwordValue} onPress={() => setPicking('password')} />
+        {unsaved ? (
+          <SettingRow label={passport.saveAction} value={passport.notSaved} onPress={() => setPicking('save')} />
+        ) : (
+          <>
+            <SettingRow label={copy.username} value={username ?? copy.usernameNone} onPress={() => setPicking('username')} />
+            <SettingRow label={copy.password} value={copy.passwordValue} onPress={() => setPicking('password')} />
+          </>
+        )}
         <View style={s.account}>
-          {session?.user.email ? (
+          {signedInAs ? (
             <Text variant="meta" color={c.muted}>
-              {voice.signIn.signedInAs(session.user.email)}
+              {voice.signIn.signedInAs(signedInAs)}
             </Text>
           ) : null}
-          <Button variant="secondary" label={voice.signIn.signOut} onPress={signOut} />
+          {/* Signing out of a passport that isn't saved loses it: say so first. */}
+          <Button variant="secondary" label={voice.signIn.signOut} onPress={unsaved ? () => setPicking('signOut') : signOut} />
         </View>
       </SettingsCard>
 
@@ -203,6 +217,25 @@ export default function SettingsScreen() {
         <UsernameSheet userId={userId} current={username} onSaved={setUsername} onClose={() => setPicking(null)} />
       ) : picking === 'password' ? (
         <PasswordSheet onClose={() => setPicking(null)} />
+      ) : picking === 'save' ? (
+        <Sheet title={passport.saveAction} onClose={() => setPicking(null)} width={440}>
+          <View style={s.sheetBody}>
+            <Text variant="meta" color={c.muted}>
+              {passport.saveLead}
+            </Text>
+            <SavePassport onDone={() => setPicking(null)} />
+          </View>
+        </Sheet>
+      ) : picking === 'signOut' ? (
+        <Sheet title={passport.signOutUnsavedTitle} onClose={() => setPicking(null)}>
+          <View style={s.sheetBody}>
+            <Text variant="body" color={c.inkSoft}>
+              {passport.signOutUnsavedBody}
+            </Text>
+            <Button label={passport.saveAction} onPress={() => setPicking('save')} />
+            <Button variant="quiet" label={passport.signOutAnyway} onPress={signOut} />
+          </View>
+        </Sheet>
       ) : picking === 'dayEnds' ? (
         <Sheet title={copy.dayEnds} onClose={() => setPicking(null)}>
           <Text variant="meta" color={c.muted} style={s.note}>
@@ -231,6 +264,7 @@ const makeStyles = (t: Tokens) => ({
     iconButton: { width: t.hitTarget, height: t.hitTarget, alignItems: 'center', justifyContent: 'center' },
     account: { gap: 10, alignItems: 'flex-start', paddingTop: 6, paddingBottom: 12 },
     note: { marginBottom: 10 },
+    sheetBody: { gap: 12, paddingVertical: 8 },
     chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingVertical: 8 },
   }),
 });

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '@/components/text';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
-export type Choice<T extends string> = { id: T; label: string; hint: string; sample?: string };
+export type Choice<T extends string> = { id: T; label: string; hint?: string; sample?: string };
 
 type Props<T extends string> = {
   choices: readonly Choice<T>[];
@@ -31,14 +31,16 @@ export function ChoiceCards<T extends string>({ choices, selected, onPick, label
             accessibilityState={{ checked: on, disabled: !!disabled }}
             // React Native Web only exposes the picked one through aria-checked.
             aria-checked={on}
-            accessibilityLabel={`${choice.label}. ${choice.hint}`}
+            accessibilityLabel={choice.hint ? `${choice.label}. ${choice.hint}` : choice.label}
             style={({ pressed }) => [s.card, on && s.cardOn, pressed && s.pressed]}>
             <View style={[s.dot, on && s.dotOn]}>{on ? <View style={s.dotFill} /> : null}</View>
             <View style={s.words}>
               <Text variant="item">{choice.label}</Text>
-              <Text variant="meta" color={c.muted}>
-                {choice.hint}
-              </Text>
+              {choice.hint ? (
+                <Text variant="meta" color={c.muted}>
+                  {choice.hint}
+                </Text>
+              ) : null}
               {choice.sample ? (
                 <Text variant="body" color={c.inkSoft} style={s.sample}>
                   “{choice.sample}”

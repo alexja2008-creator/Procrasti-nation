@@ -28,7 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Set with the session, so the screen that sees the session also sees why.
       setState((s) => ({ session, loading: false, recovering: event === 'PASSWORD_RECOVERY' || (s.recovering && !!session) }));
       // Supabase calls can't be awaited inside this callback; run after it.
-      if (session && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'PASSWORD_RECOVERY')) {
+      // (An anonymous passport has no public name; a saved one claims its pending username here.)
+      if (session && !session.user.is_anonymous && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'PASSWORD_RECOVERY')) {
         setTimeout(() => ensureProfile(session.user).catch(() => undefined), 0);
       }
     });

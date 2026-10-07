@@ -33,22 +33,6 @@ export async function sendMagicLink(email: string) {
   if (error && error.code !== 'otp_disabled') throw error;
 }
 
-/**
- * A new account. The username waits in `pending_username` until the email is confirmed
- * (`ensureProfile` makes the profile then). The 10-day trial needs nothing here: the site counts
- * it from the account's `created_at`, never from metadata the person can edit. True if signed in
- * at once (Supabase's "Confirm email" off); otherwise a confirmation link is on its way.
- */
-export async function createAccount({ email, password, username }: { email: string; password: string; username: string }) {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { emailRedirectTo: authRedirectUrl(), data: { pending_username: username } },
-  });
-  if (error) throw error;
-  return !!data.session;
-}
-
 export async function resendConfirmation(email: string) {
   const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: authRedirectUrl() } });
   if (error) throw error;

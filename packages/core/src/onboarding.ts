@@ -3,18 +3,52 @@
 // the day ends, the morning list's time, Start Mode's timer, the plans' and
 // Today's shape, the nudge tone), and Settings can change any of them later.
 
-import { addDays } from './dates.ts';
+import { addDays, daysBetween } from './dates.ts';
 import { voice } from './nation.ts';
 import type { QuickAddResult } from './quick-add.ts';
 import { morningListOf } from './reminders.ts';
-import type { Hours, List, LocalDate, MorningList, Persona, Preferences } from './types.ts';
+import type { Hours, List, LocalDate, MorningList, Persona, Preferences, ProcrastinationStyle, Task } from './types.ts';
 
-export type ApplicationPage = 'welcome' | 'purpose' | 'hours' | 'style' | 'notBroken' | 'tone' | 'oath' | 'approved';
+export type ApplicationPage =
+  | 'welcome'
+  | 'purpose'
+  | 'hours'
+  | 'style'
+  | 'notBroken'
+  | 'tone'
+  | 'result'
+  | 'help'
+  | 'heardFrom'
+  | 'oath'
+  | 'firstWeek'
+  | 'nudge'
+  | 'approved'
+  | 'save';
 
-/** In order. Welcome and Approved aren't numbered; the rest are "page n of 6". */
-export const APPLICATION_PAGES: readonly ApplicationPage[] = ['welcome', 'purpose', 'hours', 'style', 'notBroken', 'tone', 'oath', 'approved'];
+/**
+ * In order. Up to Where did you hear about us, a new person is signed out (answers wait on the
+ * device); the anonymous passport opens on the way to the Oath. Save your passport is for an
+ * anonymous one only.
+ */
+export const APPLICATION_PAGES: readonly ApplicationPage[] = [
+  'welcome',
+  'purpose',
+  'hours',
+  'style',
+  'notBroken',
+  'tone',
+  'result',
+  'help',
+  'heardFrom',
+  'oath',
+  'firstWeek',
+  'nudge',
+  'approved',
+  'save',
+];
 
-const NUMBERED: readonly ApplicationPage[] = APPLICATION_PAGES.filter((p) => p !== 'welcome' && p !== 'approved');
+/** "Page n of 9": the questions through the Oath. */
+const NUMBERED: readonly ApplicationPage[] = APPLICATION_PAGES.slice(APPLICATION_PAGES.indexOf('purpose'), APPLICATION_PAGES.indexOf('oath') + 1);
 
 /** "Page 2 of 5", or null for the unnumbered pages. */
 export function pageNumber(page: ApplicationPage): { n: number; of: number } | null {
@@ -25,7 +59,8 @@ export function pageNumber(page: ApplicationPage): { n: number; of: number } | n
 /**
  * Where to pick up: the first page not done yet, so leaving halfway (or the
  * app being closed) keeps what's answered. Nothing answered starts at Welcome;
- * the self-forgiveness page counts as seen once the next answer exists.
+ * the self-forgiveness page counts as seen once the next answer exists, and
+ * the result once they've said where they heard about us.
  */
 export function resumePage(prefs: Partial<Preferences>): ApplicationPage {
   if (!prefs.persona && !prefs.hours && !prefs.style && !prefs.nudgeTone) return 'welcome';
@@ -33,7 +68,45 @@ export function resumePage(prefs: Partial<Preferences>): ApplicationPage {
   if (!prefs.hours) return 'hours';
   if (!prefs.style) return 'style';
   if (!prefs.nudgeTone) return 'notBroken';
+  if (!prefs.heardFrom) return 'result';
   return 'oath';
+}
+
+/** Your result: the fact is about students for school, about adults otherwise. */
+export const resultAudience = (persona?: Persona): 'students' | 'adults' => (persona === 'work' || persona === 'life' ? 'adults' : 'students');
+
+export type HelpCard = 'planIt' | 'startMode' | 'focusedToday' | 'roughFirst' | 'stamps' | 'nudges';
+
+/** How PN helps you: three cards, the one that answers what stops them first. */
+export function helpCardsFor(style?: ProcrastinationStyle): HelpCard[] {
+  switch (style) {
+    case 'avoid':
+      return ['startMode', 'nudges', 'planIt'];
+    case 'perfectionist':
+      return ['roughFirst', 'planIt', 'stamps'];
+    case 'bored':
+      return ['stamps', 'nudges', 'startMode'];
+    default:
+      return ['planIt', 'focusedToday', 'startMode'];
+  }
+}
+
+/**
+ * Your first week: the Oath's steps on their days, from today through the next six. Steps without
+ * a day, or later than that, aren't shown (the plan itself has them all).
+ */
+export function firstWeekOf(tasks: Task[], planId: string, today: LocalDate): { day: LocalDate; steps: Task[] }[] {
+  const byDay = new Map<LocalDate, Task[]>();
+  const steps = tasks
+    .filter((t) => t.parentId === planId && !t.deletedAt && t.scheduledOn)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  for (const step of steps) {
+    const day = step.scheduledOn!;
+    const ahead = daysBetween(today, day);
+    if (ahead < 0 || ahead > 6) continue;
+    byDay.set(day, [...(byDay.get(day) ?? []), step]);
+  }
+  return [...byDay.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([day, dayTasks]) => ({ day, steps: dayTasks }));
 }
 
 /** The territories a purpose of visit starts someone with (only when they have none). */

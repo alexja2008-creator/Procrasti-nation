@@ -6,6 +6,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useAuth } from '@/auth/auth-provider';
 import { personName } from '@/auth/person-name';
 import { Icon } from '@/components/icon';
+import { PassportSaveCard } from '@/components/passport-save-card';
 import { Screen } from '@/components/screen';
 import { CountStamp, RoundStamp } from '@/components/stamp';
 import { Text } from '@/components/text';
@@ -105,6 +106,8 @@ export default function PassportScreen() {
           {voice.passportLead}
         </Text>
       </View>
+
+      <PassportSaveCard />
 
       <View style={s.idPage} accessibilityLabel="Identity page">
         <View style={s.idHeader}>

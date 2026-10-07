@@ -1,8 +1,9 @@
-import { actions, relativeDayLabel, voice, type LocalDate, type Task } from '@pn/core';
+import { actions, localDateString, planWindow, relativeDayLabel, voice, type LocalDate, type Task } from '@pn/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
+import { useAuth } from '@/auth/auth-provider';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
@@ -22,9 +23,10 @@ type Phase =
   | { kind: 'preview' | 'saving'; plan: Plan; dates: LocalDate[] }
   | { kind: 'failed'; message: string; canRetry: boolean };
 
-const failure = (e: unknown) =>
+/** `freeAgain`: the day their free plans come back (the next 30.5-day window). */
+const failure = (e: unknown, freeAgain: string) =>
   e instanceof ApiError && e.status === 429
-    ? { message: copy.limit, canRetry: false }
+    ? { message: copy.limit(freeAgain), canRetry: false }
     : { message: copy.failed, canRetry: true };
 
 const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
@@ -39,9 +41,12 @@ async function buildPlan(task: Task, today: LocalDate, options: Parameters<typeo
 export default function PlanScreen() {
   const s = useStyles(makeStyles);
   const { c } = s.t;
-  // `replan=1`: a fresh plan for what's left, keeping the steps already finished.
-  const { id, replan } = useLocalSearchParams<{ id: string; replan?: string }>();
+  // `replan=1`: a fresh plan for what's left, keeping the steps already finished. `oath=1`: the
+  // Citizenship Application's Oath, whose wait is the application being processed.
+  const { id, replan, oath } = useLocalSearchParams<{ id: string; replan?: string; oath?: string }>();
   const { tasks, today, status, merge } = useTasks();
+  const { session } = useAuth();
+  const freeAgain = session ? relativeDayLabel(localDateString(planWindow(session.user.created_at).end), today) : '';
   const { settings } = useUserSettings();
   const task = tasks.find((t) => t.id === id);
   const style = settings?.preferences.style;
@@ -65,7 +70,7 @@ export default function PlanScreen() {
     if (isReplan) {
       buildPlan(t, today, replanOptions).then(
         (built) => setPhase({ kind: 'preview', ...built }),
-        (e) => setPhase({ kind: 'failed', ...failure(e) }),
+        (e) => setPhase({ kind: 'failed', ...failure(e, freeAgain) }),
       );
       return;
     }
@@ -80,7 +85,7 @@ export default function PlanScreen() {
         setPhase({ kind: 'building' });
         setPhase({ kind: 'preview', ...(await buildPlan(t, today, { style })) });
       })
-      .catch((e) => setPhase({ kind: 'failed', ...failure(e) }));
+      .catch((e) => setPhase({ kind: 'failed', ...failure(e, freeAgain) }));
   });
   useEffect(() => {
     if (!task || ranAttempt.current === attempt) return;
@@ -96,7 +101,7 @@ export default function PlanScreen() {
       const options = isReplan ? replanOptions : withAnswers ? { questions, answers, style } : { style };
       setPhase({ kind: 'preview', ...(await buildPlan(task, today, options)) });
     } catch (e) {
-      setPhase({ kind: 'failed', ...failure(e) });
+      setPhase({ kind: 'failed', ...failure(e, freeAgain) });
     }
   };
 
@@ -160,7 +165,7 @@ export default function PlanScreen() {
             </Text>
 
             {phase.kind === 'reading' ? waiting(copy.reading) : null}
-            {phase.kind === 'building' ? waiting(copy.building, copy.buildingHint) : null}
+            {phase.kind === 'building' ? (oath === '1' ? waiting(copy.processing, copy.processingHint) : waiting(copy.building, copy.buildingHint)) : null}
 
             {phase.kind === 'questions' ? (
               <View style={s.questions}>

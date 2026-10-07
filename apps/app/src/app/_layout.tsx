@@ -11,12 +11,13 @@ import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@/auth/auth-provider';
+import { clearDraft } from '@/data/application-draft';
 import { SignedInProviders } from '@/data/signed-in-providers';
 import { useUserSettings } from '@/data/user-settings';
 import { useTokens } from '@/theme/tokens';
@@ -86,14 +87,30 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   );
 }
 
+/** A passport opened this recently goes straight back to its Application while its settings load. */
+const JUST_OPENED_MS = 30 * 60 * 1000;
+
 /**
- * The screens each state allows. Signed in, the Citizenship Application comes
- * first until it's done or skipped (an error loading settings never traps
- * anyone in it); signed out, only sign-in.
+ * The screens each state allows. Signed out: the Citizenship Application (someone new starts
+ * there; its anonymous passport opens on the way to the Oath) and sign-in. Signed in, the
+ * Application comes first until it's done or skipped (an error loading settings never traps
+ * anyone in it).
  */
 function AppStack({ signedIn }: { signedIn: boolean }) {
+  const { session } = useAuth();
   const { settings, status } = useUserSettings();
-  const applying = signedIn && status === 'ready' && !settings?.onboardingCompletedAt;
+  const user = session?.user;
+  // This stack mounts afresh when the session changes, so its first render is "now" enough.
+  const [mountedAt] = useState(Date.now);
+  const justOpened = !!user?.is_anonymous && mountedAt - Date.parse(user.created_at) < JUST_OPENED_MS;
+  const done = !!settings?.onboardingCompletedAt;
+  // While settings load, a just-opened passport stays on the Application (no flash of Today).
+  const applying = signedIn && (status === 'ready' ? !done : status === 'loading' && justOpened);
+
+  // Answers given signed out belong to nobody once they've signed in to an account that's done the Application.
+  useEffect(() => {
+    if (signedIn && status === 'ready' && done) clearDraft();
+  }, [signedIn, status, done]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
@@ -108,7 +125,7 @@ function AppStack({ signedIn }: { signedIn: boolean }) {
         {/* Full screen, no swipe-to-dismiss: leaving goes through the close button, which ends the session. */}
         <Stack.Screen name="start/[id]" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
       </Stack.Protected>
-      <Stack.Protected guard={applying}>
+      <Stack.Protected guard={!signedIn || applying}>
         <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
       </Stack.Protected>
       {/* Signed in, Application or not: the Oath plans a task, and a reset link chooses a new password. */}

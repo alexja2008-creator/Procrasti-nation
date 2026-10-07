@@ -23,7 +23,11 @@ export interface Preferences {
   channels: { push: boolean; email: boolean };
   /** Set on the Reminders card (Settings, later); each of the person's iPhones schedules its own. */
   reminders: { morningList: MorningList };
+  /** "Where did you hear about us?" in the Application (for marketing). */
+  heardFrom: HeardFrom;
 }
+
+export type HeardFrom = 'tiktok' | 'instagram' | 'youtube' | 'reddit' | 'friend' | 'appStore' | 'other';
 
 /** One notification a day with what's on, and the first thing to start. */
 export interface MorningList {

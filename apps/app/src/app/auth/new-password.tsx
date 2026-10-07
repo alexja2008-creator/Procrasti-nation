@@ -1,9 +1,10 @@
 import { isLongEnoughPassword, MIN_PASSWORD_LENGTH, voice } from '@pn/core';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
+import { settlePassword } from '@/auth/passport';
 import { friendlyAuthError, setPassword } from '@/auth/sign-in';
 import { Button } from '@/components/button';
 import { Logo } from '@/components/logo';
@@ -14,11 +15,15 @@ import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.signIn;
 
-/** After a password-reset link: they're signed in, and choose the password they'll use from now on. */
+/**
+ * After a password-reset link: they're signed in, and choose the password they'll use from now on.
+ * `for=save`: their email just confirmed saving their passport, and this finishes it.
+ */
 export default function NewPasswordScreen() {
   const s = useStyles(makeStyles);
   const { c } = s.t;
-  const { finishRecovery } = useAuth();
+  const { session, finishRecovery } = useAuth();
+  const saving = useLocalSearchParams<{ for?: string }>().for === 'save';
   const [password, setValue] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +42,7 @@ export default function NewPasswordScreen() {
     setBusy(true);
     try {
       await setPassword(password);
+      if (session) await settlePassword(session.user.id);
       leave();
     } catch (e) {
       setError(friendlyAuthError(e, voice.settings.passwordFailed));
@@ -53,10 +59,10 @@ export default function NewPasswordScreen() {
             {copy.eyebrow.toUpperCase()}
           </Text>
           <Text variant="title" accessibilityRole="header">
-            {copy.newPasswordTitle}
+            {saving ? voice.application.choosePasswordTitle : copy.newPasswordTitle}
           </Text>
           <Text variant="lead" color={c.muted}>
-            {copy.newPasswordLead}
+            {saving ? voice.application.choosePasswordBody : copy.newPasswordLead}
           </Text>
         </View>
         <View style={s.page}>
