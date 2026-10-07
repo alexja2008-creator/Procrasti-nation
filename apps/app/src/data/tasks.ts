@@ -60,6 +60,14 @@ const fromRow = (r: Row): Task => ({
 /** Rows as the database sends them (search returns them too). */
 export { fromRow as taskFromRow, type Row as TaskRow };
 
+/** Every task they have (open, finished, steps; not deleted), for Download your data. */
+export async function fetchEveryTask(userId: string): Promise<Task[]> {
+  const rows = await fetchAllPages<Row>((from, to) =>
+    supabase.from('tasks').select(COLUMNS).eq('user_id', userId).is('deleted_at', null).order('id').range(from, to).returns<Row[]>(),
+  );
+  return rows.map(fromRow);
+}
+
 /**
  * Open tasks plus anything finished since `since` (the start of the person's
  * day), plus every finished step of the plans among them, so "step 4 of 10"

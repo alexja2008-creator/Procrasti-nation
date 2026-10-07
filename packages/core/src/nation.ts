@@ -683,6 +683,11 @@ export const voice = {
     savingPassword: 'Saving…',
     passwordSaved: 'Password saved. Use it with your email to sign in anywhere.',
     passwordFailed: 'Couldn’t save your password. Check your connection and try again.',
+    /** Download your data: one JSON file of everything they keep here. */
+    downloadData: 'Download your data',
+    downloadValue: 'One file',
+    preparingData: 'Putting your file together…',
+    downloadFailed: 'Couldn’t make your file. Check your connection and try again.',
     done: 'Done',
     saveFailed: 'Couldn’t save that. Check your connection and try again.',
   },

@@ -31,6 +31,7 @@ import { SettingsCard } from '@/components/settings/settings-card';
 import { UsernameSheet } from '@/components/settings/username-sheet';
 import { Sheet } from '@/components/sheet';
 import { Text } from '@/components/text';
+import { downloadMyData } from '@/data/account';
 import { fetchUsername } from '@/data/profile';
 import { useUserSettings } from '@/data/user-settings';
 import { useStyles, type Tokens } from '@/theme/tokens';
@@ -70,6 +71,20 @@ export default function SettingsScreen() {
   const [error, setError] = useState<string | null>(null);
   const userId = session?.user.id;
   const [username, setUsername] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+
+  const download = async () => {
+    if (!session || exporting) return;
+    setExporting(true);
+    setError(null);
+    try {
+      await downloadMyData(session.user, settings);
+    } catch {
+      setError(copy.downloadFailed);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     if (!userId) return;
@@ -147,6 +162,7 @@ export default function SettingsScreen() {
             <SettingRow label={copy.password} value={copy.passwordValue} onPress={() => setPicking('password')} />
           </>
         )}
+        <SettingRow label={copy.downloadData} value={exporting ? copy.preparingData : copy.downloadValue} onPress={download} />
         <View style={s.account}>
           {signedInAs ? (
             <Text variant="meta" color={c.muted}>

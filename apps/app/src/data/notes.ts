@@ -52,6 +52,14 @@ export async function fetchNotePage(userId: string, scope: NoteScope, after: Not
   return rows.map(fromRow);
 }
 
+/** Every note they have (not deleted), for Download your data. */
+export async function fetchEveryNote(userId: string): Promise<Note[]> {
+  const rows = await fetchAllPages<Row>((from, to) =>
+    supabase.from('notes').select(COLUMNS).eq('user_id', userId).is('deleted_at', null).order('id').range(from, to).returns<Row[]>(),
+  );
+  return rows.map(fromRow);
+}
+
 /** These notes, if they're still here (a checklist task's note, a note opened from a link). */
 export async function fetchNotesByIds(ids: string[]): Promise<Note[]> {
   const pages = await Promise.all(
