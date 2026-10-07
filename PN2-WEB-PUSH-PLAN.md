@@ -1,6 +1,6 @@
 # Plan: Web Push (ProcrastiNation 2.0, `v2` branch)
 
-**Status: approved 2026-10-07** (decisions below confirmed by Alex).
+**Status: approved 2026-10-07** (decisions below confirmed by Alex). **Built** in `da8692b` (server) and `9a1d37c` (browser, cron schedule, dev script); the live end-to-end check in a real browser waits on the staging service-role key (see the handoff).
 
 Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with screenshots.
 
