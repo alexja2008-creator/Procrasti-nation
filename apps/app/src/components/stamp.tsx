@@ -25,6 +25,14 @@ const BOTTOM_WIDTH = 56;
 /** IBM Plex Mono: every glyph is 0.6 em wide. */
 const fit = (word: string, width: number) => Math.min(WORD_SIZE, (width / word.length - LETTER) / 0.6);
 
+// The rim text sits as far inside the ring (r = 50) at the bottom as at the top. The top
+// line stands on a radius-40 arc with its caps (0.698 em in Plex Mono) reaching out to
+// ~45.9; the bottom line's letters stand upright, so it's their baseline that faces the ring.
+const RIM_SIZE = 8.5;
+const RIM_TOP_RADIUS = 40;
+const RIM_BOTTOM_RADIUS = RIM_TOP_RADIUS + 0.698 * RIM_SIZE;
+const arc = (r: number, sweep: 0 | 1) => `M ${60 - r} 60 A ${r} ${r} 0 0 ${sweep} ${60 + r} 60`;
+
 /** The round ink stamp from the A2 Passport: rim text on both arcs, two words in the middle. */
 export function RoundStamp({ ink, rim, lines, date, size = 116 }: RoundProps) {
   // TextPath needs document-unique ids; useId's colons aren't safe in every renderer.
@@ -33,12 +41,12 @@ export function RoundStamp({ ink, rim, lines, date, size = 116 }: RoundProps) {
   return (
     <Svg width={size} height={size} viewBox="0 0 120 120" aria-hidden>
       <Defs>
-        <Path id={`${id}top`} d="M 20 60 A 40 40 0 0 1 100 60" />
-        <Path id={`${id}bottom`} d="M 24 62 A 36 36 0 0 0 96 62" />
+        <Path id={`${id}top`} d={arc(RIM_TOP_RADIUS, 1)} />
+        <Path id={`${id}bottom`} d={arc(RIM_BOTTOM_RADIUS, 0)} />
       </Defs>
       <Circle cx={60} cy={60} r={57} fill="none" stroke={ink} strokeWidth={1.8} strokeDasharray="3.5 2.5" />
       <Circle cx={60} cy={60} r={50} fill="none" stroke={ink} strokeWidth={1.4} />
-      <SvgText fill={ink} fontFamily={fonts.mono} fontSize={8.5} letterSpacing={1.6} textAnchor="middle">
+      <SvgText fill={ink} fontFamily={fonts.mono} fontSize={RIM_SIZE} letterSpacing={1.6} textAnchor="middle">
         <TextPath href={`#${id}top`} startOffset="50%">
           {rim}
         </TextPath>
