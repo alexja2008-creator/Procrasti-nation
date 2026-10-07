@@ -1,24 +1,8 @@
--- Stand-in for production's v1 structure (Supabase auth + the tables v2
--- touches), mirroring the real `tasks` and `profiles` definitions from a
--- pg_dump of production on 2026-10-03. When supabase/v2/.local/prod-schema.sql
--- exists, the tests also run against that real dump.
-
-CREATE SCHEMA auth;
-
-CREATE TABLE auth.users (
-  id UUID PRIMARY KEY,
-  email TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
--- Supabase's auth.uid(): the `sub` claim of the caller's JWT.
-CREATE FUNCTION auth.uid() RETURNS UUID LANGUAGE sql STABLE AS $$
-  SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
-$$;
-
-CREATE ROLE authenticated NOLOGIN;
-GRANT USAGE ON SCHEMA auth TO authenticated;
-GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
+-- Stand-in for production's v1 structure (the tables v2 touches), mirroring
+-- the real `tasks` and `profiles` definitions from a pg_dump of production on
+-- 2026-10-03. Loaded after the tests' Supabase stub (auth schema, roles,
+-- default grants). When supabase/v2/.local/prod-schema.sql exists, the tests
+-- also run against that real dump.
 
 CREATE TABLE tasks (
   id UUID DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
@@ -76,3 +60,13 @@ CREATE TABLE profiles (
   email_reminders_enabled BOOLEAN DEFAULT true,
   email_reports_enabled BOOLEAN DEFAULT true
 );
+
+CREATE UNIQUE INDEX profiles_username_lower_idx ON profiles (LOWER(username));
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Profiles are publicly readable" ON profiles FOR SELECT
+  USING (true);
+CREATE POLICY "Users can insert their own profile" ON profiles FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+CREATE POLICY "Users can update their own profile" ON profiles FOR UPDATE
+  USING (user_id = auth.uid());

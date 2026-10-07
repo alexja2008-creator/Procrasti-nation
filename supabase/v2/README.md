@@ -14,7 +14,7 @@ Run them in the Supabase SQL Editor, in order.
 
 ## Test locally
 
-Runs all three scripts against real Postgres (PGlite, in-process) on a stand-in of the v1 schema (`test/v1-schema.sql`), including RLS checks as a signed-in user:
+Runs all three scripts against real Postgres (PGlite, in-process) on a stand-in of the v1 schema (`test/v1-schema.sql`), including RLS checks as a signed-in user. Each baseline first gets Supabase's default grants and the fixes run on production since the dump (`PROD_FIXES` in the test: `../migrations/profiles_billing_*.sql`, which make the Stripe columns on `profiles` server-only and hide everything but the public profile from the API); the tests check those hold before and after the v2 scripts:
 
 ```bash
 npm install && npm test

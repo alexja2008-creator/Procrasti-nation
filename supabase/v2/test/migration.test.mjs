@@ -4,7 +4,8 @@
 //
 // Baselines: the committed stand-in (test/v1-schema.sql) always, plus the real
 // production structure when supabase/v2/.local/prod-schema.sql exists
-// (created by scripts/dump-prod-schema.sh; gitignored).
+// (created by scripts/dump-prod-schema.sh; gitignored). Each baseline also
+// gets the fixes run on production since that dump (PROD_FIXES).
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { test } from 'node:test';
@@ -14,7 +15,15 @@ const sql = (name) => readFileSync(new URL(`../${name}`, import.meta.url), 'utf8
 const STAND_IN = readFileSync(new URL('./v1-schema.sql', import.meta.url), 'utf8');
 const PROD_DUMP = new URL('../.local/prod-schema.sql', import.meta.url);
 
-// What Supabase provides that a public-schema dump assumes.
+// Production fixes from supabase/migrations/, in the order they're run there.
+// Idempotent, and re-run on a newer dump too (pg_dump leaves out grants).
+const PROD_FIXES = ['profiles_billing_1_before_deploy.sql', 'profiles_billing_2_after_deploy.sql'].map((name) =>
+  readFileSync(new URL(`../../migrations/${name}`, import.meta.url), 'utf8'),
+);
+
+// What Supabase provides that a public-schema dump assumes, including its
+// default grants: new tables, sequences and functions in public are open to
+// the API roles, and RLS and explicit REVOKEs narrow that.
 const SUPABASE_STUB = `
   CREATE SCHEMA auth;
   CREATE TABLE auth.users (id UUID PRIMARY KEY, email TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
@@ -23,12 +32,28 @@ const SUPABASE_STUB = `
   $$;
   CREATE ROLE anon NOLOGIN;
   CREATE ROLE authenticated NOLOGIN;
-  CREATE ROLE service_role NOLOGIN;
-  GRANT USAGE ON SCHEMA auth TO authenticated;
-  GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
+  CREATE ROLE service_role NOLOGIN BYPASSRLS;
+  GRANT USAGE ON SCHEMA auth TO anon, authenticated, service_role;
+  GRANT EXECUTE ON FUNCTION auth.uid() TO anon, authenticated, service_role;
+  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
+  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+  ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO anon, authenticated, service_role;
 `;
 
-const baselines = [{ name: 'stand-in schema', load: (db) => db.exec(STAND_IN) }];
+const applyProdFixes = async (db) => {
+  for (const fix of PROD_FIXES) await db.exec(fix);
+};
+
+const baselines = [
+  {
+    name: 'stand-in schema',
+    load: async (db) => {
+      await db.exec(SUPABASE_STUB);
+      await db.exec(STAND_IN);
+      await applyProdFixes(db);
+    },
+  },
+];
 if (existsSync(PROD_DUMP)) {
   baselines.push({
     name: 'production structure',
@@ -40,6 +65,7 @@ if (existsSync(PROD_DUMP)) {
       await db.exec(dump);
       // The dump's session settings (empty search_path, row_security = off) would leak into the tests.
       await db.exec(`RESET ALL`);
+      await applyProdFixes(db);
     },
   });
 }
@@ -112,17 +138,16 @@ async function seed(db) {
   }
 }
 
+// New tables get Supabase's default grants (SUPABASE_STUB), so nothing is
+// granted here: a blanket GRANT would also undo production's REVOKEs.
 async function applyV2(db) {
   await db.exec(sql('01_schema.sql'));
-  // Supabase grants table/sequence access to `authenticated` by default.
-  await db.exec(`
-    GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
-    GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO authenticated;
-  `);
 }
 
-async function as(db, userId, fn) {
-  await db.exec(`SET ROLE authenticated`);
+// Runs fn as an API caller: a signed-in user by default; role 'anon' for
+// signed-out, 'service_role' for the site's server routes.
+async function as(db, userId, fn, role = 'authenticated') {
+  await db.exec(`SET ROLE ${role}`);
   await db.query(`SELECT set_config('request.jwt.claim.sub', $1, false)`, [userId]);
   try {
     return await fn();
@@ -145,6 +170,75 @@ for (const baseline of baselines) {
     const v1Columns = await tasksColumns(db);
     const v1Tasks = schools ? 5 : 4;
     const v1Steps = schools ? 8 : 7; // A: 4, C: 2, D: 1 object (+1 assignment step)
+
+    await t.test("profiles: Stripe fields are the server's; API callers read only the public profile", async () => {
+      await applyProdFixes(db); // a second run changes nothing
+      await db.query(
+        `INSERT INTO profiles (user_id, username, stripe_customer_id, stripe_subscription_status) VALUES
+          ($1, 'ada', 'cus_ada', 'canceled'), ($2, 'bo', 'cus_bo', 'active')`,
+        [U1, U2],
+      );
+
+      await as(db, U1, async () => {
+        const renamed = await db.query(`UPDATE profiles SET display_name = 'Ada L.' WHERE user_id = $1`, [U1]);
+        assert.equal(renamed.affectedRows, 1, 'the public fields stay editable');
+        await assert.rejects(
+          db.query(`UPDATE profiles SET stripe_subscription_status = 'active' WHERE user_id = $1`, [U1]),
+          /billing fields are set by the server/,
+          "can't make yourself Pro",
+        );
+        await assert.rejects(
+          db.query(`UPDATE profiles SET stripe_customer_id = 'cus_bo' WHERE user_id = $1`, [U1]),
+          /billing fields are set by the server/,
+          "can't take over someone else's Stripe customer (and their billing portal)",
+        );
+        assert.deepEqual(await rows(db, `SELECT username, display_name FROM profiles ORDER BY username`), [
+          { username: 'ada', display_name: 'Ada L.' },
+          { username: 'bo', display_name: null },
+        ]);
+        for (const column of ['stripe_subscription_status', 'stripe_customer_id', 'email_reports_enabled', '*']) {
+          await assert.rejects(db.query(`SELECT ${column} FROM profiles`), /permission denied/, `${column} is not readable`);
+        }
+        assert.equal((await one(db, `SELECT my_subscription_status() AS s`)).s, 'canceled', 'but your own status is');
+      });
+
+      await as(db, U3, async () => {
+        await assert.rejects(
+          db.query(`INSERT INTO profiles (user_id, username, stripe_subscription_status) VALUES ($1, 'cy', 'active')`, [U3]),
+          /billing fields are set by the server/,
+          'not on a new profile either',
+        );
+        await db.query(`INSERT INTO profiles (user_id, username, display_name) VALUES ($1, 'cy', 'cy')`, [U3]);
+        assert.equal((await one(db, `SELECT my_subscription_status() AS s`)).s, null);
+      });
+
+      await as(db, '', async () => {
+        assert.equal((await rows(db, `SELECT username FROM profiles`)).length, 3, 'public profiles stay public');
+        await assert.rejects(db.query(`SELECT stripe_subscription_status FROM profiles`), /permission denied/);
+        await assert.rejects(db.query(`SELECT my_subscription_status()`), /permission denied/);
+      }, 'anon');
+
+      // The Stripe routes (service role): checkout stores the customer, the webhook sets the status.
+      await as(db, '', async () => {
+        await db.query(`UPDATE profiles SET stripe_customer_id = 'cus_cy' WHERE user_id = $1`, [U3]);
+        const updated = await db.query(`UPDATE profiles SET stripe_subscription_status = 'active' WHERE stripe_customer_id = 'cus_ada'`);
+        assert.equal(updated.affectedRows, 1);
+      }, 'service_role');
+      await as(db, U1, async () => {
+        assert.equal((await one(db, `SELECT my_subscription_status() AS s`)).s, 'active');
+      });
+
+      const columns = await rows(
+        db,
+        `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' ORDER BY 1`,
+      );
+      assert.deepEqual(
+        columns.map((c) => c.column_name),
+        ['created_at', 'display_name', 'email_reminders_enabled', 'email_reports_enabled', 'id', 'nudge_email_enabled',
+          'stripe_customer_id', 'stripe_subscription_status', 'user_id', 'username'],
+        'a column this check has not seen: decide whether the API may read it (supabase/migrations/profiles_billing_2_after_deploy.sql)',
+      );
+    });
 
     await t.test('schema is idempotent and numbers citizens by signup order', async () => {
       await applyV2(db);
@@ -536,6 +630,17 @@ for (const baseline of baselines) {
       await applyV2(db);
       const result = (await db.exec(sql('02_backfill.sql'))).at(-1).rows[0];
       assert.deepEqual(result, { tasks_converted: v1Tasks + 2, steps_created: v1Steps });
+    });
+
+    await t.test('the v2 migration and its rollback keep the profiles lock', async () => {
+      await as(db, U1, async () => {
+        await assert.rejects(
+          db.query(`UPDATE profiles SET stripe_customer_id = 'cus_bo' WHERE user_id = $1`, [U1]),
+          /billing fields are set by the server/,
+        );
+        await assert.rejects(db.query(`SELECT stripe_subscription_status FROM profiles`), /permission denied/);
+        assert.equal((await one(db, `SELECT my_subscription_status() AS s`)).s, 'active');
+      });
     });
 
     await db.close();
