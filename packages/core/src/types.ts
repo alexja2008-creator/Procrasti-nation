@@ -21,6 +21,16 @@ export interface Preferences {
   /** Start Mode default timer, derived from `style` unless the user overrides it. */
   startMinutes: 2 | 5 | 10 | 25;
   channels: { push: boolean; email: boolean };
+  /** Set on the Reminders card (Settings, later); each of the person's iPhones schedules its own. */
+  reminders: { morningList: MorningList };
+}
+
+/** One notification a day with what's on, and the first thing to start. */
+export interface MorningList {
+  on: boolean;
+  /** Local clock time. */
+  hour: number;
+  minute: number;
 }
 
 /**

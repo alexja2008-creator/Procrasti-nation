@@ -369,6 +369,20 @@ export const voice = {
     estimate: 'Estimate',
     minutes: (n: number) => (n < 60 || n % 60 ? `${n} min` : `${n / 60} ${n === 60 ? 'hour' : 'hours'}`),
   },
+  reminders: {
+    /** The first time a task gets a time: "Want a nudge at 6:00 PM?" (`day`: "tomorrow", "on Fri"). */
+    askTitle: (day: string | null, time: string) => `Want a nudge ${day ? `${day} ` : ''}at ${time}?`,
+    askBody: 'Reminders ring here at the time you set.',
+    allow: 'Allow',
+    notNow: 'Not now',
+    /** A deadline with a time, when it comes. */
+    due: (title: string, time: string) => `${title} is due at ${time}`,
+    step: (parent: string, index: number, count: number) => `${parent} · step ${index} of ${count}`,
+    morningTitle: (count: number) => (count === 1 ? 'One thing today' : `${spell(count)} things today`),
+    startWith: (title: string) => `Start with “${title}”.`,
+    /** The buttons under a reminder (press and hold, or pull down). */
+    snooze: 'Snooze 10 min',
+  },
   /** Words on the ink stamps (mono caps). */
   stampText: {
     rim: 'PROCRASTINATION',

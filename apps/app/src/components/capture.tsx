@@ -31,7 +31,7 @@ import { useStyles, type Tokens } from '@/theme/tokens';
  */
 type CaptureOptions = { day?: LocalDate; listId?: string };
 
-const CaptureCtx = createContext<{ open: (options?: CaptureOptions) => void }>({ open: () => {} });
+const CaptureCtx = createContext<{ open: (options?: CaptureOptions) => void; isOpen: boolean }>({ open: () => {}, isOpen: false });
 
 /** Opens the quick-add sheet from anywhere in the signed-in app. */
 export const useCapture = () => useContext(CaptureCtx);
@@ -39,7 +39,7 @@ export const useCapture = () => useContext(CaptureCtx);
 export function CaptureProvider({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState<CaptureOptions | null>(null);
   return (
-    <CaptureCtx.Provider value={{ open: (options = {}) => setOpen(options) }}>
+    <CaptureCtx.Provider value={{ open: (options = {}) => setOpen(options), isOpen: open !== null }}>
       {children}
       {open ? <CaptureSheet day={open.day} listId={open.listId} onClose={() => setOpen(null)} /> : null}
     </CaptureCtx.Provider>

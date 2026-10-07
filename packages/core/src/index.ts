@@ -11,3 +11,5 @@ export * from './upcoming.ts';
 export * from './territories.ts';
 export * from './notes.ts';
 export * from './search.ts';
+export * from './tasks.ts';
+export * from './reminders.ts';

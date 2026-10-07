@@ -1,8 +1,7 @@
 import {
-  atLocalTime,
+  checkOff,
   logicalDateString,
   scheduleOf,
-  nextOccurrence,
   parseLocalDate,
   relativeDayPhrase,
   voice,
@@ -16,6 +15,7 @@ import { AppState } from 'react-native';
 
 import { fetchActiveTasks, fetchNoteTasks, fileNoteTasks, insertTask, refileTasks, setDeleted, unfileTasks, updateTask, type TaskPatch } from '@/data/tasks';
 import { useUserSettings } from '@/data/user-settings';
+import { timeGiven } from '@/notifications/time-given';
 
 /** A short-lived note on Today, optionally with Undo. */
 export type Notice = { text: string; undo?: () => void };
@@ -168,6 +168,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
       ...fields,
     };
     setTasks((prev) => [...prev, draft]);
+    timeGiven(draft);
     const write = (async () => {
       await after;
       return insertTask(draft);
@@ -221,16 +222,11 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
     let patch: TaskPatch;
     if (task.completedAt) {
       patch = { status: 'in_progress', completedAt: null };
-    } else if (task.rrule) {
-      // Repeating tasks move to their next date instead of finishing. (Anchoring
-      // on the current date can drift a monthly-on-the-31st series; fine for now.)
-      const anchor = task.scheduledOn ?? today;
-      const next = nextOccurrence(task.rrule, anchor, anchor > today ? anchor : today);
-      const remind = task.remindAt ? new Date(task.remindAt) : null;
-      patch = { scheduledOn: next, remindAt: remind ? atLocalTime(next, remind.getHours(), remind.getMinutes()) : null };
-      setNotice({ text: voice.today.movedOn(task.title, relativeDayPhrase(next, today)) });
     } else {
-      patch = { status: 'completed', completedAt: new Date().toISOString() };
+      // A one-off finishes; a repeat moves to its next date (the same rule as a reminder's Done).
+      const done = checkOff(task, today);
+      patch = done.patch;
+      if (done.movedTo) setNotice({ text: voice.today.movedOn(task.title, relativeDayPhrase(done.movedTo, today)) });
     }
     replace(task.id, { ...task, ...patch });
     afterInsert(task.id).then(() => updateTask(task.id, patch)).then(
@@ -254,6 +250,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
 
   const update: Store['update'] = (task, patch) => {
     patchRow(task.id, patch);
+    if (patch.remindAt || patch.dueAt) timeGiven({ ...task, ...patch });
     afterInsert(task.id).then(() => updateTask(task.id, patch)).then(
       (saved) => {
         replace(task.id, saved);
