@@ -1,4 +1,4 @@
-import type { Task } from '@pn/core';
+import { morningListOf, type Task } from '@pn/core';
 import { router, usePathname, useRootNavigationState } from 'expo-router';
 import { createContext, useContext, useEffect, useEffectEvent, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
@@ -8,6 +8,7 @@ import { ReminderPrompt } from '@/components/reminder-prompt';
 import { useLists } from '@/data/lists-store';
 import { loadNotNow, saveNotNow } from '@/data/reminder-ask';
 import { useTasks } from '@/data/tasks-store';
+import { useUserSettings } from '@/data/user-settings';
 import { getPermission, requestPermission, type Permission } from '@/notifications/permission';
 import { onDestination, onDoneSaved, saveDones, type Destination } from '@/notifications/responses';
 import { clearReminders, syncReminders } from '@/notifications/scheduler';
@@ -46,6 +47,7 @@ const isBaseRoute = (path: string) => path === '/' || /^\/(upcoming|territories|
 export function RemindersProvider({ userId, children }: { userId: string; children: ReactNode }) {
   const { tasks, status, rolloverHour, merge } = useTasks();
   const { lists, status: listsStatus } = useLists();
+  const { settings, status: settingsStatus } = useUserSettings();
   const capture = useCapture();
   const pathname = usePathname();
   const [permission, setPermission] = useState<Permission | null>(null);
@@ -66,13 +68,14 @@ export function RemindersProvider({ userId, children }: { userId: string; childr
   }, [userId]);
 
   // Line reminders up after a pause in changes. Coming back to the app refreshes the tasks, which lands here too.
-  const ready = permission === 'granted' && status === 'ready' && listsStatus !== 'loading';
-  const sync = useEffectEvent(() => syncReminders(tasks, { lists, rolloverHour }));
+  const ready = permission === 'granted' && status === 'ready' && listsStatus !== 'loading' && settingsStatus !== 'loading';
+  const morning = morningListOf(settings?.preferences);
+  const sync = useEffectEvent(() => syncReminders(tasks, { lists, rolloverHour, morning }));
   useEffect(() => {
     if (!ready) return;
     const timer = setTimeout(sync, SYNC_PAUSE_MS);
     return () => clearTimeout(timer);
-  }, [ready, tasks, lists, rolloverHour]);
+  }, [ready, tasks, lists, rolloverHour, morning.on, morning.hour, morning.minute]);
 
   // Unmounting means they signed out.
   useEffect(() => () => void clearReminders(), []);

@@ -50,6 +50,9 @@ export interface Palette {
 
   tabBar: { bg: string; border: string };
 
+  /** On/off switches (the morning list): the knob, and the track while off (on is `primary`). */
+  toggle: { thumb: string; trackOff: string };
+
   stamp: { terracotta: string; violet: string; forest: string };
 }
 
@@ -78,6 +81,7 @@ export const palettes: Record<Scheme, Palette> = {
     apple: { bg: '#000000', fg: '#FFFFFF' },
     next: { bg: '#E4EADD', border: '#C9D5C0', stub: '#A9BFA6', meta: '#4A5A4E' },
     tabBar: { bg: '#ECE5D6', border: '#D8CDB5' },
+    toggle: { thumb: '#FFFFFF', trackOff: '#CFC4AE' },
     stamp: { terracotta: '#A8513B', violet: '#5E5D8F', forest: '#3A6B52' },
   },
   night: {
@@ -105,6 +109,7 @@ export const palettes: Record<Scheme, Palette> = {
     apple: { bg: '#FFFFFF', fg: '#000000' },
     next: { bg: '#1D2B28', border: '#34503F', stub: '#4F7A63', meta: '#B5C4BA' },
     tabBar: { bg: '#10152A', border: '#2A3150' },
+    toggle: { thumb: '#ECE6D8', trackOff: '#3A4163' },
     // Only terracotta was drawn for night; violet is lightened to match it.
     stamp: { terracotta: '#E08A70', violet: '#A3A2D6', forest: '#7CC3A0' },
   },

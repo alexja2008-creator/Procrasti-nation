@@ -7,6 +7,7 @@ import { useAuth } from '@/auth/auth-provider';
 import { personName } from '@/auth/person-name';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
+import { RemindersCard } from '@/components/reminders-card';
 import { Screen } from '@/components/screen';
 import { CountStamp, RoundStamp } from '@/components/stamp';
 import { Text } from '@/components/text';
@@ -170,6 +171,8 @@ export default function PassportScreen() {
           </View>
         ) : null}
       </View>
+
+      <RemindersCard />
 
       <View style={s.account}>
         {email ? (

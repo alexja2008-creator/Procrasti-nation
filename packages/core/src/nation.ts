@@ -382,6 +382,20 @@ export const voice = {
     startWith: (title: string) => `Start with “${title}”.`,
     /** The buttons under a reminder (press and hold, or pull down). */
     snooze: 'Snooze 10 min',
+    /** The Reminders card on Passport (until Settings exists). */
+    cardLabel: 'Reminders',
+    on: 'On for this iPhone. Tasks with a time ring then, with Done, Snooze and Start right on the reminder.',
+    off: 'Off on this iPhone. Turn them on to hear about tasks at the time you set.',
+    turnOn: 'Turn on',
+    blocked: 'Notifications for ProcrastiNation are turned off in Settings.',
+    openSettings: 'Open Settings',
+    web: 'Reminders ring on the iPhone app for now. They’re coming to the web next.',
+    morningList: 'Morning list',
+    morningLead: 'One notification a day with what’s on, and the first thing to start.',
+    morningLeadWeb: 'One notification a day on your iPhone with what’s on, and the first thing to start.',
+    morningAt: (time: string) => `Every morning at ${time}`,
+    changeTime: 'Change time',
+    saveFailed: 'Couldn’t save that. Check your connection and try again.',
   },
   /** Words on the ink stamps (mono caps). */
   stampText: {

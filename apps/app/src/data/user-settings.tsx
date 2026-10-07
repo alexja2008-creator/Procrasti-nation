@@ -1,5 +1,5 @@
 import { localTimeZone, type Preferences, type UserSettings } from '@pn/core';
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { supabase } from '@/lib/supabase';
 
@@ -69,15 +69,26 @@ function loadUserSettings(userId: string): Promise<UserSettings> {
 
 type State = { settings: UserSettings | null; status: 'loading' | 'ready' | 'error' };
 
-const Ctx = createContext<State>({ settings: null, status: 'loading' });
+type Settings = State & {
+  /** Merges into their preferences (the Reminders card's morning list, …); applies now, rolls back and throws if the save fails. */
+  savePreferences: (patch: Partial<Preferences>) => Promise<void>;
+};
+
+const Ctx = createContext<Settings>({ settings: null, status: 'loading', savePreferences: async () => undefined });
 
 export function UserSettingsProvider({ userId, children }: { userId: string; children: ReactNode }) {
   const [state, setState] = useState<State>({ settings: null, status: 'loading' });
+  // The newest preferences, so saves made in quick succession build on each other.
+  const latest = useRef<Partial<Preferences> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     loadUserSettings(userId).then(
-      (settings) => !cancelled && setState({ settings, status: 'ready' }),
+      (settings) => {
+        if (cancelled) return;
+        latest.current = settings.preferences;
+        setState({ settings, status: 'ready' });
+      },
       () => !cancelled && setState({ settings: null, status: 'error' }),
     );
     return () => {
@@ -85,7 +96,24 @@ export function UserSettingsProvider({ userId, children }: { userId: string; chi
     };
   }, [userId]);
 
-  return <Ctx.Provider value={state}>{children}</Ctx.Provider>;
+  const setPreferences = (preferences: Partial<Preferences>) => {
+    latest.current = preferences;
+    setState((s) => (s.settings ? { ...s, settings: { ...s.settings, preferences } } : s));
+  };
+
+  const savePreferences: Settings['savePreferences'] = async (patch) => {
+    const before = latest.current;
+    if (!before) return;
+    const preferences = { ...before, ...patch };
+    setPreferences(preferences);
+    const { error } = await supabase.from('user_settings').update({ preferences }).eq('user_id', userId);
+    if (error) {
+      setPreferences(before);
+      throw error;
+    }
+  };
+
+  return <Ctx.Provider value={{ ...state, savePreferences }}>{children}</Ctx.Provider>;
 }
 
 export function useUserSettings() {
