@@ -1,6 +1,11 @@
 # ProcrastiNation 2.0: Session Handoff (as of 2026-10-07)
 
-Paste this into a new Claude Code session together with the approved plan ("ProcrastiNation 2.0: Re-envisioning & Rebuild Plan", saved at `~/.claude/plans/ProcrastiNation2.md`). Project memory lives in `~/.claude/projects/-Users-alexanderson-Desktop-Procrasti-nation/memory/` (the folder changed when the repo moved) and holds four entries: `feedback_git_workflow`, `product-direction-v2`, `plan-quality-evals` and `design-direction-a2`.
+Paste this into a new Claude Code session together with the approved plan ("ProcrastiNation 2.0: Re-envisioning & Rebuild Plan", saved at `~/.claude/plans/ProcrastiNation2.md`). Project memory lives in `~/.claude/projects/-Users-alexanderson-Desktop-Procrasti-nation/memory/` (the folder changed when the repo moved) and holds six entries: `feedback_git_workflow`, `product-direction-v2`, `plan-quality-evals`, `design-direction-a2`, `no-accidental-done` (no one-tap Done where a dismiss could hit it; web notifications are Start + Snooze) and `self-compassion-voice` (shame feeds procrastination: no guilt anywhere, Roast included).
+
+**Start the next session here:**
+1. **Sign in again on staging.** Every staging session was revoked on 2026-10-07: an old global sign-out, since fixed. Alex requests ONE magic link (from the iOS Simulator's Expo Go, or in the browser pane) and pastes it into the chat, and Claude opens it on that device (`xcrun simctl openurl booted "<link>"`). Only the newest link works, and it must open where it was requested. If sign-in says "too many tries", that's Supabase's email rate limit: wait a few minutes before asking again.
+2. **Then check what onboarding couldn't be tested on** (section 5, "Onboarding, still to check").
+3. **A separate session was started on 2026-10-07** to fix web screen-reader state: `aria-checked` / `aria-selected` on checkboxes, tabs and radios, about 15 controls. It may have committed to `v2`, so pull first.
 
 ---
 
@@ -9,7 +14,7 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 - **Repo:** `~/Desktop/Procrasti-nation` (moved 2026-10-01 to drop the space and curly apostrophe from the path).
 - **Production (`main`, `94763ed`)** runs the v1 site with all Phase 0 fixes plus the Next 14.2.35 security patch, live on procrasti-nation.work.
 - **`v2`** is pushed to origin and up to date. Vercel shows failed preview builds for it until the Root Directory flip at merge (expected).
-- **Staging Supabase:** project `mbuakrohovzjegonrplp`. It has production's structure only (no production data) plus v2's `01_schema.sql` (including `ai_requests`, `tasks.note_id`, the `note_counts` view, the `search_items` function, and Web Push's `push_tokens.keys`, `save_web_push`, `push_sends` and `push_snoozes`). Alex is signed in there as **citizen #000001**, with a few test tasks and one test plan ("Write 5-page history paper on WWI", 10 steps; step 1 is done and stamped).
+- **Staging Supabase:** project `mbuakrohovzjegonrplp`. It has production's structure only (no production data) plus v2's `01_schema.sql` (including `ai_requests`, `tasks.note_id`, the `note_counts` view, the `search_items` function, and Web Push's `push_tokens.keys`, `save_web_push`, `push_sends` and `push_snoozes`). Alex is **citizen #000001** there, with 17 live tasks including one test plan ("Write 5-page history paper on WWI", 10 steps). His Citizenship Application is reset to fresh: preferences `{}`, not completed, no territories. **He's signed out on every device** (see "Start the next session here").
 
 **What works on v2 today** (verified on web in the browser pane, signed in against staging):
 - **Sign-in:** email magic link (PKCE) with a sign-in gate. Apple and Google are built but hidden behind `EXPO_PUBLIC_AUTH_PROVIDERS=email` until the providers are configured.
@@ -93,8 +98,12 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
 | `ef6fa61` | The Citizenship Application (gate, pages, answers, self-forgiveness page, Approved; `LandingStamp`) |
 | `8ae3c5e` | The Oath and Settings; sign out is this device only; saves that change no row fail |
 | `a064850` | Nudge tone in Start Mode and the morning list; overwhelmed Today |
+| `4b9f7f4` | Docs: onboarding and Settings |
+| `529ba4c` | APPLICATION / APPROVED stamp: 270pt on Approved, earned once for answering (`citizenship`), on Passport; stamp words fit their line |
 
-**State of the Simulator (end of 2026-10-06):** iPhone 18 Pro (iOS 27) has two copies of the app. **Expo Go** is signed in as Alex and fine for everything except notifications. The **development build** (`dev.procrastination.local`, the plain "ProcrastiNation" icon) is also signed in as Alex, with notifications allowed; it was built with `METRO_PORT=8083`, so it only loads while a Metro server runs on 8083 (from `apps/app`: `npx expo start --port 8083 < /dev/null`), or rebuild it with the script below for the default 8081. Notification Center still holds an old "Harness test" notification; clear it. CocoaPods 1.17 is installed (Homebrew).
+**State of the Simulator (end of 2026-10-07):** iPhone 18 Pro (iOS 27) has two copies of the app, both **signed out** (sessions revoked; sign in again).
+- **Expo Go** is fine for everything except notifications. It last loaded from the Metro on port 8083: `exp://127.0.0.1:8083`.
+- The **development build** (`dev.procrastination.local`, the plain "ProcrastiNation" icon) has notifications allowed; it was built with `METRO_PORT=8083`, so it only loads while a Metro server runs on 8083 (from `apps/app`: `npx expo start --port 8083 < /dev/null`), or rebuild it with the script below for the default 8081. Notification Center still holds an old "Harness test" notification; clear it. CocoaPods 1.17 is installed (Homebrew).
 
 **iOS development build** (reminders need it: Expo Go can't schedule local notifications on iOS 27): with Metro running, `sh apps/app/scripts/ios-dev-build.sh` (add `METRO_PORT=8083` to point it at another Metro). It builds a copy in `~/Library/Caches/procrastination-ios` (about 8.5 GB with build products; later builds are incremental), because this repo sits on the iCloud-synced Desktop and iCloud's file attributes break code signing, and installs `dev.procrastination.local` on the booted Simulator. It's a separate app from Expo Go, so it needs its own sign-in (request the link from it, then open the link on the Simulator).
 
