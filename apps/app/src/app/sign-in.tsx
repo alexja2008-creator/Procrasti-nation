@@ -259,7 +259,7 @@ export default function SignInScreen() {
                     {mode === 'password' ? (
                       <Button variant="quiet" label={copy.forgot} disabled={busy} onPress={() => send('reset', email.trim())} />
                     ) : null}
-                    {mode !== 'phone' ? (
+                    {mode !== 'phone' && enabledMethods.has('phone') ? (
                       <Button variant="quiet" label={copy.useCode} disabled={busy} onPress={() => switchTo('phone')} />
                     ) : null}
                     {mode !== 'link' ? (

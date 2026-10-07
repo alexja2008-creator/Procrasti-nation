@@ -9,6 +9,8 @@
 
 **Still to check live (needs Alex: opening a passport creates an account on staging, which Claude doesn't do):** answering the last question opens the passport and lands on the Oath with the answers moved in; Your first week; the nudge (the system prompt on iOS); Approved → Save your passport by texted code (after Twilio is wired) and by email (confirm the link lands on Choose a password); Later → the Passport card and the Settings row; signing out of an unsaved passport warns; the free-plan limit message after two plans.
 
+**Texted codes are hidden for now (Alex, 2026-10-07):** Twilio requires a paid account to create a Verify service, so "Text me a code" shows only when `EXPO_PUBLIC_AUTH_PROVIDERS` includes `phone`; saving a passport is email + password until then. Flagged for production in `PN2-HANDOFF.md`, open item 8.
+
 **Before anonymous sign-ins reach production:** a `profiles` insert policy that refuses anonymous users (today only the app keeps them from claiming a name; the API wouldn't stop a script). Database review, and rehearsal against the production structure.
 
 Read `PN2-HANDOFF.md`, `CLAUDE.md` and `PN2-ONBOARDING-PLAN.md` (the Citizenship Application this builds on) first.

@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
 
-export type SignInMethod = 'email' | 'apple' | 'google';
+export type SignInMethod = 'email' | 'phone' | 'apple' | 'google';
 
 /** Methods turned on in EXPO_PUBLIC_AUTH_PROVIDERS (only enable a provider once Supabase Auth is set up for it). */
 export const enabledMethods = new Set(

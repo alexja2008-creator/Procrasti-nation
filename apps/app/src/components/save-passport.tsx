@@ -4,7 +4,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
 import { confirmSaveCode, sendSaveCode, sendSaveLink } from '@/auth/passport';
-import { friendlyAuthError, isValidEmail } from '@/auth/sign-in';
+import { enabledMethods, friendlyAuthError, isValidEmail } from '@/auth/sign-in';
 import { Button } from '@/components/button';
 import { Text } from '@/components/text';
 import { UsernameField } from '@/components/username-field';
@@ -14,6 +14,8 @@ import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.application;
 const signIn = voice.signIn;
+/** Texted codes wait for a paid Twilio account (EXPO_PUBLIC_AUTH_PROVIDERS includes `phone`). */
+const PHONE = enabledMethods.has('phone');
 
 type Step = { kind: 'form' } | { kind: 'code'; phone: string } | { kind: 'emailSent'; email: string } | { kind: 'saved'; phone: string };
 
@@ -34,7 +36,7 @@ export function SavePassport({ onDone, onLater }: Props) {
   const { session } = useAuth();
   const userId = session?.user.id;
   const [step, setStep] = useState<Step>({ kind: 'form' });
-  const [method, setMethod] = useState<'phone' | 'email'>('phone');
+  const [method, setMethod] = useState<'phone' | 'email'>(PHONE ? 'phone' : 'email');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -206,15 +208,17 @@ export function SavePassport({ onDone, onLater }: Props) {
         <Button label={busy ? signIn.sending : copy.sendEmailLink} disabled={busy} onPress={sendLink} />
       )}
       <View style={s.quiet}>
-        <Button
-          variant="quiet"
-          label={method === 'phone' ? copy.useEmail : copy.usePhone}
-          disabled={busy}
-          onPress={() => {
-            setMethod(method === 'phone' ? 'email' : 'phone');
-            setError(null);
-          }}
-        />
+        {PHONE ? (
+          <Button
+            variant="quiet"
+            label={method === 'phone' ? copy.useEmail : copy.usePhone}
+            disabled={busy}
+            onPress={() => {
+              setMethod(method === 'phone' ? 'email' : 'phone');
+              setError(null);
+            }}
+          />
+        ) : null}
         {onLater ? <Button variant="quiet" label={copy.later} disabled={busy} onPress={onLater} /> : null}
       </View>
     </View>
