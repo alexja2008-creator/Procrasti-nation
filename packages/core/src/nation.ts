@@ -389,7 +389,12 @@ export const voice = {
     turnOn: 'Turn on',
     blocked: 'Notifications for ProcrastiNation are turned off in Settings.',
     openSettings: 'Open Settings',
-    web: 'Reminders ring on the iPhone app for now. They’re coming to the web next.',
+    /** The card in a browser. */
+    onWeb: 'On in this browser. Tasks with a time ring then, even with this tab closed, as long as the browser is open.',
+    offWeb: 'Off in this browser. Turn them on to hear about tasks at the time you set.',
+    blockedWeb: 'Notifications are blocked for this site. Allow them in the browser’s site settings (the icon beside the address), then come back.',
+    unsupportedWeb: 'This browser can’t show reminders. Chrome, Edge, Firefox and Safari on a computer can, and so can the iPhone app.',
+    turnOffHere: 'Turn off here',
     morningList: 'Morning list',
     morningLead: 'One notification a day with what’s on, and the first thing to start.',
     morningLeadWeb: 'One notification a day on your iPhone with what’s on, and the first thing to start.',

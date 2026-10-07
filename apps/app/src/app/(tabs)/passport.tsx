@@ -15,9 +15,16 @@ import { fetchPassportStamps, type PassportStamps } from '@/data/stamps';
 import { countStarts } from '@/data/starts';
 import { useUserSettings } from '@/data/user-settings';
 import { supabase } from '@/lib/supabase';
+import { clearReminders } from '@/notifications/scheduler';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.passport;
+
+/** Reminders stop first, while still signed in (a browser is forgotten on the server too). */
+async function signOut() {
+  await clearReminders();
+  await supabase.auth.signOut();
+}
 
 export default function PassportScreen() {
   const s = useStyles(makeStyles);
@@ -180,7 +187,7 @@ export default function PassportScreen() {
             {voice.signIn.signedInAs(email)}
           </Text>
         ) : null}
-        <Button variant="secondary" label={voice.signIn.signOut} onPress={() => supabase.auth.signOut()} />
+        <Button variant="secondary" label={voice.signIn.signOut} onPress={signOut} />
       </View>
     </Screen>
   );

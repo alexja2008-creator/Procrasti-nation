@@ -9,19 +9,21 @@ import { useLists } from '@/data/lists-store';
 import { loadNotNow, saveNotNow } from '@/data/reminder-ask';
 import { useTasks } from '@/data/tasks-store';
 import { useUserSettings } from '@/data/user-settings';
-import { getPermission, requestPermission, type Permission } from '@/notifications/permission';
+import { getPermission, requestPermission, turnOffHere, type Permission } from '@/notifications/permission';
 import { onDestination, onDoneSaved, saveDones, type Destination } from '@/notifications/responses';
 import { clearReminders, syncReminders } from '@/notifications/scheduler';
 import { onTimeGiven } from '@/notifications/time-given';
 
 type Reminders = {
-  /** Null until it's been read. 'unsupported' on web (Web Push is next). */
+  /** Null until it's been read. 'unsupported': a browser that can't do Web Push. */
   permission: Permission | null;
-  /** iOS's own prompt (or nothing, once iOS has its answer). */
+  /** The system's own prompt (or nothing, once it has its answer); on the web it also subscribes this browser. */
   allow: () => Promise<void>;
+  /** Web only: stop ringing in this browser ("Turn off here"). */
+  turnOff: () => Promise<void>;
 };
 
-const Ctx = createContext<Reminders>({ permission: null, allow: async () => undefined });
+const Ctx = createContext<Reminders>({ permission: null, allow: async () => undefined, turnOff: async () => undefined });
 
 /** Waiting a moment after the last change saves a pass per keystroke-sized edit. */
 const SYNC_PAUSE_MS = 1500;
@@ -39,10 +41,11 @@ function open(d: Destination) {
 const isBaseRoute = (path: string) => path === '/' || /^\/(upcoming|territories|passport|territory)(\/|$)/.test(path);
 
 /**
- * Reminders on this iPhone: keeps what's scheduled in step with the person's
- * tasks, asks for notifications the first time a task gets a time (never on
- * launch), and opens what a reminder's tap or Start 5 min asks for. Clears
- * everything on sign-out. On web it schedules nothing.
+ * Reminders: on the iPhone, keeps what's scheduled in step with the person's
+ * tasks; on the web the site's sender rings them, and this keeps the
+ * browser's subscription. Both ask for notifications the first time a task
+ * gets a time (never on launch), open what a reminder's tap or Start 5 min
+ * asks for, and stop on sign-out.
  */
 export function RemindersProvider({ userId, children }: { userId: string; children: ReactNode }) {
   const { tasks, status, rolloverHour, merge } = useTasks();
@@ -115,6 +118,14 @@ export function RemindersProvider({ userId, children }: { userId: string; childr
     setPermission(await requestPermission().catch(() => permission));
   };
 
+  const turnOff = async () => {
+    await turnOffHere();
+    setPermission('undetermined');
+    // Turned off on purpose: don't ask again when the next task gets a time.
+    setNotNow(true);
+    saveNotNow(userId);
+  };
+
   const decline = () => {
     settle();
     setNotNow(true);
@@ -122,7 +133,7 @@ export function RemindersProvider({ userId, children }: { userId: string; childr
   };
 
   return (
-    <Ctx.Provider value={{ permission, allow }}>
+    <Ctx.Provider value={{ permission, allow, turnOff }}>
       {children}
       {asking && askShown ? <ReminderPrompt ringsAt={asking} onAllow={allow} onNotNow={decline} /> : null}
     </Ctx.Provider>

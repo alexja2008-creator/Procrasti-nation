@@ -1,6 +1,6 @@
 import { formatTime, morningListOf, timeSlots, voice, type ClockTime, type MorningList } from '@pn/core';
 import { useState } from 'react';
-import { Linking, Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
@@ -9,6 +9,7 @@ import { Sheet } from '@/components/sheet';
 import { Text } from '@/components/text';
 import { useUserSettings } from '@/data/user-settings';
 import { switchThumbOnWeb } from '@/lib/web-styles';
+import type { Permission } from '@/notifications/permission';
 import { useReminders } from '@/notifications/reminders-provider';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
@@ -17,20 +18,28 @@ const clockLabel = (t: ClockTime) => formatTime(new Date(2000, 0, 1, t.hour, t.m
 /** Morning list times: 5:00 to 11:30 AM. */
 const MORNING_SLOTS = timeSlots(5, 11);
 
+const WEB = Platform.OS === 'web';
+
+/** What the card says about this device. */
+const statusOf: Record<Permission, string> = WEB
+  ? { granted: copy.onWeb, undetermined: copy.offWeb, denied: copy.blockedWeb, unsupported: copy.unsupportedWeb }
+  : { granted: copy.on, undetermined: copy.off, denied: copy.blocked, unsupported: copy.off };
+
 /**
  * On the Passport tab until Settings exists: whether reminders are on for
- * this iPhone, and the morning list (saved with the person, so each of their
- * iPhones rings it). The web says reminders come to it next (Web Push).
+ * this iPhone or this browser (each on its own), and the morning list (saved
+ * with the person, so it rings everywhere their reminders are on).
  */
 export function RemindersCard() {
   const s = useStyles(makeStyles);
   const { c } = s.t;
-  const { permission, allow } = useReminders();
+  const { permission, allow, turnOff } = useReminders();
   const { settings, savePreferences } = useUserSettings();
   const morning = morningListOf(settings?.preferences);
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const web = permission === 'unsupported';
+  // Can't ring here at all: the morning list still rings on their iPhone.
+  const elsewhere = WEB && permission === 'unsupported';
 
   const saveMorning = (next: MorningList) => {
     setError(null);
@@ -39,8 +48,7 @@ export function RemindersCard() {
     if (next.on && permission === 'undetermined') allow();
   };
 
-  const status =
-    permission === 'granted' ? copy.on : permission === 'undetermined' ? copy.off : permission === 'denied' ? copy.blocked : web ? copy.web : null;
+  const status = permission ? statusOf[permission] : null;
 
   return (
     <View style={s.card}>
@@ -56,9 +64,13 @@ export function RemindersCard() {
         <View style={s.action}>
           <Button variant="secondary" label={copy.turnOn} onPress={allow} />
         </View>
-      ) : permission === 'denied' ? (
+      ) : permission === 'denied' && !WEB ? (
         <View style={s.action}>
           <Button variant="secondary" label={copy.openSettings} onPress={() => Linking.openSettings()} />
+        </View>
+      ) : permission === 'granted' && WEB ? (
+        <View style={s.action}>
+          <Button variant="secondary" label={copy.turnOffHere} onPress={turnOff} />
         </View>
       ) : null}
 
@@ -67,7 +79,7 @@ export function RemindersCard() {
         <View style={s.rowText}>
           <Text variant="item">{copy.morningList}</Text>
           <Text variant="meta" color={c.muted}>
-            {web ? copy.morningLeadWeb : copy.morningLead}
+            {elsewhere ? copy.morningLeadWeb : copy.morningLead}
           </Text>
         </View>
         <Switch
