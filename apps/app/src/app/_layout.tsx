@@ -11,12 +11,13 @@ import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@/auth/auth-provider';
+import { passportOpenedHere } from '@/auth/passport';
 import { clearDraft } from '@/data/application-draft';
 import { SignedInProviders } from '@/data/signed-in-providers';
 import { useUserSettings } from '@/data/user-settings';
@@ -87,9 +88,6 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   );
 }
 
-/** A passport opened this recently goes straight back to its Application while its settings load. */
-const JUST_OPENED_MS = 30 * 60 * 1000;
-
 /**
  * The screens each state allows. Signed out: the Citizenship Application (someone new starts
  * there; its anonymous passport opens on the way to the Oath) and sign-in. Signed in, the
@@ -99,10 +97,8 @@ const JUST_OPENED_MS = 30 * 60 * 1000;
 function AppStack({ signedIn }: { signedIn: boolean }) {
   const { session } = useAuth();
   const { settings, status } = useUserSettings();
-  const user = session?.user;
-  // This stack mounts afresh when the session changes, so its first render is "now" enough.
-  const [mountedAt] = useState(Date.now);
-  const justOpened = !!user?.is_anonymous && mountedAt - Date.parse(user.created_at) < JUST_OPENED_MS;
+  // A passport opened moments ago in this run of the app (not a cold start, whose links must still work).
+  const justOpened = !!session?.user.is_anonymous && passportOpenedHere();
   const done = !!settings?.onboardingCompletedAt;
   // While settings load, a just-opened passport stays on the Application (no flash of Today).
   const applying = signedIn && (status === 'ready' ? !done : status === 'loading' && justOpened);

@@ -6,11 +6,18 @@ import type { User } from '@supabase/supabase-js';
 import { authRedirectUrl } from '@/auth/sign-in';
 import { supabase } from '@/lib/supabase';
 
+// Opened in this run of the app: until its settings load, the gate keeps it on the Application.
+let openedHere = false;
+
 /** A real, anonymous account: settings, tasks and the free plans work as for anyone. */
 export async function openPassport() {
   const { error } = await supabase.auth.signInAnonymously();
   if (error) throw error;
+  openedHere = true;
 }
+
+/** True only in the run of the app that opened the passport (a cold start never is, so its links still work). */
+export const passportOpenedHere = () => openedHere;
 
 export const isUnsaved = (user: User | undefined | null) => !!user?.is_anonymous;
 
