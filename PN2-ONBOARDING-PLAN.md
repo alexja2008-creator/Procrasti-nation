@@ -1,6 +1,16 @@
 # Plan: Citizenship Application (onboarding) and Settings (ProcrastiNation 2.0, `v2` branch)
 
-**Status: approved 2026-10-07** (decisions below confirmed by Alex).
+**Status: approved 2026-10-07** (decisions below confirmed by Alex). **Built 2026-10-07** in `ef6fa61` (the Application), `8ae3c5e` (the Oath, Settings) and `a064850` (tone, overwhelmed Today). Changes from the plan:
+- The Approved stamp reads CITIZEN / APPROVED, because APPLICATION didn't fit the stamp.
+- Settings opens from sliders at the top right of Passport.
+- Two fixes surfaced while testing: Sign out now signs out this device only (supabase-js signs out every device by default), and a save that changes no row now counts as failed.
+
+**Checked:**
+- The whole Application on web and on the iPhone (Expo Go), signed in on staging: the gate, every page, answers saved and taking effect, resume, Back, Skip, Approved, Today.
+- The Oath: creating the task, opening Plan it, and coming back without a plan.
+- Settings: on the iPhone, it showed and changed the answers.
+
+**Still to check with a live session** (the test session died partway): accepting a plan from the Oath, Settings saves landing, the focused Today, and the tone lines in Start Mode.
 
 Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
