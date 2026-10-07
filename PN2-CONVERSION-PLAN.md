@@ -1,6 +1,15 @@
 # Plan: Onboarding that converts (ProcrastiNation 2.0, `v2` branch)
 
-**Status: approved 2026-10-07** (decisions below confirmed by Alex; prices stay v1's for now, a semester plan comes up later).
+**Status: approved 2026-10-07** (decisions below confirmed by Alex; prices stay v1's for now, a semester plan comes up later). **Phase 1 built 2026-10-07** in `f0422e4` (server limits) and `a25def5` (the funnel). Changes from the plan:
+- The anonymous passport opens on answering "Where did you hear about us?", not at Begin: the questions are answered on the device (`pn.application.draft`) and move into the passport then. People who stop mid-quiz leave no accounts behind, and bots must get through nine pages before they cost anything.
+- A saved-by-email passport's username waits in `pending_username` until the email confirms, so an unsaved passport never holds a public name.
+- The plan route also allows one plan request at a time per person (a parallel burst used to pass the free count) and caps clarifying questions at 20 a day.
+
+**Checked (web, signed out, without opening a passport):** every question page through "Where did you hear about us?", answers kept on the device and resumed after a reload, Your result and How PN helps for "It feels too big", the sign-in screen's three ways in and its local checks, "New here?" back to the Application; a saved account's Passport and Settings unchanged on the iPhone; core tests (93), database tests (ai_requests kinds), the site build and its tests.
+
+**Still to check live (needs Alex: opening a passport creates an account on staging, which Claude doesn't do):** answering the last question opens the passport and lands on the Oath with the answers moved in; Your first week; the nudge (the system prompt on iOS); Approved → Save your passport by texted code (after Twilio is wired) and by email (confirm the link lands on Choose a password); Later → the Passport card and the Settings row; signing out of an unsaved passport warns; the free-plan limit message after two plans.
+
+**Before anonymous sign-ins reach production:** a `profiles` insert policy that refuses anonymous users (today only the app keeps them from claiming a name; the API wouldn't stop a script). Database review, and rehearsal against the production structure.
 
 Read `PN2-HANDOFF.md`, `CLAUDE.md` and `PN2-ONBOARDING-PLAN.md` (the Citizenship Application this builds on) first.
 
