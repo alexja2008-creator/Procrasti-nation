@@ -3,13 +3,16 @@
 // the day ends, the morning list's time, Start Mode's timer, the plans' and
 // Today's shape, the nudge tone), and Settings can change any of them later.
 
+import { addDays } from './dates.ts';
 import { voice } from './nation.ts';
-import type { Hours, List, MorningList, Persona, Preferences } from './types.ts';
+import type { QuickAddResult } from './quick-add.ts';
+import { morningListOf } from './reminders.ts';
+import type { Hours, List, LocalDate, MorningList, Persona, Preferences } from './types.ts';
 
-export type ApplicationPage = 'welcome' | 'purpose' | 'hours' | 'style' | 'notBroken' | 'tone' | 'approved';
+export type ApplicationPage = 'welcome' | 'purpose' | 'hours' | 'style' | 'notBroken' | 'tone' | 'oath' | 'approved';
 
-/** In order. Welcome and Approved aren't numbered; the rest are "page n of 5". */
-export const APPLICATION_PAGES: readonly ApplicationPage[] = ['welcome', 'purpose', 'hours', 'style', 'notBroken', 'tone', 'approved'];
+/** In order. Welcome and Approved aren't numbered; the rest are "page n of 6". */
+export const APPLICATION_PAGES: readonly ApplicationPage[] = ['welcome', 'purpose', 'hours', 'style', 'notBroken', 'tone', 'oath', 'approved'];
 
 const NUMBERED: readonly ApplicationPage[] = APPLICATION_PAGES.filter((p) => p !== 'welcome' && p !== 'approved');
 
@@ -30,7 +33,7 @@ export function resumePage(prefs: Partial<Preferences>): ApplicationPage {
   if (!prefs.hours) return 'hours';
   if (!prefs.style) return 'style';
   if (!prefs.nudgeTone) return 'notBroken';
-  return 'approved';
+  return 'oath';
 }
 
 /** The territories a purpose of visit starts someone with (only when they have none). */
@@ -40,9 +43,34 @@ export function territoriesFor(persona: Persona): Pick<List, 'name' | 'kind' | '
   return picks.map((s) => ({ name: s.name, kind: s.kind, ink: s.ink }));
 }
 
+export type OathDue = 'today' | 'tomorrow' | 'week' | 'none';
+
+/**
+ * The Oath's task: what they typed, read like quick add (a date in the text,
+ * "essay due fri", wins), else due when they picked.
+ */
+export function oathTask(parsed: QuickAddResult, due: OathDue, today: LocalDate): QuickAddResult {
+  if (parsed.scheduledOn || parsed.dueOn) return parsed;
+  const dueOn = { today, tomorrow: addDays(today, 1), week: addDays(today, 7), none: null }[due];
+  return { ...parsed, dueOn };
+}
+
 /** When their day ends: a night owl's late night still counts as today (3 AM); everyone else, midnight. */
 export const rolloverFor = (hours: Hours): number => (hours === 'night' ? 3 : 0);
 
 /** The morning list's time for their hours (it stays off until they turn it on). */
 export const morningTimeFor = (hours: Hours): Pick<MorningList, 'hour' | 'minute'> =>
   ({ early: { hour: 7, minute: 0 }, day: { hour: 8, minute: 0 }, night: { hour: 10, minute: 0 } })[hours];
+
+/**
+ * Everything an Hours answer changes (the Application and Settings alike):
+ * when the day ends, and the morning list's time while it's still off (once
+ * it's on, it keeps the time they chose).
+ */
+export function hoursChange(hours: Hours, prefs: Partial<Preferences>): { preferences: Partial<Preferences>; dayRolloverHour: number } {
+  const morning = morningListOf(prefs);
+  return {
+    preferences: { hours, reminders: { ...prefs.reminders, morningList: morning.on ? morning : { ...morning, ...morningTimeFor(hours) } } },
+    dayRolloverHour: rolloverFor(hours),
+  };
+}

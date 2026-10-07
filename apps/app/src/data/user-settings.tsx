@@ -54,6 +54,17 @@ async function ensureUserSettings(userId: string): Promise<UserSettings> {
   return fromRow(row);
 }
 
+/**
+ * Updates their row and confirms it changed: with no valid session the request
+ * goes out signed out, and row security quietly matches nothing, which would
+ * otherwise look like a successful save.
+ */
+async function updateRow(userId: string, fields: Partial<Row>): Promise<{ error: Error | null }> {
+  const { data, error } = await supabase.from('user_settings').update(fields).eq('user_id', userId).select('user_id');
+  if (error) return { error };
+  return { error: data?.length ? null : new Error('user_settings: nothing was saved') };
+}
+
 // One request per person at a time. React can run effects twice (development),
 // and two concurrent first-run inserts burn a citizen number on the loser's conflict.
 const inFlight = new Map<string, Promise<UserSettings>>();
@@ -75,8 +86,12 @@ export type SettingsPatch = Partial<Pick<UserSettings, 'dayRolloverHour' | 'onbo
 type Settings = State & {
   /** Merges into their preferences (the Reminders card's morning list, …); applies now, rolls back and throws if the save fails. */
   savePreferences: (patch: Partial<Preferences>) => Promise<void>;
-  /** When their day ends, or that the Application is done; applies now, rolls back and throws if the save fails. */
-  saveSettings: (patch: SettingsPatch) => Promise<void>;
+  /**
+   * When their day ends, or that the Application is done; applies now, rolls
+   * back and throws if the save fails. `confirmFirst` applies only once saved
+   * (finishing the Application changes which screens exist, so it can't bounce).
+   */
+  saveSettings: (patch: SettingsPatch, options?: { confirmFirst?: boolean }) => Promise<void>;
 };
 
 const Ctx = createContext<Settings>({
@@ -116,26 +131,27 @@ export function UserSettingsProvider({ userId, children }: { userId: string; chi
     if (!before) return;
     const preferences = { ...before, ...patch };
     setPreferences(preferences);
-    const { error } = await supabase.from('user_settings').update({ preferences }).eq('user_id', userId);
+    const { error } = await updateRow(userId, { preferences });
     if (error) {
       setPreferences(before);
       throw error;
     }
   };
 
-  const saveSettings: Settings['saveSettings'] = async (patch) => {
+  const saveSettings: Settings['saveSettings'] = async (patch, options) => {
     const before = state.settings;
     if (!before) return;
     const apply = (fields: SettingsPatch) => setState((s) => (s.settings ? { ...s, settings: { ...s.settings, ...fields } } : s));
-    apply(patch);
+    if (!options?.confirmFirst) apply(patch);
     const row: Partial<Pick<Row, 'day_rollover_hour' | 'onboarding_completed_at'>> = {};
     if (patch.dayRolloverHour !== undefined) row.day_rollover_hour = patch.dayRolloverHour;
     if (patch.onboardingCompletedAt !== undefined) row.onboarding_completed_at = patch.onboardingCompletedAt;
-    const { error } = await supabase.from('user_settings').update(row).eq('user_id', userId);
+    const { error } = await updateRow(userId, row);
     if (error) {
       apply({ dayRolloverHour: before.dayRolloverHour, onboardingCompletedAt: before.onboardingCompletedAt });
       throw error;
     }
+    if (options?.confirmFirst) apply(patch);
   };
 
   return <Ctx.Provider value={{ ...state, savePreferences, saveSettings }}>{children}</Ctx.Provider>;

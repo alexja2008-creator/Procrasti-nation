@@ -101,6 +101,14 @@ const glyphs = {
   house: <Path d="M4 10.5L12 4l8 6.5M6 9v11h12V9M10 20v-5h4v5" />,
   flag: <Path d="M5 21V4h11l-2 4 2 4H5" />,
   bell: <Path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2.2 2.2 0 0 0 4 0" />,
+  /** Settings: two sliders. */
+  sliders: (
+    <>
+      <Path d="M4 8h9M17 8h3M4 16h3M11 16h9" />
+      <Circle cx={15} cy={8} r={2} />
+      <Circle cx={9} cy={16} r={2} />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof glyphs;

@@ -1,32 +1,37 @@
 import {
   APPLICATION_PAGES,
+  actions,
   formatCitizenNumber,
-  morningListOf,
-  morningTimeFor,
+  hoursChange,
   nudgeTones,
+  oathTask,
+  parseQuickAdd,
   resumePage,
-  rolloverFor,
   territoriesFor,
   voice,
   type ApplicationPage,
   type Hours,
   type NudgeToneId,
+  type OathDue,
   type Persona,
   type Preferences,
   type ProcrastinationStyle,
 } from '@pn/core';
+import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { StyleSheet, View, type ScrollView } from 'react-native';
+import { StyleSheet, TextInput, View, type ScrollView } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
 import { personName } from '@/auth/person-name';
 import { ApplicationForm } from '@/components/application/application-form';
 import { ChoiceCards, type Choice } from '@/components/application/choice-cards';
 import { Button } from '@/components/button';
+import { Chip } from '@/components/chip';
 import { LandingStamp } from '@/components/landing-stamp';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { useLists } from '@/data/lists-store';
+import { useTasks } from '@/data/tasks-store';
 import { useUserSettings } from '@/data/user-settings';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
@@ -60,12 +65,21 @@ export default function ApplicationScreen() {
   const { session } = useAuth();
   const { settings, savePreferences, saveSettings } = useUserSettings();
   const { lists, status: listsStatus, add } = useLists();
+  const { tasks, today, add: addTask } = useTasks();
   const prefs: Partial<Preferences> = settings?.preferences ?? {};
   const scroll = useRef<ScrollView>(null);
-  const [page, setPage] = useState<ApplicationPage>(() => resumePage(prefs));
+  const [turnedTo, setPage] = useState<ApplicationPage>(() => resumePage(prefs));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const turnedAt = useRef(0);
+  // The Oath: what they typed, when it's due, and the task once it's made.
+  const [oathText, setOathText] = useState('');
+  const [oathDue, setOathDue] = useState<OathDue>('week');
+  const [oathId, setOathId] = useState<string | null>(null);
+  const oath = oathId ? tasks.find((t) => t.id === oathId) : undefined;
+  const planned = !!oathId && tasks.some((t) => t.parentId === oathId && !t.deletedAt);
+  // A plan accepted in Plan it (its steps land in the store) is the Oath taken: Approved shows underneath.
+  const page: ApplicationPage = turnedTo === 'oath' && planned ? 'approved' : turnedTo;
 
   const index = APPLICATION_PAGES.indexOf(page);
   const go = (to: ApplicationPage) => {
@@ -94,13 +108,30 @@ export default function ApplicationScreen() {
 
   const pickHours = (hours: Hours) =>
     answer(() => {
-      const morning = morningListOf(prefs);
-      return Promise.all([
-        // The morning list keeps its time once it's on; until then it follows their hours.
-        savePreferences({ hours, reminders: { ...prefs.reminders, morningList: morning.on ? morning : { ...morning, ...morningTimeFor(hours) } } }),
-        saveSettings({ dayRolloverHour: rolloverFor(hours) }),
-      ]);
+      const change = hoursChange(hours, prefs);
+      return Promise.all([savePreferences(change.preferences), saveSettings({ dayRolloverHour: change.dayRolloverHour })]);
     });
+
+  /** Makes the Oath's task (once), then opens Plan it for it; accepting the plan comes back here. */
+  const planOath = async () => {
+    if (busy) return;
+    let id = oathId;
+    if (!id) {
+      const text = oathText.trim();
+      if (!text) return;
+      setBusy(true);
+      setError(null);
+      const saved = await addTask(oathTask(parseQuickAdd(text, new Date(), { lists }), oathDue, today));
+      setBusy(false);
+      if (!saved) {
+        setError(copy.saveFailed);
+        return;
+      }
+      id = saved.id;
+      setOathId(id);
+    }
+    router.push({ pathname: '/plan/[id]', params: { id } });
+  };
 
   /** Done (or skipped): their territories, then Today (the gate lets them through once it's saved). */
   const finish = async (skipped: boolean) => {
@@ -111,7 +142,7 @@ export default function ApplicationScreen() {
       if (!skipped && prefs.persona && listsStatus === 'ready' && lists.length === 0) {
         for (const territory of territoriesFor(prefs.persona)) await add(territory);
       }
-      await saveSettings({ onboardingCompletedAt: new Date().toISOString() });
+      await saveSettings({ onboardingCompletedAt: new Date().toISOString() }, { confirmFirst: true });
     } catch {
       setError(copy.saveFailed);
       setBusy(false);
@@ -195,6 +226,48 @@ export default function ApplicationScreen() {
               onPick={(nudgeTone) => answer(() => savePreferences({ nudgeTone }))}
             />
           </ApplicationForm>
+        ) : page === 'oath' ? (
+          <ApplicationForm
+            page={page}
+            title={copy.oathTitle}
+            lead={oath && !planned ? copy.oathAgain : copy.oathLead}
+            error={error}
+            footer={
+              <>
+                {backButton}
+                <View style={s.actions}>
+                  <Button variant="quiet" label={copy.notNow} onPress={next} disabled={busy} />
+                  <Button label={actions.planIt} onPress={planOath} disabled={busy || (!oath && !oathText.trim())} />
+                </View>
+              </>
+            }>
+            <TextInput
+              value={oath ? oath.title : oathText}
+              onChangeText={setOathText}
+              editable={!oath}
+              placeholder={copy.oathPlaceholder}
+              placeholderTextColor={c.muted}
+              accessibilityLabel={copy.oathTitle}
+              returnKeyType="go"
+              onSubmitEditing={planOath}
+              style={s.input}
+            />
+            {oath ? null : (
+              <>
+                <Text variant="meta" color={c.muted}>
+                  {copy.oathHint}
+                </Text>
+                <Text variant="label" color={c.muted} style={s.dueLabel}>
+                  {copy.dueLabel.toUpperCase()}
+                </Text>
+                <View style={s.dues} accessibilityRole="radiogroup" accessibilityLabel={copy.dueLabel}>
+                  {copy.dues.map((d) => (
+                    <Chip key={d.id} label={d.label} selected={oathDue === d.id} onPress={() => setOathDue(d.id)} />
+                  ))}
+                </View>
+              </>
+            )}
+          </ApplicationForm>
         ) : (
           <View style={s.approved} accessibilityLiveRegion="polite">
             <LandingStamp ink={c.stamp.terracotta} lines={copy.approvedStamp} style={s.stamp} />
@@ -202,7 +275,7 @@ export default function ApplicationScreen() {
               {copy.approvedTitle(personName(session?.user).first)}
             </Text>
             <Text variant="lead" color={c.inkSoft} style={s.centered}>
-              {copy.approvedBody(citizenNo)}
+              {planned ? copy.approvedBodyOath(citizenNo) : copy.approvedBody(citizenNo)}
             </Text>
             {error ? (
               <Text variant="meta" color={c.error} style={s.centered}>
@@ -222,6 +295,20 @@ const makeStyles = (t: Tokens) => ({
   ...StyleSheet.create({
     page: { paddingBottom: 24 },
     reserved: { letterSpacing: 1.2 },
+    actions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    input: {
+      minHeight: 52,
+      paddingHorizontal: 14,
+      borderWidth: 1,
+      borderColor: t.c.field.border,
+      borderRadius: t.radii.lg,
+      backgroundColor: t.c.field.bg,
+      color: t.c.ink,
+      fontFamily: t.fonts.body,
+      fontSize: 17,
+    },
+    dueLabel: { marginTop: 4 },
+    dues: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     approved: { gap: 14, width: '100%', maxWidth: 480, alignSelf: 'center', paddingTop: 12 },
     stamp: { alignSelf: 'center', marginBottom: 8 },
     centered: { textAlign: 'center' },

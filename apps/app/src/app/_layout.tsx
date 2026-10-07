@@ -99,9 +99,9 @@ function AppStack({ signedIn }: { signedIn: boolean }) {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Protected guard={signedIn && !applying}>
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="plan/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="task/[id]" options={{ presentation: 'modal' }} />
         <Stack.Screen name="territory/[id]" />
+        <Stack.Screen name="settings" />
         <Stack.Screen name="note/[id]" options={{ presentation: 'modal' }} />
         {/* On web it draws its own panel over the page at laptop width (a full page on phones). */}
         <Stack.Screen name="search" options={{ presentation: Platform.OS === 'web' ? 'transparentModal' : 'modal' }} />
@@ -110,6 +110,10 @@ function AppStack({ signedIn }: { signedIn: boolean }) {
       </Stack.Protected>
       <Stack.Protected guard={applying}>
         <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
+      </Stack.Protected>
+      {/* The Application's Oath plans a task too. */}
+      <Stack.Protected guard={signedIn}>
+        <Stack.Screen name="plan/[id]" options={{ presentation: 'modal' }} />
       </Stack.Protected>
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="sign-in" />

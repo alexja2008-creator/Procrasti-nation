@@ -1,30 +1,21 @@
 import { formatCitizenNumber, formatStampDate, mrzMottoLine, mrzNameLine, rankFor, voice } from '@pn/core';
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
 import { personName } from '@/auth/person-name';
-import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
-import { RemindersCard } from '@/components/reminders-card';
 import { Screen } from '@/components/screen';
 import { CountStamp, RoundStamp } from '@/components/stamp';
 import { Text } from '@/components/text';
 import { fetchPassportStamps, type PassportStamps } from '@/data/stamps';
 import { countStarts } from '@/data/starts';
 import { useUserSettings } from '@/data/user-settings';
-import { supabase } from '@/lib/supabase';
-import { clearReminders } from '@/notifications/scheduler';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.passport;
 
-/** Reminders stop first, while still signed in (a browser is forgotten on the server too). */
-async function signOut() {
-  await clearReminders();
-  await supabase.auth.signOut();
-}
 
 export default function PassportScreen() {
   const s = useStyles(makeStyles);
@@ -67,9 +58,18 @@ export default function PassportScreen() {
   return (
     <Screen>
       <View style={s.head}>
-        <Text variant="label" color={c.muted}>
-          {copy.eyebrow.toUpperCase()}
-        </Text>
+        <View style={s.headTop}>
+          <Text variant="label" color={c.muted}>
+            {copy.eyebrow.toUpperCase()}
+          </Text>
+          <Pressable
+            onPress={() => router.push('/settings')}
+            accessibilityRole="button"
+            accessibilityLabel={voice.settings.open}
+            style={({ pressed }) => [s.settingsButton, pressed && s.pressed]}>
+            <Icon name="sliders" size={22} color={c.ink} strokeWidth={1.8} />
+          </Pressable>
+        </View>
         <Text variant="pageTitle" accessibilityRole="header">
           {voice.passportLead}
         </Text>
@@ -179,16 +179,6 @@ export default function PassportScreen() {
         ) : null}
       </View>
 
-      <RemindersCard />
-
-      <View style={s.account}>
-        {email ? (
-          <Text variant="meta" color={c.muted}>
-            {voice.signIn.signedInAs(email)}
-          </Text>
-        ) : null}
-        <Button variant="secondary" label={voice.signIn.signOut} onPress={signOut} />
-      </View>
     </Screen>
   );
 }
@@ -197,6 +187,9 @@ const makeStyles = (t: Tokens) => ({
   t,
   ...StyleSheet.create({
     head: { gap: 6 },
+    headTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: -12, marginVertical: -12 },
+    settingsButton: { width: t.hitTarget, height: t.hitTarget, alignItems: 'center', justifyContent: 'center' },
+    pressed: { opacity: 0.6 },
     idPage: {
       gap: 12,
       paddingVertical: 16,
@@ -244,6 +237,5 @@ const makeStyles = (t: Tokens) => ({
     progressLabel: { fontFamily: t.fonts.bodySemibold, flex: 1 },
     track: { height: 6, borderRadius: 3, backgroundColor: t.c.chip, overflow: 'hidden' },
     fill: { height: '100%', borderRadius: 3, backgroundColor: t.c.primary },
-    account: { gap: 10, marginTop: 12, alignItems: 'flex-start' },
   }),
 });
