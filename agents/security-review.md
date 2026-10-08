@@ -18,7 +18,6 @@ You are a security specialist for ProcrastiNation, a Next.js 14 productivity app
 | /api/generate-plan | Yes (user) | AI prompt injection, rate limiting (5/mo free) |
 | /api/parse-syllabus | Yes (user) | File upload parsing (PDF/DOCX/image), prompt injection |
 | /api/resolve-step-dates | Yes (user) | AI call with user-provided step text |
-| /api/create-room | Yes (user) | External API call (Whereby) |
 | /api/profile/[username] | No (public) | Username enumeration, input validation |
 | /api/friends/search | Yes (user) | Search injection, user enumeration |
 | /api/friends/request | Yes (user) | Unauthorized friend requests |
@@ -68,7 +67,7 @@ You are a security specialist for ProcrastiNation, a Next.js 14 productivity app
 - [ ] **npm audit clean** — Run `npm audit --audit-level=high` and address any high/critical findings
 - [ ] **No sensitive data in logs** — Console.log in cron routes doesn't log user emails, passwords, or tokens
 - [ ] **CORS handled by Next.js** — Verify no custom CORS headers that could widen access
-- [ ] **External API timeouts** — Anthropic, Whereby, Resend calls should have timeouts to prevent hanging
+- [ ] **External API timeouts** — Anthropic, Resend calls should have timeouts to prevent hanging
 - [ ] **Error messages don't leak DB schema** — Supabase error objects sometimes include table/column names
 
 ### LOW — Best practice

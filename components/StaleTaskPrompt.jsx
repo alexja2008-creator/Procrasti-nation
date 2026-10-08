@@ -10,9 +10,8 @@ import { AlertTriangle, Plus, Zap } from 'lucide-react';
  * Props:
  * - tasks: full array of user tasks (all statuses)
  * - darkMode: boolean from useTheme()
- * - compact: optional boolean for inline usage (focus-pods sidebar)
  */
-export default function StaleTaskPrompt({ tasks = [], darkMode, compact = false }) {
+export default function StaleTaskPrompt({ tasks = [], darkMode }) {
   const staleTasks = tasks.filter((t) => {
     if (t.status !== 'in_progress') return false;
     if ((t.completed_steps || 0) > 0) return false;
@@ -31,7 +30,7 @@ export default function StaleTaskPrompt({ tasks = [], darkMode, compact = false 
       }`}>
         <div className="flex items-center gap-2 mb-3">
           <AlertTriangle className={`w-5 h-5 ${darkMode ? 'text-amber-400' : 'text-amber-600'}`} />
-          <h3 className={`font-bold ${compact ? 'text-base' : 'text-lg'} ${darkMode ? 'text-white' : 'text-slate-900'}`}>
+          <h3 className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-slate-900'}`}>
             {staleTasks.length === 1
               ? 'You have a task collecting dust'
               : `You have ${staleTasks.length} tasks collecting dust`}

@@ -149,20 +149,10 @@ const STEPS = [
     body: "Now delete the sample task to keep your workspace tidy. Open it from the list below and hit Delete. We'll celebrate when you do!",
     pill: "🗑️ Delete the [Tutorial] task from the dashboard. Click Continue when done!",
     pillCta: 'Done — celebrate! →',
-    ctaLabel: 'Done — show me Focus Pods →',
+    ctaLabel: 'Done — show me Recovery Mode →',
   },
   {
-    // 11 — Focus Pods
-    page: '/focus-pods',
-    icon: '👥',
-    title: 'Focus Pods',
-    body: "Struggling to stay focused? Join a Focus Pod — virtual co-working rooms where you work alongside other citizens. Just knowing someone else is working too is surprisingly powerful.",
-    pill: '👆 Have a look around Focus Pods. Click Continue when ready.',
-    pillCta: 'Continue →',
-    ctaLabel: 'Cool — show me Recovery Mode →',
-  },
-  {
-    // 12 — Recovery Mode
+    // 11 — Recovery Mode
     page: '/reset-station',
     icon: '🧘',
     title: 'Recovery Mode',
@@ -172,7 +162,7 @@ const STEPS = [
     ctaLabel: "All done — let's start planning →",
   },
   {
-    // 13 — Final
+    // 12 — Final
     page: '/planner',
     icon: '🏁',
     title: 'Citizenship granted.',

@@ -7,7 +7,7 @@ import { supabase } from '../lib/supabase';
 
 const PRO_FEATURES = [
   'Unlimited AI-planned tasks, with no monthly cap',
-  'Everything in Free: calendar, syllabus import, Focus Pods, nudges',
+  'Everything in Free: calendar, syllabus import, nudges',
 ];
 
 export default function UpgradeModal({ onClose, reason = 'limit' }) {

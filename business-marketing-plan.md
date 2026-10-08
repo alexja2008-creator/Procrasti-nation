@@ -163,7 +163,7 @@ Every signup automatically gets a **14-day full Pro trial** (no credit card requ
 
 | Tier | Price | Key Limits |
 |------|-------|------------|
-| Free (post-trial) | $0/mo | 5 AI plans/month, public Focus Pods, basic metrics |
+| Free (post-trial) | $0/mo | 5 AI plans/month, basic metrics |
 | Pro Monthly | $7.99/mo | Unlimited plans, private pods, nudges, streak freeze, templates |
 | Pro Annual | $72/yr ($6/mo) | Same as Pro — 25% discount, early adopter lock-in |
 
@@ -207,7 +207,7 @@ Every signup automatically gets a **14-day full Pro trial** (no credit card requ
 | AI step scheduling | Shipped | Auto-resolves "when" for each step |
 | Dashboard with stats & archive | Shipped | Progress visibility, streak motivation |
 | Kanban boards | Shipped | Organization by project/course |
-| Focus Pods (Whereby video) | Shipped | Social accountability |
+| Focus Pods (Whereby video) | Retired 2026-10-08 | Not core to the product, and moderating live video wasn't worth the risk |
 | Reset Station (wellness videos) | Shipped | Burnout recovery |
 | Interactive onboarding tutorial | Shipped | Reduces first-session drop-off |
 | Supabase auth + 14-day Pro trial | Shipped | Conversion model |
@@ -239,7 +239,7 @@ Every signup automatically gets a **14-day full Pro trial** (no credit card requ
 - Action: Encourage, reframe remaining steps, or regenerate revised plan
 - This is the "coach in your pocket" moment
 
-**4. Private Focus Pods (Pro only)**
+**4. ~~Private Focus Pods (Pro only)~~** Dropped with Focus Pods (2026-10-08).
 - Free: Public pods (join anyone)
 - Pro: Private 1–3 person pods — invite your study partner, accountability buddy
 - Genuinely social, hard to replicate with a free tool

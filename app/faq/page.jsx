@@ -13,7 +13,7 @@ const FAQ_CATEGORIES = [
     items: [
       {
         q: 'What is ProcrastiNation?',
-        a: 'ProcrastiNation is an AI-powered productivity app built for people who struggle with getting started. You describe a task in plain language and the AI breaks it into bite-sized, actionable steps — each with a time estimate and a suggested day to complete it. It also includes tools for accountability (Focus Pods), recovery (Recovery Mode), and tracking your momentum (streaks and Dashboard).',
+        a: 'ProcrastiNation is an AI-powered productivity app built for people who struggle with getting started. You describe a task in plain language and the AI breaks it into bite-sized, actionable steps — each with a time estimate and a suggested day to complete it. It also includes tools for recovery (Recovery Mode) and tracking your momentum (streaks and Dashboard).',
       },
       {
         q: 'How do I create my first task?',
@@ -21,7 +21,7 @@ const FAQ_CATEGORIES = [
       },
       {
         q: 'Do I need an account to use it?',
-        a: 'You can generate a plan without an account, but signing up (free) lets you save tasks, track your streak, access the Dashboard, and use Focus Pods. Your data is saved to the cloud so you can access it from any device.',
+        a: 'You can generate a plan without an account, but signing up (free) lets you save tasks, track your streak, and access the Dashboard. Your data is saved to the cloud so you can access it from any device.',
       },
       {
         q: 'What is the 10-day Pro trial?',
@@ -91,25 +91,6 @@ const FAQ_CATEGORIES = [
       {
         q: 'How do I delete a task?',
         a: 'Open a task in the Dashboard (click on it to expand its detail panel) and click the "Delete Task" button. This permanently removes the task and all its steps.',
-      },
-    ],
-  },
-  {
-    id: 'focus-pods',
-    title: 'Focus Pods',
-    icon: '👥',
-    items: [
-      {
-        q: 'What are Focus Pods?',
-        a: 'Focus Pods are virtual co-working rooms powered by Whereby. You join a video room with other ProcrastiNation users, set a focus duration, and work silently (or with soft music) alongside each other. The social presence effect makes it much harder to procrastinate.',
-      },
-      {
-        q: 'How long do pods last?',
-        a: 'Pods can run from 30 to 90 minutes. The host selects the duration when creating the pod. Once the session ends, the room is automatically cleaned up.',
-      },
-      {
-        q: 'Is camera or microphone required?',
-        a: 'No. You can join a pod without turning on your camera or mic and simply work silently alongside others. Many users find the visual presence of others is enough to stay on track.',
       },
     ],
   },
