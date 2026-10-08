@@ -1,13 +1,15 @@
 // The account as a whole: Download your data (built here, on the device, from the rows the
-// person can already read).
+// person can already read), and Delete your passport (the site's route does the deleting).
 import { buildExport, exportFileName, localDateString, type UserSettings } from '@pn/core';
 import type { User } from '@supabase/supabase-js';
 
+import { forgetDeletedAccount } from '@/auth/sign-out';
 import { fetchLists } from '@/data/lists';
 import { fetchEveryNote } from '@/data/notes';
 import { fetchAllPages } from '@/data/paging';
 import { fetchUsername } from '@/data/profile';
 import { fetchEveryTask } from '@/data/tasks';
+import { apiPost } from '@/lib/api';
 import { saveFile } from '@/lib/save-file';
 import { supabase } from '@/lib/supabase';
 
@@ -58,4 +60,18 @@ export async function downloadMyData(user: User, settings: UserSettings | null):
   });
 
   await saveFile(exportFileName(localDateString()), JSON.stringify(exported, null, 2), 'application/json');
+}
+
+// Deleted in this run of the app: Welcome says so, kindly, once.
+let deletedHere = false;
+export const passportDeletedHere = () => deletedHere;
+
+/**
+ * Deletes their account and everything in it (the site's route; it cancels a Stripe subscription
+ * first), then forgets this device. The session ends here, so the app goes back to Welcome.
+ */
+export async function deleteMyAccount(userId: string): Promise<void> {
+  await apiPost<{ deleted: true }>('/api/account/delete', { confirm: 'DELETE' });
+  deletedHere = true;
+  await forgetDeletedAccount(userId);
 }

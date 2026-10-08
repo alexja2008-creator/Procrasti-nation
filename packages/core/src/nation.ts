@@ -688,6 +688,18 @@ export const voice = {
     downloadValue: 'One file',
     preparingData: 'Putting your file together…',
     downloadFailed: 'Couldn’t make your file. Check your connection and try again.',
+    /** Delete your passport (App Store 5.1.1(v)): kind, plain, no guilt. */
+    deletePassport: 'Delete your passport',
+    deleteTitle: 'Delete your passport?',
+    deleteBody: 'This deletes your account and everything in it: tasks and plans, notes, territories, stamps and settings. It can’t be undone.',
+    deleteDownloadFirst: 'Download your data first',
+    deleteTypeLabel: 'Type DELETE to confirm',
+    deleteConfirm: 'Delete my passport',
+    deleting: 'Deleting…',
+    deleteFailed: 'Couldn’t delete your passport just now. Nothing was deleted. Check your connection and try again.',
+    deleteBilling: 'Couldn’t cancel your subscription, so nothing was deleted. Try again in a moment.',
+    /** On Welcome, right after. */
+    deleted: 'Your passport is deleted. Thanks for being part of the Nation.',
     done: 'Done',
     saveFailed: 'Couldn’t save that. Check your connection and try again.',
   },

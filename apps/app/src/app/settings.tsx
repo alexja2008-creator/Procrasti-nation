@@ -25,6 +25,7 @@ import { Icon } from '@/components/icon';
 import { RemindersCard } from '@/components/reminders-card';
 import { SavePassport } from '@/components/save-passport';
 import { Screen } from '@/components/screen';
+import { DeleteSheet } from '@/components/settings/delete-sheet';
 import { PasswordSheet } from '@/components/settings/password-sheet';
 import { SettingRow } from '@/components/settings/setting-row';
 import { SettingsCard } from '@/components/settings/settings-card';
@@ -50,7 +51,7 @@ const tones: Choice<NudgeToneId>[] = (Object.keys(nudgeTones) as NudgeToneId[]).
 const TIMERS: StartMinutes[] = [2, 5, 10, 25];
 const DAY_ENDS = [0, 1, 2, 3, 4, 5, 6];
 
-type Picking = 'purpose' | 'hours' | 'style' | 'tone' | 'timer' | 'dayEnds' | 'username' | 'password' | 'save' | 'signOut' | null;
+type Picking = 'purpose' | 'hours' | 'style' | 'tone' | 'timer' | 'dayEnds' | 'username' | 'password' | 'save' | 'signOut' | 'delete' | null;
 
 const labelOf = <T extends string>(choices: readonly { id: T; label: string }[], id: T | undefined) =>
   choices.find((c) => c.id === id)?.label ?? copy.notSet;
@@ -163,6 +164,7 @@ export default function SettingsScreen() {
           </>
         )}
         <SettingRow label={copy.downloadData} value={exporting ? copy.preparingData : copy.downloadValue} onPress={download} />
+        <SettingRow label={copy.deletePassport} value="" onPress={() => setPicking('delete')} />
         <View style={s.account}>
           {signedInAs ? (
             <Text variant="meta" color={c.muted}>
@@ -242,6 +244,8 @@ export default function SettingsScreen() {
             <SavePassport onDone={() => setPicking(null)} />
           </View>
         </Sheet>
+      ) : picking === 'delete' && userId ? (
+        <DeleteSheet userId={userId} onDownload={download} downloading={exporting} onClose={() => setPicking(null)} />
       ) : picking === 'signOut' ? (
         <Sheet title={passport.signOutUnsavedTitle} onClose={() => setPicking(null)}>
           <View style={s.sheetBody}>

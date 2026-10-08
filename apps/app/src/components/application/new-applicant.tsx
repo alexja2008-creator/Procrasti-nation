@@ -9,6 +9,7 @@ import { useTurns } from '@/components/application/use-turns';
 import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
+import { passportDeletedHere } from '@/data/account';
 import { loadDraft, saveDraft, type Draft } from '@/data/application-draft';
 import { useTokens } from '@/theme/tokens';
 
@@ -86,6 +87,13 @@ function Questions({ initial }: { initial: Draft }) {
           prefs={draft.preferences}
           busy={busy}
           error={error}
+          welcomeNote={
+            passportDeletedHere() ? (
+              <Text variant="body" color={t.c.primaryText} accessibilityLiveRegion="polite">
+                {voice.settings.deleted}
+              </Text>
+            ) : null
+          }
           welcomeFooter={
             <>
               <Button variant="quiet" label={copy.alreadyCitizen} onPress={() => router.push('/sign-in')} />

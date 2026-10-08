@@ -601,6 +601,46 @@ for (const baseline of baselines) {
       }
     });
 
+    await t.test("deleting an account takes every row of theirs, and nothing of anyone else's", async () => {
+      // The account route deletes the auth user; every table pointing at a person must follow.
+      const U9 = '00000000-0000-0000-0000-000000000009';
+      await db.query(`INSERT INTO auth.users (id, email) VALUES ($1, 'leaving@x.test')`, [U9]);
+      await db.query(`INSERT INTO user_settings (user_id) VALUES ($1)`, [U9]);
+      const list = await one(db, `INSERT INTO lists (user_id, name) VALUES ($1, 'Chem') RETURNING id`, [U9]);
+      const note = await one(db, `INSERT INTO notes (user_id, list_id, body) VALUES ($1, $2, 'Lab') RETURNING id`, [U9, list.id]);
+      const plan = await one(db, `INSERT INTO tasks (user_id, list_id, title) VALUES ($1, $2, 'Essay') RETURNING id`, [U9, list.id]);
+      const step = await one(db, `INSERT INTO tasks (user_id, parent_id, title) VALUES ($1, $2, 'Outline') RETURNING id`, [U9, plan.id]);
+      await db.query(`INSERT INTO tasks (user_id, note_id, title) VALUES ($1, $2, 'Goggles')`, [U9, note.id]);
+      await db.query(`INSERT INTO stamps (user_id, kind, task_id, list_id) VALUES ($1, 'task-done', $2, $3)`, [U9, step.id, list.id]);
+      await db.query(`INSERT INTO start_sessions (user_id, task_id, planned_minutes, outcome) VALUES ($1, $2, 5, 'done')`, [U9, step.id]);
+      await db.query(`INSERT INTO plan_generations (user_id, task_id) VALUES ($1, $2)`, [U9, plan.id]);
+      await db.query(`INSERT INTO ai_requests (user_id, kind) VALUES ($1, 'plan')`, [U9]);
+      await db.query(`INSERT INTO push_tokens (user_id, platform, token) VALUES ($1, 'ios', 'leaving-device')`, [U9]);
+      await db.query(`INSERT INTO profiles (user_id, username) VALUES ($1, 'leaving')`, [U9]);
+
+      // Every (table, column) with a foreign key to auth.users, so tables added later are covered too.
+      const refs = await rows(
+        db,
+        `SELECT c.conrelid::regclass::text AS tbl, a.attname AS col
+           FROM pg_constraint c JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY (c.conkey)
+          WHERE c.contype = 'f' AND c.confrelid = 'auth.users'::regclass`,
+      );
+      const count = async (where) => {
+        const out = {};
+        for (const { tbl, col } of refs) out[`${tbl}.${col}`] = (await one(db, `SELECT count(*)::int AS n FROM ${tbl} WHERE ${col} ${where}`, [U9])).n;
+        return out;
+      };
+      const theirs = await count('= $1');
+      assert.ok(Object.values(theirs).filter((n) => n > 0).length >= 10, 'the departing user has rows across the tables');
+      const others = await count('IS DISTINCT FROM $1');
+
+      await db.query(`DELETE FROM auth.users WHERE id = $1`, [U9]);
+
+      const left = await count('= $1');
+      assert.deepEqual(Object.entries(left).filter(([, n]) => n > 0), [], 'nothing of theirs is left anywhere');
+      assert.deepEqual(await count('IS DISTINCT FROM $1'), others, "everyone else's rows are untouched");
+    });
+
     await t.test('rollback restores v1 exactly and can be re-applied', async () => {
       await db.exec(sql('99_rollback.sql'));
 
