@@ -98,7 +98,6 @@ export default function Navigation() {
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/calendar', label: 'Calendar' },
     { href: '/syllabus', label: 'Syllabus' },
-    { href: '/focus-pods', label: 'Focus Pods' },
     { href: '/reset-station', label: 'Recovery Mode' },
     { href: '/friends', label: 'Friends' },
   ];

@@ -46,7 +46,6 @@ For each design decision, document:
 - **Auth**: Supabase Auth with trial/free/pro tiers via `useAuth()`
 - **AI**: Anthropic Claude API via raw `fetch()` (not SDK)
 - **Email**: Resend
-- **Video**: Whereby embeds
 - **Hosting**: Vercel Hobby tier, auto-deploy from `main`
 
 ### State Management Layers
@@ -55,7 +54,7 @@ For each design decision, document:
 | Component state | UI-only state | Modals, form inputs, loading flags |
 | Context (providers.jsx) | App-wide state | `darkMode`, `user`, `trialStatus` |
 | localStorage | Client persistence | Boards, completed resets, theme, tutorial |
-| Supabase | Server persistence | Tasks, streaks, focus pods, profiles |
+| Supabase | Server persistence | Tasks, streaks, profiles |
 
 ### Key Constraints
 - **Vercel Hobby tier**: 10s serverless function timeout, 1MB request body limit
@@ -108,7 +107,7 @@ For each design decision, document:
 
 ### Backend (API Routes)
 - **Flat route handlers**: Parse request → validate → do work → respond
-- **Raw fetch to external APIs**: Anthropic, Whereby, Resend — no SDKs
+- **Raw fetch to external APIs**: Anthropic, Resend — no SDKs
 - **Supabase client per request**: Import from `lib/supabase.js` (anon) or create inline (service role)
 
 ### Data

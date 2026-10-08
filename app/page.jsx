@@ -382,35 +382,35 @@ export default function LandingPage() {
             </ul>
           </Link>
 
-          {/* Focus Pods */}
-          <Link href="/focus-pods" className={`p-8 rounded-2xl border hover:shadow-xl transition-all group ${
-            darkMode 
-              ? 'bg-slate-800 border-slate-700 hover:border-emerald-700' 
+          {/* Calendar */}
+          <Link href="/calendar" className={`p-8 rounded-2xl border hover:shadow-xl transition-all group ${
+            darkMode
+              ? 'bg-slate-800 border-slate-700 hover:border-emerald-700'
               : 'bg-white border-slate-200 hover:border-emerald-200'
           }`}>
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform ${
               darkMode ? 'bg-blue-900/30' : 'bg-blue-100'
             }`}>
-              <Users className={`w-6 h-6 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+              <Calendar className={`w-6 h-6 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
             </div>
             <h3 className={`text-2xl font-bold mb-3 ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-              Focus Pods
+              Calendar
             </h3>
             <p className={`text-lg leading-relaxed mb-4 ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
-              Work alongside others in virtual co-working sessions. Stay accountable and motivated together.
+              Every step of your plan lands on a day. See the week at a glance, and move a step when life happens.
             </p>
             <ul className="space-y-2">
               <li className={`flex items-center ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                 <Check className={`w-4 h-4 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-                Audio co-working
+                Day, week and month views
               </li>
               <li className={`flex items-center ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                 <Check className={`w-4 h-4 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-                Scheduled sessions
+                Steps scheduled for you
               </li>
               <li className={`flex items-center ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
                 <Check className={`w-4 h-4 mr-2 ${darkMode ? 'text-blue-400' : 'text-blue-600'}`} />
-                Community support
+                Change any step's date
               </li>
             </ul>
           </Link>
@@ -481,10 +481,6 @@ export default function LandingPage() {
                 <li className="flex items-center text-slate-300">
                   <Check className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" />
                   Access to Recovery Mode
-                </li>
-                <li className="flex items-center text-slate-300">
-                  <Check className="w-5 h-5 text-emerald-500 mr-3 flex-shrink-0" />
-                  Community Focus Pods
                 </li>
               </ul>
 

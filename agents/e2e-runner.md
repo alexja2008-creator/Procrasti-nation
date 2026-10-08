@@ -59,13 +59,12 @@ These are the flows that must work. Prioritized by impact:
 ### MEDIUM Priority
 5. **Calendar interaction** — View day/week/month, see step dates, edit a date
 6. **Dashboard** — See stats, view boards, move tasks between boards, open archive
-7. **Focus pods** — Browse rooms, join a room (Whereby embed loads)
-8. **Friends** — Search username, send request, accept request, send nudge
+7. **Friends** — Search username, send request, accept request, send nudge
 
 ### LOW Priority
-9. **Recovery station** — Browse videos, mark as completed
-10. **Profile** — View own profile, view public profile by username
-11. **Dark mode** — Toggle theme, verify persistence across page navigation
+8. **Recovery station** — Browse videos, mark as completed
+9. **Profile** — View own profile, view public profile by username
+10. **Dark mode** — Toggle theme, verify persistence across page navigation
 
 ---
 

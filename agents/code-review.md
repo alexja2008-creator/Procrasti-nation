@@ -44,7 +44,7 @@ You are a senior code reviewer for ProcrastiNation, a Next.js 14 productivity ap
 ## MEDIUM — Fix if straightforward
 
 - [ ] **No N+1 queries** — Don't fetch related data in loops; use joins or batch queries
-- [ ] **External fetch() has timeouts** — Anthropic/Whereby/Resend calls should not hang forever
+- [ ] **External fetch() has timeouts** — Anthropic/Resend calls should not hang forever
 - [ ] **No unnecessary re-renders** — Expensive computations wrapped in useMemo; stable callbacks in useCallback
 - [ ] **Images optimized** — Use Next.js `<Image>` where possible; lazy load below-fold images
 - [ ] **No dead code** — Remove commented-out code, unused imports, unreachable branches
