@@ -91,6 +91,21 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
   // Notes whose checklist lines are loaded, ticked ones included: the notes on screen.
   const noteScope = useRef(new Set<string>());
   const afterInsert = (id: string) => inserting.current.get(id)?.catch(() => undefined) ?? Promise.resolve();
+  // Edits still on their way, by task id: each task's writes go out one at a time, in order, so a
+  // quick Undo can't land before the change it undoes.
+  const writing = useRef(new Map<string, Promise<unknown>>());
+  /** Saves an edit after the task's earlier writes; `latest()` says whether a newer edit has queued since. */
+  const queueWrite = (id: string, write: () => Promise<Task>) => {
+    const before = writing.current.get(id)?.catch(() => undefined) ?? afterInsert(id);
+    const saving = before.then(write);
+    writing.current.set(id, saving);
+    const latest = () => writing.current.get(id) === saving;
+    saving.then(
+      () => latest() && writing.current.delete(id),
+      () => latest() && writing.current.delete(id),
+    );
+    return { saving, latest };
+  };
 
   // Notice the day changing, and refresh when the app comes back to the foreground.
   useEffect(() => {
@@ -229,9 +244,11 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
       if (done.movedTo) setNotice({ text: voice.today.movedOn(task.title, relativeDayPhrase(done.movedTo, today)) });
     }
     replace(task.id, { ...task, ...patch });
-    afterInsert(task.id).then(() => updateTask(task.id, patch)).then(
+    const { saving, latest } = queueWrite(task.id, () => updateTask(task.id, patch));
+    saving.then(
       (saved) => {
-        replace(task.id, saved);
+        // A newer edit is on its way: it brings the row up to date.
+        if (latest()) replace(task.id, saved);
         setError(null);
       },
       () => {
@@ -251,9 +268,10 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
   const update: Store['update'] = (task, patch) => {
     patchRow(task.id, patch);
     if (patch.remindAt || patch.dueAt) timeGiven({ ...task, ...patch });
-    afterInsert(task.id).then(() => updateTask(task.id, patch)).then(
+    const { saving, latest } = queueWrite(task.id, () => updateTask(task.id, patch));
+    saving.then(
       (saved) => {
-        replace(task.id, saved);
+        if (latest()) replace(task.id, saved);
         setError(null);
       },
       () => {

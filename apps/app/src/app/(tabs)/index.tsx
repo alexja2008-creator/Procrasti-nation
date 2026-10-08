@@ -17,6 +17,7 @@ import { ActivityIndicator, Platform, Pressable, StyleSheet, Text as RNText, Vie
 
 import { useAuth } from '@/auth/auth-provider';
 import { personName } from '@/auth/person-name';
+import { MorningBriefing } from '@/components/briefing/morning-briefing';
 import { Button } from '@/components/button';
 import { useCapture } from '@/components/capture';
 import { Icon } from '@/components/icon';
@@ -151,6 +152,9 @@ export default function TodayScreen() {
           <Button variant="secondary" label={voice.today.retry} onPress={refresh} />
         </View>
       ) : null}
+
+      {/* What carried over from before today, each given a place again. */}
+      {session ? <MorningBriefing userId={session.user.id} /> : null}
 
       {!focused && view.customs.length > 0 ? (
         <View>

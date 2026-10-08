@@ -6,6 +6,7 @@ export * from './quick-add.ts';
 export * from './agenda.ts';
 export * from './planning.ts';
 export * from './plan-offer.ts';
+export * from './briefing.ts';
 export * from './start-mode.ts';
 export * from './when.ts';
 export * from './upcoming.ts';

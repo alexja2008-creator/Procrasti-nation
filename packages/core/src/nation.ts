@@ -17,6 +17,7 @@ export const names = {
   allies: 'Allies',
   citizenship: 'Citizenship Application',
   oath: 'The Oath',
+  morningBriefing: 'Morning Briefing',
 } as const;
 
 export const actions = {
@@ -209,6 +210,37 @@ export const voice = {
     /** "What stops you: it feels too big": Today shows just the next step. */
     focusedSubtitle: 'Just this one for now. The rest can wait.',
     showEverything: (n: number) => `Show everything (${n} more)`,
+  },
+  /** The Morning Briefing: what carried over from before today (PN2-MORNING-PLAN.md). Never "overdue". */
+  briefing: {
+    /** The card on Today. */
+    carriedOver: (n: number) => (n === 1 ? 'One thing carried over' : `${spell(n)} things carried over`),
+    sort: (n: number) => (n === 1 ? 'Sort it' : 'Sort them'),
+    notNow: 'Not now',
+    /** Where a leftover came from: "from yesterday", "was due Sat 3 Oct". */
+    from: (day: string) => `from ${day}`,
+    wasDue: (day: string) => `was due ${day}`,
+    today: 'Today',
+    pickDay: 'Pick a day',
+    letGo: 'Let it go',
+    moveAll: 'Move all to today',
+    /** A plan with steps carried over. */
+    planSteps: (n: number) => (n === 1 ? 'One step carried over' : `${spell(n)} steps carried over`),
+    respread: 'Re-spread the rest',
+    /** A plan's carried-over steps, folded away until asked for. */
+    oneByOne: 'One by one',
+    hideSteps: 'Hide steps',
+    respreadHint: (deadline: string | null) =>
+      deadline ? `Re-spread puts its open steps between today and ${deadline}.` : 'Re-spread puts its open steps one a day from today.',
+    allSorted: 'All sorted. A fresh page.',
+    /** Undo notices. */
+    onToday: (title: string) => `“${title}” is on today.`,
+    movedTo: (title: string, day: string) => `“${title}” moved to ${day}.`,
+    letGone: (title: string) => `Let “${title}” go. It’s waiting with no date.`,
+    allToday: (n: number) => (n === 1 ? 'Moved one thing to today.' : `Moved ${spell(n).toLowerCase()} things to today.`),
+    respreadDone: (title: string) => `Spaced out “${title}” again.`,
+    /** Read aloud for each row's buttons: "Today: Buy stamps". */
+    actionFor: (action: string, title: string) => `${action}: ${title}`,
   },
   upcoming: {
     eyebrow: 'Upcoming',
@@ -736,6 +768,8 @@ export interface ToneLines {
   /** The morning list notification. */
   morningTitle: (count: number) => string;
   startWith: (title: string) => string;
+  /** The Morning Briefing, under its title: how many things carried over. */
+  briefingLead: (count: number) => string;
 }
 
 export const toneLines: Record<NudgeTone, ToneLines> = {
@@ -746,6 +780,7 @@ export const toneLines: Record<NudgeTone, ToneLines> = {
     leftNotice: voice.start.leftNotice,
     morningTitle: voice.reminders.morningTitle,
     startWith: voice.reminders.startWith,
+    briefingLead: (n) => (n === 1 ? 'One thing carried over. Where should it go?' : `${spell(n)} things carried over. Let’s give each one a place.`),
   },
   drill: {
     startLead: (m) => `${capitalize(minutesWord(m))} minutes. One task. The timer’s running: begin.`,
@@ -754,6 +789,7 @@ export const toneLines: Record<NudgeTone, ToneLines> = {
     leftNotice: 'You started. Logged.',
     morningTitle: (n) => (n === 1 ? 'One order today' : `${spell(n)} orders today`),
     startWith: (title) => `First up: “${title}”. Move.`,
+    briefingLead: (n) => (n === 1 ? 'One item carried over. Assign it a day.' : `${spell(n)} items carried over. Assign each one a day.`),
   },
   roast: {
     startLead: (m) => `Just ${minutesWord(m)} minutes. The task is more scared of you than you are of it.`,
@@ -762,6 +798,7 @@ export const toneLines: Record<NudgeTone, ToneLines> = {
     leftNotice: 'You started. Frame it.',
     morningTitle: (n) => (n === 1 ? 'One thing today. Just one. Easy.' : `${spell(n)} things today. Bold of them.`),
     startWith: (title) => `“${title}” has been waiting very politely.`,
+    briefingLead: (n) => (n === 1 ? 'One thing followed you here. Clingy.' : `${spell(n)} things followed you here. Clingy bunch.`),
   },
 };
 
