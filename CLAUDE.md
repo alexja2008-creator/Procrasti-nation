@@ -292,6 +292,10 @@ export default function PageName() {
 - Functions/variables: camelCase
 - File names: lowercase with hyphens for directories, `.jsx` for React files
 
+## Decisions
+
+`DECISIONS.md` (repo root) collects Alex's product decisions and the deliberate code an outside reviewer could mistake for a bug or over-engineering (local-only sign-out, `fetchAllPages`, settings saves that confirm a row changed, …), plus known limits and what's out of scope. It's what a second reviewer reads first. When Alex makes a product call, or a fix adds code that only looks redundant, add it there. Before removing defensive code, check it isn't listed.
+
 ## Agent Instructions
 
 Specialized agent instructions live in the `agents/` directory. Read the relevant file before performing that task.
