@@ -1,6 +1,10 @@
 # Plan: Delete your passport, and download your data (ProcrastiNation 2.0, `v2` branch)
 
-**Status: approved 2026-10-07** (decisions below confirmed by Alex).
+**Status: approved 2026-10-07** (decisions below confirmed by Alex). **Built 2026-10-08** in `1475bc4` (Download your data) and `4ca5446` (Delete your passport).
+
+**Checked:** the export's shape (core tests); on web, the file intercepted and read (the test passport's account, answers, territory, 11 tasks with steps linked to their plan, stamp, AI plan); on the iPhone, the share sheet with a 32 KB file (Save to Files); deleting a user leaves no row of theirs anywhere and nobody else's changes (migration test, stand-in and production structure); the route refuses no session (401) and anything but DELETE (400) with a real session; the sheet's button stays off until DELETE is typed.
+
+**Still to check live (Alex: Claude doesn't permanently delete data):** delete a throwaway passport and confirm Welcome's note and that its rows are gone on staging.
 
 Read `PN2-HANDOFF.md` and `CLAUDE.md` first.
 
