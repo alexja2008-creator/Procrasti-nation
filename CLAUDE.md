@@ -19,7 +19,6 @@ AI-powered productivity SaaS that helps users overcome procrastination via:
 - Syllabus upload — auto-extract assignments from PDF/DOCX/image
 - Calendar views (day/week/month) with AI-resolved step dates
 - Kanban boards for task organization
-- Focus pods (virtual co-working via Whereby)
 - Reset station (wellness videos)
 - Metrics dashboard with streaks, completion rates, and archive
 - Email nudges + weekly citizen reports
@@ -33,7 +32,6 @@ AI-powered productivity SaaS that helps users overcome procrastination via:
 - **AI**: Anthropic Claude API (raw `fetch()` — not the SDK)
 - **Auth + DB**: Supabase (Auth + PostgreSQL with RLS)
 - **File Parsing**: mammoth (DOCX), unpdf (PDF), base64 (images → Claude vision)
-- **Video**: Whereby (Focus Pods)
 - **Email**: Resend
 - **Analytics**: Vercel Analytics
 - **Hosting**: Vercel (Hobby tier)
@@ -70,7 +68,6 @@ Requires `apps/site/.env.local` (Next only reads it from its own folder) with:
 ANTHROPIC_API_KEY=sk-ant-...
 NEXT_PUBLIC_SUPABASE_URL=https://tmigxhhnhledszjdgnwk.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=anon_key
-WHEREBY_API_KEY=Bearer_token
 RESEND_API_KEY=re_...
 SUPABASE_SERVICE_ROLE_KEY=service_role_key
 CRON_SECRET=secret_for_cron_auth
@@ -91,7 +88,6 @@ app/
   dashboard/page.jsx                # Metrics, boards, task list, archive
   calendar/page.jsx                 # Day/week/month calendar views
   syllabus/page.jsx                 # Syllabus upload & AI parsing
-  focus-pods/page.jsx               # Virtual co-working (Whereby embed)
   reset-station/page.jsx            # Wellness videos (YouTube embeds)
   faq/page.jsx                      # FAQ with collapsible Q&A sections
   api/
@@ -100,7 +96,6 @@ app/
     account/delete/route.js         # v2 Delete your passport: session + typed DELETE, cancels a Stripe subscription that still bills (fails closed), then auth.admin.deleteUser (every table cascades)
     unstick/route.js                # v2 Start Mode "I'm stuck" → one 2-minute action (free, 20/day via ai_requests)
     resolve-step-dates/route.js     # Relative timing → absolute calendar dates
-    create-room/route.js            # Whereby room creation
     cron/nudge/route.js             # Daily nudge digest (one email per user) + missed-commitment nudges
     unsubscribe/route.js            # Signed one-click unsubscribe (reminders / reports)
     cron/push/route.js              # v2 Web Push sender, every minute (Supabase Cron): what came due per person, in their timezone, to each of their browsers
@@ -219,8 +214,8 @@ Device storage (AsyncStorage, per device): `pn.application.draft` (the Applicati
 ### `streaks` table
 id, user_id, current_streak, highest_streak, last_completed_date, updated_at
 
-### `focus_pods` table
-id, name, category, duration, max_participants, participants, room_url, created_by, end_time, created_at
+### `focus_pods` table (retired)
+Focus Pods (Whereby video rooms) were removed on 2026-10-08: no page or route uses this table. It stays until the cutover contract migration drops the v1-only tables.
 
 All tables have RLS policies filtering by `user_id`.
 
@@ -263,7 +258,7 @@ Additive migration with a cutover-only backfill and a tested rollback; see `supa
 - Local state: `useState` in components
 - App-wide: ThemeProvider + AuthProvider contexts
 - Persistent client: localStorage for boards, completed resets, theme, tutorial state
-- Persistent server: Supabase for tasks, streaks, focus pods
+- Persistent server: Supabase for tasks, streaks
 
 ### localStorage Keys
 - `theme` — dark/light preference
@@ -320,6 +315,6 @@ When adding new agent files, update this table.
 - **Auto-deploy**: From `main` branch (git user.email must be alexja2008@gmail.com)
 - **Domain**: procrasti-nation.work (Porkbun → Vercel DNS)
 - **Cron**: `vercel.json` — nudge daily 2pm UTC, weekly report Monday 1pm UTC
-- **Env vars**: All 8 vars above must be set in Vercel dashboard
+- **Env vars**: All 7 vars above must be set in Vercel dashboard (`WHEREBY_API_KEY` is no longer used: delete it there)
 - **Web Push at the v2 deploy:** production VAPID keys in both Vercel projects (`VAPID_*` on the site, `EXPO_PUBLIC_VAPID_PUBLIC_KEY` on the app), then `select vault.create_secret('<CRON_SECRET>', 'push_cron_secret');` and `supabase/v2/03_push_cron.sql` on production. The app's Vercel project must rewrite every path to `index.html` (a notification can open `/task/<id>` in a new tab) and serve `/sw.js` from the export's root.
 - **v2 merge:** the Vercel project's Root Directory must flip to `apps/site` at the same moment `v2` merges to `main` (the setting applies to every branch, so flipping it early breaks production). Until then, `v2` pushes produce failing previews. The Expo web build will get its own Vercel project at `app.procrasti-nation.work`.

@@ -33,12 +33,6 @@ An AI-powered productivity app that breaks tasks down until starting is easier t
 - Archive of all completed tasks with step details
 - Task detail modal with progress bar and action buttons
 
-### Focus Pods
-- Virtual co-working sessions via Whereby video
-- Create pods by category (Study, Work, Writing, Exam Prep, Coffee Break)
-- Set duration and max participants
-- Join active pods with other users
-
 ### Recovery Mode
 - Curated wellness videos (breathwork, meditation, stress management, focus)
 - Filter by category
@@ -62,7 +56,6 @@ An AI-powered productivity app that breaks tasks down until starting is easier t
 - **AI**: Anthropic Claude API (claude-sonnet-4-20250514)
 - **Auth + Database**: Supabase (PostgreSQL with Row Level Security)
 - **File Parsing**: mammoth (DOCX), unpdf (PDF), Claude vision (images)
-- **Video**: Whereby
 - **Email**: Resend
 - **Hosting**: Vercel
 
@@ -97,7 +90,6 @@ An AI-powered productivity app that breaks tasks down until starting is easier t
    ANTHROPIC_API_KEY=sk-ant-...
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-   WHEREBY_API_KEY=your_whereby_key
    RESEND_API_KEY=re_...
    SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
    CRON_SECRET=your_cron_secret
@@ -133,7 +125,6 @@ Configured in `vercel.json`:
 | `ANTHROPIC_API_KEY` | Anthropic API key for Claude | Yes |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
-| `WHEREBY_API_KEY` | Whereby API key for Focus Pods | Yes |
 | `RESEND_API_KEY` | Resend API key for emails | Yes |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (cron jobs) | Yes |
 | `CRON_SECRET` | Secret to authenticate cron endpoints | Yes |
@@ -147,7 +138,6 @@ app/
 │   ├── generate-plan/route.js       # AI task planning
 │   ├── parse-syllabus/route.js      # Syllabus file parsing
 │   ├── resolve-step-dates/route.js  # Step date scheduling
-│   ├── create-room/route.js         # Whereby room creation
 │   └── cron/
 │       ├── nudge/route.js           # Daily email nudges
 │       └── weekly-report/route.js   # Monday progress digest
@@ -155,7 +145,6 @@ app/
 ├── dashboard/page.jsx               # Metrics & boards
 ├── calendar/page.jsx                # Day/week/month views
 ├── syllabus/page.jsx                # Syllabus upload
-├── focus-pods/page.jsx              # Virtual co-working
 ├── reset-station/page.jsx           # Wellness videos
 ├── faq/page.jsx                     # Help documentation
 ├── page.jsx                         # Landing page
@@ -181,7 +170,7 @@ lib/
 
 | Tier | Price | Includes |
 |------|-------|----------|
-| Free (post-trial) | $0/mo | 5 AI plans/month, public Focus Pods, basic metrics |
+| Free (post-trial) | $0/mo | 5 AI plans/month, basic metrics |
 | Pro Monthly | $7.99/mo | Unlimited plans, all features |
 | Pro Annual | $72/yr ($6/mo) | Same as Pro, 25% savings |
 
