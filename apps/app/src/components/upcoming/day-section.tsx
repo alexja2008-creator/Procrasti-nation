@@ -1,8 +1,8 @@
 import {
   formatShortDate,
   formatTime,
+  offersPlan,
   relativeDayPhrase,
-  suggestsPlan,
   voice,
   type LocalDate,
   type UpcomingEntry,
@@ -39,7 +39,7 @@ function rowFor(entry: UpcomingEntry, today: LocalDate, planned: Set<string>, pl
     rrule: t.rrule ?? undefined,
     minutes: t.estimateMinutes ?? undefined,
     time: entry.at ? formatTime(new Date(entry.at)) : undefined,
-    suggestPlan: !t.parentId && t.source !== 'ai' && !planned.has(t.id) && suggestsPlan(t.title),
+    suggestPlan: offersPlan(t, planned.has(t.id)),
   };
 }
 

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { buildToday } from '../src/agenda.ts';
-import { fallbackStepDates, parseMinutes, sortOrderForMove, suggestsPlan } from '../src/planning.ts';
+import { fallbackStepDates, parseMinutes, sortOrderForMove } from '../src/planning.ts';
 import type { Task } from '../src/types.ts';
 
 test('estimates become minutes (same rules as the database backfill)', () => {
@@ -10,15 +10,6 @@ test('estimates become minutes (same rules as the database backfill)', () => {
     ['15 min', '45 mins', '1 hour', '1.5 hours', '2 hrs', '1h 30m', '10-15 min', '20', 'soon', '', null].map(parseMinutes),
     [15, 45, 60, 90, 120, 90, 15, 20, null, null, null],
   );
-});
-
-test('"Plan it" is offered for big or vague tasks only', () => {
-  for (const title of ['Study for orgo midterm', 'Write 10-page history paper', 'Clean my room', 'Essay', 'Figure out what to do about summer housing']) {
-    assert.equal(suggestsPlan(title), true, title);
-  }
-  for (const title of ['Walk Biscuit', 'Buy stamps', 'Call mom', 'Read ch. 4', 'Reply to Prof. Alvarez']) {
-    assert.equal(suggestsPlan(title), false, title);
-  }
 });
 
 test('fallback step dates spread to the deadline', () => {

@@ -16,28 +16,6 @@ export function parseMinutes(value: string | null | undefined): number | null {
   return total > 0 ? total : null;
 }
 
-// Words that usually mean "this is bigger than one sitting".
-const BIG_TASK = new RegExp(
-  '\\b(' +
-    [
-      'essay', 'paper', 'report', 'project', 'presentation', 'thesis', 'dissertation', 'portfolio',
-      'study', 'studying', 'exam', 'midterm', 'final', 'finals', 'test', 'quiz', 'lab', 'assignment', 'homework',
-      'apply', 'application', 'applications', 'research', 'prepare', 'prep', 'plan', 'organi[sz]e',
-      'move', 'moving', 'build', 'launch', 'write', 'revise', 'learn', 'practice', 'clean', 'declutter', 'taxes',
-    ].join('|') +
-    ')\\b',
-  'i',
-);
-
-/**
- * Whether to offer "Plan it" on a task: it sounds big ("Study for orgo
- * midterm", "Clean my room") or is long enough to be vague. "Walk Biscuit"
- * and "Buy stamps" never get a patronizing breakdown offer.
- */
-export function suggestsPlan(title: string): boolean {
-  return BIG_TASK.test(title) || title.trim().split(/\s+/).length >= 6;
-}
-
 /**
  * Dates for plan steps when AI date resolution isn't available: spread from
  * today to the due date (or one step a day with no due date).

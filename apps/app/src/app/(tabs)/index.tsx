@@ -3,9 +3,9 @@ import {
   formatDayLabel,
   formatTime,
   names,
+  offersPlan,
   parseLocalDate,
   relativeDayPhrase,
-  suggestsPlan,
   timeOnItsDay,
   voice,
   type AgendaEntry,
@@ -60,7 +60,7 @@ function rowFor(entry: AgendaEntry, today: string, planned: Set<string>, places:
     minutes: t.estimateMinutes ?? undefined,
     time: clock && !entry.done ? formatTime(new Date(clock)) : undefined,
     done: entry.done,
-    suggestPlan: !entry.done && !t.parentId && t.source !== 'ai' && !planned.has(t.id) && suggestsPlan(t.title),
+    suggestPlan: !entry.done && offersPlan(t, planned.has(t.id)),
   };
 }
 

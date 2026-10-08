@@ -89,7 +89,8 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
   const [text, setText] = useState('');
   const [parsed, setParsed] = useState<QuickAddResult | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
-  const bigTask = !!parsed && suggestsPlan(parsed.title);
+  // A repeat is a habit: no plan for it.
+  const bigTask = !!parsed && !parsed.rrule && suggestsPlan(parsed.title);
 
   const onChange = (value: string) => {
     setText(value);

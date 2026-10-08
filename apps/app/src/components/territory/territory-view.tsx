@@ -3,9 +3,9 @@ import {
   buildTerritory,
   formatTime,
   names,
+  offersPlan,
   relativeDayLabel,
   relativeDayPhrase,
-  suggestsPlan,
   voice,
   type LocalDate,
   type Task,
@@ -46,7 +46,7 @@ function rowFor(e: TerritoryEntry, today: LocalDate, planned: Set<string>): Task
     rrule: t.rrule ?? undefined,
     minutes: t.estimateMinutes ?? undefined,
     time: e.at ? formatTime(new Date(e.at)) : undefined,
-    suggestPlan: !t.parentId && t.source !== 'ai' && !planned.has(t.id) && suggestsPlan(t.title),
+    suggestPlan: offersPlan(t, planned.has(t.id)),
   };
 }
 
