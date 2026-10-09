@@ -56,11 +56,11 @@ You are a senior code reviewer for ProcrastiNation, a Next.js 14 productivity ap
 
 ## Project-Specific Checks
 
-- [ ] **localStorage keys** — Only use documented keys: `theme`, `task-boards`, `completed-resets`, `tutorialComplete`
+- [ ] **localStorage keys** — Only use documented keys: `theme`, `task-boards`, `completed-resets`, `tutorialComplete`, `age-gate-blocked`
 - [ ] **Supabase timestamps** — Use `created_at` for staleness checks (immutable), never `updated_at` (resets on every write)
 - [ ] **Step dates** — Calendar step dates resolved via `/api/resolve-step-dates`, cached in DB `step_dates` column
 - [ ] **Recurrence** — Recurring task logic handles `{ type, startDate }` format; test daily/weekly/monthly
-- [ ] **Trial logic** — Free tier caps at 5 AI plans/month; Pro/trial bypass; check `trialStatus` from `useAuth()`
+- [ ] **Trial logic** — Free tier caps at 3 AI plans/month; Pro/trial bypass; check `trialStatus` from `useAuth()`
 
 ---
 

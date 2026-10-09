@@ -47,6 +47,7 @@ RESEND_API_KEY=re_...
 SUPABASE_SERVICE_ROLE_KEY=service_role_key
 CRON_SECRET=secret_for_cron_auth
 NEXT_PUBLIC_BASE_URL=https://procrasti-nation.work
+POSTAL_ADDRESS=ProcrastiNation, <street or USPS-registered PO box / private mailbox>, City, ST ZIP
 ```
 
 ## Project Structure
@@ -66,7 +67,7 @@ app/
     parse-syllabus/route.js         # Syllabus file → JSON assignments
     resolve-step-dates/route.js     # Relative timing → absolute calendar dates
     cron/nudge/route.js             # Daily nudge digest (one email per user) + missed-commitment nudges
-    unsubscribe/route.js            # Signed one-click unsubscribe (reminders / reports)
+    unsubscribe/route.js            # Signed one-click unsubscribe (reminders / reports / friend nudges)
     cron/weekly-report/route.js     # Monday weekly progress digest
 
 components/
@@ -116,7 +117,7 @@ lib/
 | last_nudge_sent | TIMESTAMP | Last nudge email timestamp |
 
 ### `profiles` email preferences
-`email_reminders_enabled`, `email_reports_enabled` (BOOLEAN, default true) — set false by `/api/unsubscribe`; crons skip opted-out users.
+`email_reminders_enabled`, `email_reports_enabled`, `nudge_email_enabled` (BOOLEAN, default true) — set false by `/api/unsubscribe`; crons and friend nudges skip opted-out users.
 
 ### `profiles` billing and visibility
 - `stripe_customer_id`, `stripe_subscription_status` are written only by the Stripe routes (service role); a trigger rejects users setting them (`supabase/migrations/profiles_billing_1_before_deploy.sql`).
@@ -142,10 +143,12 @@ All tables have RLS policies filtering by `user_id`.
 - `trialStatus`: `'trial'` | `'free'` | `'pro'`
 - Free tier: 3 AI plans per calendar month
 - Trial: 10 days of Pro from sign-up, counted from `user.created_at` by `trialDaysRemaining()` in `lib/trial.js` (both the plan route and `AuthProvider`). Never decide access from `user_metadata`: users can write it themselves
+- Signup age gate (COPPA): `AuthModal` asks for a date of birth and blocks under-13s before any request is made. Keep it neutral: never say what age is required, never store the birth date
 
 ### Styling
 - All styling via Tailwind utility classes
 - No CSS modules or styled-components
+- Space Grotesk is self-hosted with `next/font` in `app/layout.jsx` (CSS variable `--font-space-grotesk`). Never link fonts.googleapis.com or other third-party font CDNs
 - Responsive breakpoints: `md:` and `lg:`
 
 ### State Management
@@ -159,6 +162,7 @@ All tables have RLS policies filtering by `user_id`.
 - `task-boards` — board assignments (boardName → taskId mapping)
 - `completed-resets` — Set of completed wellness video IDs
 - `tutorialComplete` — boolean, onboarding finished
+- `age-gate-blocked` — `'1'` once this browser failed the signup age gate
 
 ### API Communication
 - Client uses `fetch()` to `/api/*` endpoints
@@ -166,6 +170,8 @@ All tables have RLS policies filtering by `user_id`.
 - Plan prompts live in `lib/prompts/plan.js`; any prompt/model change must pass `evals/plan-quality` (see its README) before shipping
 - Clients send `today` (local YYYY-MM-DD, from `lib/dates.js`) and `timeZone` so the AI resolves relative dates correctly; never use `toISOString()` for local calendar dates
 - Cron routes secured with `Authorization: Bearer <CRON_SECRET>`
+- Every email goes through `emailWrapper()` in `lib/emails.js`, which adds the `POSTAL_ADDRESS` footer and the unsubscribe link (CAN-SPAM). New email types need an `EMAIL_KINDS` entry in `lib/unsubscribe.js` and `unsubscribeHeaders()` on the send
+- Every subscribe button shows the auto-renewal terms right next to it (California ARL): landing page Pro card, `UpgradeModal`, and Stripe Checkout's `custom_text` in `/api/stripe/checkout`. Update all three if prices or intervals change
 - Service role client created inline in cron routes to bypass RLS
 
 ### Component Pattern
@@ -209,4 +215,4 @@ When adding new agent files, update this table.
 - **Auto-deploy**: From `main` branch (git user.email must be alexja2008@gmail.com)
 - **Domain**: procrasti-nation.work (Porkbun → Vercel DNS)
 - **Cron**: `vercel.json` — nudge daily 2pm UTC, weekly report Monday 1pm UTC
-- **Env vars**: All 7 vars above must be set in Vercel dashboard (`WHEREBY_API_KEY` is no longer used: delete it there)
+- **Env vars**: All 8 vars above must be set in Vercel dashboard (`WHEREBY_API_KEY` is no longer used: delete it there)

@@ -3,8 +3,28 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useTheme } from '../app/providers';
+import { localDateString } from '../lib/dates';
 import { X } from 'lucide-react';
 import Logo from './Logo';
+
+// COPPA: no accounts for under-13s. The age screen is neutral (it asks for a birth date and never
+// says what age is required), and a blocked browser stays blocked so the date can't just be retyped.
+const MIN_SIGNUP_AGE = 13;
+const AGE_GATE_KEY = 'age-gate-blocked';
+
+// Whole years from one YYYY-MM-DD date to another.
+function yearsBetween(from, to) {
+  const years = Number(to.slice(0, 4)) - Number(from.slice(0, 4));
+  return to.slice(5) < from.slice(5) ? years - 1 : years;
+}
+
+function isAgeBlocked() {
+  try {
+    return localStorage.getItem(AGE_GATE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
 
 export default function AuthModal({ onClose }) {
   const { darkMode } = useTheme();
@@ -12,6 +32,8 @@ export default function AuthModal({ onClose }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [ageBlocked, setAgeBlocked] = useState(isAgeBlocked);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,6 +45,24 @@ export default function AuthModal({ onClose }) {
     setLoading(true);
 
     if (mode === 'signup') {
+      // Age screen runs before anything is sent to the server. The birth date itself is never stored.
+      const today = localDateString();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(birthDate) || birthDate < '1900-01-01' || birthDate > today) {
+        setError('Enter a valid date of birth.');
+        setLoading(false);
+        return;
+      }
+      if (yearsBetween(birthDate, today) < MIN_SIGNUP_AGE) {
+        try {
+          localStorage.setItem(AGE_GATE_KEY, '1');
+        } catch {
+          // Storage unavailable (private mode): still block this attempt
+        }
+        setAgeBlocked(true);
+        setLoading(false);
+        return;
+      }
+
       // Validate username
       const trimmedUsername = username.trim().toLowerCase();
       if (!/^[a-z0-9_]{3,20}$/.test(trimmedUsername)) {
@@ -111,94 +151,125 @@ export default function AuthModal({ onClose }) {
             : 'Sign up free — includes a 10-day Pro trial, no credit card required'}
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {mode === 'signup' && (
+        {mode === 'signup' && ageBlocked ? (
+          <p className={`text-sm px-3 py-2 rounded-lg ${darkMode ? 'text-slate-300 bg-slate-700/50' : 'text-slate-700 bg-slate-100'}`}>
+            Sorry, you&apos;re not eligible to create a ProcrastiNation account.
+          </p>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === 'signup' && (
+              <div>
+                <label htmlFor="signup-birth-date" className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Date of birth
+                </label>
+                <input
+                  id="signup-birth-date"
+                  type="date"
+                  required
+                  value={birthDate}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  min="1900-01-01"
+                  max={localDateString()}
+                  className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none transition-colors ${
+                    darkMode
+                      ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white [color-scheme:dark]'
+                      : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900'
+                  }`}
+                />
+                <p className={`text-xs mt-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  We don&apos;t save this.
+                </p>
+              </div>
+            )}
+
+            {mode === 'signup' && (
+              <div>
+                <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Username
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                  placeholder="your_username"
+                  minLength={3}
+                  maxLength={20}
+                  className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none transition-colors ${
+                    darkMode
+                      ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500'
+                      : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
+                  }`}
+                />
+                <p className={`text-xs mt-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  3-20 characters: letters, numbers, underscores
+                </p>
+              </div>
+            )}
+
             <div>
               <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-                Username
+                Email
               </label>
               <input
-                type="text"
+                type="email"
                 required
-                value={username}
-                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                placeholder="your_username"
-                minLength={3}
-                maxLength={20}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
                 className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none transition-colors ${
                   darkMode
                     ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500'
                     : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
                 }`}
               />
-              <p className={`text-xs mt-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                3-20 characters: letters, numbers, underscores
-              </p>
             </div>
-          )}
 
-          <div>
-            <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none transition-colors ${
-                darkMode
-                  ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500'
-                  : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
-              }`}
-            />
-          </div>
+            <div>
+              <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                Password
+              </label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                minLength={6}
+                className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none transition-colors ${
+                  darkMode
+                    ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500'
+                    : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
+                }`}
+              />
+              {mode === 'signup' && (
+                <p className={`text-xs mt-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Minimum 6 characters
+                </p>
+              )}
+            </div>
 
-          <div>
-            <label className={`block text-sm font-semibold mb-2 ${darkMode ? 'text-slate-300' : 'text-slate-700'}`}>
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              minLength={6}
-              className={`w-full px-4 py-3 rounded-lg border-2 focus:outline-none transition-colors ${
-                darkMode
-                  ? 'bg-slate-900 border-slate-600 focus:border-emerald-400 text-white placeholder-slate-500'
-                  : 'bg-white border-slate-200 focus:border-emerald-500 text-slate-900 placeholder-slate-400'
-              }`}
-            />
-            {mode === 'signup' && (
-              <p className={`text-xs mt-1.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                Minimum 6 characters
+            {error && (
+              <p className={`text-sm px-3 py-2 rounded-lg ${darkMode ? 'text-red-400 bg-red-900/20' : 'text-red-600 bg-red-50'}`}>
+                {error}
               </p>
             )}
-          </div>
 
-          {error && (
-            <p className={`text-sm px-3 py-2 rounded-lg ${darkMode ? 'text-red-400 bg-red-900/20' : 'text-red-600 bg-red-50'}`}>
-              {error}
-            </p>
-          )}
+            {message && (
+              <p className={`text-sm px-3 py-2 rounded-lg ${darkMode ? 'text-emerald-400 bg-emerald-900/20' : 'text-emerald-600 bg-emerald-50'}`}>
+                {message}
+              </p>
+            )}
 
-          {message && (
-            <p className={`text-sm px-3 py-2 rounded-lg ${darkMode ? 'text-emerald-400 bg-emerald-900/20' : 'text-emerald-600 bg-emerald-50'}`}>
-              {message}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-xl font-bold transition-colors"
-          >
-            {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-xl font-bold transition-colors"
+            >
+              {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+            </button>
+          </form>
+        )}
 
         <p className={`text-sm text-center mt-4 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
           {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}

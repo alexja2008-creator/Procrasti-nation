@@ -146,13 +146,21 @@ export default function UpgradeModal({ onClose, reason = 'limit' }) {
             {loading ? 'Redirecting to Stripe…' : plan === 'yearly' ? 'Join the Nation — $72/yr' : 'Join the Nation — $7.99/mo'}
           </button>
 
+          {/* Auto-renewal terms must sit next to the subscribe button (California ARL / ROSCA) */}
+          <p className={`text-sm mt-3 text-center ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+            {plan === 'yearly'
+              ? 'You’re charged $72 today, then $72 every year until you cancel.'
+              : 'You’re charged $7.99 today, then $7.99 every month until you cancel.'}
+            {' '}Renews automatically. Cancel anytime in Profile → Manage billing.
+          </p>
+
           <button
             onClick={onClose}
             className={`w-full mt-3 text-sm text-center transition-colors ${
               darkMode ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'
             }`}
           >
-            Continue on Free tier (5 tasks/month)
+            Continue on Free tier (3 AI plans/month)
           </button>
         </div>
       </div>

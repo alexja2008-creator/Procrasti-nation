@@ -5,6 +5,7 @@ import { EMAIL_KINDS, verifyUnsubscribe } from '../../../lib/unsubscribe';
 const KIND_LABELS = {
   reminders: 'reminder emails',
   reports: 'weekly report emails',
+  friends: 'friend nudge emails',
 };
 
 async function unsubscribe(searchParams) {

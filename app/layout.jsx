@@ -1,6 +1,10 @@
 import './globals.css';
 import { ThemeProvider, AuthProvider } from './providers';
 import { Analytics } from '@vercel/analytics/next';
+import { Space_Grotesk } from 'next/font/google';
+
+// Downloaded at build time and served from our own domain: visitors' browsers never contact Google.
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], display: 'swap', variable: '--font-space-grotesk' });
 
 const description = 'The AI planner that breaks down the task you\'re avoiding into steps small enough to start today.';
 
@@ -23,12 +27,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-      </head>
+    <html lang="en" className={spaceGrotesk.variable} suppressHydrationWarning>
       <body>
         <ThemeProvider>
           <AuthProvider>

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 import { buildFriendNudgeEmail, buildFriendPraiseEmail } from '../../../../lib/emails';
+import { unsubscribeUrl, unsubscribeHeaders } from '../../../../lib/unsubscribe';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -91,10 +92,12 @@ export async function POST(request) {
 
         if (emailEnabled && receiverEmail) {
           const emailBuilder = type === 'nudge' ? buildFriendNudgeEmail : buildFriendPraiseEmail;
+          const unsubUrl = unsubscribeUrl(friendUserId, 'friends');
           const { subject, html } = emailBuilder({
             senderUsername,
             receiverName,
             message: safeMessage,
+            unsubscribeUrl: unsubUrl,
           });
 
           await resend.emails.send({
@@ -102,6 +105,7 @@ export async function POST(request) {
             to: receiverEmail,
             subject,
             html,
+            headers: unsubscribeHeaders(unsubUrl),
           });
         }
       } catch (emailErr) {
