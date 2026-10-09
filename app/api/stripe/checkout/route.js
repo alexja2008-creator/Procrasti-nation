@@ -6,6 +6,13 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
+// Auto-renewal terms shown right above Stripe Checkout's Subscribe button (California ARL / ROSCA).
+// Stripe shows the price itself next to this text.
+const RENEWAL_TERMS = {
+  monthly: 'Your subscription renews automatically every month at the price shown until you cancel. Cancel anytime in your ProcrastiNation profile under Manage billing.',
+  yearly: 'Your subscription renews automatically every year at the price shown until you cancel. Cancel anytime in your ProcrastiNation profile under Manage billing.',
+}
+
 function stripePost(path, params) {
   return fetch(`https://api.stripe.com/v1${path}`, {
     method: 'POST',
@@ -26,7 +33,8 @@ export async function POST(request) {
   if (authError || !user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { plan } = await request.json()
-  const priceId = plan === 'yearly'
+  const interval = plan === 'yearly' ? 'yearly' : 'monthly'
+  const priceId = interval === 'yearly'
     ? process.env.STRIPE_PRICE_ID_YEARLY
     : process.env.STRIPE_PRICE_ID_MONTHLY
 
@@ -73,6 +81,7 @@ export async function POST(request) {
     'line_items[0][quantity]': '1',
     success_url: `${baseUrl}/planner?checkout=success`,
     cancel_url: `${baseUrl}/planner?checkout=canceled`,
+    'custom_text[submit][message]': RENEWAL_TERMS[interval],
   })
   const session = await sessionRes.json()
   if (!sessionRes.ok) {

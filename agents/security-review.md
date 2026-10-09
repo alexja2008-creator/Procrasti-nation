@@ -58,7 +58,7 @@ You are a security specialist for ProcrastiNation, a Next.js 14 productivity app
 - [ ] **API routes return generic errors** — Never expose internal error details, stack traces, or DB error messages to clients
 - [ ] **File upload validation** — Syllabus parser checks file type and size before processing
 - [ ] **AI prompt boundaries** — User input sent to Claude API is wrapped in clear delimiters to reduce prompt injection risk
-- [ ] **Rate limiting on AI routes** — Free tier capped at 5 plans/month (check this is enforced server-side, not just client-side)
+- [ ] **Rate limiting on AI routes** — Free tier capped at 3 plans/month (check this is enforced server-side, not just client-side)
 - [ ] **Friend nudge rate limit** — 3 per sender→receiver per 24h (verify this is checked before inserting, not just in UI)
 - [ ] **Username input sanitized** — `/api/profile/[username]` and `/api/friends/search` sanitize the input before querying
 

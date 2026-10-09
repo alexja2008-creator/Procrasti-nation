@@ -506,7 +506,7 @@ export default function LandingPage() {
                   <span className="text-5xl font-bold text-white">$7.99</span>
                   <span className="text-emerald-100 ml-2">/month</span>
                 </div>
-                <p className="text-emerald-100">10-day trial free, then $7.99/mo — or <span className="font-bold">$72/yr</span></p>
+                <p className="text-emerald-100">Starts with a 10-day free trial, no card needed. Then $7.99/mo or <span className="font-bold">$72/yr</span> if you subscribe.</p>
               </div>
               
               <ul className="space-y-4 mb-8">
@@ -527,6 +527,12 @@ export default function LandingPage() {
               >
                 {proLoading ? 'Redirecting…' : trialStatus === 'pro' ? 'Go to Planner' : 'Join the Nation'}
               </button>
+              {/* Auto-renewal terms must sit next to the subscribe button (California ARL / ROSCA) */}
+              {trialStatus !== 'pro' && (
+                <p className="text-sm text-emerald-50 text-center mt-3">
+                  Subscribing charges $7.99 today, then $7.99 every month until you cancel. Renews automatically. Cancel anytime in Profile → Manage billing.
+                </p>
+              )}
             </div>
           </div>
         </div>

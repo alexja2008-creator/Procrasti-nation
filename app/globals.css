@@ -7,5 +7,5 @@ html {
 }
 
 body {
-  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-space-grotesk), system-ui, -apple-system, sans-serif;
 }
