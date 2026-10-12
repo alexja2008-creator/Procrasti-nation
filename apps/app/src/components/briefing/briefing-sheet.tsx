@@ -85,7 +85,7 @@ export function BriefingSheet({ recap, onClose, onPutOff, onBringBack }: Props) 
     setTicked(new Set(picks.slice(0, PICK_MOST).map((p) => p.task.id)));
   }
   const [restShown, setRestShown] = useState(false);
-  // A fourth tap while three are ticked: the line under the lead says to untick one first.
+  // A fourth tap while three are ticked: a line above Put on today says to untick one first.
   const [triedFourth, setTriedFourth] = useState(false);
   const chosen = picks.filter((p) => ticked.has(p.task.id)).map((p) => p.task);
   const full = chosen.length >= PICK_MOST;
@@ -156,8 +156,8 @@ export function BriefingSheet({ recap, onClose, onPutOff, onBringBack }: Props) 
             {!briefing.count ? copy.allSorted : choosing ? lines.briefingPickLead(briefing.count) : lines.briefingLead(briefing.count)}
           </Text>
           {choosing ? (
-            <Text variant="meta" color={c.muted} accessibilityLiveRegion="polite">
-              {triedFourth && full ? copy.pickFull : copy.pickWhy}
+            <Text variant="meta" color={c.muted}>
+              {copy.pickWhy}
             </Text>
           ) : null}
         </View>
@@ -166,6 +166,12 @@ export function BriefingSheet({ recap, onClose, onPutOff, onBringBack }: Props) 
         choosing ? (
           <View style={s.footer}>
             <NoticeBar />
+            {/* Pinned, so it's in view wherever the list is scrolled to. */}
+            {triedFourth && full ? (
+              <Text variant="meta" color={c.muted} style={s.full} accessibilityLiveRegion="polite">
+                {copy.pickFull}
+              </Text>
+            ) : null}
             <Button label={copy.putOnToday(chosen.length)} disabled={!chosen.length} onPress={putOnToday} />
             <View style={s.footerRow}>
               <Button variant="quiet" label={copy.sortEach} onPress={() => setOneByOne(true)} />
@@ -270,6 +276,7 @@ const makeStyles = (t: Tokens) => ({
     planTitle: { fontFamily: t.fonts.bodySemibold },
     planActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
     footer: { gap: 6, paddingBottom: 4 },
+    full: { textAlign: 'center' },
     footerRow: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap' },
     rest: { alignItems: 'flex-start', marginLeft: -8, paddingTop: 4, borderTopWidth: 1, borderTopColor: t.c.rule },
   }),

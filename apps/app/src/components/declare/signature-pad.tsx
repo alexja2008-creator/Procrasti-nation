@@ -1,6 +1,6 @@
 import { voice } from '@pn/core';
-import type { Dispatch, SetStateAction } from 'react';
-import { StyleSheet, View, type GestureResponderEvent } from 'react-native';
+import { useState, type Dispatch, type SetStateAction } from 'react';
+import { Platform, StyleSheet, View, type GestureResponderEvent } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { Button } from '@/components/button';
@@ -24,6 +24,14 @@ const ink = (strokes: Point[][]) =>
 
 export const isSigned = (sig: Signature) => !!sig.name || ink(sig.strokes) >= MIN_INK;
 
+// The signed name: its size, and the room beside it (the × on the left, a margin on the right).
+const NAME_SIZE = 34;
+const NAME_INSET = 36 + 16;
+// Web can't shrink text to fit (adjustsFontSizeToFit is native only), so there the name is sized
+// from its length: this italic averages about half an em a character.
+const webNameSize = (name: string, width: number) =>
+  Math.min(NAME_SIZE, Math.max(14, (width - NAME_INSET) / (name.length * 0.52)));
+
 const pathOf = (stroke: Point[]) => stroke.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
 
 type Props = {
@@ -43,6 +51,8 @@ export function SignaturePad({ value, onChange, name, onDrawing }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const empty = !value.name && value.strokes.length === 0;
+  const [width, setWidth] = useState(0);
+  const nameSize = Platform.OS === 'web' && value.name && width ? webNameSize(value.name, width) : NAME_SIZE;
 
   // React Native's own touch system: works inside a Modal and on web (a mouse), and keeps the
   // touch for the whole stroke. Children don't take touches, so locations are the pad's own.
@@ -65,6 +75,7 @@ export function SignaturePad({ value, onChange, name, onDrawing }: Props) {
     <View style={s.wrap}>
       <View
         style={s.area}
+        onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
         onStartShouldSetResponder={() => true}
         onMoveShouldSetResponder={() => true}
         onResponderTerminationRequest={() => false}
@@ -80,7 +91,11 @@ export function SignaturePad({ value, onChange, name, onDrawing }: Props) {
           ))}
         </Svg>
         {value.name ? (
-          <Text style={s.name} numberOfLines={1} adjustsFontSizeToFit pointerEvents="none">
+          <Text
+            style={[s.name, { fontSize: nameSize, lineHeight: Math.round(nameSize * 1.3) }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            pointerEvents="none">
             {value.name}
           </Text>
         ) : null}
@@ -116,8 +131,8 @@ const makeStyles = (t: Tokens) => ({
       backgroundColor: t.c.page,
       overflow: 'hidden',
     },
-    // Its own line height: the body style's 20 would clip a 34-point name.
-    name: { position: 'absolute', left: 36, right: 16, bottom: 30, fontFamily: t.fonts.displayItalic, fontSize: 34, lineHeight: 44, color: t.c.ink },
+    // Its own line height (set with its size): the body style's 20 would clip a 34-point name.
+    name: { position: 'absolute', left: 36, right: 16, bottom: 30, fontFamily: t.fonts.displayItalic, color: t.c.ink },
     baseline: { position: 'absolute', left: 14, right: 14, bottom: 26, flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
     rule: { flex: 1, height: 1, backgroundColor: t.c.dashed, marginBottom: 4 },
     hint: { position: 'absolute', left: 14, bottom: 8 },

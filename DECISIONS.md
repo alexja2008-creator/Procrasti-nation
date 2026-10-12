@@ -144,6 +144,7 @@ Each of these looks redundant, over-built or odd, and each exists because the si
 - **Nothing relies on `onBlur` to save.** Screens use `keyboardShouldPersistTaps="handled"`, so tapping a button with the keyboard up doesn't blur the field.
 - **The small casts in `apps/app/src/lib/web-styles.ts`** (`oneRowOnWeb`, `noFocusRing`, `switchThumbOnWeb`) fix web-only quirks that React Native's types don't describe.
 - **`aria-checked` / `aria-selected` next to `accessibilityState`,** because React Native Web ignores `accessibilityState`.
+- **The signed name's size is worked out from its length on web** (`webNameSize` in `signature-pad.tsx`): `adjustsFontSizeToFit` is native only, so without it a long name is cut off with an ellipsis. The iPhone still shrinks it to fit itself.
 
 ### Setup and style
 - **Not an npm workspace:** the site is on React 18 and the Expo app on React 19, so each has its own `node_modules`. `packages/core` is shared through a tsconfig alias.

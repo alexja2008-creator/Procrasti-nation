@@ -35,8 +35,9 @@ export function PickRow({ pick, today, ticked, full, onToggle }: Props) {
       onPress={onToggle}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: ticked, disabled: waiting }}
-      // React Native Web only exposes the tick through aria-checked.
+      // React Native Web only exposes these through aria-*.
       aria-checked={ticked}
+      aria-disabled={waiting}
       accessibilityLabel={meta ? `${task.title}, ${meta}` : task.title}
       accessibilityHint={waiting ? copy.pickFull : undefined}
       style={({ pressed }) => [s.row, waiting && s.waiting, pressed && s.pressed]}>
