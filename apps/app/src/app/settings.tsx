@@ -33,6 +33,7 @@ import { UsernameSheet } from '@/components/settings/username-sheet';
 import { Sheet } from '@/components/sheet';
 import { Text } from '@/components/text';
 import { downloadMyData } from '@/data/account';
+import { openSitePage } from '@/lib/site-pages';
 import { fetchUsername } from '@/data/profile';
 import { useUserSettings } from '@/data/user-settings';
 import { useStyles, type Tokens } from '@/theme/tokens';
@@ -165,6 +166,8 @@ export default function SettingsScreen() {
         )}
         <SettingRow label={copy.downloadData} value={exporting ? copy.preparingData : copy.downloadValue} onPress={download} />
         <SettingRow label={copy.deletePassport} value="" onPress={() => setPicking('delete')} />
+        <SettingRow label={copy.privacyPolicy} value="" onPress={() => openSitePage('/privacy')} />
+        <SettingRow label={copy.terms} value="" onPress={() => openSitePage('/terms')} />
         <View style={s.account}>
           {signedInAs ? (
             <Text variant="meta" color={c.muted}>

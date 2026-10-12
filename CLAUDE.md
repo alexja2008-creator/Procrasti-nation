@@ -71,7 +71,8 @@ The Expo app gets the same public key as `EXPO_PUBLIC_VAPID_PUBLIC_KEY`. Develop
 ## Project Structure
 ```
 app/
-  page.jsx                          # Landing page (a placeholder until PN2-LAUNCH-PLAN.md phase 2): what it is, Open the app
+  page.jsx                          # Landing page: components/landing/* (Hero, HowItWorks, Features, Tones = @pn/core's nudgeTones, Closing, SiteHeader/Footer, Phone = a framed light/night screenshot from public/screens/, RoundStamp = the app's stamp in SVG)
+  privacy/page.jsx, terms/page.jsx  # Drafts until reviewed (lib/site.js LEGAL_DRAFT; components/legal/LegalPage, Todo = an open question in [brackets]); written from what the code does: change them with any feature that changes what's collected or who processes it
   layout.jsx                        # Root layout: metadata, A2 fonts, Vercel Analytics (no auth: sign-in is the app's)
   globals.css                       # Tailwind + the A2 palette as CSS variables (light / night via prefers-color-scheme)
   opengraph-image.jsx, icon.svg     # Share preview and favicon
@@ -89,8 +90,10 @@ middleware.js                       # CORS for /api/* (the app's origins)
 
 components/
   Logo.jsx                          # The PN mark + wordmark (`color` / `accent` props follow the page's palette)
+  landing/, legal/                  # The landing page's sections; the legal pages' layout
 
 lib/
+  site.js                           # APP_URL, CONTACT_EMAIL (NEXT_PUBLIC_CONTACT_EMAIL), LEGAL_DRAFT
   ai.js                             # callClaude(), model constants, resolveToday()
   prompts/plan.js                   # Adherence planner prompts + JSON schemas
   prompts/unstick.js                # "I'm stuck" prompt + schema (gated by evals/unstick)
@@ -109,7 +112,7 @@ evals/                              # plan-quality and unstick evals (gate any p
 ```
 src/app/_layout.tsx               # Root Stack: A2 fonts, AuthProvider; AppStack's Stack.Protected gates: sign-in, then the Citizenship Application until `onboarding_completed_at` (a settings load error never traps anyone), Plan it reachable from both
 src/app/welcome.tsx               # The Citizenship Application (onboarding; PN2-CONVERSION-PLAN.md): Welcome → Purpose → Hours → What stops you → "you're not broken" → Nudge tone → Your result → How PN helps → Where did you hear (signed out so far: application/new-applicant, answers on the device) → the anonymous passport opens → the Oath (the real Plan it, ?oath=1) → Your first week → Your first Declaration (its first step; components/declare) → a nudge (names the Declaration's time) → APPROVED stamp → Save your passport (anonymous only); each answer saved as picked, resumes where left, Skip (signed in) counts as done
-src/app/settings.tsx              # Settings (sliders on Passport): the Application's answers, Start Mode timer, Day ends at, the Reminders card, Account (Username, Password: set or change with no email, Download your data, Delete your passport (settings/delete-sheet), Sign out)
+src/app/settings.tsx              # Settings (sliders on Passport): the Application's answers, Start Mode timer, Day ends at, the Reminders card, Account (Username, Password: set or change with no email, Download your data, Delete your passport (settings/delete-sheet), Privacy policy and Terms of use (lib/site-pages: the site's pages in the in-app browser), Sign out)
 src/app/sign-in.tsx               # For existing accounts: password (Forgot your password?), a texted code (sign-in/phone-sign-in), a sign-in link, Apple + Google (each method only if in EXPO_PUBLIC_AUTH_PROVIDERS); "New here?" starts the Application
 src/app/auth/callback.tsx         # Where magic links / confirmations / resets / OAuth land; exchanges the PKCE ?code= (a reset goes on to auth/new-password)
 src/app/auth/new-password.tsx     # Choose a new password after a reset link (signed in, Application or not)

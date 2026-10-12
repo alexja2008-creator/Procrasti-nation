@@ -794,6 +794,9 @@ export const voice = {
     downloadFailed: 'Couldn’t make your file. Check your connection and try again.',
     /** Delete your passport (App Store 5.1.1(v)): kind, plain, no guilt. */
     deletePassport: 'Delete your passport',
+    /** The site's pages, from Settings → Account. */
+    privacyPolicy: 'Privacy policy',
+    terms: 'Terms of use',
     deleteTitle: 'Delete your passport?',
     deleteBody: 'This deletes your account and everything in it: tasks and plans, notes, territories, stamps and settings. It can’t be undone.',
     deleteDownloadFirst: 'Download your data first',

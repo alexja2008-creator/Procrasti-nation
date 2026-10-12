@@ -5,21 +5,45 @@
 /* The app's A2 palette (packages/core/src/tokens.ts), light and "night passport". */
 :root {
   --bg: #F5F1E8;
+  --security-line: rgba(35, 42, 69, 0.025);
   --ink: #232A45;
   --ink-soft: #4A4F63;
   --muted: #5C6070;
+  --accent: #9A7B3C;
   --primary: #3A6B52;
+  --primary-text: #2F5A44;
   --on-primary: #FFFFFF;
+  --card: #FBF8F1;
+  --page: #EFE8D8;
+  --page-border: #D8CDB5;
+  --rule: #DDD4C2;
+  --outline: #CFC4AE;
+  --stamp-terracotta: #A8513B;
+  --stamp-violet: #5E5D8F;
+  --stamp-forest: #3A6B52;
+  --bezel: #232A45;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #161B2E;
+    --security-line: rgba(212, 178, 106, 0.04);
     --ink: #ECE6D8;
     --ink-soft: #C9C6BC;
     --muted: #A7AABB;
+    --accent: #D4B26A;
     --primary: #7CC3A0;
+    --primary-text: #9AD4B6;
     --on-primary: #0F1F17;
+    --card: #1E2440;
+    --page: #1B2139;
+    --page-border: #2A3150;
+    --rule: #2A3150;
+    --outline: #3A4163;
+    --stamp-terracotta: #E08A70;
+    --stamp-violet: #A3A2D6;
+    --stamp-forest: #7CC3A0;
+    --bezel: #0B0F1C;
   }
 }
 
@@ -28,7 +52,22 @@ html {
 }
 
 body {
-  background: var(--bg);
+  /* The passport's faint security lines. */
+  background: repeating-linear-gradient(135deg, var(--security-line) 0 1px, transparent 1px 7px), var(--bg);
   color: var(--ink);
   font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
 }
+
+.font-display { font-family: 'Fraunces', Georgia, serif; font-weight: 500; }
+.font-mono-pn { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+.eyebrow { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.75rem; letter-spacing: 0.18em; color: var(--muted); }
+
+/* The privacy policy and terms. */
+.legal h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 1.6rem; line-height: 1.25; margin: 2.75rem 0 0.75rem; }
+.legal h3 { font-weight: 600; font-size: 1.1rem; margin: 1.75rem 0 0.5rem; }
+.legal p, .legal li { color: var(--ink-soft); line-height: 1.7; }
+.legal p + p { margin-top: 0.9rem; }
+.legal ul { list-style: disc; padding-left: 1.4rem; margin: 0.75rem 0; display: grid; gap: 0.4rem; }
+.legal strong { color: var(--ink); font-weight: 600; }
+.legal a { color: var(--primary-text); text-decoration: underline; }
+.todo { background: var(--page); color: var(--stamp-terracotta); border-radius: 4px; padding: 0 4px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.9em; }

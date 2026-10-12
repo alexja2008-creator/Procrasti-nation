@@ -36,7 +36,7 @@ export function DeleteSheet({ userId, onDownload, downloading, onClose }: Props)
     setError(null);
     try {
       await deleteMyAccount(userId);
-    } catch (e) {
+    } catch {
       setError(copy.deleteFailed);
       setBusy(false);
     }

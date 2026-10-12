@@ -1,4 +1,4 @@
-// Where the app lives (app/page.jsx links there too). Local development points it at the
+// Where the app lives (lib/site.js has the same default, for the pages). Local development points it at the
 // Expo dev server with NEXT_PUBLIC_APP_URL=http://localhost:8081.
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.procrasti-nation.work';
 
