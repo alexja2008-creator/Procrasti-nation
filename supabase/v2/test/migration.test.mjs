@@ -385,6 +385,14 @@ for (const baseline of baselines) {
         const created = await one(db, `INSERT INTO user_settings (user_id, citizen_number) VALUES ($1, 1) RETURNING citizen_number`, [U4]);
         assert.equal(Number(created.citizen_number), 4, 'new users get the next number, whatever they send');
       });
+      // The app sends no number: still the next one, drawn once (a column default as well drew two).
+      const U8 = '00000000-0000-0000-0000-000000000008';
+      await db.query(`INSERT INTO auth.users (id, email) VALUES ($1, 'next@x.test')`, [U8]);
+      await as(db, U8, async () => {
+        const created = await one(db, `INSERT INTO user_settings (user_id) VALUES ($1) RETURNING citizen_number`, [U8]);
+        assert.equal(Number(created.citizen_number), 5, 'the number after');
+      });
+      await db.query(`DELETE FROM auth.users WHERE id = $1`, [U8]);
     });
 
     await t.test('plan generations can be logged and counted, never erased', async () => {
@@ -704,6 +712,24 @@ for (const baseline of baselines) {
         await assert.rejects(db.query(`SELECT stripe_subscription_status FROM profiles`), /permission denied/);
         assert.equal((await one(db, `SELECT my_subscription_status() AS s`)).s, 'active');
       });
+    });
+
+    // Last: it deletes every account the tests above rely on.
+    await t.test('the fresh start deletes every account and restarts citizen numbers', async () => {
+      assert.ok((await one(db, `SELECT count(*)::int AS n FROM auth.users`)).n > 0, 'there are accounts to delete');
+      if (schools) assert.ok((await one(db, `SELECT count(*)::int AS n FROM assignments`)).n > 0, 'including a schools assignment');
+
+      const result = (await db.exec(sql('04_fresh_start.sql'))).at(-1).rows[0];
+      assert.deepEqual(result, { accounts_left: 0 });
+      for (const table of ['tasks', 'profiles', 'user_settings', 'lists', 'notes', 'stamps', 'start_sessions', 'push_tokens']) {
+        assert.equal((await one(db, `SELECT count(*)::int AS n FROM ${table}`)).n, 0, `${table} is empty`);
+      }
+
+      await db.exec(sql('04_fresh_start.sql')); // again, with nothing to delete
+      const U10 = '00000000-0000-0000-0000-000000000010';
+      await db.query(`INSERT INTO auth.users (id, email) VALUES ($1, 'first@x.test')`, [U10]);
+      await db.query(`INSERT INTO user_settings (user_id) VALUES ($1)`, [U10]);
+      assert.equal(Number((await one(db, `SELECT citizen_number FROM user_settings WHERE user_id = $1`, [U10])).citizen_number), 1);
     });
 
     await db.close();

@@ -59,7 +59,8 @@ CREATE SEQUENCE IF NOT EXISTS citizen_number_seq;
 
 CREATE TABLE IF NOT EXISTS user_settings (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  citizen_number BIGINT NOT NULL UNIQUE DEFAULT nextval('citizen_number_seq'),
+  -- No DEFAULT: the trigger below assigns it (a default as well drew two numbers per citizen).
+  citizen_number BIGINT NOT NULL UNIQUE,
   timezone TEXT,
   day_rollover_hour SMALLINT NOT NULL DEFAULT 0 CHECK (day_rollover_hour BETWEEN 0 AND 6),
   preferences JSONB NOT NULL DEFAULT '{}'::jsonb,
@@ -69,6 +70,8 @@ CREATE TABLE IF NOT EXISTS user_settings (
 );
 
 ALTER SEQUENCE citizen_number_seq OWNED BY user_settings.citizen_number;
+-- Where the table was made with the old default (staging, 2026-10): drop it.
+ALTER TABLE user_settings ALTER COLUMN citizen_number DROP DEFAULT;
 
 -- Existing users get citizen numbers in signup order, so early users
 -- get the low numbers. New users get theirs when the app first creates

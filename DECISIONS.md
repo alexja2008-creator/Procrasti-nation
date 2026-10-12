@@ -31,6 +31,7 @@ More detail: `CLAUDE.md` (layout, data model, patterns), `PN2-HANDOFF.md` (state
 **Who it's for**
 - Students first, as individuals. Adults come later.
 - The goal is to replace Apple Notes and Reminders on a student's phone, with the AI planner as the reason to switch.
+- **A fresh start at cutover (2026-10-12).** v1 has one real user (Alex), so nothing is migrated: `supabase/v2/04_fresh_start.sql` deletes every account, Alex's included, and citizen numbers start again at 000001, so everyone meets v2 through the Citizenship Application. `02_backfill.sql` stays in the repo, tested, unused.
 - **Not a school or LMS product.** The schools tables (`organizations`, `classes`, `assignments` and so on) and the policy that lets teachers read students' assignment tasks are leftovers from an abandoned idea. They're still in production and are left alone on purpose: don't propose features or clean-up for them. Dropping them would be its own decision. A security hole in them still counts, since they're live.
 
 **Platforms**
