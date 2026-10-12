@@ -2,10 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* The app's A2 palette (packages/core/src/tokens.ts), light and "night passport". */
+:root {
+  --bg: #F5F1E8;
+  --ink: #232A45;
+  --ink-soft: #4A4F63;
+  --muted: #5C6070;
+  --primary: #3A6B52;
+  --on-primary: #FFFFFF;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #161B2E;
+    --ink: #ECE6D8;
+    --ink-soft: #C9C6BC;
+    --muted: #A7AABB;
+    --primary: #7CC3A0;
+    --on-primary: #0F1F17;
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
 }

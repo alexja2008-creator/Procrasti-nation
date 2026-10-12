@@ -127,7 +127,7 @@ Respond with a JSON array of steps.`
 
 - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in client code — these are intentionally public
 - `.env.local` listed in `.gitignore` — that's correct, secrets stay local
-- Supabase anon key in `lib/supabase.js` — this is the public anon key, not the service role key
+- Supabase anon key in the app (`EXPO_PUBLIC_SUPABASE_ANON_KEY`) — this is the public anon key, not the service role key
 - Console.log in cron routes — intentional for monitoring (but verify no PII is logged)
 
 ---

@@ -11,31 +11,21 @@ packages/core  # Shared, dependency-free TS: A2 tokens, nation naming/voice, dat
 - **The Expo app never holds secrets.** It gets only `EXPO_PUBLIC_*` values (see `apps/app/.env.example`; real values in gitignored `apps/app/.env.local`) and calls `apps/site`'s `/api/*` routes for anything needing a key.
 - **v2 auth:** someone new answers the Citizenship Application signed out and gets an **anonymous passport** (Supabase anonymous sign-in, needs "Anonymous sign-ins" on in the project) on the way to the Oath; they **save it** later with a username plus a texted code (Twilio Verify via Supabase's phone provider; US and Canada) or an email link then a password (the username waits in `user_metadata.pending_username` until the email confirms; `ensureProfile` makes the `profiles` row once they're not anonymous). Existing accounts sign in with email + password (Supabase Auth keeps the hashes; v1 passwords work as they are), a texted code, or a magic link (each for existing accounts only; an unknown address or number hears the same "on its way"). Changing a password signs out the account's other sessions (Supabase). Forgot password (the reset link's `PASSWORD_RECOVERY` sends the callback to `auth/new-password`), a magic link for existing accounts only (PKCE; an unknown address hears the same "on its way"), Sign in with Apple (native on iOS via `signInWithIdToken` + nonce; OAuth on web), Google (OAuth). Supabase Auth's redirect allow list must include every callback form: `procrastination://auth/callback`, `exp://**` (Expo Go), `http://localhost:8081/auth/callback`, and the production web URL. Expo Go lacks the Apple native module, so Apple sign-in needs a development build.
 - **v2 → site API:** the app calls `apps/site` `/api/*` with the Supabase access token (`src/lib/api.ts`). CORS lives in `apps/site/middleware.js` (allowlist: the site's origin, `app.procrasti-nation.work`, and `localhost:8081` / `127.0.0.1:8081` in development; the second is the same app under its own storage, a signed-out window for testing). For local work, `apps/site/.env.development.local` (gitignored) points the site at the staging Supabase project so it accepts staging sessions.
-- Everything below this section describes `apps/site` unless it says otherwise; paths are relative to `apps/site/`.
+- Everything below this section describes `apps/site` unless it says otherwise; paths are relative to `apps/site/`. On `v2` the site is the landing page plus the API (v1's pages retired 2026-10-12).
 
 ## Project Overview
-AI-powered productivity SaaS that helps users overcome procrastination via:
-- AI task breakdown with step editing, scheduling, and recurrence
-- Syllabus upload — auto-extract assignments from PDF/DOCX/image
-- Calendar views (day/week/month) with AI-resolved step dates
-- Kanban boards for task organization
-- Reset station (wellness videos)
-- Metrics dashboard with streaks, completion rates, and archive
-- Email nudges + weekly citizen reports
-- Interactive onboarding tutorial for new users
+ProcrastiNation helps people start what they're avoiding: an AI planner breaks a task into steps small enough to begin, and the app nudges them to start. On `v2`, `apps/site` is the marketing site and the API the app calls; v1's pages (planner, dashboard, calendar, syllabus, reset station, friends, profile, FAQ) and its emails were retired on 2026-10-12 (`PN2-LAUNCH-PLAN.md`) and redirect to the app. `main` still runs v1 until the v2 merge.
 
 ## Tech Stack
-- **Framework**: Next.js 14 (App Router)
-- **Language**: JavaScript/JSX
-- **Styling**: Tailwind CSS 3 (class-based dark mode)
-- **Icons**: Lucide React
+- **Framework**: Next.js 14 (App Router), JavaScript/JSX
+- **Styling**: Tailwind CSS 3, plus the A2 palette as CSS variables in `app/globals.css` (light and night follow the system)
 - **AI**: Anthropic Claude API (raw `fetch()` — not the SDK)
-- **Auth + DB**: Supabase (Auth + PostgreSQL with RLS)
-- **File Parsing**: mammoth (DOCX), unpdf (PDF), base64 (images → Claude vision)
-- **Email**: Resend
+- **Auth + DB**: Supabase (Auth + PostgreSQL with RLS); the site checks the app's session token on each API call
+- **File Parsing** (`parse-syllabus`): mammoth (DOCX), unpdf (PDF), base64 (images → Claude vision)
+- **Web Push**: web-push + VAPID
 - **Analytics**: Vercel Analytics
 - **Hosting**: Vercel (Hobby tier)
-- **Domain**: procrasti-nation.work
+- **Domain**: procrasti-nation.work (the app: app.procrasti-nation.work)
 
 ## Dev Commands
 Site (run inside `apps/site`):
@@ -68,57 +58,45 @@ Requires `apps/site/.env.local` (Next only reads it from its own folder) with:
 ANTHROPIC_API_KEY=sk-ant-...
 NEXT_PUBLIC_SUPABASE_URL=https://tmigxhhnhledszjdgnwk.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=anon_key
-RESEND_API_KEY=re_...
 SUPABASE_SERVICE_ROLE_KEY=service_role_key
-CRON_SECRET=secret_for_cron_auth
+CRON_SECRET=secret_for_cron_auth   # the Web Push sender (Supabase Cron) and unsubscribe links
 NEXT_PUBLIC_BASE_URL=https://procrasti-nation.work
+NEXT_PUBLIC_APP_URL=https://app.procrasti-nation.work   # optional (that's the default); http://localhost:8081 in development
+STRIPE_SECRET_KEY=sk_...           # only so Delete your passport can cancel a subscription still billing
 VAPID_PUBLIC_KEY=...          # Web Push (v2); generate: node -e 'console.log(require("web-push").generateVAPIDKeys())'
 VAPID_PRIVATE_KEY=...
 VAPID_SUBJECT=https://procrasti-nation.work
 ```
-The Expo app gets the same public key as `EXPO_PUBLIC_VAPID_PUBLIC_KEY`. Development keys live in the gitignored `apps/site/.env.development.local` and `apps/app/.env.local`; production needs its own pair in both Vercel projects.
+The Expo app gets the same public key as `EXPO_PUBLIC_VAPID_PUBLIC_KEY`. Development keys live in the gitignored `apps/site/.env.development.local` and `apps/app/.env.local`; production needs its own pair in both Vercel projects. `RESEND_API_KEY` isn't used by the site since v1's emails retired (State of the Union will bring email back).
 
 ## Project Structure
 ```
 app/
-  page.jsx                          # Landing page (hero + pricing + features)
-  layout.jsx                        # Root layout (AuthProvider + ThemeProvider)
-  providers.jsx                     # useTheme() + useAuth() context providers
-  planner/page.jsx                  # AI task planner (main feature)
-  dashboard/page.jsx                # Metrics, boards, task list, archive
-  calendar/page.jsx                 # Day/week/month calendar views
-  syllabus/page.jsx                 # Syllabus upload & AI parsing
-  reset-station/page.jsx            # Wellness videos (YouTube embeds)
-  faq/page.jsx                      # FAQ with collapsible Q&A sections
+  page.jsx                          # Landing page (a placeholder until PN2-LAUNCH-PLAN.md phase 2): what it is, Open the app
+  layout.jsx                        # Root layout: metadata, A2 fonts, Vercel Analytics (no auth: sign-in is the app's)
+  globals.css                       # Tailwind + the A2 palette as CSS variables (light / night via prefers-color-scheme)
+  opengraph-image.jsx, icon.svg     # Share preview and favicon
   api/
     generate-plan/route.js          # AI task planning (clarify + generate steps)
-    parse-syllabus/route.js         # Syllabus file → JSON assignments
-    account/delete/route.js         # v2 Delete your passport: session + typed DELETE, cancels a Stripe subscription that still bills (fails closed), then auth.admin.deleteUser (every table cascades)
-    unstick/route.js                # v2 Start Mode "I'm stuck" → one 2-minute action (free, 20/day via ai_requests)
     resolve-step-dates/route.js     # Relative timing → absolute calendar dates
-    cron/nudge/route.js             # Daily nudge digest (one email per user) + missed-commitment nudges
-    unsubscribe/route.js            # Signed one-click unsubscribe (reminders / reports)
-    cron/push/route.js              # v2 Web Push sender, every minute (Supabase Cron): what came due per person, in their timezone, to each of their browsers
-    push/action/route.js            # v2 Snooze 10 min from a web notification (signed token, no session)
-    cron/weekly-report/route.js     # Monday weekly progress digest
+    unstick/route.js                # Start Mode "I'm stuck" → one 2-minute action (free, 20/day via ai_requests)
+    account/delete/route.js         # Delete your passport: session + typed DELETE, cancels a Stripe subscription that still bills (fails closed), then auth.admin.deleteUser (every table cascades)
+    cron/push/route.js              # Web Push sender, every minute (Supabase Cron): what came due per person, in their timezone, to each of their browsers
+    push/action/route.js            # Snooze 10 min from a web notification (signed token, no session)
+    unsubscribe/route.js            # Signed one-click unsubscribe (kept for State of the Union's email)
+    parse-syllabus/route.js         # Syllabus file → JSON assignments (unused until v2's syllabus import)
+next.config.js                      # Security headers; v1's old paths redirect (307) to the app
+middleware.js                       # CORS for /api/* (the app's origins)
 
 components/
-  Navigation.jsx                    # Top nav bar with trial badge + auth
-  AuthModal.jsx                     # Sign in / sign up modal
-  TutorialModal.jsx                 # 7-step interactive onboarding overlay
-  UpgradeModal.jsx                  # Pro upgrade prompt (limit/trial reasons)
-  Logo.jsx                          # Logo component
-  CalendarWeekGrid.jsx              # Week view grid
-  CalendarMonthGrid.jsx             # Month view grid
-  CalendarDayGrid.jsx               # Day view (hourly timeline)
-  CalendarEventPopover.jsx          # Click-to-edit step date popover
+  Logo.jsx                          # The PN mark + wordmark (`color` / `accent` props follow the page's palette)
 
 lib/
   ai.js                             # callClaude(), model constants, resolveToday()
   prompts/plan.js                   # Adherence planner prompts + JSON schemas
   prompts/unstick.js                # "I'm stuck" prompt + schema (gated by evals/unstick)
   prompts/dates.js                  # Step "when" → calendar date prompt
-  dates.js                          # Local-date helpers (localDateString, localTimeZone)
+  authMiddleware.js                 # The app's session token → user, for each API route
   trial.js                          # trialDaysRemaining(user): 10 days from auth created_at
   stripe.js                         # cancelCustomerSubscriptions (fetch, no SDK)
   unsubscribe.js                    # Signed unsubscribe links + List-Unsubscribe headers
@@ -126,9 +104,7 @@ lib/
   push.js                           # Web Push: send (web-push + VAPID), payloads (Start 5 min / Snooze 10 min, never Done), withTimeZone, snooze tokens
 test/push.test.mjs                  # npm test: snooze tokens, the zone switch, payloads
 scripts/push-cron-dev.sh            # Development stand-in for Supabase Cron
-  supabase.js                       # Supabase client (anon key)
-  storage.js                        # localStorage wrapper (legacy, still used for boards/resets)
-  emails.js                         # Email templates (nudge + weekly report)
+evals/                              # plan-quality and unstick evals (gate any prompt or model change)
 ```
 
 ### apps/app (Expo, v2)
@@ -205,10 +181,10 @@ Device storage (AsyncStorage, per device): `pn.application.draft` (the Applicati
 `organizations`, `org_memberships`, `classes`, `enrollments`, `class_invites`, `assignment_templates`, `assignments`, plus `reset_sessions`. Teachers can SELECT students' `tasks` where `source = 'assignment'` via `is_teacher_of_assignment()`. The full structure is in a pg_dump at `supabase/v2/.local/prod-schema.sql` (gitignored; regenerate with `supabase/v2/scripts/dump-prod-schema.sh`).
 
 ### `profiles` email preferences
-`email_reminders_enabled`, `email_reports_enabled` (BOOLEAN, default true) — set false by `/api/unsubscribe`; crons skip opted-out users.
+`email_reminders_enabled`, `email_reports_enabled` (BOOLEAN, default true) — set false by `/api/unsubscribe`. v1's email crons are retired; State of the Union will read `email_reports_enabled`.
 
 ### `profiles` billing and visibility
-- `stripe_customer_id`, `stripe_subscription_status` are written only by the Stripe routes (service role); a trigger rejects users setting them (`supabase/migrations/profiles_billing_1_before_deploy.sql`).
+- `stripe_customer_id`, `stripe_subscription_status` were written only by v1's Stripe routes (service role; retired with v1, payments return through RevenueCat); a trigger rejects users setting them (`supabase/migrations/profiles_billing_1_before_deploy.sql`).
 - API callers can read only `id, user_id, username, display_name, created_at` (`profiles_billing_2_after_deploy.sql`). The signed-in user reads their own status with `supabase.rpc('my_subscription_status')`. A new profiles column is hidden from the API until it's granted there.
 
 ### `streaks` table
@@ -238,55 +214,26 @@ Additive migration with a tested rollback; at cutover a fresh start (`04_fresh_s
 ## Key Patterns
 
 ### Dark Mode
-- **apps/site:** Use `useTheme()` hook from `app/providers.jsx`
-- Apply dark styles via ternary: `` `${darkMode ? 'bg-slate-800' : 'bg-white'}` ``
-- **Never** use Tailwind's `dark:` prefix — the project uses class-based JS toggling
+- **apps/site:** the A2 palette as CSS variables in `app/globals.css`, switched by `prefers-color-scheme`; style with `var(--ink)` and friends. (v1's `useTheme()` ternaries retired with its pages.)
 - **apps/app (v2) does not use ternaries.** Style with React Native `StyleSheet` and A2 tokens: `const s = useStyles(makeStyles)` with a module-level `makeStyles = (t: Tokens) => ...`, or `useTokens()` for one-off colors. Light/night follow the system scheme. Never hard-code a hex in a component; add a token to `packages/core/src/tokens.ts` instead. Use the `Text` component's `variant` for type roles, and the `Icon` component (SVG strokes), never emoji.
 - v2 copy: nation names for places and rewards (from `@pn/core` `names`/`voice`), plain labels on buttons (`actions`). The AI-plan button is always "Plan it".
 
-### Auth
-- `useAuth()` from `app/providers.jsx` — exposes `{ user, loading, trialStatus, trialDaysLeft, signOut }`
-- `trialStatus`: `'trial'` | `'free'` | `'pro'`
-- Free tier: 3 AI plans per calendar month (v1). **v2's route:** 2 per 30.5-day window from the account's creation (core `planWindow`, `FREE_PLANS_PER_WINDOW`); an anonymous passport gets no trial
-- Trial: 10 days of Pro from sign-up, counted from `user.created_at` by `trialDaysRemaining()` in `lib/trial.js` (both the plan route and `AuthProvider`). Never decide access from `user_metadata`: users can write it themselves
+### Auth and access
+- The site has no sign-in of its own: each API route reads the app's Supabase session token (`lib/authMiddleware.js`).
+- Free tier: 2 AI plans per 30.5-day window from the account's creation (core `planWindow`, `FREE_PLANS_PER_WINDOW`); an anonymous passport gets no trial. The web launches free-only (payments come with the App Store version, through RevenueCat).
+- Trial: 10 days of Pro from sign-up, counted from `user.created_at` by `trialDaysRemaining()` in `lib/trial.js`. Never decide access from `user_metadata`: users can write it themselves.
 
 ### Styling
-- All styling via Tailwind utility classes
-- No CSS modules or styled-components
+- Tailwind utility classes plus the CSS variables above; no CSS modules or styled-components
 - Responsive breakpoints: `md:` and `lg:`
 
-### State Management
-- Local state: `useState` in components
-- App-wide: ThemeProvider + AuthProvider contexts
-- Persistent client: localStorage for boards, completed resets, theme, tutorial state
-- Persistent server: Supabase for tasks, streaks
-
-### localStorage Keys
-- `theme` — dark/light preference
-- `task-boards` — board assignments (boardName → taskId mapping)
-- `completed-resets` — Set of completed wellness video IDs
-- `tutorialComplete` — boolean, onboarding finished
-
 ### API Communication
-- Client uses `fetch()` to `/api/*` endpoints
+- The app calls `/api/*` with its session token (`apps/app/src/lib/api.ts`); CORS lives in `middleware.js`
 - Server calls Anthropic through `callClaude()` in `lib/ai.js` (raw `fetch()`, structured JSON output). Models: `MODELS.plan` = `claude-sonnet-5-5` (plans, clarifying questions, syllabus; "I'm stuck" at low effort), `MODELS.fast` = `claude-haiku-4-5` (step dates, short copy). Never build plans on Haiku.
 - Plan prompts live in `lib/prompts/plan.js`; any prompt/model change must pass `evals/plan-quality` (see its README) before shipping. The "I'm stuck" prompt (`lib/prompts/unstick.js`) is gated the same way by `evals/unstick`
-- Clients send `today` (local YYYY-MM-DD, from `lib/dates.js`) and `timeZone` so the AI resolves relative dates correctly; never use `toISOString()` for local calendar dates
+- Clients send `today` (local YYYY-MM-DD) and `timeZone` so the AI resolves relative dates correctly; never use `toISOString()` for local calendar dates
 - Cron routes secured with `Authorization: Bearer <CRON_SECRET>`
 - Service role client created inline in cron routes to bypass RLS
-
-### Component Pattern
-All pages use `'use client'` directive and follow:
-```jsx
-'use client'
-import { useTheme } from '../providers'
-import { useAuth } from '../providers'
-export default function PageName() {
-  const { darkMode } = useTheme()
-  const { user } = useAuth()
-  // ...
-}
-```
 
 ### Naming Conventions
 - Components: PascalCase
@@ -319,7 +266,8 @@ When adding new agent files, update this table.
 - **Platform**: Vercel (Hobby tier)
 - **Auto-deploy**: From `main` branch (git user.email must be alexja2008@gmail.com)
 - **Domain**: procrasti-nation.work (Porkbun → Vercel DNS)
-- **Cron**: `vercel.json` — nudge daily 2pm UTC, weekly report Monday 1pm UTC
-- **Env vars**: All 7 vars above must be set in Vercel dashboard (`WHEREBY_API_KEY` is no longer used: delete it there)
-- **Web Push at the v2 deploy:** production VAPID keys in both Vercel projects (`VAPID_*` on the site, `EXPO_PUBLIC_VAPID_PUBLIC_KEY` on the app), then `select vault.create_secret('<CRON_SECRET>', 'push_cron_secret');` and `supabase/v2/03_push_cron.sql` on production. The app's Vercel project must rewrite every path to `index.html` (a notification can open `/task/<id>` in a new tab) and serve `/sw.js` from the export's root.
+- **Cron**: none on Vercel since v1's emails retired; the Web Push sender runs from Supabase Cron (`supabase/v2/03_push_cron.sql`)
+- **Env vars**: the site's vars above in its Vercel project (`WHEREBY_API_KEY` and, after the v2 merge, `RESEND_API_KEY` are no longer used: delete them there)
+- **The app's project** (`apps/app`, at `app.procrasti-nation.work`): `apps/app/vercel.json` builds the web export (`npx expo export --platform web` → `dist`), serves real files first and every other path as `index.html`, and keeps `sw.js` uncached; it needs "Include files outside the Root Directory" on (the build reads `packages/core`) and the `EXPO_PUBLIC_*` vars.
+- **Web Push at the v2 deploy:** production VAPID keys in both Vercel projects (`VAPID_*` on the site, `EXPO_PUBLIC_VAPID_PUBLIC_KEY` on the app), then `select vault.create_secret('<CRON_SECRET>', 'push_cron_secret');` and `supabase/v2/03_push_cron.sql` on production. The app's Vercel project rewrites every path to `index.html` (a notification can open `/task/<id>` in a new tab) and serves `/sw.js` from the export's root (`apps/app/vercel.json`).
 - **v2 merge:** the Vercel project's Root Directory must flip to `apps/site` at the same moment `v2` merges to `main` (the setting applies to every branch, so flipping it early breaks production). Until then, `v2` pushes produce failing previews. The Expo web build will get its own Vercel project at `app.procrasti-nation.work`.

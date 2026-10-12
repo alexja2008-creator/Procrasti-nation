@@ -1,5 +1,4 @@
 import './globals.css';
-import { ThemeProvider, AuthProvider } from './providers';
 import { Analytics } from '@vercel/analytics/next';
 
 const description = 'The AI planner that breaks down the task you\'re avoiding into steps small enough to start today.';
@@ -21,20 +20,20 @@ export const metadata = {
   },
 };
 
+// The marketing site: no sign-in here (that's the app's, at app.procrasti-nation.work).
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=IBM+Plex+Mono&family=Instrument+Sans:wght@400;600&family=Space+Grotesk:wght@700&display=swap"
+          rel="stylesheet"
+        />
       </head>
       <body>
-        <ThemeProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </ThemeProvider>
+        {children}
         <Analytics />
       </body>
     </html>

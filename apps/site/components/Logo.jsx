@@ -6,15 +6,17 @@
 // N — bold italic letterform: two angled vertical stems + diagonal crossbar,
 //     rendered as a single unified shape in white
 
-export default function Logo({ size = 'md', darkText = false }) {
+// `color` and `accent` (any CSS color, e.g. 'var(--ink)') override darkText and the green of "Nation",
+// for pages that follow light and dark themselves.
+export default function Logo({ size = 'md', darkText = false, color, accent }) {
   const sizes = {
     sm: { mark: 22, text: 'text-base' },
     md: { mark: 30, text: 'text-xl' },
     lg: { mark: 44, text: 'text-3xl' },
   };
   const { mark, text } = sizes[size] || sizes.md;
-  const stemColor = darkText ? '#1e293b' : '#ffffff';
-  const baseColor = darkText ? 'text-slate-900' : 'text-white';
+  const stemColor = color ?? (darkText ? '#1e293b' : '#ffffff');
+  const baseColor = color ? '' : darkText ? 'text-slate-900' : 'text-white';
 
   return (
     <div className="flex items-center space-x-2.5">
@@ -68,9 +70,9 @@ export default function Logo({ size = 'md', darkText = false }) {
       {/* Wordmark */}
       <span
         className={`${text} font-bold tracking-tight leading-none ${baseColor}`}
-        style={{ fontFamily: "'Space Grotesk', sans-serif", transform: 'skewX(-5deg)', display: 'inline-block' }}
+        style={{ fontFamily: "'Space Grotesk', sans-serif", transform: 'skewX(-5deg)', display: 'inline-block', color }}
       >
-        Procrasti<span className="text-emerald-400">Nation</span>
+        Procrasti<span className={accent ? undefined : 'text-emerald-400'} style={{ color: accent }}>Nation</span>
       </span>
     </div>
   );

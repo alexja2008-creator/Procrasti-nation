@@ -38,6 +38,8 @@ No database changes beyond `01_schema.sql` and `04_fresh_start.sql` (both writte
 2. **A placeholder landing page** that points to the app, so Phase 1 could ship alone.
 3. **`apps/app/vercel.json`** and a check of the web export locally (`npx expo export --platform web`, served with the rewrites): a deep link like `/task/<id>` loads, `sw.js` registers.
 
+**Built 2026-10-12.** The site is now the placeholder landing page (A2 palette and fonts, light and night, "Open the app"), the eight routes v2 uses or will (`generate-plan`, `resolve-step-dates`, `unstick`, `account/delete`, `cron/push`, `push/action`, `unsubscribe`, `parse-syllabus`), the share image and the icon. Removed: v1's 8 pages, 10 components, the friends, profile and Stripe routes, the nudge and weekly-report crons (`vercel.json` is gone), `lib/{dates,emails,storage,supabase}.js`, `providers.jsx`, and the `lucide-react` and `resend` packages. `/planner`, `/dashboard/…`, `/profile/…`, `/faq`, `/focus-pods` and the rest answer 307 to the app (`NEXT_PUBLIC_APP_URL`, default `https://app.procrasti-nation.work`). `apps/app/vercel.json`: `npx expo export --platform web` → `dist`, real files first, every other path → `index.html`, security headers, `sw.js` uncached. **Checked:** the site builds and its tests pass; signed-out calls get 401 and the app's CORS preflight still passes; the placeholder in light and night (the wordmark's green follows the palette: v1's light green read at 1.8:1 on cream); the web export served by the same rule: `/task/<id>` returned the app, which booted and routed to the Application (signed out); in a throwaway headless Chrome `sw.js` registered at the root scope. The Claude browser pane refuses service-worker scripts from new local ports (the export and a plain Python server alike), so that check needs real Chrome. **For the app's Vercel project:** turn on "Include files outside the Root Directory in the Build Step" (the build reads `packages/core`).
+
 ## Phase 2: The landing page, privacy and terms (Claude drafts, Alex approves)
 1. **Landing page:** A2 look, real screenshots of Today, Plan it, Start Mode and the Passport; "Open the app"; the free tier stated plainly.
 2. **Privacy policy and terms:** drafts built from what the code actually collects. Not legal advice: Alex reviews (a lawyer or a generator service if he wants certainty).
@@ -53,7 +55,7 @@ Before the day (Alex):
 
 On the day, in order:
 1. `supabase/v2/01_schema.sql` on production.
-2. Stripe: nothing billing (none as of 2026-10-12).
+2. Stripe: nothing billing (none as of 2026-10-12); delete the webhook endpoint in Stripe's dashboard (v2 has no webhook route, so Stripe's retries would only fail).
 3. `supabase/v2/04_fresh_start.sql` on production. Permanent.
 4. Merge `v2` into `main` and flip the site project's Root Directory to `apps/site` at the same moment.
 5. Deploy the app project.
