@@ -161,6 +161,8 @@ Done: Xcode installed (27.0, license accepted, iOS 27 runtime); staging project 
 | Notes | Capture-first notes, not a full Apple Notes clone |
 | Schools / teachers | A relic of an idea to turn PN into an LMS; **not the path.** Ignore it (2026-10-06): no new work for teachers, classes or assignments. The priority is making the app production-ready for individual users |
 | Theme | Logo stays. **Lean harder** into the nation theme (Passport, Stamps, Territories, Customs, Declarations, State of the Union, Residency, Holidays, Town Hall, Allies) |
+| Web launch | **Decided (2026-10-12).** The web goes live first, free-only (payments with the App Store version, through RevenueCat); v1's pages retire and redirect to `app.procrasti-nation.work`. Plan: `PN2-LAUNCH-PLAN.md` |
+| Emails | **Decided (2026-10-12).** v1's daily nudge email retires at cutover; State of the Union replaces the Weekly Citizen Report every **Monday morning** (not Sunday evening), built after launch |
 | Fresh start at cutover | **Decided (2026-10-12).** v1 has one real user (Alex), so no data migrates: every account is deleted at cutover (`supabase/v2/04_fresh_start.sql`), Alex's included, and everyone starts over through the Citizenship Application |
 | Focus Pods | **Dropped (2026-10-08).** Whereby video co-working wasn't core to the product, and moderating live video wasn't worth the liability. Removed from v2's site and hidden on `main` (PR #11, merged 2026-10-08), so Whereby can be cancelled. The `focus_pods` table goes with the other v1 tables at cutover |
 | Town Hall | **A count only (2026-10-08):** an anonymous "citizens working right now" number (e.g. in Start Mode). No video, no chat, nothing one person can say to another |

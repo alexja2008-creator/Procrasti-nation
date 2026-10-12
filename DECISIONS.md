@@ -70,6 +70,11 @@ More detail: `CLAUDE.md` (layout, data model, patterns), `PN2-HANDOFF.md` (state
 - A 10-day Pro trial is counted from the account's creation date. Anonymous accounts get no trial.
 - "I'm stuck" is free for everyone (20 a day), because Start Mode is what keeps people.
 - Planned, not built yet: a required 7-day trial with the payment method taken up front; cancelling keeps the free tier.
+- The web launches free-only (2026-10-12): payments arrive with the App Store version through RevenueCat (which can take web payments through Stripe too). v1's Stripe checkout, portal and webhook retire at cutover.
+
+**Email**
+- v1's daily nudge email retires at cutover (2026-10-12): v2 nudges through notifications.
+- The Weekly Citizen Report becomes **State of the Union, every Monday morning** (2026-10-12; the original v2 plan said Sunday evening). Not built yet; it comes after the web launch.
 
 **Reminders**
 - Permission is asked the first time a task gets a time ("Want a nudge at 6:00 PM?"), never on launch.
