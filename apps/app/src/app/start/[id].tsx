@@ -2,6 +2,7 @@ import {
   defaultStartMinutes,
   effectiveListId,
   formatClock,
+  keepsDeclaration,
   linesFor,
   relativeDayPhrase,
   stampKinds,
@@ -12,7 +13,7 @@ import {
 } from '@pn/core';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useEffectEvent, useState, type ReactNode } from 'react';
+import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -25,7 +26,7 @@ import { Stamped } from '@/components/start/stamped';
 import { StuckPanel } from '@/components/start/stuck-panel';
 import { TimerRing } from '@/components/start/timer-ring';
 import { Text } from '@/components/text';
-import { awardStamp } from '@/data/stamps';
+import { awardDeclarationKept, awardStamp } from '@/data/stamps';
 import { useTasks } from '@/data/tasks-store';
 import { tinyFirstAction } from '@/data/unstick';
 import { useUserSettings } from '@/data/user-settings';
@@ -73,6 +74,20 @@ function StartMode({ id, minutes }: { id: string; minutes?: number }) {
   const plannedMs = planned * 60_000;
   const reached = timer.elapsed >= plannedMs;
   const contract = phase === 'running' && reached && !run.keptGoing;
+
+  // Started within a Declaration's window: "Declaration kept", once per Declaration.
+  const [declarationKept, setDeclarationKept] = useState(false);
+  const keptChecked = useRef(false);
+  const checkKept = useEffectEvent((t: Task) => {
+    if (!keepsDeclaration(t, new Date())) return;
+    const listId = effectiveListId(t, new Map(tasks.map((x) => [x.id, x])));
+    awardDeclarationKept(userId, t, listId).then(setDeclarationKept, () => undefined);
+  });
+  useEffect(() => {
+    if (!live || !userId || keptChecked.current) return;
+    keptChecked.current = true;
+    checkKept(live);
+  }, [live, userId]);
 
   const onContract = useEffectEvent(() => haptic(Haptics.ImpactFeedbackStyle.Medium));
   useEffect(() => {
@@ -173,6 +188,11 @@ function StartMode({ id, minutes }: { id: string; minutes?: number }) {
         {task.notes && !tiny ? (
           <Text variant="body" color={c.inkSoft} style={s.centered}>
             {task.notes}
+          </Text>
+        ) : null}
+        {declarationKept ? (
+          <Text variant="meta" color={c.stamp.violet} style={s.centered} accessibilityLiveRegion="polite">
+            {voice.declaration.kept}
           </Text>
         ) : null}
         {run.firstStart ? (

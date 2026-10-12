@@ -113,7 +113,9 @@ export function planReminders(tasks: Task[], now: Date, options: ReminderOptions
     const taskTimes = new Set<number>();
     if (t.scheduledOn && t.remindAt) {
       const { hour, minute } = clockOf(t.remindAt);
-      const body = [t.rrule ? describeRRule(t.rrule) : null, ...where].filter(Boolean).join(' · ');
+      const context = [t.rrule ? describeRRule(t.rrule) : null, ...where].filter(Boolean).join(' · ');
+      // A Declaration speaks as one (a repeat can't be declared).
+      const body = t.declaredAt && !t.rrule ? [lines.declaredReminder, context].filter(Boolean).join('\n') : context;
       for (const day of ringDays(t as Task & { scheduledOn: LocalDate }, firstDay, lastDay)) {
         const at = Date.parse(atLocalTime(day, hour, minute));
         if (!inWindow(at)) continue;

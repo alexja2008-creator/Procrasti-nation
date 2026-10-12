@@ -6,7 +6,7 @@ import { chunks, fetchAllPages } from '@/data/paging';
 import { supabase } from '@/lib/supabase';
 
 const COLUMNS =
-  'id,user_id,list_id,parent_id,note_id,title,notes,status,due_on,due_at,remind_at,rrule,estimate_minutes,' +
+  'id,user_id,list_id,parent_id,note_id,title,notes,status,due_on,due_at,remind_at,declared_at,rrule,estimate_minutes,' +
   'scheduled_on,sort_order,source,external_id,completed_at,created_at,updated_at,deleted_at';
 
 type Row = {
@@ -21,6 +21,8 @@ type Row = {
   due_on: string | null;
   due_at: string | null;
   remind_at: string | null;
+  /** Optional: search's rows may not carry it. */
+  declared_at?: string | null;
   rrule: string | null;
   estimate_minutes: number | null;
   scheduled_on: string | null;
@@ -45,6 +47,7 @@ const fromRow = (r: Row): Task => ({
   dueOn: r.due_on,
   dueAt: r.due_at,
   remindAt: r.remind_at,
+  declaredAt: r.declared_at ?? null,
   rrule: r.rrule,
   estimateMinutes: r.estimate_minutes,
   scheduledOn: r.scheduled_on,
@@ -169,6 +172,7 @@ const PATCH_COLUMNS = {
   completedAt: 'completed_at',
   scheduledOn: 'scheduled_on',
   remindAt: 'remind_at',
+  declaredAt: 'declared_at',
   dueOn: 'due_on',
   dueAt: 'due_at',
   rrule: 'rrule',

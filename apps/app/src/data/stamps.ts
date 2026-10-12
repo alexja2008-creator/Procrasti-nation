@@ -32,6 +32,26 @@ export async function awardFirstStart(userId: string): Promise<boolean> {
   return result === 'awarded';
 }
 
+/**
+ * "Declaration kept": once per Declaration (the same task can be declared again another day),
+ * so starting twice in the window, or resuming, earns it once. True when it was just earned.
+ */
+export async function awardDeclarationKept(userId: string, task: { id: string; declaredAt: string | null }, listId: string | null): Promise<boolean> {
+  if (!task.declaredAt) return false;
+  const { data, error } = await supabase
+    .from('stamps')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('kind', stampKinds.declarationKept)
+    .eq('task_id', task.id)
+    .gte('earned_at', task.declaredAt)
+    .limit(1);
+  if (error) throw error;
+  if (data.length) return false;
+  await awardStamp({ userId, kind: stampKinds.declarationKept, taskId: task.id, listId });
+  return true;
+}
+
 /** "Application approved": once, and only for answering the Application (Skip earns nothing). */
 export async function awardCitizenship(userId: string): Promise<void> {
   await awardStamp({ userId, kind: stampKinds.citizenship });

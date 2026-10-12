@@ -19,6 +19,8 @@ export interface TaskRowItem {
   time?: string;
   /** Big or vague task with no plan yet: offer "Plan it". */
   suggestPlan?: boolean;
+  /** A Declaration still to come: a small violet seal under its time. */
+  declared?: boolean;
   done?: boolean;
 }
 
@@ -137,6 +139,13 @@ export function TaskRow({ item, last, onToggle, onPlan, onMenu, onOpen, detail }
               {item.time}
             </Text>
           ) : null}
+          {item.declared ? (
+            <View style={s.declared}>
+              <Text variant="labelSmall" color={c.stamp.violet} style={s.stampedText}>
+                {voice.declaration.mark.toUpperCase()}
+              </Text>
+            </View>
+          ) : null}
         </View>
       ) : null}
     </View>
@@ -195,6 +204,14 @@ const makeStyles = (t: Tokens) => ({
       paddingVertical: 2,
     },
     stampedText: { letterSpacing: 1.26 },
+    declared: {
+      transform: [{ rotate: '-4deg' }],
+      borderWidth: 1,
+      borderColor: t.c.stamp.violet,
+      borderRadius: t.radii.chip,
+      paddingHorizontal: 5,
+      paddingVertical: 1,
+    },
     pressed: { opacity: 0.7 },
   }),
 });

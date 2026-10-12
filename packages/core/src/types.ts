@@ -93,6 +93,11 @@ export interface Task {
   /** Set when the task is due at a specific time. */
   dueAt: ISODateTime | null;
   remindAt: ISODateTime | null;
+  /**
+   * A Declaration: when they signed for the When above (`scheduledOn` + `remindAt`) as their
+   * start time. Any other change of When clears it (core's `whenPatch`).
+   */
+  declaredAt: ISODateTime | null;
   rrule: string | null;
   estimateMinutes: number | null;
   scheduledOn: LocalDate | null;

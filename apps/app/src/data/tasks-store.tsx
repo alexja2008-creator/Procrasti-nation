@@ -171,6 +171,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
       scheduledOn: null,
       dueOn: null,
       remindAt: null,
+      declaredAt: null,
       dueAt: null,
       rrule: null,
       estimateMinutes: null,

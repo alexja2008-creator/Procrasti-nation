@@ -107,12 +107,15 @@ export function monthGrid(year: number, month: number): (LocalDate | null)[][] {
 // Patches. "When" is the day you'll do it (scheduledOn, with its time in
 // remindAt); "Due" is the deadline (dueOn, with dueAt when it has a time).
 
-export type Schedule = Pick<Task, 'scheduledOn' | 'remindAt' | 'dueOn' | 'dueAt' | 'rrule'>;
+export type Schedule = Pick<Task, 'scheduledOn' | 'remindAt' | 'dueOn' | 'dueAt' | 'rrule' | 'declaredAt'>;
 
-/** Clearing "When" also clears the repeat: a series needs a day to start from. */
+/**
+ * Clearing "When" also clears the repeat: a series needs a day to start from. Any new When
+ * withdraws a Declaration (a new time takes a new signature: `declarePatch`).
+ */
 export function whenPatch(day: LocalDate | null, time: ClockTime | null): Partial<Schedule> {
-  if (!day) return { scheduledOn: null, remindAt: null, rrule: null };
-  return { scheduledOn: day, remindAt: time ? atLocalTime(day, time.hour, time.minute) : null };
+  if (!day) return { scheduledOn: null, remindAt: null, rrule: null, declaredAt: null };
+  return { scheduledOn: day, remindAt: time ? atLocalTime(day, time.hour, time.minute) : null, declaredAt: null };
 }
 
 export function duePatch(day: LocalDate | null, time: ClockTime | null): Partial<Schedule> {

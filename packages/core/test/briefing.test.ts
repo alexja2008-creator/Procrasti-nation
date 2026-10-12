@@ -10,7 +10,7 @@ const TODAY = '2026-10-08';
 
 const base: Task = {
   id: 'x', userId: 'u', listId: null, parentId: null, noteId: null, title: 'x', notes: null, status: 'in_progress',
-  dueOn: null, dueAt: null, remindAt: null, rrule: null, estimateMinutes: null, scheduledOn: null, sortOrder: 0,
+  dueOn: null, dueAt: null, remindAt: null, declaredAt: null, rrule: null, estimateMinutes: null, scheduledOn: null, sortOrder: 0,
   source: 'self', externalId: null, completedAt: null, createdAt: '2026-10-01T00:00:00Z', updatedAt: '2026-10-01T00:00:00Z', deletedAt: null,
 };
 const task = (fields: Partial<Task>): Task => ({ ...base, title: fields.id ?? 'x', ...fields });
@@ -55,16 +55,16 @@ test('the briefing groups a plan’s missed steps under it and lists the rest, o
 
 test('Today keeps the time; Pick a day and Let it go clear a deadline that passed', () => {
   const timed = task({ scheduledOn: '2026-10-07', remindAt: atLocalTime('2026-10-07', 15, 30), dueOn: '2026-10-03' });
-  assert.deepEqual(todayPatch(timed, TODAY), { scheduledOn: TODAY, remindAt: atLocalTime(TODAY, 15, 30) });
+  assert.deepEqual(todayPatch(timed, TODAY), { scheduledOn: TODAY, remindAt: atLocalTime(TODAY, 15, 30), declaredAt: null });
 
   assert.deepEqual(dayPatch(timed, TODAY, '2026-10-10', { hour: 9, minute: 0 }), {
-    scheduledOn: '2026-10-10', remindAt: atLocalTime('2026-10-10', 9, 0), dueOn: null, dueAt: null,
+    scheduledOn: '2026-10-10', remindAt: atLocalTime('2026-10-10', 9, 0), declaredAt: null, dueOn: null, dueAt: null,
   });
-  assert.deepEqual(dayPatch(timed, TODAY, TODAY, null), { scheduledOn: TODAY, remindAt: null }, 'picking today keeps it, like Today');
+  assert.deepEqual(dayPatch(timed, TODAY, TODAY, null), { scheduledOn: TODAY, remindAt: null, declaredAt: null }, 'picking today keeps it, like Today');
 
-  assert.deepEqual(letGoPatch(timed, TODAY), { scheduledOn: null, remindAt: null, dueOn: null, dueAt: null });
+  assert.deepEqual(letGoPatch(timed, TODAY), { scheduledOn: null, remindAt: null, declaredAt: null, dueOn: null, dueAt: null });
   const ahead = task({ scheduledOn: '2026-10-07', dueOn: '2026-10-20' });
-  assert.deepEqual(letGoPatch(ahead, TODAY), { scheduledOn: null, remindAt: null }, 'a deadline ahead stays');
+  assert.deepEqual(letGoPatch(ahead, TODAY), { scheduledOn: null, remindAt: null, declaredAt: null }, 'a deadline ahead stays');
 });
 
 test('Re-spread the rest spaces a plan’s open steps from today to its deadline, in order', () => {
@@ -88,7 +88,7 @@ test('Re-spread the rest spaces a plan’s open steps from today to its deadline
 
 test('Undo writes back exactly the fields a patch changed', () => {
   const t = task({ scheduledOn: '2026-10-07', remindAt: atLocalTime('2026-10-07', 15, 30), dueOn: '2026-10-03', title: 'Essay' });
-  assert.deepEqual(undoPatch(t, letGoPatch(t, TODAY)), { scheduledOn: '2026-10-07', remindAt: t.remindAt, dueOn: '2026-10-03', dueAt: null });
+  assert.deepEqual(undoPatch(t, letGoPatch(t, TODAY)), { scheduledOn: '2026-10-07', remindAt: t.remindAt, declaredAt: null, dueOn: '2026-10-03', dueAt: null });
 });
 
 test('the recap says what yesterday held, in true numbers, and nothing at zero', () => {

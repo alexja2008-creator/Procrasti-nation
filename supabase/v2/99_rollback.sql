@@ -52,6 +52,7 @@ ALTER TABLE tasks
   DROP COLUMN IF EXISTS sort_order,
   DROP COLUMN IF EXISTS external_id,
   DROP COLUMN IF EXISTS deleted_at,
+  DROP COLUMN IF EXISTS declared_at,
   DROP COLUMN IF EXISTS v1_backfilled_at,
   DROP COLUMN IF EXISTS legacy_step_index;
 

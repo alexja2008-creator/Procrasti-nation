@@ -460,6 +460,26 @@ for (const baseline of baselines) {
       });
     });
 
+    await t.test('a Declaration always has a time; clearing the time takes the Declaration with it', async () => {
+      await as(db, U1, async () => {
+        await db.query(
+          `UPDATE tasks SET scheduled_on = '2026-10-12', remind_at = '2026-10-12T20:00:00Z', declared_at = now() WHERE id = $1`,
+          [TASK_A],
+        );
+        await assert.rejects(
+          db.query(`UPDATE tasks SET remind_at = NULL WHERE id = $1`, [TASK_A]),
+          /tasks_declared_has_time/,
+          'a Declaration without its time is refused',
+        );
+        await db.query(`UPDATE tasks SET remind_at = NULL, declared_at = NULL WHERE id = $1`, [TASK_A]);
+        await assert.rejects(
+          db.query(`UPDATE tasks SET declared_at = now() WHERE id = $1`, [TASK_A]),
+          /tasks_declared_has_time/,
+          'nothing to declare without a time',
+        );
+      });
+    });
+
     await t.test('web push: a browser belongs to one account; the send log and snoozes are server only', async () => {
       const endpoint = 'https://fcm.googleapis.com/fcm/send/browser-1';
       const owners = async () =>

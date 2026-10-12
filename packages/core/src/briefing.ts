@@ -80,7 +80,12 @@ export function dayPatch(t: Dated, today: LocalDate, day: LocalDate, time: Clock
 }
 
 /** Let it go: no day any more. A deadline still ahead stays, so it comes back that day. */
-export const letGoPatch = (t: Dated, today: LocalDate): Partial<Schedule> => ({ scheduledOn: null, remindAt: null, ...passedDeadline(t, today) });
+export const letGoPatch = (t: Dated, today: LocalDate): Partial<Schedule> => ({
+  scheduledOn: null,
+  remindAt: null,
+  declaredAt: null,
+  ...passedDeadline(t, today),
+});
 
 /**
  * Re-spread the rest: a plan's open steps spread out again from today to its

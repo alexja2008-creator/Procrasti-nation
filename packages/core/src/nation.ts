@@ -211,6 +211,35 @@ export const voice = {
     focusedSubtitle: 'Just this one for now. The rest can wait.',
     showEverything: (n: number) => `Show everything (${n} more)`,
   },
+  /** Declarations: a start time signed for one task (PN2-DECLARATIONS-PLAN.md). */
+  declaration: {
+    /** The row menu's item. */
+    action: 'Declare a start',
+    /** The task page's button, beside Start. */
+    short: 'Declare',
+    statement: (title: string, when: string) => `I’ll start “${title}” ${when}.`,
+    /** Before a time is picked. */
+    statementOpen: (title: string) => `I’ll start “${title}” at…`,
+    why: 'Deciding exactly when you’ll start makes starting likelier. You’ll get a nudge then.',
+    day: 'Day',
+    time: 'Start at',
+    soon: 'In 15 min',
+    otherTime: 'Other time',
+    signHere: 'Sign here',
+    signLabel: 'Signature',
+    signHint: 'Draw your signature, or choose Sign with my name.',
+    signWithName: 'Sign with my name',
+    /** When there's no name to sign with. */
+    signedFallback: 'Citizen',
+    clear: 'Clear',
+    declare: 'Declare',
+    /** The notice after signing, with Undo. */
+    declared: (title: string, when: string) => `Declared: “${title}” ${when}.`,
+    /** Beside a declared row's time. */
+    mark: 'Declared',
+    /** Start Mode, on starting in time. */
+    kept: 'Declaration kept. That’s a stamp in your passport.',
+  },
   /** The Morning Briefing: what carried over from before today (PN2-MORNING-PLAN.md). Never "overdue". */
   briefing: {
     /** The card on Today. */
@@ -784,6 +813,8 @@ export interface ToneLines {
   startWith: (title: string) => string;
   /** The Morning Briefing, under its title: how many things carried over. */
   briefingLead: (count: number) => string;
+  /** A declared start's reminder, above where the task lives. */
+  declaredReminder: string;
 }
 
 export const toneLines: Record<NudgeTone, ToneLines> = {
@@ -795,6 +826,7 @@ export const toneLines: Record<NudgeTone, ToneLines> = {
     morningTitle: voice.reminders.morningTitle,
     startWith: voice.reminders.startWith,
     briefingLead: (n) => (n === 1 ? 'One thing carried over. Where should it go?' : `${spell(n)} things carried over. Let’s give each one a place.`),
+    declaredReminder: 'Your declared start. Five minutes is enough to begin.',
   },
   drill: {
     startLead: (m) => `${capitalize(minutesWord(m))} minutes. One task. The timer’s running: begin.`,
@@ -804,6 +836,7 @@ export const toneLines: Record<NudgeTone, ToneLines> = {
     morningTitle: (n) => (n === 1 ? 'One order today' : `${spell(n)} orders today`),
     startWith: (title) => `First up: “${title}”. Move.`,
     briefingLead: (n) => (n === 1 ? 'One item carried over. Assign it a day.' : `${spell(n)} items carried over. Assign each one a day.`),
+    declaredReminder: 'Declared start. It’s time. Move.',
   },
   roast: {
     startLead: (m) => `Just ${minutesWord(m)} minutes. The task is more scared of you than you are of it.`,
@@ -813,6 +846,7 @@ export const toneLines: Record<NudgeTone, ToneLines> = {
     morningTitle: (n) => (n === 1 ? 'One thing today. Just one. Easy.' : `${spell(n)} things today. Bold of them.`),
     startWith: (title) => `“${title}” has been waiting very politely.`,
     briefingLead: (n) => (n === 1 ? 'One thing followed you here. Clingy.' : `${spell(n)} things followed you here. Clingy bunch.`),
+    declaredReminder: 'You signed for this. In ink, basically.',
   },
 };
 

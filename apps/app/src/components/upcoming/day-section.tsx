@@ -1,6 +1,7 @@
 import {
   formatShortDate,
   formatTime,
+  isDeclared,
   offersPlan,
   relativeDayPhrase,
   voice,
@@ -40,6 +41,7 @@ function rowFor(entry: UpcomingEntry, today: LocalDate, planned: Set<string>, pl
     minutes: t.estimateMinutes ?? undefined,
     time: entry.at ? formatTime(new Date(entry.at)) : undefined,
     suggestPlan: offersPlan(t, planned.has(t.id)),
+    declared: isDeclared(t, today),
   };
 }
 

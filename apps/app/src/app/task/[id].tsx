@@ -1,9 +1,11 @@
 import {
   actions,
+  canDeclare,
   clockOf,
   describeRRule,
   duePatch,
   formatTime,
+  isDeclared,
   relativeDayLabel,
   repeatPatch,
   stepContext,
@@ -15,6 +17,7 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { DeclareSheet } from '@/components/declare/declare-sheet';
 import { Icon } from '@/components/icon';
 import { NoticeBar } from '@/components/notice-bar';
 import { Screen } from '@/components/screen';
@@ -40,7 +43,7 @@ export default function TaskRoute() {
   return <TaskDetail key={id} id={id} />;
 }
 
-type SheetKind = 'when' | 'due' | 'repeat' | 'estimate' | 'territory' | null;
+type SheetKind = 'when' | 'due' | 'repeat' | 'estimate' | 'territory' | 'declare' | null;
 
 /** Everything about one task, edited in place. Changes save as you make them. */
 function TaskDetail({ id }: { id: string }) {
@@ -179,6 +182,14 @@ function TaskDetail({ id }: { id: string }) {
               icon={<Icon name="play" size={16} color={c.onPrimary} strokeWidth={2} />}
               onPress={() => router.push({ pathname: '/start/[id]', params: { id: task.id } })}
             />
+            {canDeclare(task) ? (
+              <Button
+                variant="secondary"
+                label={voice.declaration.short}
+                icon={<Icon name="pencil" size={16} color={c.ink} strokeWidth={2} />}
+                onPress={() => setSheet('declare')}
+              />
+            ) : null}
             {canPlan ? (
               <Button
                 variant="secondary"
@@ -193,7 +204,13 @@ function TaskDetail({ id }: { id: string }) {
         <View style={s.fields}>
           <FieldRow
             label={copy.when}
-            value={task.scheduledOn ? relativeDayLabel(task.scheduledOn, today) + clock(task.remindAt) : copy.none}
+            value={
+              task.scheduledOn
+                ? relativeDayLabel(task.scheduledOn, today) +
+                  clock(task.remindAt) +
+                  (isDeclared(task, today) ? ` · ${voice.declaration.mark}` : '')
+                : copy.none
+            }
             onPress={() => setSheet('when')}
           />
           {!task.parentId ? (
@@ -325,6 +342,7 @@ function TaskDetail({ id }: { id: string }) {
           onClose={() => setSheet(null)}
         />
       ) : null}
+      {sheet === 'declare' ? <DeclareSheet task={task} onClose={() => setSheet(null)} /> : null}
     </Screen>
   );
 }

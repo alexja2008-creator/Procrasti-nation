@@ -2,6 +2,7 @@ import {
   buildNotes,
   buildTerritory,
   formatTime,
+  isDeclared,
   names,
   offersPlan,
   relativeDayLabel,
@@ -47,6 +48,7 @@ function rowFor(e: TerritoryEntry, today: LocalDate, planned: Set<string>): Task
     minutes: t.estimateMinutes ?? undefined,
     time: e.at ? formatTime(new Date(e.at)) : undefined,
     suggestPlan: offersPlan(t, planned.has(t.id)),
+    declared: isDeclared(t, today),
   };
 }
 

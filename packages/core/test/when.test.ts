@@ -29,9 +29,10 @@ test('time slots run every half hour', () => {
 });
 
 test('when and due patches', () => {
-  assert.deepEqual(whenPatch(null, null), { scheduledOn: null, remindAt: null, rrule: null }, 'no day: no repeat either');
+  assert.deepEqual(whenPatch(null, null), { scheduledOn: null, remindAt: null, rrule: null, declaredAt: null }, 'no day: no repeat either');
   const at6 = whenPatch('2026-10-09', { hour: 18, minute: 0 });
   assert.equal(at6.scheduledOn, '2026-10-09');
+  assert.equal(at6.declaredAt, null, 'a new When withdraws a Declaration');
   assert.deepEqual(clockOf(at6.remindAt!), { hour: 18, minute: 0 });
   assert.deepEqual(duePatch('2026-10-09', null), { dueOn: '2026-10-09', dueAt: null });
   assert.deepEqual(duePatch(null, { hour: 9, minute: 0 }), { dueOn: null, dueAt: null });

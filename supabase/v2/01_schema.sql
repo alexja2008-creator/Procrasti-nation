@@ -168,6 +168,11 @@ ALTER TABLE tasks ADD CONSTRAINT tasks_source_check
   CHECK (source IN ('self', 'assignment', 'ai', 'syllabus', 'lms', 'reminders'));
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS external_id TEXT;
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+-- A Declaration: when they signed for the task's When (scheduled_on + remind_at) as their start
+-- time. The app clears it whenever the When changes; a Declaration always has a time.
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS declared_at TIMESTAMPTZ;
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_declared_has_time;
+ALTER TABLE tasks ADD CONSTRAINT tasks_declared_has_time CHECK (declared_at IS NULL OR remind_at IS NOT NULL);
 -- Backfill bookkeeping: which v1 rows were converted, and which child
 -- rows came from a v1 step (its 1-based position in the steps array).
 ALTER TABLE tasks ADD COLUMN IF NOT EXISTS v1_backfilled_at TIMESTAMPTZ;

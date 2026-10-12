@@ -2,6 +2,7 @@ import {
   buildToday,
   formatDayLabel,
   formatTime,
+  isDeclared,
   names,
   offersPlan,
   parseLocalDate,
@@ -62,6 +63,7 @@ function rowFor(entry: AgendaEntry, today: string, planned: Set<string>, places:
     time: clock && !entry.done ? formatTime(new Date(clock)) : undefined,
     done: entry.done,
     suggestPlan: !entry.done && offersPlan(t, planned.has(t.id)),
+    declared: !entry.done && isDeclared(t, today),
   };
 }
 

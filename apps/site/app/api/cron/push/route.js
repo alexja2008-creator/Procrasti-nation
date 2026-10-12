@@ -28,7 +28,7 @@ const PAGE = 1000;
 const IDS_PER_QUERY = 100;
 
 const TASK_COLUMNS =
-  'id,user_id,list_id,parent_id,note_id,title,status,due_on,due_at,remind_at,rrule,estimate_minutes,' +
+  'id,user_id,list_id,parent_id,note_id,title,status,due_on,due_at,remind_at,declared_at,rrule,estimate_minutes,' +
   'scheduled_on,sort_order,source,external_id,completed_at,created_at,updated_at,deleted_at';
 
 // Rows → core's shapes (as apps/app/src/data does). Notes text isn't needed to plan.
@@ -44,6 +44,7 @@ const taskFromRow = (r) => ({
   dueOn: r.due_on,
   dueAt: r.due_at,
   remindAt: r.remind_at,
+  declaredAt: r.declared_at,
   rrule: r.rrule,
   estimateMinutes: r.estimate_minutes,
   scheduledOn: r.scheduled_on,

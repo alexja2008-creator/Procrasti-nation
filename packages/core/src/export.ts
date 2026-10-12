@@ -79,6 +79,8 @@ export function buildExport(input: ExportInput) {
         noteId: t.noteId,
         scheduledOn: t.scheduledOn,
         remindAt: t.remindAt,
+        /** When they signed a Declaration for that time. */
+        declaredAt: t.declaredAt ?? null,
         dueOn: t.dueOn,
         dueAt: t.dueAt,
         repeat: t.rrule,
