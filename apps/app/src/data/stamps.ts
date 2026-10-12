@@ -3,6 +3,7 @@
 import { stampKinds } from '@pn/core';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { fetchAllPages } from '@/data/paging';
 import { supabase } from '@/lib/supabase';
 
 type Award = { userId: string; kind: string; taskId?: string | null; listId?: string | null };
@@ -78,4 +79,43 @@ export async function fetchPassportStamps(userId: string): Promise<PassportStamp
   if (done.error) throw done.error;
   const at = (row: unknown) => (row as { earned_at: string } | null)?.earned_at ?? null;
   return { approvedAt: at(approved.data), firstStartAt: at(first.data), stepsDone: done.count ?? 0 };
+}
+
+/** A kept Declaration for the Passport: when they started, and the task (null once it's deleted for good). */
+export type KeptDeclaration = { id: string; earnedAt: string; title: string | null };
+
+type KeptRow = { id: string; earned_at: string; task: { title: string } | null };
+
+const KEPT_COLUMNS = 'id, earned_at, task:tasks(title)';
+const fromKept = (r: KeptRow): KeptDeclaration => ({ id: r.id, earnedAt: r.earned_at, title: r.task?.title ?? null });
+
+/** The latest `limit` Declarations kept, newest first, and how many there are in all. */
+export async function fetchDeclarationsKept(userId: string, limit: number): Promise<{ count: number; latest: KeptDeclaration[] }> {
+  const { data, count, error } = await supabase
+    .from('stamps')
+    .select(KEPT_COLUMNS, { count: 'exact' })
+    .eq('user_id', userId)
+    .eq('kind', stampKinds.declarationKept)
+    .order('earned_at', { ascending: false })
+    .order('id')
+    .range(0, limit - 1)
+    .returns<KeptRow[]>();
+  if (error) throw error;
+  return { count: count ?? 0, latest: (data ?? []).map(fromKept) };
+}
+
+/** Every Declaration kept, newest first (Show all). */
+export async function fetchAllDeclarationsKept(userId: string): Promise<KeptDeclaration[]> {
+  const rows = await fetchAllPages<KeptRow>((from, to) =>
+    supabase
+      .from('stamps')
+      .select(KEPT_COLUMNS)
+      .eq('user_id', userId)
+      .eq('kind', stampKinds.declarationKept)
+      .order('earned_at', { ascending: false })
+      .order('id')
+      .range(from, to)
+      .returns<KeptRow[]>(),
+  );
+  return rows.map(fromKept);
 }

@@ -7,6 +7,7 @@ import { useAuth } from '@/auth/auth-provider';
 import { personName } from '@/auth/person-name';
 import { Icon } from '@/components/icon';
 import { PassportSaveCard } from '@/components/passport-save-card';
+import { DeclarationsPage } from '@/components/passport/declarations-page';
 import { Screen } from '@/components/screen';
 import { CountStamp, RoundStamp } from '@/components/stamp';
 import { Text } from '@/components/text';
@@ -206,6 +207,7 @@ export default function PassportScreen() {
         ) : null}
       </View>
 
+      {userId ? <DeclarationsPage userId={userId} /> : null}
     </Screen>
   );
 }

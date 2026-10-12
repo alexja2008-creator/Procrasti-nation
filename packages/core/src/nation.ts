@@ -518,6 +518,7 @@ export const voice = {
     done: ['OFFICIALLY', 'DONE'],
     approved: ['APPLICATION', 'APPROVED'],
     smallSteps: ['SMALL STEPS', 'AND COUNTING'],
+    declarations: ['DECLARATIONS', 'KEPT'],
   },
   plan: {
     reading: 'Reading the task…',
@@ -569,6 +570,16 @@ export const voice = {
         .join('. '),
     toNextRank: (n: number, rank: string) => `${n} more ${n === 1 ? 'start' : 'starts'} to ${rank}`,
     loadFailed: 'Couldn’t load your passport. Check your connection.',
+    /** The Declarations page: only ever what was kept (never a kept-or-missed tally). */
+    declarationsLabel: 'Declarations',
+    declarationsLead: (n: number) => (n === 1 ? 'One start time signed and kept.' : `${spell(n)} start times signed and kept.`),
+    declarationsEmpty: (web: boolean) =>
+      `${web ? 'Right-click or press and hold' : 'Press and hold'} a task, then Declare a start. Start on time and it’s recorded here.`,
+    /** A kept Declaration, read aloud: "Essay, started Mon 12 Oct at 2:58 PM". */
+    declarationSpoken: (title: string, day: string, time: string) => `${title}, started ${day} at ${time}`,
+    deletedTask: 'A task since deleted',
+    showAll: (n: number) => `Show all (${n})`,
+    showFewer: 'Show fewer',
   },
   /** The Citizenship Application (first-run onboarding). */
   application: {
