@@ -32,7 +32,8 @@ const SYNC_PAUSE_MS = 1500;
 const START_MINUTES = 5;
 
 function open(d: Destination) {
-  if (d.to === 'today') router.navigate('/');
+  // The morning list: Today, with the Morning Briefing open when anything carried over.
+  if (d.to === 'today') router.navigate({ pathname: '/', params: { briefing: '1' } });
   else if (d.to === 'task') router.push({ pathname: '/task/[id]', params: { id: d.taskId } });
   else router.push({ pathname: '/start/[id]', params: { id: d.taskId, minutes: String(START_MINUTES) } });
 }

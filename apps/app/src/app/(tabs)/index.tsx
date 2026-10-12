@@ -11,7 +11,7 @@ import {
   type AgendaEntry,
   type Task,
 } from '@pn/core';
-import { router, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text as RNText, View } from 'react-native';
 
@@ -76,6 +76,8 @@ export default function TodayScreen() {
   const [customsOpen, setCustomsOpen] = useState(false);
   const [menuFor, setMenuFor] = useState<Task | null>(null);
   const { settings } = useUserSettings();
+  // ?briefing=1: opened from the morning list notification.
+  const { briefing } = useLocalSearchParams<{ briefing?: string }>();
   const [showAll, setShowAll] = useState(false);
   // "Show everything" lasts for this visit.
   useFocusEffect(useCallback(() => () => setShowAll(false), []));
@@ -154,7 +156,13 @@ export default function TodayScreen() {
       ) : null}
 
       {/* What carried over from before today, each given a place again. */}
-      {session ? <MorningBriefing userId={session.user.id} /> : null}
+      {session ? (
+        <MorningBriefing
+          userId={session.user.id}
+          openOnArrival={briefing === '1'}
+          onArrived={() => router.setParams({ briefing: undefined })}
+        />
+      ) : null}
 
       {!focused && view.customs.length > 0 ? (
         <View>

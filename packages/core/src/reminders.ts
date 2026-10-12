@@ -9,6 +9,7 @@
 // deadline with a time, and the optional morning list.
 
 import { buildToday } from './agenda.ts';
+import { briefingOf } from './briefing.ts';
 import { addDays, atLocalTime, clockOf, describeRRule, formatTime, localDateString, logicalDateString, nextOccurrence, occurrenceOnOrAfter } from './dates.ts';
 import { linesFor, voice, type NudgeTone } from './nation.ts';
 import { stepsByParent } from './order.ts';
@@ -146,6 +147,8 @@ export function planReminders(tasks: Task[], now: Date, options: ReminderOptions
         const ahead = view.agenda.filter((e) => !e.done);
         const count = ahead.length + (view.nextStep ? 1 : 0) + (view.upNext ? 1 : 0);
         const first = view.nextStep ?? view.upNext ?? ahead[0];
+        // What will have carried over by then; opening the notification opens the Morning Briefing.
+        const carried = briefingOf(live, logicalDateString(new Date(at), rolloverHour)).count;
         // Nothing on: no ring.
         if (first) {
           planned.push({
@@ -155,7 +158,7 @@ export function planReminders(tasks: Task[], now: Date, options: ReminderOptions
             at,
             day,
             title: lines.morningTitle(count),
-            body: lines.startWith(first.task.title),
+            body: [lines.startWith(first.task.title), carried ? voice.briefing.morningCarried(carried) : null].filter(Boolean).join(' '),
           });
         }
       }

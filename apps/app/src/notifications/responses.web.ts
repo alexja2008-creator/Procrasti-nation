@@ -10,7 +10,8 @@ const ID = '([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})';
 
 /** The paths lib/push.js gives a reminder, and nothing else. */
 export function destinationOf(path: string): Destination | null {
-  if (path === '/') return { to: 'today' };
+  // The morning list ('/' before the Morning Briefing).
+  if (path === '/' || path === '/?briefing=1') return { to: 'today' };
   const task = new RegExp(`^/task/${ID}$`).exec(path);
   if (task) return { to: 'task', taskId: task[1] };
   const start = new RegExp(`^/start/${ID}\\?minutes=5$`).exec(path);

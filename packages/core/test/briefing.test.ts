@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import { briefingOf, carriedOver, dayPatch, letGoPatch, respreadPatches, todayPatch, undoPatch } from '../src/briefing.ts';
 import { atLocalTime } from '../src/dates.ts';
+import { voice } from '../src/nation.ts';
 import type { Task } from '../src/types.ts';
 
 const TODAY = '2026-10-08';
@@ -88,4 +89,13 @@ test('Re-spread the rest spaces a plan’s open steps from today to its deadline
 test('Undo writes back exactly the fields a patch changed', () => {
   const t = task({ scheduledOn: '2026-10-07', remindAt: atLocalTime('2026-10-07', 15, 30), dueOn: '2026-10-03', title: 'Essay' });
   assert.deepEqual(undoPatch(t, letGoPatch(t, TODAY)), { scheduledOn: '2026-10-07', remindAt: t.remindAt, dueOn: '2026-10-03', dueAt: null });
+});
+
+test('the recap says what yesterday held, in true numbers, and nothing at zero', () => {
+  const { recap } = voice.briefing;
+  assert.equal(recap(4, 2), 'Yesterday: four things finished and two starts.');
+  assert.equal(recap(1, 0), 'Yesterday: one thing finished.');
+  assert.equal(recap(0, 1), 'Yesterday: one start.');
+  assert.equal(recap(12, 0), 'Yesterday: 12 things finished.');
+  assert.equal(recap(0, 0), null);
 });

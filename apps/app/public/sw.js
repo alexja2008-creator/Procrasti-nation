@@ -3,9 +3,10 @@
 // Plain JS, served at /sw.js, so it isn't bundled with the app.
 //
 // It shows each reminder. A click opens the task (the morning list opens
-// Today), Start 5 min opens Start Mode with a five-minute timer, and Snooze
-// 10 min asks the site to ring it again without opening anything. There's no
-// Done here on purpose: dismissing a notification must never finish a task.
+// Today with the Morning Briefing), Start 5 min opens Start Mode with a
+// five-minute timer, and Snooze 10 min asks the site to ring it again without
+// opening anything. There's no Done here on purpose: dismissing a
+// notification must never finish a task.
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));

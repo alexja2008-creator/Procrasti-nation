@@ -52,7 +52,7 @@ const cut = (text) => (text.length > MAX_WORDS ? `${text.slice(0, MAX_WORDS - 1)
  * What the service worker (apps/app/public/sw.js) gets for a reminder: its
  * words, where a click goes, and the two buttons (Start 5 min, Snooze 10 min;
  * deliberately no Done, so dismissing can never finish a task). The morning
- * list has no buttons and opens Today.
+ * list has no buttons and opens Today with the Morning Briefing.
  */
 export function reminderPayload(userId, reminder, actionUrl) {
   const title = cut(reminder.title);
@@ -64,7 +64,7 @@ export function reminderPayload(userId, reminder, actionUrl) {
     at: reminder.at,
     title,
     body,
-    path: task ? `/task/${task}` : '/',
+    path: task ? `/task/${task}` : '/?briefing=1',
     buttons: task
       ? [
           { action: 'start', title: actions.startFive, path: `/start/${task}?minutes=5` },

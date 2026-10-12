@@ -60,5 +60,5 @@ test('a reminder carries Start 5 min and Snooze 10 min, never Done; the morning 
   assert.ok(JSON.stringify(long).length < 3000);
 
   const morningList = reminderPayload('u1', { id: 'morning:2026-10-07', kind: 'morning', taskId: null, at: 1, day: '2026-10-07', title: 'Three things today', body: 'Start with “Read”.' }, 'https://x.test');
-  assert.deepEqual([morningList.path, morningList.buttons], ['/', []]);
+  assert.deepEqual([morningList.path, morningList.buttons], ['/?briefing=1', []]);
 });

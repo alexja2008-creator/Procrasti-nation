@@ -41,7 +41,7 @@ const STEPS_SHOWN = 2;
  * given a place again (Today, Pick a day, Let it go), and plans that fell
  * behind spread out again. Every change applies at once and offers Undo.
  */
-export function BriefingSheet({ onClose }: { onClose: () => void }) {
+export function BriefingSheet({ recap, onClose }: { recap: string | null; onClose: () => void }) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const { tasks, today, update, notify } = useTasks();
@@ -87,9 +87,16 @@ export function BriefingSheet({ onClose }: { onClose: () => void }) {
       title={names.morningBriefing}
       width={460}
       header={
-        <Text variant="section" style={s.lead} accessibilityLiveRegion="polite">
-          {briefing.count ? lines.briefingLead(briefing.count) : copy.allSorted}
-        </Text>
+        <View style={s.lead}>
+          {recap ? (
+            <Text variant="meta" color={c.primaryText}>
+              {recap}
+            </Text>
+          ) : null}
+          <Text variant="section" accessibilityLiveRegion="polite">
+            {briefing.count ? lines.briefingLead(briefing.count) : copy.allSorted}
+          </Text>
+        </View>
       }
       footer={
         <View style={s.footer}>
@@ -155,7 +162,7 @@ export function BriefingSheet({ onClose }: { onClose: () => void }) {
 const makeStyles = (t: Tokens) => ({
   t,
   ...StyleSheet.create({
-    lead: { paddingTop: 4, paddingBottom: 8 },
+    lead: { gap: 4, paddingTop: 4, paddingBottom: 8 },
     plan: { marginBottom: 8 },
     planHead: { gap: 3, paddingVertical: 12, borderTopWidth: 1, borderTopColor: t.c.rule },
     planTitle: { fontFamily: t.fonts.bodySemibold },

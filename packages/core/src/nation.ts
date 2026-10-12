@@ -241,6 +241,20 @@ export const voice = {
     respreadDone: (title: string) => `Spaced out “${title}” again.`,
     /** Read aloud for each row's buttons: "Today: Buy stamps". */
     actionFor: (action: string, title: string) => `${action}: ${title}`,
+    /** Added to the morning list notification; opening it opens the briefing. */
+    morningCarried: (n: number) => (n === 1 ? 'One thing carried over, ready to sort.' : `${spell(n)} things carried over, ready to sort.`),
+    /**
+     * Yesterday, in true numbers: one-offs and plan steps finished, and starts. Repeats leave no
+     * record when checked off, so they aren't counted (and the words never claim "everything").
+     * Null when both are zero: no recap rather than a zero.
+     */
+    recap: (finished: number, starts: number) => {
+      const parts = [
+        finished ? (finished === 1 ? 'one thing finished' : `${spell(finished).toLowerCase()} things finished`) : null,
+        starts ? (starts === 1 ? 'one start' : `${spell(starts).toLowerCase()} starts`) : null,
+      ].filter(Boolean);
+      return parts.length ? `Yesterday: ${parts.join(' and ')}.` : null;
+    },
   },
   upcoming: {
     eyebrow: 'Upcoming',

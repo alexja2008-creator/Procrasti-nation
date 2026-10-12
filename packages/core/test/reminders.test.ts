@@ -121,11 +121,15 @@ test('the morning list counts the day and names the first thing to start', () =>
     at: ms(6, 8),
     day: TODAY,
     title: 'Three things today',
-    body: 'Start with “Gather 4-5 sources”.',
+    // "Buy stamps" was for yesterday: opening this opens the Morning Briefing.
+    body: 'Start with “Gather 4-5 sources”. One thing carried over, ready to sort.',
   });
   // Projected like Today: anything not done by then (even Tuesday's walk) rolls forward.
   assert.equal(mornings.length, 14);
   assert.equal(mornings[1].title, 'Three things today');
+  assert.equal(mornings[1].body, 'Start with “Gather 4-5 sources”. Two things carried over, ready to sort.', 'the walk is a repeat: never carried over');
+  const nothingCarried = planReminders(tasks.slice(0, 2), early, { morning: { on: true, hour: 8, minute: 0 } })[0];
+  assert.equal(nothingCarried.body, 'Start with “Gather 4-5 sources”.');
   assert.equal(
     planReminders(tasks.slice(0, 2), early, { morning: { on: true, hour: 8, minute: 0 } })[1].title,
     'One thing today',
