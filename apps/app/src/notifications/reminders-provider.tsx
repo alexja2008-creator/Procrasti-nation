@@ -21,9 +21,19 @@ type Reminders = {
   allow: () => Promise<void>;
   /** Web only: stop ringing in this browser ("Turn off here"). */
   turnOff: () => Promise<void>;
+  /**
+   * Drops a first-time ask already waiting, without remembering "Not now": the Application's nudge
+   * page just asked about the same time, so Today mustn't ask again; the next new time still does.
+   */
+  dismissAsk: () => void;
 };
 
-const Ctx = createContext<Reminders>({ permission: null, allow: async () => undefined, turnOff: async () => undefined });
+const Ctx = createContext<Reminders>({
+  permission: null,
+  allow: async () => undefined,
+  turnOff: async () => undefined,
+  dismissAsk: () => undefined,
+});
 
 /** Waiting a moment after the last change saves a pass per keystroke-sized edit. */
 const SYNC_PAUSE_MS = 1500;
@@ -135,7 +145,7 @@ export function RemindersProvider({ userId, children }: { userId: string; childr
   };
 
   return (
-    <Ctx.Provider value={{ permission, allow, turnOff }}>
+    <Ctx.Provider value={{ permission, allow, turnOff, dismissAsk: settle }}>
       {children}
       {asking && askShown ? <ReminderPrompt ringsAt={asking} onAllow={allow} onNotNow={decline} /> : null}
     </Ctx.Provider>

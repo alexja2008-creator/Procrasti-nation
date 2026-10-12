@@ -17,10 +17,12 @@ type Props = {
   stickyHeaderIndices?: number[];
   /** Laptop width only: a column beside the scrolling one that stays put (Upcoming's calendar). */
   aside?: ReactNode;
+  /** False holds the page still (someone is signing their name on it). */
+  scrollEnabled?: boolean;
 };
 
 /** Passport-paper page with a centered, scrolling content column. */
-export function Screen({ children, scrollRef, stickyHeaderIndices, aside }: Props) {
+export function Screen({ children, scrollRef, stickyHeaderIndices, aside, scrollEnabled = true }: Props) {
   const t = useTokens();
   const insets = useSafeAreaInsets();
   const wide = useIsWide();
@@ -30,6 +32,7 @@ export function Screen({ children, scrollRef, stickyHeaderIndices, aside }: Prop
   const scroll = (
     <ScrollView
       ref={scrollRef}
+      scrollEnabled={scrollEnabled}
       style={belowStatusBar ? { marginTop: insets.top } : undefined}
       stickyHeaderIndices={stickyHeaderIndices}
       keyboardShouldPersistTaps="handled"

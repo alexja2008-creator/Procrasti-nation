@@ -685,9 +685,15 @@ export const voice = {
     firstWeekTitle: 'Your first week',
     firstWeekLead: 'Small steps on their days. You don’t have to do them all: just the next one.',
     firstWeekNone: 'Your plan’s steps are on Today and Upcoming, each on its day.',
+    /** The Oath's first step, declared: a start time signed (PN2-DECLARATIONS-PLAN.md). */
+    declareTitle: 'Your first Declaration',
+    declareLead: (step: string) => `When will you start “${step}”? Pick a time and sign. You’ll get a nudge then.`,
     nudgeTitle: 'A nudge for your next step?',
     nudgeBody: (time: string) =>
       `One notification each morning at ${time}, with what’s on and the first thing to start. Nothing else unless you ask.`,
+    /** After the first Declaration: notifications are what make it ring. */
+    nudgeBodyDeclared: (when: string, time: string) =>
+      `Allow notifications and your Declaration rings ${when}. Each morning at ${time}, a short list of what’s on, too. Nothing else unless you ask.`,
     nudgeYes: 'Yes, nudge me',
     nudgeOff: 'Notifications are off for ProcrastiNation. You can turn them on later in Settings.',
     approvedTitle: (firstName?: string | null) => (firstName ? `Welcome, ${firstName}.` : 'Welcome, citizen.'),

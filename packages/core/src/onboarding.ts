@@ -21,6 +21,7 @@ export type ApplicationPage =
   | 'heardFrom'
   | 'oath'
   | 'firstWeek'
+  | 'declare'
   | 'nudge'
   | 'approved'
   | 'save';
@@ -42,6 +43,7 @@ export const APPLICATION_PAGES: readonly ApplicationPage[] = [
   'heardFrom',
   'oath',
   'firstWeek',
+  'declare',
   'nudge',
   'approved',
   'save',
@@ -107,6 +109,15 @@ export function firstWeekOf(tasks: Task[], planId: string, today: LocalDate): { 
     byDay.set(day, [...(byDay.get(day) ?? []), step]);
   }
   return [...byDay.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([day, dayTasks]) => ({ day, steps: dayTasks }));
+}
+
+/** Their first Declaration is for this: the Oath's plan's first open step, in plan order. */
+export function firstStepOf(tasks: Task[], planId: string): Task | null {
+  return (
+    tasks
+      .filter((t) => t.parentId === planId && !t.deletedAt && !t.completedAt)
+      .sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt))[0] ?? null
+  );
 }
 
 /** The territories a purpose of visit starts someone with (only when they have none). */

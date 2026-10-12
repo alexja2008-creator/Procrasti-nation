@@ -1,8 +1,10 @@
 import {
   APPLICATION_PAGES,
   actions,
+  firstStepOf,
   formatCitizenNumber,
   hoursChange,
+  isDeclared,
   oathTask,
   parseQuickAdd,
   resumePage,
@@ -19,7 +21,7 @@ import { ActivityIndicator, StyleSheet, TextInput, View, type ScrollView } from 
 import { useAuth } from '@/auth/auth-provider';
 import { isUnsaved } from '@/auth/passport';
 import { personName } from '@/auth/person-name';
-import { FirstWeekPage, NudgePage } from '@/components/application/after-oath';
+import { DeclarePage, FirstWeekPage, NudgePage } from '@/components/application/after-oath';
 import { ApplicationForm } from '@/components/application/application-form';
 import { NewApplicant } from '@/components/application/new-applicant';
 import { isQuizPage, QuizPages } from '@/components/application/quiz-pages';
@@ -111,6 +113,9 @@ function Application() {
   const planned = !!oathId && tasks.some((t) => t.parentId === oathId && !t.deletedAt);
   // A plan accepted in Plan it (its steps land in the store) is the Oath taken: their first week shows underneath.
   const page = turnedTo === 'oath' && planned ? 'firstWeek' : turnedTo;
+  // Their first Declaration is for the plan's first step; a stroke on its signature line holds the page still.
+  const oathStep = oathId ? firstStepOf(tasks, oathId) : null;
+  const [signing, setSigning] = useState(false);
 
   const index = APPLICATION_PAGES.indexOf(page);
   const next = () => go(APPLICATION_PAGES[index + 1]);
@@ -233,8 +238,10 @@ function Application() {
     </ApplicationForm>
   ) : page === 'firstWeek' && oathId ? (
     <FirstWeekPage planId={oathId} onContinue={next} />
-  ) : page === 'firstWeek' || page === 'nudge' ? (
-    <NudgePage onContinue={() => go('approved')} />
+  ) : page === 'declare' && oathStep ? (
+    <DeclarePage step={oathStep} onContinue={() => go('nudge')} onDrawing={setSigning} />
+  ) : page === 'firstWeek' || page === 'declare' || page === 'nudge' ? (
+    <NudgePage declared={oathStep && isDeclared(oathStep, today) ? oathStep : null} onContinue={() => go('approved')} />
   ) : page === 'save' ? (
     <ApplicationForm page={page} title={copy.saveTitle} lead={copy.saveLead}>
       <SavePassport onDone={() => finish(false)} onLater={() => finish(false)} />
@@ -268,7 +275,7 @@ function Application() {
   );
 
   return (
-    <Screen scrollRef={scroll}>
+    <Screen scrollRef={scroll} scrollEnabled={!signing}>
       <View style={s.page}>{content}</View>
     </Screen>
   );

@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { voice } from '../src/nation.ts';
 import {
   APPLICATION_PAGES,
+  firstStepOf,
   firstWeekOf,
   helpCardsFor,
   hoursChange,
@@ -20,7 +21,7 @@ import { parseQuickAdd } from '../src/quick-add.ts';
 test('the questions are numbered through the Oath; the rest are not', () => {
   assert.deepEqual(
     APPLICATION_PAGES.map((p) => pageNumber(p)?.n ?? null),
-    [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, null, null, null, null],
+    [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, null, null, null, null, null],
   );
   assert.equal(pageNumber('oath')?.of, 9);
 });
@@ -110,4 +111,19 @@ test('changing hours moves the morning list only while it is off', () => {
   const on = { reminders: { morningList: { on: true, hour: 6, minute: 30 } } };
   assert.deepEqual(hoursChange('early', on).preferences.reminders?.morningList, { on: true, hour: 6, minute: 30 });
   assert.equal(hoursChange('early', on).dayRolloverHour, 0);
+});
+
+test('the first Declaration is for the plan’s first open step', () => {
+  const base = { userId: 'u', listId: null, noteId: null, notes: null, status: 'in_progress' as const, dueOn: null, dueAt: null,
+    remindAt: null, declaredAt: null, rrule: null, estimateMinutes: null, scheduledOn: '2026-10-12', source: 'ai' as const,
+    externalId: null, completedAt: null, createdAt: '2026-10-12T00:00:00Z', updatedAt: '2026-10-12T00:00:00Z', deletedAt: null };
+  const tasks = [
+    { ...base, id: 'oath', parentId: null, title: 'Study for chem midterm', sortOrder: 0, source: 'self' as const },
+    { ...base, id: 's2', parentId: 'oath', title: 'Make flashcards', sortOrder: 2 },
+    { ...base, id: 's1', parentId: 'oath', title: 'List the chapters', sortOrder: 1, completedAt: '2026-10-12T15:00:00Z', status: 'completed' as const },
+    { ...base, id: 's0', parentId: 'oath', title: 'Gone', sortOrder: 0, deletedAt: '2026-10-12T15:00:00Z' },
+    { ...base, id: 's3', parentId: 'oath', title: 'Practice test', sortOrder: 3 },
+  ];
+  assert.equal(firstStepOf(tasks, 'oath')?.id, 's2', 'finished and deleted steps are passed over');
+  assert.equal(firstStepOf(tasks, 'nothing'), null);
 });

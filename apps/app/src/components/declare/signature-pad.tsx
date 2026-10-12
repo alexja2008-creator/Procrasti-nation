@@ -31,13 +31,15 @@ type Props = {
   onChange: Dispatch<SetStateAction<Signature>>;
   /** What "Sign with my name" writes on the line. */
   name: string;
+  /** A stroke began (true) or ended: a scrolling page holds still meanwhile. */
+  onDrawing?: (drawing: boolean) => void;
 };
 
 /**
  * The signature line: draw with a finger (a mouse on web), or "Sign with my name", which also
  * serves VoiceOver and keyboard users. The ceremony is the point; nothing is saved.
  */
-export function SignaturePad({ value, onChange, name }: Props) {
+export function SignaturePad({ value, onChange, name, onDrawing }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const empty = !value.name && value.strokes.length === 0;
@@ -46,6 +48,7 @@ export function SignaturePad({ value, onChange, name }: Props) {
   // touch for the whole stroke. Children don't take touches, so locations are the pad's own.
   const at = (e: GestureResponderEvent): Point => [e.nativeEvent.locationX, e.nativeEvent.locationY];
   const begin = (e: GestureResponderEvent) => {
+    onDrawing?.(true);
     const point = at(e);
     onChange((prev) => ({ name: null, strokes: [...prev.strokes, [point]] }));
   };
@@ -67,6 +70,8 @@ export function SignaturePad({ value, onChange, name }: Props) {
         onResponderTerminationRequest={() => false}
         onResponderGrant={begin}
         onResponderMove={extend}
+        onResponderRelease={() => onDrawing?.(false)}
+        onResponderTerminate={() => onDrawing?.(false)}
         accessibilityLabel={copy.signLabel}
         accessibilityHint={copy.signHint}>
         <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -111,7 +116,8 @@ const makeStyles = (t: Tokens) => ({
       backgroundColor: t.c.page,
       overflow: 'hidden',
     },
-    name: { position: 'absolute', left: 36, right: 16, bottom: 34, fontFamily: t.fonts.displayItalic, fontSize: 34, color: t.c.ink },
+    // Its own line height: the body style's 20 would clip a 34-point name.
+    name: { position: 'absolute', left: 36, right: 16, bottom: 30, fontFamily: t.fonts.displayItalic, fontSize: 34, lineHeight: 44, color: t.c.ink },
     baseline: { position: 'absolute', left: 14, right: 14, bottom: 26, flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
     rule: { flex: 1, height: 1, backgroundColor: t.c.dashed, marginBottom: 4 },
     hint: { position: 'absolute', left: 14, bottom: 8 },
