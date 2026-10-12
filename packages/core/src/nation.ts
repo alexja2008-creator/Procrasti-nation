@@ -262,6 +262,18 @@ export const voice = {
     respreadHint: (deadline: string | null) =>
       deadline ? `Re-spread puts its open steps between today and ${deadline}.` : 'Re-spread puts its open steps one a day from today.',
     allSorted: 'All sorted. A fresh page.',
+    /** A long briefing (core's `LONG_BRIEFING`): pick up to three for today, and the rest wait. */
+    pickThree: 'Pick three',
+    pickWhy: 'Suggested by the nearest deadline, then what’s waited longest. Swap any of them.',
+    pickFull: 'Three picked. Untick one to swap.',
+    /** A deadline still ahead, beside a pick: "due Fri". */
+    dueBy: (day: string) => `due ${day}`,
+    showRest: (n: number) => `Show the rest (${n})`,
+    hideRest: 'Hide the rest',
+    putOnToday: (n: number) => (n === 0 ? 'Put on today' : `Put ${spell(n).toLowerCase()} on today`),
+    sortEach: 'Sort one by one instead',
+    pickInstead: 'Pick three instead',
+    pickedToday: (n: number) => `${n === 1 ? 'One thing is' : `${spell(n)} things are`} on today. The rest can wait.`,
     /** Undo notices. */
     onToday: (title: string) => `“${title}” is on today.`,
     movedTo: (title: string, day: string) => `“${title}” moved to ${day}.`,
@@ -830,6 +842,8 @@ export interface ToneLines {
   startWith: (title: string) => string;
   /** The Morning Briefing, under its title: how many things carried over. */
   briefingLead: (count: number) => string;
+  /** A long Morning Briefing (core's `LONG_BRIEFING`): three for today is plenty. */
+  briefingPickLead: (count: number) => string;
   /** A declared start's reminder, above where the task lives. */
   declaredReminder: string;
 }
@@ -843,6 +857,7 @@ export const toneLines: Record<NudgeTone, ToneLines> = {
     morningTitle: voice.reminders.morningTitle,
     startWith: voice.reminders.startWith,
     briefingLead: (n) => (n === 1 ? 'One thing carried over. Where should it go?' : `${spell(n)} things carried over. Let’s give each one a place.`),
+    briefingPickLead: (n) => `${spell(n)} things carried over. That’s a lot to carry, so pick up to three for today. The rest can wait.`,
     declaredReminder: 'Your declared start. Five minutes is enough to begin.',
   },
   drill: {
@@ -853,6 +868,7 @@ export const toneLines: Record<NudgeTone, ToneLines> = {
     morningTitle: (n) => (n === 1 ? 'One order today' : `${spell(n)} orders today`),
     startWith: (title) => `First up: “${title}”. Move.`,
     briefingLead: (n) => (n === 1 ? 'One item carried over. Assign it a day.' : `${spell(n)} items carried over. Assign each one a day.`),
+    briefingPickLead: (n) => `${spell(n)} items carried over. Nobody clears that in a day. Pick three for today; the rest hold.`,
     declaredReminder: 'Declared start. It’s time. Move.',
   },
   roast: {
@@ -863,6 +879,7 @@ export const toneLines: Record<NudgeTone, ToneLines> = {
     morningTitle: (n) => (n === 1 ? 'One thing today. Just one. Easy.' : `${spell(n)} things today. Bold of them.`),
     startWith: (title) => `“${title}” has been waiting very politely.`,
     briefingLead: (n) => (n === 1 ? 'One thing followed you here. Clingy.' : `${spell(n)} things followed you here. Clingy bunch.`),
+    briefingPickLead: (n) => `${spell(n)} things followed you here. Nobody does ${spell(n).toLowerCase()} things in a day. Pick three.`,
     declaredReminder: 'You signed for this. In ink, basically.',
   },
 };

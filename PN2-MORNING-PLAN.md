@@ -54,9 +54,26 @@ No database change: every action is an ordinary task update.
 - **Web keyboard:** nothing to build. React Native Web's Modal already closes on Escape (the date sheet first when it's open), and Tab reaches every button in order; arrow keys through rows were dropped as not worth a roving-focus model. The sheet is 460 wide at laptop width.
 - **Checked:** core tests (the notification's line, a repeat never counted, none when nothing carried over; the recap's words and zero); site tests (the morning list's path); on the iPhone (Expo Go, 2026-10-12, Alex's 3 AM rollover): `/?briefing=1` opened the briefing over Today with 24 carried over, closing it didn't reopen on the next visit, a second open reopened it; no recap line (nothing finished or started on Oct 10, confirmed on staging, while Oct 6 counts 2 finished and 6 starts). **Not seen:** a recap on screen (needs a day with something done), a real morning notification (Alex's morning list is off), and the web.
 
-## Phase 3: Polish
-- A long list (say 10+): suggest picking up to three for today and letting the rest wait.
-- VoiceOver: each row's actions read with the task's title.
+## Phase 3: Pick three (Alex, 2026-10-12)
+A long briefing is the pile again, and Move all to today would put the whole pile on today. So a long one asks for less.
+- **When:** 10 or more things to decide about, a plan counting once (Re-spread sorts a plan in one go, so plans far behind stay the usual list). Alex's own briefing showed why: 17 carried over, all steps of three plans. Move all to today isn't offered at 10 or more carried over (steps counted one by one) either way.
+- **The sheet opens on Pick three:** the lead (per tone) says it's a lot and three is plenty; the card's button says Pick three; the app suggests three, already ticked: deadlines still ahead first (the soonest first), then the oldest day first. A plan offers only its next carried-over step (steps go in order), with the plan's name under it. The suggestions show first; Show the rest lists the others. They can untick and swap, up to three; a fourth tap says "Three picked. Untick one to swap." The tick boxes are square, so they never read as Done.
+- **Put on today:** the ticked ones go on today (keeping their times), the card rests for the day (as Not now does), the sheet closes, and the notice says the rest can wait, with Undo (which brings the card back too).
+- **The rest stay as they are:** still carried over, back on tomorrow's card. Nothing is moved, undated or spread without being asked.
+- **Sort one by one** switches to the usual list (with Today / Pick a day / Let it go for each); on a long list it has no Move all to today.
+- **VoiceOver:** each row's buttons already read with the task's title (phase 1); the tick boxes are checkboxes named by the task.
+- **No AI** (it's a ranking on the device) and no database change.
+
+| File | What changes |
+|---|---|
+| `packages/core/src/briefing.ts` (+ test) | `LONG_BRIEFING` = 10, `PICK_MOST` = 3, `picksOf(briefing, today)` (each loose task and each plan's next carried-over step, ranked), `isLongBriefing` (picks, not steps) |
+| `packages/core/src/nation.ts` | The copy: `toneLines.briefingPickLead` per tone, `voice.briefing` pick words and the notice |
+| `apps/app/src/components/briefing/pick-row.tsx` | Create: a tick box row (title, plan, where it came from, a deadline ahead) |
+| `apps/app/src/components/briefing/briefing-sheet.tsx` | Pick three mode, Sort one by one, no Move all on a long list |
+| `apps/app/src/components/briefing/morning-briefing.tsx` | The card's lead and button on a long list; lets the sheet rest the card and Undo wake it |
+| `apps/app/src/data/briefing.ts` | Clearing the put-off day (for Undo) |
+
+**Built 2026-10-12.** **Checked on the iPhone (Expo Go, Alex's account, Roast tone):** Alex's real 17 (three plans) stays the usual list, now without Move all to today. With nine sample tasks added in memory only (never saved; removed before committing) beside his three plans: the card read "26 things followed you here. Nobody does 26 things in a day. Pick three." with Pick three; the sheet ticked the chem step (due Wed) between two samples due sooner, then listed the rest oldest first ("from Mon 28 Sep", "was due Mon 5 Oct", a plan's step under its plan's name); Show the rest / Hide the rest (a ticked one from the rest stayed in sight); a fourth tap said to untick one; swapping; Sort one by one instead (no Move all, Pick three instead) and back; Put one on today wrote exactly that step's `scheduled_on` on staging (compared with a snapshot), closed the sheet, rested the card and showed "One thing is on today. The rest can wait."; Undo put the step back and the card with it; the sheet's Not now rested the card; the morning list's link (`/?briefing=1`) still opened Pick three while it rested; night theme. Staging matched the snapshot afterwards (37 open tasks, counts unchanged). **Not exercised:** VoiceOver itself (the rows are checkboxes named by title and where they came from; checked in code only) and the web signed in (the browser pane is signed out; the web bundle loads clean).
 
 ## State & Data Flow
 - Leftovers are derived from the tasks store on every render (`briefingOf`), like Today itself. Sorting a task changes its dates, so it leaves the briefing (and the card's count) at once, on every device after its next refresh.

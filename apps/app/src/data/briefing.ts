@@ -20,6 +20,11 @@ export function savePutOff(userId: string, day: LocalDate): void {
   AsyncStorage.setItem(keyFor(userId), day).catch(() => undefined);
 }
 
+/** The card back (an Undo of Pick three, which rests it for the day). */
+export function clearPutOff(userId: string): void {
+  AsyncStorage.removeItem(keyFor(userId)).catch(() => undefined);
+}
+
 export type Recap = { finished: number; starts: number };
 
 /** When a day of theirs begins: midnight, or their rollover hour (a night owl's day starts at 3 AM). */

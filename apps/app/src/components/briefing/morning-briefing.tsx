@@ -1,11 +1,11 @@
-import { briefingOf, linesFor, names, voice, type LocalDate } from '@pn/core';
+import { briefingOf, isLongBriefing, linesFor, names, voice, type LocalDate } from '@pn/core';
 import { useEffect, useEffectEvent, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { BriefingSheet } from '@/components/briefing/briefing-sheet';
 import { Button } from '@/components/button';
 import { Text } from '@/components/text';
-import { fetchYesterday, loadPutOff, savePutOff } from '@/data/briefing';
+import { clearPutOff, fetchYesterday, loadPutOff, savePutOff } from '@/data/briefing';
 import { useTasks } from '@/data/tasks-store';
 import { useUserSettings } from '@/data/user-settings';
 import { useStyles, type Tokens } from '@/theme/tokens';
@@ -57,7 +57,11 @@ export function MorningBriefing({ userId, openOnArrival = false, onArrived }: Pr
     };
   }, [userId, today, rolloverHour]);
 
-  const count = briefingOf(tasks, today).count;
+  const briefing = briefingOf(tasks, today);
+  const { count } = briefing;
+  // A long one asks for three things today, not a place for each.
+  const long = isLongBriefing(briefing, today);
+  const lines = linesFor(settings?.preferences.nudgeTone);
 
   // From the morning notification: straight to the briefing if anything carried over, once per
   // tap (set while rendering, React's way to adjust state to a prop), then the param is cleared.
@@ -76,6 +80,10 @@ export function MorningBriefing({ userId, openOnArrival = false, onArrived }: Pr
     setPutOffOn(today);
     savePutOff(userId, today);
   };
+  const bringBack = () => {
+    setPutOffOn(null);
+    clearPutOff(userId);
+  };
 
   // Once open, the sheet stays until closed, even when the last thing is sorted ("All sorted.").
   const showCard = status === 'ready' && count > 0 && putOffOn !== undefined && putOffOn !== today;
@@ -93,17 +101,17 @@ export function MorningBriefing({ userId, openOnArrival = false, onArrived }: Pr
             </Text>
           ) : null}
           <Text variant="body" color={c.inkSoft}>
-            {linesFor(settings?.preferences.nudgeTone).briefingLead(count)}
+            {long ? lines.briefingPickLead(count) : lines.briefingLead(count)}
           </Text>
           <View style={s.buttons}>
             <View style={s.sort}>
-              <Button label={copy.sort(count)} onPress={() => setOpen(true)} />
+              <Button label={long ? copy.pickThree : copy.sort(count)} onPress={() => setOpen(true)} />
             </View>
             <Button variant="quiet" label={copy.notNow} onPress={putOff} />
           </View>
         </View>
       ) : null}
-      {open ? <BriefingSheet recap={recap} onClose={() => setOpen(false)} /> : null}
+      {open ? <BriefingSheet recap={recap} onClose={() => setOpen(false)} onPutOff={putOff} onBringBack={bringBack} /> : null}
     </>
   );
 }

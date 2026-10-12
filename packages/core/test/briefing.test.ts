@@ -1,7 +1,17 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { briefingOf, carriedOver, dayPatch, letGoPatch, respreadPatches, todayPatch, undoPatch } from '../src/briefing.ts';
+import {
+  briefingOf,
+  carriedOver,
+  dayPatch,
+  isLongBriefing,
+  letGoPatch,
+  picksOf,
+  respreadPatches,
+  todayPatch,
+  undoPatch,
+} from '../src/briefing.ts';
 import { atLocalTime } from '../src/dates.ts';
 import { voice } from '../src/nation.ts';
 import type { Task } from '../src/types.ts';
@@ -84,6 +94,51 @@ test('Re-spread the rest spaces a plan’s open steps from today to its deadline
   );
   const noDeadline = respreadPatches({ dueOn: '2026-10-01' }, steps, TODAY);
   assert.deepEqual(noDeadline.map(({ patch }) => patch.scheduledOn), [TODAY, '2026-10-09', '2026-10-10'], 'a passed deadline: one a day');
+});
+
+test('a long briefing suggests deadlines ahead first, then the oldest day, and a plan’s next step only', () => {
+  const tasks = [
+    task({ id: 'old', scheduledOn: '2026-09-20' }),
+    task({ id: 'recent', scheduledOn: '2026-10-07' }),
+    task({ id: 'dueSoon', scheduledOn: '2026-10-06', dueOn: '2026-10-09' }),
+    task({ id: 'missedAgain', dueOn: '2026-10-02', scheduledOn: '2026-10-05' }),
+    task({ id: 'wasDue', dueOn: '2026-10-01' }),
+    task({ id: 'essay', dueOn: '2026-10-08' }),
+    task({ id: 'e1', parentId: 'essay', scheduledOn: '2026-10-05', sortOrder: 1, source: 'ai' }),
+    task({ id: 'e2', parentId: 'essay', scheduledOn: '2026-10-06', sortOrder: 2, source: 'ai' }),
+    task({ id: 'e3', parentId: 'essay', scheduledOn: '2026-10-07', sortOrder: 3, source: 'ai' }),
+  ];
+  const b = briefingOf(tasks, TODAY);
+  const picks = picksOf(b, TODAY);
+  assert.deepEqual(
+    picks.map((p) => [p.task.id, p.plan?.id ?? null, p.deadline]),
+    [
+      ['e1', 'essay', TODAY], // the plan's deadline is today: still ahead
+      ['dueSoon', null, '2026-10-09'],
+      ['old', null, null],
+      ['wasDue', null, null], // a passed deadline ranks by its day, like any other
+      ['missedAgain', null, null], // its day (Oct 5), not its passed deadline
+      ['recent', null, null],
+    ],
+  );
+  assert.equal(b.count, 8);
+  assert.equal(isLongBriefing(b, TODAY), false, 'under ten');
+});
+
+test('long means ten or more things to decide about, a plan counting once', () => {
+  const many = (n: number) => Array.from({ length: n }, (_, i) => task({ id: `t${i}`, scheduledOn: '2026-10-07', sortOrder: i }));
+  assert.equal(isLongBriefing(briefingOf(many(9), TODAY), TODAY), false);
+  assert.equal(isLongBriefing(briefingOf(many(10), TODAY), TODAY), true);
+  // Plans far behind are still one thing each: Re-spread is their answer.
+  const plan = (id: string, steps: number) => [
+    task({ id }),
+    ...Array.from({ length: steps }, (_, i) => task({ id: `${id}${i}`, parentId: id, scheduledOn: '2026-10-07', sortOrder: i, source: 'ai' })),
+  ];
+  const b = briefingOf([...plan('room', 1), ...plan('essay', 6), ...plan('chem', 10)], TODAY);
+  assert.equal(b.count, 17);
+  assert.equal(isLongBriefing(b, TODAY), false);
+  assert.deepEqual(picksOf(b, TODAY).map((p) => p.task.id).sort(), ['chem0', 'essay0', 'room0']);
+  assert.equal(isLongBriefing(briefingOf([...plan('chem', 10), ...many(9)], TODAY), TODAY), true, 'nine tasks and a plan');
 });
 
 test('Undo writes back exactly the fields a patch changed', () => {

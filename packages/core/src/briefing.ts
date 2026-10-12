@@ -64,6 +64,42 @@ export function briefingOf(tasks: Task[], today: LocalDate): Briefing {
   return { plans, loose, count: loose.length + plans.reduce((n, p) => n + p.steps.length, 0) };
 }
 
+/**
+ * A long briefing: this many things to decide about (a plan counts once: Re-spread sorts it in one
+ * go) asks for a few things today instead of a place for each. With this many carried over (steps
+ * counted one by one), Move all to today would be the pile again, so it isn't offered.
+ */
+export const LONG_BRIEFING = 10;
+/** How many a long briefing suggests for today. */
+export const PICK_MOST = 3;
+
+export interface BriefingPick {
+  task: Task;
+  /** The plan it's a step of. */
+  plan: Task | null;
+  /** Its deadline (or its plan's) if still ahead, today included. */
+  deadline: LocalDate | null;
+}
+
+/**
+ * What a long briefing offers to put on today, best first: each loose thing and each plan's next
+ * carried-over step (steps go in order). Deadlines still ahead come first, the soonest first; then
+ * the oldest day first. The first `PICK_MOST` are the suggestion.
+ */
+export function picksOf(b: Briefing, today: LocalDate): BriefingPick[] {
+  const ahead = (day: LocalDate | null) => (day !== null && day >= today ? day : null);
+  const picks: BriefingPick[] = [
+    ...b.plans.map((p) => ({ task: p.steps[0], plan: p.plan, deadline: ahead(p.steps[0].dueOn ?? p.plan.dueOn) })),
+    ...b.loose.map((t) => ({ task: t, plan: null, deadline: ahead(t.dueOn) })),
+  ];
+  return picks.sort(
+    (a, b) => nullsLast(a.deadline, b.deadline) || nullsLast(missedDay(a.task), missedDay(b.task)) || bySortOrder(a.task, b.task),
+  );
+}
+
+/** Long enough to pick a few: `LONG_BRIEFING` or more things to decide about, a plan counting once. */
+export const isLongBriefing = (b: Briefing, today: LocalDate) => picksOf(b, today).length >= LONG_BRIEFING;
+
 type Dated = Pick<Task, 'scheduledOn' | 'remindAt' | 'dueOn' | 'dueAt'>;
 
 const timeOf = (t: Pick<Task, 'remindAt'>): ClockTime | null => (t.remindAt ? clockOf(t.remindAt) : null);

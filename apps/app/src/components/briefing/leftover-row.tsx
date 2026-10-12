@@ -43,15 +43,19 @@ export function ActionPill({ label, onPress, primary, accessibilityLabel, access
   );
 }
 
-/** One thing that carried over: its title, the day it came from, and where it goes now. */
-export function LeftoverRow({ task, today, onToday, onPick, onLetGo }: Props) {
-  const s = useStyles(makeStyles);
-  const { c } = s.t;
-  const came = task.scheduledOn
+/** Where a leftover came from: "from Tue", or with no day "was due Sat 3 Oct". */
+export const cameFrom = (task: Task, today: LocalDate): string | null =>
+  task.scheduledOn
     ? copy.from(relativeDayPhrase(task.scheduledOn, today))
     : task.dueOn
       ? copy.wasDue(relativeDayPhrase(task.dueOn, today))
       : null;
+
+/** One thing that carried over: its title, the day it came from, and where it goes now. */
+export function LeftoverRow({ task, today, onToday, onPick, onLetGo }: Props) {
+  const s = useStyles(makeStyles);
+  const { c } = s.t;
+  const came = cameFrom(task, today);
   const pill = (label: string, onPress: () => void, primary = false) => (
     <ActionPill label={label} onPress={onPress} primary={primary} accessibilityLabel={copy.actionFor(label, task.title)} />
   );
