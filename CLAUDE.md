@@ -93,7 +93,7 @@ components/
   landing/, legal/                  # The landing page's sections; the legal pages' layout
 
 lib/
-  site.js                           # APP_URL, CONTACT_EMAIL (NEXT_PUBLIC_CONTACT_EMAIL), LEGAL_DRAFT
+  site.js                           # APP_URL, CONTACT_EMAIL (procrasti.nation.marketing@gmail.com), LEGAL_EFFECTIVE (the launch date), LEGAL_DRAFT
   ai.js                             # callClaude(), model constants, resolveToday()
   prompts/plan.js                   # Adherence planner prompts + JSON schemas
   prompts/unstick.js                # "I'm stuck" prompt + schema (gated by evals/unstick)

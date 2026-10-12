@@ -72,6 +72,10 @@ More detail: `CLAUDE.md` (layout, data model, patterns), `PN2-HANDOFF.md` (state
 - Planned, not built yet: a required 7-day trial with the payment method taken up front; cancelling keeps the free tier.
 - The web launches free-only (2026-10-12): payments arrive with the App Store version through RevenueCat (which can take web payments through Stripe too). v1's Stripe checkout, portal and webhook retire at cutover.
 
+**Legal pages** (`apps/site/app/privacy`, `/terms`; Alex, 2026-10-12)
+- Run by Alex Anderson, New York City; contact procrasti.nation.marketing@gmail.com; 13 and older; New York State law; effective at launch (tentatively October 25, 2026).
+- The privacy policy promises deleted data is gone from backups within 7 days (there are none today). Turning on longer backups means changing the policy first.
+
 **Email**
 - v1's daily nudge email retires at cutover (2026-10-12): v2 nudges through notifications.
 - The Weekly Citizen Report becomes **State of the Union, every Monday morning** (2026-10-12; the original v2 plan said Sunday evening). Not built yet; it comes after the web launch.

@@ -1,22 +1,22 @@
 import Link from 'next/link';
-import LegalPage, { Todo } from '../../components/legal/LegalPage';
-import { CONTACT_EMAIL } from '../../lib/site';
+import LegalPage from '../../components/legal/LegalPage';
+import { CONTACT_EMAIL, LEGAL_EFFECTIVE } from '../../lib/site';
 
 export const metadata = { title: 'Terms · ProcrastiNation' };
 
 // A draft until Alex has it reviewed (lib/site.js). Paid plans add their own section when they ship.
 export default function Terms() {
-  const contact = CONTACT_EMAIL ? <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> : <Todo>contact email</Todo>;
+  const contact = <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>;
   return (
-    <LegalPage eyebrow="TERMS OF USE" title="The deal, in plain words." effective={<Todo>date of launch</Todo>}>
+    <LegalPage eyebrow="TERMS OF USE" title="The deal, in plain words." effective={LEGAL_EFFECTIVE}>
       <p>
-        These terms are the agreement between you and ProcrastiNation <Todo>legal name</Todo> when you use the app or this
-        website. By using them, you agree to these terms and to our <Link href="/privacy">privacy policy</Link>.
+        These terms are the agreement between you and Alex Anderson, who runs ProcrastiNation from New York City
+        (&ldquo;ProcrastiNation&rdquo;, &ldquo;we&rdquo;), when you use the app or this website. By using them, you agree to these terms and to our <Link href="/privacy">privacy policy</Link>.
       </p>
 
       <h2>Who can use it</h2>
       <p>
-        You need to be 13 or older <Todo>confirm the minimum age</Todo>, and old enough where you live to agree to these terms
+        You need to be 13 or older, and old enough where you live to agree to these terms
         (or have a parent or guardian agree for you).
       </p>
 
@@ -69,7 +69,7 @@ export default function Terms() {
         The app is provided &ldquo;as is&rdquo;, without warranties of any kind, to the extent the law allows. To the extent the law
         allows, ProcrastiNation isn&rsquo;t liable for indirect or consequential losses, or for missed deadlines, and our total
         liability is limited to what you paid us in the last twelve months (for the free app, nothing). Some places don&rsquo;t allow
-        these limits, so they may not apply to you. These terms are governed by the laws of <Todo>state or country</Todo>.
+        these limits, so they may not apply to you. These terms are governed by the laws of the State of New York.
       </p>
 
       <h2>Changes to these terms</h2>

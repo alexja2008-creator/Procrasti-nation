@@ -1,19 +1,21 @@
-import LegalPage, { Todo } from '../../components/legal/LegalPage';
-import { CONTACT_EMAIL } from '../../lib/site';
+import LegalPage from '../../components/legal/LegalPage';
+import { CONTACT_EMAIL, LEGAL_EFFECTIVE } from '../../lib/site';
 
 export const metadata = { title: 'Privacy policy · ProcrastiNation' };
 
 // Written from what the code does (2026-10-12). When a feature changes what's collected or who
 // processes it, change this page in the same commit. A draft until Alex has it reviewed (lib/site.js).
+// Still to add when they ship: a phone number (texted sign-in codes) and the weekly State of the Union
+// email with its one-click unsubscribe.
 export default function Privacy() {
-  const contact = CONTACT_EMAIL ? <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> : <Todo>contact email</Todo>;
+  const contact = <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>;
   return (
-    <LegalPage eyebrow="PRIVACY POLICY" title="What we keep, and why." effective={<Todo>date of launch</Todo>}>
+    <LegalPage eyebrow="PRIVACY POLICY" title="What we keep, and why." effective={LEGAL_EFFECTIVE}>
       <p>
         ProcrastiNation (&ldquo;we&rdquo;) is an app for planning and starting tasks, on the web at app.procrasti-nation.work and,
         soon, on iPhone. This policy says what information the app collects, what it&rsquo;s used for, who else handles it,
         and what you can do about it. The short version: we keep what the app needs to work, we never sell it, and there
-        are no ads or ad trackers. <Todo>the legal name of who runs ProcrastiNation, and where</Todo>
+        are no ads or ad trackers. ProcrastiNation is run by Alex Anderson, in New York City.
       </p>
 
       <h2>What we collect</h2>
@@ -26,7 +28,7 @@ export default function Privacy() {
         <li>
           <strong>When you save it:</strong> a username, and your email address (with a password, if you choose one), or the
           email and name Apple or Google share when you sign in with them. Passwords are stored by our database provider as
-          salted hashes; we never see them. <Todo>add: a phone number, if texted sign-in codes are turned on at launch</Todo>
+          salted hashes; we never see them.
         </li>
       </ul>
       <h3>What you put in it</h3>
@@ -61,17 +63,17 @@ export default function Privacy() {
           <strong>To make plans with AI.</strong> When you use Plan it, &ldquo;I&rsquo;m stuck&rdquo; or dated steps, we send that
           task&rsquo;s text (its title, notes, deadline, the plan&rsquo;s steps, your answers to its questions), the date and your
           time zone, and the &ldquo;what stops you&rdquo; answer from your application to Anthropic, whose Claude models write the
-          plan. Nothing else from your account goes with it. <Todo>confirm Anthropic&rsquo;s current terms on training and retention</Todo>
+          plan. Nothing else from your account goes with it. Anthropic&rsquo;s terms for businesses don&rsquo;t let it train its models on what we send.
         </li>
         <li>To count your free plans, and to stop abuse (we log each AI request with its time).</li>
-        <li>To email you about your account (sign-in links, confirming your address). <Todo>add the weekly State of the Union email, with its one-click unsubscribe, when it ships</Todo></li>
+        <li>To email you about your account (sign-in links, confirming your address).</li>
       </ul>
       <p>We don&rsquo;t sell your information, share it for advertising, or use it to train AI models.</p>
 
       <h2>Who else handles it</h2>
       <p>These companies process information for us, only to run the parts of the app they&rsquo;re named for:</p>
       <ul>
-        <li><strong>Supabase:</strong> our database and sign-in. <Todo>the region the database is hosted in</Todo></li>
+        <li><strong>Supabase:</strong> our database and sign-in, hosted in the United States (Amazon Web Services, in Oregon).</li>
         <li><strong>Vercel:</strong> hosting for this website, the app on the web, and our server.</li>
         <li><strong>Anthropic:</strong> the AI that writes plans, as described above.</li>
         <li><strong>Resend:</strong> sending our emails.</li>
@@ -85,7 +87,7 @@ export default function Privacy() {
       <h2>Your choices</h2>
       <ul>
         <li><strong>Download your data:</strong> Settings → Account → Download your data gives you everything in one file.</li>
-        <li><strong>Delete your passport:</strong> Settings → Account → Delete your passport removes your account and everything in it from our database right away. <Todo>how long backups keep it, from Supabase&rsquo;s plan</Todo></li>
+        <li><strong>Delete your passport:</strong> Settings → Account → Delete your passport removes your account and everything in it from our database right away. We don&rsquo;t keep backups of the database today; if we start, they&rsquo;ll last at most 7 days, so anything deleted is gone from them within a week.</li>
         <li><strong>Change or correct</strong> anything in the app itself, and turn reminders and emails off whenever you like.</li>
         <li>For anything else, including requests under laws like the GDPR or CCPA, write to {contact}.</li>
       </ul>
@@ -98,7 +100,7 @@ export default function Privacy() {
       </p>
 
       <h2>Age</h2>
-      <p>ProcrastiNation is for people 13 and older. <Todo>confirm the minimum age</Todo> If you think a younger child has an account, tell us and we&rsquo;ll delete it.</p>
+      <p>ProcrastiNation is for people 13 and older. If you think a younger child has an account, tell us at {contact} and we&rsquo;ll delete it.</p>
 
       <h2>Changes</h2>
       <p>If this policy changes in a way that matters, we&rsquo;ll say so in the app before it takes effect. Questions: {contact}.</p>

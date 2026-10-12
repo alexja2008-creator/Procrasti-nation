@@ -10,7 +10,7 @@ export default function LegalPage({ eyebrow, title, effective, children }) {
       <main className="mx-auto max-w-3xl px-5 pb-20 pt-8 md:px-8">
         {LEGAL_DRAFT ? (
           <p className="mb-8 rounded-xl border px-4 py-3 text-sm" style={{ borderColor: 'var(--stamp-terracotta)', color: 'var(--stamp-terracotta)' }}>
-            Draft, not yet reviewed. Marks like <span className="todo">[this]</span> are still open.
+            Draft, not yet reviewed.
           </p>
         ) : null}
         <p className="eyebrow">{eyebrow}</p>
