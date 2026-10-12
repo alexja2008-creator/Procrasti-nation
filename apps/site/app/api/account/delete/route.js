@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireAuth } from '../../../../lib/authMiddleware';
-import { cancelCustomerSubscriptions } from '../../../../lib/stripe';
 
 /**
  * Delete your passport (App Store 5.1.1(v)): the signed-in person's account and everything in it.
@@ -26,24 +25,8 @@ export async function POST(request) {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    // Billing stops before the account goes (v1's Pro on the web). If Stripe can't be reached,
-    // nothing is deleted: better to ask them to try again than to leave a subscription charging.
-    const { data: profile, error: profileError } = await admin
-      .from('profiles')
-      .select('stripe_customer_id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-    if (profileError) throw profileError;
-    if (profile?.stripe_customer_id) {
-      if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY is not set');
-      try {
-        await cancelCustomerSubscriptions(profile.stripe_customer_id);
-      } catch (e) {
-        console.error('account/delete: could not cancel the subscription', e?.message);
-        return NextResponse.json({ error: 'Could not cancel your subscription. Nothing was deleted.' }, { status: 502 });
-      }
-    }
-
+    // No billing to stop first: v1's Stripe retired, and no v2 account has had a Stripe customer
+    // (the fresh start at cutover). Payments come back through RevenueCat, with their own rule.
     const { error } = await admin.auth.admin.deleteUser(user.id);
     if (error) throw error;
 

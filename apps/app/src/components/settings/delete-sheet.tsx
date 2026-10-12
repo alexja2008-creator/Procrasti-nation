@@ -6,7 +6,6 @@ import { Button } from '@/components/button';
 import { Sheet } from '@/components/sheet';
 import { Text } from '@/components/text';
 import { deleteMyAccount } from '@/data/account';
-import { ApiError } from '@/lib/api';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.settings;
@@ -38,7 +37,7 @@ export function DeleteSheet({ userId, onDownload, downloading, onClose }: Props)
     try {
       await deleteMyAccount(userId);
     } catch (e) {
-      setError(e instanceof ApiError && e.status === 502 ? copy.deleteBilling : copy.deleteFailed);
+      setError(copy.deleteFailed);
       setBusy(false);
     }
   };

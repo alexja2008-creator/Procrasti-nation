@@ -105,7 +105,7 @@ Each of these looks redundant, over-built or odd, and each exists because the si
 - **The Stripe columns on `profiles` are server-only.** A trigger rejects users setting them, and the API can only read the public columns (`supabase/migrations/profiles_billing_*.sql`); people read their own status through `my_subscription_status()`. `profiles` is publicly readable.
 - **Private settings live in `user_settings`, not `profiles`**, for the same reason.
 - **A new username waits in `user_metadata.pending_username`** until the email is confirmed, so nobody can claim a name with an address they don't own.
-- **Deleting an account cancels any Stripe subscription first and stops if that fails** (`apps/site/app/api/account/delete/route.js`). Better to ask them to try again than to delete the account and keep charging the card.
+- **Deleting an account has no billing step** (`apps/site/app/api/account/delete/route.js`; removed 2026-10-12, Alex). v1's Stripe retired, no v2 account has a Stripe customer after the fresh start, and the Stripe keys are gone from Vercel. When payments return through RevenueCat, deletion needs its own rule (App Store subscriptions can't be cancelled for the person: tell them where to cancel).
 - **`detectSessionInUrl: false`** (`apps/app/src/lib/supabase.ts`). Sign-in links use PKCE, and one callback screen (`src/app/auth/callback.tsx`) handles links, confirmations, resets and OAuth on every platform.
 
 ### Loading and saving data

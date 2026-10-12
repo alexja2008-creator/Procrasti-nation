@@ -62,7 +62,6 @@ SUPABASE_SERVICE_ROLE_KEY=service_role_key
 CRON_SECRET=secret_for_cron_auth   # the Web Push sender (Supabase Cron) and unsubscribe links
 NEXT_PUBLIC_BASE_URL=https://procrasti-nation.work
 NEXT_PUBLIC_APP_URL=https://app.procrasti-nation.work   # optional (that's the default); http://localhost:8081 in development
-STRIPE_SECRET_KEY=sk_...           # only so Delete your passport can cancel a subscription still billing; deleted from Vercel (2026-10-12): after the fresh start no account has a Stripe customer, so the step never runs
 VAPID_PUBLIC_KEY=...          # Web Push (v2); generate: node -e 'console.log(require("web-push").generateVAPIDKeys())'
 VAPID_PRIVATE_KEY=...
 VAPID_SUBJECT=https://procrasti-nation.work
@@ -80,7 +79,7 @@ app/
     generate-plan/route.js          # AI task planning (clarify + generate steps)
     resolve-step-dates/route.js     # Relative timing → absolute calendar dates
     unstick/route.js                # Start Mode "I'm stuck" → one 2-minute action (free, 20/day via ai_requests)
-    account/delete/route.js         # Delete your passport: session + typed DELETE, cancels a Stripe subscription that still bills (fails closed), then auth.admin.deleteUser (every table cascades)
+    account/delete/route.js         # Delete your passport: session + typed DELETE, then auth.admin.deleteUser (every table cascades)
     cron/push/route.js              # Web Push sender, every minute (Supabase Cron): what came due per person, in their timezone, to each of their browsers
     push/action/route.js            # Snooze 10 min from a web notification (signed token, no session)
     unsubscribe/route.js            # Signed one-click unsubscribe (kept for State of the Union's email)
@@ -98,7 +97,6 @@ lib/
   prompts/dates.js                  # Step "when" → calendar date prompt
   authMiddleware.js                 # The app's session token → user, for each API route
   trial.js                          # trialDaysRemaining(user): 10 days from auth created_at
-  stripe.js                         # cancelCustomerSubscriptions (fetch, no SDK)
   unsubscribe.js                    # Signed unsubscribe links + List-Unsubscribe headers
   core.js                           # Re-exports @pn/core (packages/core TS; Next compiles it), so the server plans exactly as the app does
   push.js                           # Web Push: send (web-push + VAPID), payloads (Start 5 min / Snooze 10 min, never Done), withTimeZone, snooze tokens

@@ -801,7 +801,6 @@ export const voice = {
     deleteConfirm: 'Delete my passport',
     deleting: 'Deleting…',
     deleteFailed: 'Couldn’t delete your passport just now. Nothing was deleted. Check your connection and try again.',
-    deleteBilling: 'Couldn’t cancel your subscription, so nothing was deleted. Try again in a moment.',
     /** On Welcome, right after. */
     deleted: 'Your passport is deleted. Thanks for being part of the Nation.',
     done: 'Done',

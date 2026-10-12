@@ -67,8 +67,7 @@ let deletedHere = false;
 export const passportDeletedHere = () => deletedHere;
 
 /**
- * Deletes their account and everything in it (the site's route; it cancels a Stripe subscription
- * first), then forgets this device. The session ends here, so the app goes back to Welcome.
+ * Deletes their account and everything in it (the site's route), then forgets this device. The session ends here, so the app goes back to Welcome.
  */
 export async function deleteMyAccount(userId: string): Promise<void> {
   await apiPost<{ deleted: true }>('/api/account/delete', { confirm: 'DELETE' });

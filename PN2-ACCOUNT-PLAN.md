@@ -23,7 +23,7 @@ Both live in **Settings → Account**.
 1. Settings → Account → **Delete your passport** opens a sheet: what goes, that it can't be undone, a nudge to **download your data first**, and the confirmation (decision 2).
 2. The app calls a new site route, `/api/account/delete`, with their session. The route:
    - checks the session (`requireAuth`);
-   - **cancels a Stripe subscription** if the person has one (v1's Pro on the web; otherwise they'd keep being billed with no account);
+   - **cancels a Stripe subscription** if the person has one (v1's Pro on the web; otherwise they'd keep being billed with no account); *(removed 2026-10-12 with v1's billing: no v2 account has a Stripe customer)*
    - deletes the user with the service role (`auth.admin.deleteUser`): the only step that needs it, on the server only.
 3. The app clears the device: scheduled reminders, this person's saved state on the device, the Web Push subscription. It lands on the Application's Welcome with a short, kind note ("Your passport is deleted. Thanks for being part of the Nation.").
 
