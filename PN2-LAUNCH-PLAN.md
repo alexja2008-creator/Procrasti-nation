@@ -90,5 +90,5 @@ Alex's Apple Developer account was approved on 2026-10-13. App Store Connect: **
 ## Done When
 - [ ] The site has only the landing page, `/privacy`, `/terms` and the routes v2 uses; every v1 path redirects; the site builds and its tests pass.
 - [ ] The app's web export serves deep links and `sw.js` with `apps/app/vercel.json`.
-- [ ] Alex has approved the landing page, the privacy policy and the terms. (Privacy policy and terms: approved 2026-10-13.)
+- [x] Alex has approved the landing page, the privacy policy and the terms (all 2026-10-13; the landing page after its feature cards became passport visa pages and the tones a carousel of lock screens; to be iterated after launch).
 - [ ] The cutover steps ran in order, and the smoke test passed on production.
