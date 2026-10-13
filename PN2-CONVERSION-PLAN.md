@@ -132,8 +132,8 @@ Existing accounts that haven't done the Application start at 1 already signed in
 
 ## Open (Alex)
 
-- ~~**A semester plan's price**~~ **Decided (Alex, 2026-10-13), drafted in App Store Connect:** $4.99/month (`1A`), yearly (`1B`; $49.99 at first, then lowered so it's the clear deal: 17% off monthly wasn't; new price to come), $12.99 for 3 months, called Quarterly (`1C`; Apple has no 4-month length, and a 3-month "Semester" would end before finals). Lower than v1's $7.99/month and $72/year: $4.99 is an impulse buy for a student, $7.99 an instant turn-off.
-- **Is the yearly plan the default?** Most trial funnels lead with yearly.
+- ~~**A semester plan's price**~~ **Decided (Alex, 2026-10-13), drafted in App Store Connect:** $4.99/month (`1A`), $29.99/year (`1B`; $49.99 at first, but 17% off monthly wasn't a deal), a founding price shown as "save 50%" against monthly, never as a markdown from a price nobody pays (one introductory offer per subscription, so a cheaper first year would also have cost the free trial); founding subscribers keep it if the price rises; revisit after launch, $12.99 for 3 months, called Quarterly (`1C`; Apple has no 4-month length, and a 3-month "Semester" would end before finals). Lower than v1's $7.99/month and $72/year: $4.99 is an impulse buy for a student, $7.99 an instant turn-off.
+- **Is the yearly plan the default?** Most trial funnels lead with yearly; at $29.99 (save 50%) it's the obvious pick.
 
 ## Out of scope
 
