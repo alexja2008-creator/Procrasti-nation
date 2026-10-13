@@ -266,7 +266,7 @@ When adding new agent files, update this table.
 ## Deployment
 - **Platform**: Vercel (Hobby tier)
 - **Auto-deploy**: From `main` branch (git user.email must be alexja2008@gmail.com)
-- **Domain**: procrasti-nation.work (Porkbun → Vercel DNS)
+- **Domain**: procrasti-nation.work, bought through Vercel (registrar Name.com); DNS is Vercel's (`ns1/ns2.vercel-dns.com`): records live under Vercel → Domains, and a domain added to a Vercel project needs no record by hand
 - **Cron**: none on Vercel since v1's emails retired; the Web Push sender runs from Supabase Cron (`supabase/v2/03_push_cron.sql`)
 - **Env vars**: the site's vars above in its Vercel project (`WHEREBY_API_KEY` and, after the v2 merge, `RESEND_API_KEY` are no longer used: delete them there)
 - **The app's project** (`apps/app`, at `app.procrasti-nation.work`): `apps/app/vercel.json` builds the web export (`npx expo export --platform web` → `dist`), serves real files first and every other path as `index.html`, and keeps `sw.js` uncached; it needs "Include files outside the Root Directory" on (the build reads `packages/core`) and the `EXPO_PUBLIC_*` vars.
