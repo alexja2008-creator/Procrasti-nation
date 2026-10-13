@@ -51,7 +51,7 @@ No database changes beyond `01_schema.sql` and `04_fresh_start.sql` (both writte
 
 ## Phase 3: Cutover day, Friday 2026-10-16 (Alex runs, Claude checks along)
 Before the day (Alex):
-- Resend as Supabase's SMTP on production; raise the email rate limit.
+- Resend as Supabase's SMTP on production; raise the email rate limit. **Done (2026-10-13):** sender `passport@procrasti-nation.work`, 1,000 emails an hour; the first test (a password recovery) failed with `535 "Invalid username"` until the username was lowercase `resend`, then arrived in Gmail's spam. Against spam: a DMARC record at Porkbun (`_dmarc` TXT `v=DMARC1; p=none;`), and the four auth emails rewritten (`supabase/v2/email-templates/`, pasted into both projects).
 - Supabase production auth: anonymous sign-ins on; Confirm email as decided; Site URL `https://app.procrasti-nation.work`; redirect allow list `https://app.procrasti-nation.work/auth/callback` (plus `procrastination://auth/callback` for the iPhone later).
 - Vercel: a second project for `apps/app` (domain `app.procrasti-nation.work`, DNS at Porkbun), its `EXPO_PUBLIC_*` env (production Supabase URL and anon key, `EXPO_PUBLIC_API_BASE_URL=https://procrasti-nation.work`, `EXPO_PUBLIC_AUTH_PROVIDERS`, `EXPO_PUBLIC_VAPID_PUBLIC_KEY`); production VAPID keys on the site project; Vercel Pro when he's ready to charge.
 - Sign-in methods at launch: email and password plus the sign-in link; Google if its OAuth client is set up; texted codes off; Apple with the iPhone app.
