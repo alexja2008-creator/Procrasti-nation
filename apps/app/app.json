@@ -5,10 +5,14 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "procrastination",
+    "scheme": "work.procrastination.app",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "usesAppleSignIn": true
+      "bundleIdentifier": "work.procrastination.app",
+      "usesAppleSignIn": true,
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {

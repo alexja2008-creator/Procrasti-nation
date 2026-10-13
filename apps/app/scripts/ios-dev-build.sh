@@ -9,9 +9,9 @@
 #   sh apps/app/scripts/ios-dev-build.sh                   # Metro on 8081
 #   METRO_PORT=8083 sh apps/app/scripts/ios-dev-build.sh   # another Metro
 #
-# Until the Apple Developer account exists, the build leaves out the Sign in
-# with Apple entitlement (it needs a signing team even on the Simulator) and
-# isn't code signed.
+# The build isn't code signed, so it leaves out the Sign in with Apple
+# entitlement (that needs a signing team even on the Simulator). Try Apple
+# sign-in on an EAS build (eas.json) from TestFlight instead.
 set -eu
 
 APP_DIR="$(cd "$(dirname "$0")/.." && pwd)"

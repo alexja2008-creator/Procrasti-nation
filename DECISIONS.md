@@ -73,7 +73,7 @@ More detail: `CLAUDE.md` (layout, data model, patterns), `PN2-HANDOFF.md` (state
 - The web launches free-only (2026-10-12): payments arrive with the App Store version through RevenueCat (which can take web payments through Stripe too). v1's Stripe checkout, portal and webhook retire at cutover.
 
 **Legal pages** (`apps/site/app/privacy`, `/terms`; Alex, 2026-10-12)
-- Run by Alex Anderson, New York City; contact procrasti.nation.marketing@gmail.com; 13 and older; New York State law; effective at launch (tentatively October 25, 2026).
+- Run by Alex Anderson, New York City; contact procrasti.nation.marketing@gmail.com; 13 and older; New York State law; effective at launch (October 16, 2026; moved up from October 25 by Alex on 2026-10-13).
 - The privacy policy promises deleted data is gone from backups within 7 days (there are none today). Turning on longer backups means changing the policy first.
 
 **Email**
@@ -159,7 +159,7 @@ Each of these looks redundant, over-built or odd, and each exists because the si
 ### Setup and style
 - **Not an npm workspace:** the site is on React 18 and the Expo app on React 19, so each has its own `node_modules`. `packages/core` is shared through a tsconfig alias.
 - **Core imports end in `.ts`,** because its tests run directly on TypeScript with `node --test`.
-- **The iOS build script builds in `~/Library/Caches`** (`apps/app/scripts/ios-dev-build.sh`), because the repo sits on an iCloud-synced Desktop whose file attributes break code signing. The bundle id is a placeholder until the Apple Developer account exists.
+- **The iOS build script builds in `~/Library/Caches`** (`apps/app/scripts/ios-dev-build.sh`), because the repo sits on an iCloud-synced Desktop whose file attributes break code signing. It stays unsigned; signed builds come from EAS Build in Expo's cloud, which never sees the iCloud attributes.
 - **The site calls Claude with raw `fetch()`** (`apps/site/lib/ai.js`), not the SDK.
 - **The app never holds secrets.** It gets only `EXPO_PUBLIC_*` values and calls the site's `/api/*` for anything needing a key.
 - **App styling:** `StyleSheet` with design tokens, never a hard-coded color in a component, and SVG icons, never emoji. **Site styling:** dark mode by JavaScript ternaries, never Tailwind's `dark:` prefix.
