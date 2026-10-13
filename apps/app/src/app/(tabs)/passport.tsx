@@ -1,4 +1,4 @@
-import { formatCitizenNumber, formatStampDate, mrzMottoLine, mrzNameLine, rankFor, voice } from '@pn/core';
+import { formatCitizenNumber, mrzMottoLine, mrzNameLine, rankFor, voice } from '@pn/core';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
@@ -8,8 +8,8 @@ import { personName } from '@/auth/person-name';
 import { Icon } from '@/components/icon';
 import { PassportSaveCard } from '@/components/passport-save-card';
 import { DeclarationsPage } from '@/components/passport/declarations-page';
+import { NO_STAMPS, StampPage } from '@/components/passport/stamp-page';
 import { Screen } from '@/components/screen';
-import { CountStamp, RoundStamp } from '@/components/stamp';
 import { Text } from '@/components/text';
 import { fetchPassportStamps, type PassportStamps } from '@/data/stamps';
 import { countStarts } from '@/data/starts';
@@ -26,7 +26,6 @@ export default function PassportScreen() {
   const { settings, status } = useUserSettings();
   const userId = session?.user.id;
   const [record, setRecord] = useState<{ starts: number; stamps: PassportStamps } | null>(null);
-  const [stampPageWidth, setStampPageWidth] = useState(0);
 
   // Refresh on every visit: a Start or a stamp may have happened since.
   useFocusEffect(
@@ -55,39 +54,6 @@ export default function PassportScreen() {
   const starts = record?.starts ?? 0;
   const { next, startsToNext } = rankFor(starts);
   const progress = next ? starts / next.minStarts : 1;
-  const approvedAt = record?.stamps.approvedAt;
-  const firstStartAt = record?.stamps.firstStartAt;
-  const stepsDone = record?.stamps.stepsDone ?? 0;
-  // Earned in this order, laid down left to right, overlapping a little like a real passport page.
-  const rounds = [
-    approvedAt ? (
-      <RoundStamp
-        ink={c.stamp.forest}
-        rim={voice.stampText.rim}
-        lines={voice.stampText.approved}
-        date={formatStampDate(new Date(approvedAt))}
-      />
-    ) : null,
-    firstStartAt ? (
-      <RoundStamp
-        ink={c.stamp.terracotta}
-        rim={voice.stampText.rim}
-        lines={voice.stampText.started}
-        date={formatStampDate(new Date(firstStartAt))}
-      />
-    ) : null,
-  ].filter((stamp) => stamp !== null);
-  const stamps = rounds.map((stamp, i) => ({ stamp, slot: ROUND_SLOTS[i] }));
-  if (stepsDone > 0) {
-    stamps.push({
-      stamp: <CountStamp ink={c.stamp.violet} top={voice.stampText.smallSteps[0]} value={stepsDone} bottom={voice.stampText.smallSteps[1]} />,
-      slot: countSlot(stamps.at(-1)?.slot),
-    });
-  }
-  // A card narrower than the stamps shrinks them to fit instead of spilling past its edge.
-  const stampsWidth = stamps.length > 0 ? stamps[stamps.length - 1].slot.left + STAMP_REACH : 0;
-  const stampScale = stampPageWidth > 0 ? Math.min(1, stampPageWidth / stampsWidth) : 1;
-
   return (
     <Screen>
       <View style={s.head}>
@@ -166,27 +132,7 @@ export default function PassportScreen() {
         <Text variant="label" color={c.muted} style={s.stampsLabel}>
           {copy.stampsLabel.toUpperCase()}
         </Text>
-        {stamps.length > 0 ? (
-          <View
-            style={[s.stampPage, { height: STAMP_PAGE_HEIGHT * stampScale }]}
-            onLayout={(e) => setStampPageWidth(e.nativeEvent.layout.width)}
-            accessible
-            accessibilityLabel={copy.stampsSpoken(!!approvedAt, !!firstStartAt, stepsDone)}>
-            {stampPageWidth > 0 ? (
-              <View style={[s.stampSlots, { transform: [{ scale: stampScale }] }]}>
-                {stamps.map(({ stamp, slot }, i) => (
-                  <View key={i} style={[s.slot, slot]}>
-                    {stamp}
-                  </View>
-                ))}
-              </View>
-            ) : null}
-          </View>
-        ) : (
-          <Text variant="body" color={c.inkSoft}>
-            {copy.noStamps}
-          </Text>
-        )}
+        <StampPage stamps={record?.stamps ?? NO_STAMPS} />
         <Text variant="body" color={c.inkSoft}>
           {voice.encouragement}
         </Text>
@@ -211,19 +157,6 @@ export default function PassportScreen() {
     </Screen>
   );
 }
-
-type Slot = { left: number; top: number; transform: { rotate: string }[] };
-
-/** Where the round stamps land, in the order they're earned: rims overlap, words never do. */
-const ROUND_SLOTS: Slot[] = [
-  { left: 0, top: 2, transform: [{ rotate: '-10deg' }] },
-  { left: 90, top: 38, transform: [{ rotate: '6deg' }] },
-];
-/** The count stamp comes last, just clear of the words on the round stamp before it (its edge reaches them). */
-const countSlot = (after?: Slot): Slot => ({ left: after ? after.left + 102 : 0, top: after ? 4 : 2, transform: [{ rotate: '-5deg' }] });
-/** How far a stamp reaches right of its slot (the tilted count stamp is the widest). */
-const STAMP_REACH = 120;
-const STAMP_PAGE_HEIGHT = 158;
 
 const makeStyles = (t: Tokens) => ({
   t,
@@ -270,9 +203,6 @@ const makeStyles = (t: Tokens) => ({
       borderRadius: t.radii.card,
     },
     stampsLabel: { letterSpacing: 1.5 },
-    stampPage: { marginVertical: 4 },
-    stampSlots: { height: STAMP_PAGE_HEIGHT, transformOrigin: 'left top' },
-    slot: { position: 'absolute' },
     progress: { gap: 6, marginTop: 2 },
     progressRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
     progressLabel: { fontFamily: t.fonts.bodySemibold, flex: 1 },

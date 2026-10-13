@@ -25,6 +25,7 @@ import { personName } from '@/auth/person-name';
 import { Chip } from '@/components/chip';
 import { isSigned, NO_SIGNATURE, type Signature } from '@/components/declare/signature-pad';
 import { Text } from '@/components/text';
+import { awardFirstDeclaration } from '@/data/stamps';
 import { useTasks } from '@/data/tasks-store';
 import { useUserSettings } from '@/data/user-settings';
 import { useStyles, type Tokens } from '@/theme/tokens';
@@ -66,6 +67,8 @@ export function useDeclaration(task: Task) {
     const patch = declarePatch(day, time, new Date());
     update(latest, patch);
     notify(copy.declared(latest.title, declaredWhen(day, time, today)), () => update({ ...latest, ...patch }, undoPatch(latest, patch)));
+    // "Declaration signed" for the first one ever (later ones are turned away); Undo doesn't take it back.
+    if (session) awardFirstDeclaration(session.user.id).catch(() => undefined);
     return true;
   };
 

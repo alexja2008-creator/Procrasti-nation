@@ -58,9 +58,16 @@ export async function awardCitizenship(userId: string): Promise<void> {
   await awardStamp({ userId, kind: stampKinds.citizenship });
 }
 
+/** "Declaration signed": once, for the first Declaration ever (the database turns away the rest). */
+export async function awardFirstDeclaration(userId: string): Promise<void> {
+  await awardStamp({ userId, kind: stampKinds.firstDeclaration });
+}
+
 export interface PassportStamps {
   /** When the Citizenship Application was approved, if it was answered. */
   approvedAt: string | null;
+  /** When the first Declaration was signed, if one has been. */
+  firstDeclarationAt: string | null;
   /** When "Officially started" was earned, if it has been. */
   firstStartAt: string | null;
   /** Steps and tasks finished in Start Mode ("Small steps and counting"). */
@@ -69,16 +76,18 @@ export interface PassportStamps {
 
 export async function fetchPassportStamps(userId: string): Promise<PassportStamps> {
   const once = (kind: string) => supabase.from('stamps').select('earned_at').eq('user_id', userId).eq('kind', kind).maybeSingle();
-  const [approved, first, done] = await Promise.all([
+  const [approved, declared, first, done] = await Promise.all([
     once(stampKinds.citizenship),
+    once(stampKinds.firstDeclaration),
     once(stampKinds.firstStart),
     supabase.from('stamps').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('kind', stampKinds.stepDone),
   ]);
   if (approved.error) throw approved.error;
+  if (declared.error) throw declared.error;
   if (first.error) throw first.error;
   if (done.error) throw done.error;
   const at = (row: unknown) => (row as { earned_at: string } | null)?.earned_at ?? null;
-  return { approvedAt: at(approved.data), firstStartAt: at(first.data), stepsDone: done.count ?? 0 };
+  return { approvedAt: at(approved.data), firstDeclarationAt: at(declared.data), firstStartAt: at(first.data), stepsDone: done.count ?? 0 };
 }
 
 /** A kept Declaration for the Passport: when they started, and the task (null once it's deleted for good). */

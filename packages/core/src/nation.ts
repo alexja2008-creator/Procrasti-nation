@@ -529,6 +529,7 @@ export const voice = {
     started: ['OFFICIALLY', 'STARTED'],
     done: ['OFFICIALLY', 'DONE'],
     approved: ['APPLICATION', 'APPROVED'],
+    declared: ['DECLARATION', 'SIGNED'],
     smallSteps: ['SMALL STEPS', 'AND COUNTING'],
     declarations: ['DECLARATIONS', 'KEPT'],
   },
@@ -572,9 +573,10 @@ export const voice = {
     stampsLabel: 'Visas & stamps',
     noStamps: 'Your first stamp lands the first time you start something.',
     /** The stamp page, read aloud. */
-    stampsSpoken: (approved: boolean, started: boolean, stepsDone: number) =>
+    stampsSpoken: ({ approved, declared, started, stepsDone }: { approved: boolean; declared: boolean; started: boolean; stepsDone: number }) =>
       [
         approved ? 'Application approved' : null,
+        declared ? 'Declaration signed' : null,
         started ? 'Officially started' : null,
         stepsDone > 0 ? `${stepsDone} small ${stepsDone === 1 ? 'step' : 'steps'} done` : null,
       ]

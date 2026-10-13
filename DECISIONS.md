@@ -94,6 +94,7 @@ More detail: `CLAUDE.md` (layout, data model, patterns), `PN2-HANDOFF.md` (state
 - Deleting a territory sends its tasks back to Customs (undated) or leaves them on their days, with Undo.
 - Morning Briefing: repeats are left out (a missed repeat is already one item). Let it go takes the date off; it never deletes. Re-spread uses no AI.
 - Morning Briefing, long lists (2026-10-12): 10 or more things to decide about (a plan counts once) opens on Pick three, with three suggested for today (deadlines still ahead, then the oldest) and the rest left carried over: nothing is moved, undated or spread unasked. Putting them on today rests the card for the day (Undo brings it back). Move all to today isn't offered at 10 or more.
+- A "Declaration signed" stamp for the first Declaration ever (Alex, 2026-10-13: a new Passport looked bare with Approved alone). The Application's first Declaration earns it, so a new citizen starts with two stamps. Undoing that Declaration keeps the stamp. Round stamps sit in the order earned, so it usually lands left of Approved.
 - Notes are capture-first, not an Apple Notes clone. A note's title is its first line. A checklist line is a real task. Deleting a note deletes its checklist tasks, with Undo.
 - Search doesn't tolerate typos and doesn't search territory names (both possible later).
 - Focus Pods (live video) were dropped: moderating live video wasn't worth the liability. Town Hall will only ever be an anonymous count of people working. **There's nothing one person can say to another anywhere in the app.**

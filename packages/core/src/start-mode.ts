@@ -75,6 +75,8 @@ export const stampKinds = {
   stepDone: 'task-done',
   /** The Citizenship Application, answered (not skipped). Once only. */
   citizenship: 'citizenship',
+  /** The first Declaration signed (usually the Application's, on the Oath's first step). Once only. */
+  firstDeclaration: 'first-declaration',
   /** Started within a Declaration's window. Once per Declaration (a task can be declared again). */
   declarationKept: 'declaration-kept',
 } as const;
