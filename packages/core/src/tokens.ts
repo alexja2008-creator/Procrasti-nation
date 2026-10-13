@@ -172,6 +172,22 @@ export const radii = { chip: 4, sm: 6, md: 10, lg: 12, card: 14, pill: 999 } as 
 /** Minimum touch target (Apple HIG). */
 export const hitTarget = 44;
 
+/**
+ * The look chosen in Settings, per device. Night is the default (Alex, 2026-10-13: a US passport is
+ * navy); `system` follows the device's light or dark mode.
+ */
+export type AppearanceChoice = 'night' | 'day' | 'system';
+export const DEFAULT_APPEARANCE: AppearanceChoice = 'night';
+export const isAppearanceChoice = (value: unknown): value is AppearanceChoice =>
+  value === 'night' || value === 'day' || value === 'system';
+
+/** The palette a choice shows, given the device's mode ('dark', 'light', or unknown). */
+export function schemeFor(choice: AppearanceChoice, device: string | null | undefined): Scheme {
+  if (choice === 'night') return 'night';
+  if (choice === 'day') return 'light';
+  return device === 'dark' ? 'night' : 'light';
+}
+
 export const motion = {
   /** Checkbox fill, chip press. */
   quick: 140,

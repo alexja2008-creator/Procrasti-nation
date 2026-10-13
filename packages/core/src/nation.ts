@@ -773,6 +773,13 @@ export const voice = {
     dayLabel: 'Your day',
     dayEnds: 'Day ends at',
     dayLead: 'Anything you do before then still counts as the day before.',
+    appearanceLabel: 'Appearance',
+    theme: 'Theme',
+    themeChoices: [
+      { id: 'night', label: 'Night passport', hint: 'Navy, like the real thing.' },
+      { id: 'day', label: 'Day passport', hint: 'Cream paper and ink.' },
+      { id: 'system', label: 'Match my device', hint: 'Night or day, with your phone or computer.' },
+    ] as { id: 'night' | 'day' | 'system'; label: string; hint: string }[],
     midnight: 'Midnight',
     hourAM: (h: number) => `${h} AM`,
     accountLabel: 'Account',

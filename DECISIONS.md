@@ -37,6 +37,7 @@ More detail: `CLAUDE.md` (layout, data model, patterns), `PN2-HANDOFF.md` (state
 **Platforms**
 - An App Store app is required (Expo + React Native, with small Swift add-ons).
 - The web has every core feature the iPhone has, from the same codebase. Layout adapts to a laptop; features don't drop.
+- **Night passport is the default look** (Alex, 2026-10-13: a US passport is navy). Settings → Appearance → Theme offers Night, Day and Match my device, saved per device so it applies before sign-in too. The marketing site still follows the visitor's system.
 
 **The AI planner ("Plan it") is the heart of the product**
 - Plans are built by Claude Sonnet. Haiku is used only for small jobs where an eval proved it's good enough. It failed both the plan eval (2/30) and the "I'm stuck" eval (8/16).

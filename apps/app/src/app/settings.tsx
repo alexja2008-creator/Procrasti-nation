@@ -36,6 +36,7 @@ import { downloadMyData } from '@/data/account';
 import { openSitePage } from '@/lib/site-pages';
 import { fetchUsername } from '@/data/profile';
 import { useUserSettings } from '@/data/user-settings';
+import { useAppearance } from '@/theme/appearance';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.settings;
@@ -52,7 +53,7 @@ const tones: Choice<NudgeToneId>[] = (Object.keys(nudgeTones) as NudgeToneId[]).
 const TIMERS: StartMinutes[] = [2, 5, 10, 25];
 const DAY_ENDS = [0, 1, 2, 3, 4, 5, 6];
 
-type Picking = 'purpose' | 'hours' | 'style' | 'tone' | 'timer' | 'dayEnds' | 'username' | 'password' | 'save' | 'signOut' | 'delete' | null;
+type Picking = 'purpose' | 'hours' | 'style' | 'tone' | 'timer' | 'dayEnds' | 'theme' | 'username' | 'password' | 'save' | 'signOut' | 'delete' | null;
 
 const labelOf = <T extends string>(choices: readonly { id: T; label: string }[], id: T | undefined) =>
   choices.find((c) => c.id === id)?.label ?? copy.notSet;
@@ -70,6 +71,7 @@ export default function SettingsScreen() {
   const { settings, savePreferences, saveSettings } = useUserSettings();
   const prefs: Partial<Preferences> = settings?.preferences ?? {};
   const [picking, setPicking] = useState<Picking>(null);
+  const appearance = useAppearance();
   const [error, setError] = useState<string | null>(null);
   const userId = session?.user.id;
   const [username, setUsername] = useState<string | null>(null);
@@ -151,6 +153,10 @@ export default function SettingsScreen() {
 
       <SettingsCard label={copy.dayLabel}>
         <SettingRow label={copy.dayEnds} value={dayEndsLabel(rollover)} onPress={() => setPicking('dayEnds')} last />
+      </SettingsCard>
+
+      <SettingsCard label={copy.appearanceLabel}>
+        <SettingRow label={copy.theme} value={labelOf(copy.themeChoices, appearance.choice)} onPress={() => setPicking('theme')} last />
       </SettingsCard>
 
       <RemindersCard />
@@ -258,6 +264,11 @@ export default function SettingsScreen() {
             <Button label={passport.saveAction} onPress={() => setPicking('save')} />
             <Button variant="quiet" label={passport.signOutAnyway} onPress={signOut} />
           </View>
+        </Sheet>
+      ) : picking === 'theme' ? (
+        // Applies as it's picked (this device only), so the page behind changes with it; the sheet stays open to compare.
+        <Sheet title={copy.theme} onClose={() => setPicking(null)} width={440}>
+          <ChoiceCards label={copy.theme} choices={copy.themeChoices} selected={appearance.choice} onPick={appearance.choose} />
         </Sheet>
       ) : picking === 'dayEnds' ? (
         <Sheet title={copy.dayEnds} onClose={() => setPicking(null)}>

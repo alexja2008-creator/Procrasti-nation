@@ -20,6 +20,7 @@ import { AuthProvider, useAuth } from '@/auth/auth-provider';
 import { passportOpenedHere } from '@/auth/passport';
 import { clearDraft } from '@/data/application-draft';
 import { SignedInProviders } from '@/data/signed-in-providers';
+import { AppearanceProvider, useAppearance } from '@/theme/appearance';
 import { useUserSettings } from '@/data/user-settings';
 import { useTokens } from '@/theme/tokens';
 
@@ -40,19 +41,25 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <AuthProvider>
-          <RootNavigator fontsReady={loaded || !!error} />
-        </AuthProvider>
+        <AppearanceProvider>
+          <AuthProvider>
+            <RootNavigator fontsReady={loaded || !!error} />
+          </AuthProvider>
+        </AppearanceProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
 
-/** Keeps the splash up until fonts and the stored session are ready, so signed-in people never see sign-in flash by. */
+/**
+ * Keeps the splash up until fonts, the stored session and the chosen theme are ready, so signed-in
+ * people never see sign-in flash by, and nobody sees the wrong theme first.
+ */
 function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   const t = useTokens();
   const { session, loading } = useAuth();
-  const ready = fontsReady && !loading;
+  const appearance = useAppearance();
+  const ready = fontsReady && !loading && appearance.ready;
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
