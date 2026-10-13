@@ -132,7 +132,7 @@ Existing accounts that haven't done the Application start at 1 already signed in
 
 ## Open (Alex)
 
-- **A semester plan's price** (6 months), beside v1's $7.99/month and $72/year.
+- ~~**A semester plan's price**~~ **Decided (Alex, 2026-10-13), drafted in App Store Connect:** $4.99/month (`1A`), $49.99/year (`1B`), $12.99 for 3 months as the Semester plan (`1C`). Lower than v1's $7.99/month and $72/year: $4.99 is an impulse buy for a student, $7.99 an instant turn-off.
 - **Is the yearly plan the default?** Most trial funnels lead with yearly.
 
 ## Out of scope
