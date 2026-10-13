@@ -10,6 +10,6 @@ export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'procrasti
 // When the privacy policy and terms take effect: the launch (Alex, 2026-10-13). Move it with the launch.
 export const LEGAL_EFFECTIVE = 'October 16, 2026';
 
-// The privacy policy and terms are drafts until Alex has them reviewed: while this is true they
-// say so at the top. Flip it after review. Open questions show as [bracketed] marks (<Todo>).
-export const LEGAL_DRAFT = true;
+// While this is true the privacy policy and terms say "Draft" at the top. Alex approved both on
+// 2026-10-13; set it back to true while a rewrite awaits review. Open questions show as [bracketed] marks (<Todo>).
+export const LEGAL_DRAFT = false;

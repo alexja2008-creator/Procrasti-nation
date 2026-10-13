@@ -4,8 +4,8 @@ import { CONTACT_EMAIL, LEGAL_EFFECTIVE } from '../../lib/site';
 
 export const metadata = { title: 'Terms of Use · ProcrastiNation' };
 
-// Formal rewrite (Alex, 2026-10-13): disputes go to the New York County courts, no arbitration. A draft
-// until Alex has it reviewed (lib/site.js). Section 9 carries Apple's minimum terms for an app's license.
+// Formal rewrite, approved by Alex on 2026-10-13: disputes go to the New York County courts, no
+// arbitration. Section 9 carries Apple's minimum terms for an app's license.
 export default function Terms() {
   const contact = <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>;
   return (

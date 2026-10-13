@@ -72,7 +72,7 @@ The Expo app gets the same public key as `EXPO_PUBLIC_VAPID_PUBLIC_KEY`. Develop
 ```
 app/
   page.jsx                          # Landing page: components/landing/* (Hero, HowItWorks, Features, Tones = @pn/core's nudgeTones, Closing, SiteHeader/Footer, Phone = a framed light/night screenshot from public/screens/, RoundStamp = the app's stamp in SVG)
-  privacy/page.jsx, terms/page.jsx  # Drafts until reviewed (lib/site.js LEGAL_DRAFT; components/legal/LegalPage, Todo = an open question in [brackets]); written from what the code does: change them with any feature that changes what's collected or who processes it
+  privacy/page.jsx, terms/page.jsx  # Formal; approved by Alex 2026-10-13 (lib/site.js LEGAL_DRAFT = false shows no Draft banner; components/legal/LegalPage, Todo = an open question in [brackets]); written from what the code does: change them with any feature that changes what's collected or who processes it
   layout.jsx                        # Root layout: metadata, A2 fonts, Vercel Analytics (no auth: sign-in is the app's)
   globals.css                       # Tailwind + the A2 palette as CSS variables (light / night via prefers-color-scheme)
   opengraph-image.jsx, icon.svg     # Share preview and favicon
