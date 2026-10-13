@@ -49,6 +49,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5a5451e8-7a6f-4ce4-900f-355ea66f647e"
+      }
+    },
+    "owner": "procrastination.work"
   }
 }
