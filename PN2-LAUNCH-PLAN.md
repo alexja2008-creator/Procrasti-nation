@@ -60,16 +60,23 @@ Before the day (Alex):
 - A fresh dump of production's structure (`supabase/v2/scripts/dump-prod-schema.sh`) so `npm run db:test` checks the real thing; then a rehearsal of `01_schema.sql` and `04_fresh_start.sql` on staging inside a rolled-back transaction.
   - **Rehearsed on staging (2026-10-13, Claude):** both in one transaction, `04`'s own BEGIN/COMMIT removed. `01` re-ran cleanly (idempotent); `04` left 0 accounts, 0 tasks, 0 settings rows and the citizen counter at 1 (unused); rolled back. Sequences don't roll back, so the counter was saved first and put back (staging: 1 account, 2,202 tasks, counter at 5, as before). Still needed: the fresh production dump and `db:test` on it.
 
-On the day, in order:
-1. `supabase/v2/01_schema.sql` on production.
-2. Stripe: nothing billing (none as of 2026-10-12); delete the webhook endpoint in Stripe's dashboard (v2 has no webhook route, so Stripe's retries would only fail). The Stripe env vars are already gone from Vercel (Alex, 2026-10-12).
-3. `supabase/v2/04_fresh_start.sql` on production. Permanent.
-4. Merge `v2` into `main` and flip the site project's Root Directory to `apps/site` at the same moment.
-5. Deploy the app project.
-6. Web Push: `select vault.create_secret('<CRON_SECRET>', 'push_cron_secret');` then `supabase/v2/03_push_cron.sql`.
-7. Smoke test: a new passport through the whole Application and the Oath, a plan, Start Mode, a reminder on the web, Save your passport by email, sign out and back in, an old v1 URL redirecting.
+**Before the day: all done (2026-10-13).** Resend SMTP, DMARC and the new auth emails on production; production auth (anonymous sign-ins and Confirm email on, checked from the public settings; the two redirect URLs added by Alex); VAPID keys on the site project; the app's Vercel project (`procrastination-app`: Framework Other, Root Directory `apps/app`, files outside the root included, production env, `app.procrasti-nation.work`; a preview built from `v2` reached "Exported: dist", served `/sw.js`, and sent `/task/test` to the app, not a 404); the Stripe webhook, Whereby and `WHEREBY_API_KEY` gone; a fresh dump of production's structure (only change since 2026-10-03: the two billing scripts) and `npm run db:test` on it, the fresh start included: 33 pass, 1 skipped.
 
-If it goes wrong: revert the merge and the Root Directory (v1's code works on the v2 schema, which is additive). Accounts deleted by step 3 don't come back, which is the point.
+**On the day, in order** (about an hour; Alex runs the dashboards, Claude checks each step):
+1. **Claude, first thing:** site build, app export and the tests once more on the latest `v2`; open the pull request from `v2` into `main`.
+2. **Production SQL Editor: `supabase/v2/01_schema.sql`** (the whole file). Additive: v1 keeps working on it. Check: `select count(*) from plan_generations;` answers 0 instead of an error.
+3. **Production SQL Editor: `supabase/v2/04_fresh_start.sql`.** Permanent: every account goes, Alex's v1 one too. Check: it ends with `accounts_left = 0`.
+4. **The site's Vercel project → Settings → Build and Deployment → Root Directory: `apps/site`**, Save. This alone deploys nothing; v1 stays live until the next deployment.
+5. **GitHub: merge the pull request into `main`.** Both projects build from it: the site from `apps/site`, the app from `apps/app`. If the site's build fails, Vercel keeps serving v1 (nothing is lost; fix and push again).
+6. **Check both are Ready:** `procrasti-nation.work` shows the new landing page, `/privacy` and `/terms` load, `/planner` redirects to the app; `app.procrasti-nation.work` opens on Welcome.
+7. **Supabase production → Authentication → URL Configuration → Site URL: `https://app.procrasti-nation.work`.**
+8. **Web Push, production SQL Editor:** `select vault.create_secret('<CRON_SECRET from the site's Vercel env>', 'push_cron_secret');` then `supabase/v2/03_push_cron.sql`. Check after a minute: `select status_code from net._http_response order by created desc limit 3;` shows 200s.
+9. **Smoke test on production (Alex, in real Chrome):** a new passport through the Application and the Oath (a real plan), Start Mode, a reminder that rings in the browser, Save your passport by email (the new email, in the inbox), sign out and back in with the password, an old v1 address redirecting.
+10. **Tidy:** delete `RESEND_API_KEY` from the site's Vercel env (v2's site doesn't send email).
+
+**If it goes wrong:** before step 5, nothing users see has changed. After it: Vercel → the site project → Deployments → the last v1 deployment → **Instant Rollback**, and set the Root Directory back to `./` (v1 runs on the v2 schema, which only adds). The accounts deleted in step 3 don't come back, which is the point.
+
+**After cutover (the iPhone track):** EAS's production environment gets production's values; the Apple provider on production with `work.procrastination.app`; a production build to TestFlight's external group for the 10 students (Beta App Review: the privacy policy URL is live by then).
 
 ## The iPhone track (alongside, students after cutover)
 Alex's Apple Developer account was approved on 2026-10-13. App Store Connect: **"ProcrastiNation: AI Planner"** ("ProcrastiNation" was refused: a 2025 joke app called "Procrasti Nation" holds the name and the bundle id `com.procrastination.app`), bundle id `work.procrastination.app`, SKU `procrastination-ios`. The name under the icon stays ProcrastiNation (`app.json`); the store name can change with any update. Builds: **EAS Build** (Alex, 2026-10-13), `apps/app/eas.json`.
