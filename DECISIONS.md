@@ -76,6 +76,7 @@ More detail: `CLAUDE.md` (layout, data model, patterns), `PN2-HANDOFF.md` (state
 **Legal pages** (`apps/site/app/privacy`, `/terms`; Alex, 2026-10-12)
 - Run by Alex Anderson, New York City; contact procrasti.nation.marketing@gmail.com; 13 and older; New York State law; effective at launch (October 16, 2026; moved up from October 25 by Alex on 2026-10-13).
 - The privacy policy promises deleted data is gone from backups within 7 days (there are none today). Turning on longer backups means changing the policy first.
+- Formal wording, not conversational (Alex, 2026-10-13): numbered sections, defined terms for the app's own names (passport, territories, Start Mode, Declarations). Disputes go to the state and federal courts in New York County, small claims allowed; **no arbitration** (Alex: simpler, and an arbitration clause needs careful drafting to hold, more so with users under 18). Under-18s use it with a parent's or guardian's consent. Liability is capped at the greater of what was paid in 12 months or US$50 (a $0 cap on a free app is more likely to be thrown out). The Terms carry Apple's minimum terms for an app's license (section 9), which ask for a mailing address: the pages say only "New York, New York" (a PO box would do, or keep Apple's standard license in App Store Connect).
 
 **Email**
 - v1's daily nudge email retires at cutover (2026-10-12): v2 nudges through notifications.

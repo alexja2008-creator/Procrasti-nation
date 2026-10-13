@@ -1,109 +1,216 @@
+import Link from 'next/link';
 import LegalPage from '../../components/legal/LegalPage';
 import { CONTACT_EMAIL, LEGAL_EFFECTIVE } from '../../lib/site';
 
-export const metadata = { title: 'Privacy policy · ProcrastiNation' };
+export const metadata = { title: 'Privacy Policy · ProcrastiNation' };
 
-// Written from what the code does (2026-10-12). When a feature changes what's collected or who
-// processes it, change this page in the same commit. A draft until Alex has it reviewed (lib/site.js).
-// Still to add when they ship: a phone number (texted sign-in codes) and the weekly State of the Union
-// email with its one-click unsubscribe.
+// Written from what the code does (2026-10-12; formal rewrite, Alex 2026-10-13). When a feature changes
+// what's collected or who processes it, change this page in the same commit. A draft until Alex has it
+// reviewed (lib/site.js). Still to add when they ship: a phone number (texted sign-in codes) and the
+// weekly State of the Union email with its one-click unsubscribe.
 export default function Privacy() {
   const contact = <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>;
   return (
-    <LegalPage eyebrow="PRIVACY POLICY" title="What we keep, and why." effective={LEGAL_EFFECTIVE}>
+    <LegalPage eyebrow="LEGAL" title="Privacy Policy" effective={LEGAL_EFFECTIVE}>
       <p>
-        ProcrastiNation (&ldquo;we&rdquo;) is an app for planning and starting tasks, on the web at app.procrasti-nation.work and,
-        soon, on iPhone. This policy says what information the app collects, what it&rsquo;s used for, who else handles it,
-        and what you can do about it. The short version: we keep what the app needs to work, we never sell it, and there
-        are no ads or ad trackers. ProcrastiNation is run by Alex Anderson, in New York City.
+        This Privacy Policy describes how Alex Anderson, an individual doing business as ProcrastiNation
+        (“ProcrastiNation,” “we,” “us,” or “our”), collects, uses, discloses and otherwise processes information in
+        connection with the ProcrastiNation website located at procrasti-nation.work, the ProcrastiNation web
+        application located at app.procrasti-nation.work, the ProcrastiNation application for iOS, and any related
+        services (collectively, the “Services”). This Privacy Policy is incorporated into, and forms part of, our{' '}
+        <Link href="/terms">Terms of Use</Link>. By accessing or using the Services, you acknowledge that you have read
+        and understood this Privacy Policy.
+      </p>
+      <p>
+        We do not sell personal information, we do not share personal information for cross-context behavioral
+        advertising, and the Services do not display advertisements or use advertising trackers.
       </p>
 
-      <h2>What we collect</h2>
-      <h3>Your account</h3>
-      <ul>
-        <li>
-          <strong>A passport without an account.</strong> You can start without giving us anything: the app opens an anonymous
-          passport, identified only by a random ID.
-        </li>
-        <li>
-          <strong>When you save it:</strong> a username, and your email address (with a password, if you choose one), or the
-          email and name Apple or Google share when you sign in with them. Passwords are stored by our database provider as
-          salted hashes; we never see them.
-        </li>
-      </ul>
-      <h3>What you put in it</h3>
-      <ul>
-        <li>Your tasks, plans and their steps, notes, territories, dates, times, repeats and estimates.</li>
-        <li>
-          Your answers to the Citizenship Application (what you&rsquo;re using it for, your hours, what tends to stop you, the
-          tone you like), and your settings, including your time zone.
-        </li>
-        <li>
-          What you do in Start Mode (when you started, for how long, how it ended), the stamps you&rsquo;ve earned and the start
-          times you&rsquo;ve declared. A Declaration&rsquo;s signature is drawn on your screen and never stored.
-        </li>
-      </ul>
-      <h3>Reminders</h3>
+      <h2>1. Information We Collect</h2>
       <p>
-        On iPhone, reminders are scheduled on the device itself. In a browser, if you turn reminders on, we store the
-        browser&rsquo;s push subscription (an address at your browser&rsquo;s push service, such as Google&rsquo;s or
-        Mozilla&rsquo;s, and its keys) so our server can send them, plus a short log of what was sent so nothing rings twice.
+        <strong>1.1 Account Information.</strong> You may begin using the Services without providing any personal
+        information. When you do, we create an account for you (referred to in the Services as your “passport”) that is
+        identified only by a randomly generated identifier. If you elect to save your passport, we collect a username
+        and either (a) your email address and, if you choose one, a password, or (b) the email address and name made
+        available to us by Apple or Google, if you sign in with that provider. At your election, Apple may provide a
+        private relay address in place of your email address. Passwords are stored by our database provider in salted
+        and hashed form, and we do not have access to them in readable form.
       </p>
-      <h3>On your device</h3>
       <p>
-        The app keeps your sign-in session and a few preferences in your device&rsquo;s storage (things like a reminder you
-        snoozed or a tip you dismissed). It doesn&rsquo;t use advertising cookies. This website counts page visits with Vercel
-        Analytics, which doesn&rsquo;t use cookies or follow you to other sites.
+        <strong>1.2 Content You Provide.</strong> We collect the content you create or submit through the Services
+        (“Content”), including: (a) tasks, plans and their steps, notes, lists (referred to in the Services as
+        “territories”), dates, times, recurrence rules and time estimates; (b) your responses to the onboarding
+        questionnaire (referred to in the Services as the “Citizenship Application”), including your intended use of the
+        Services, the hours during which you typically work, the obstacles you report, your preferred notification tone
+        and how you heard about the Services; and (c) your settings, including your time zone.
       </p>
-
-      <h2>How we use it</h2>
-      <ul>
-        <li>To run the app: show your tasks on every device you sign in on, ring your reminders, and keep your passport.</li>
-        <li>
-          <strong>To make plans with AI.</strong> When you use Plan it, &ldquo;I&rsquo;m stuck&rdquo; or dated steps, we send that
-          task&rsquo;s text (its title, notes, deadline, the plan&rsquo;s steps, your answers to its questions), the date and your
-          time zone, and the &ldquo;what stops you&rdquo; answer from your application to Anthropic, whose Claude models write the
-          plan. Nothing else from your account goes with it. Anthropic&rsquo;s terms for businesses don&rsquo;t let it train its models on what we send.
-        </li>
-        <li>To count your free plans, and to stop abuse (we log each AI request with its time).</li>
-        <li>To email you about your account (sign-in links, confirming your address).</li>
-      </ul>
-      <p>We don&rsquo;t sell your information, share it for advertising, or use it to train AI models.</p>
-
-      <h2>Who else handles it</h2>
-      <p>These companies process information for us, only to run the parts of the app they&rsquo;re named for:</p>
-      <ul>
-        <li><strong>Supabase:</strong> our database and sign-in, hosted in the United States (Amazon Web Services, in Oregon).</li>
-        <li><strong>Vercel:</strong> hosting for this website, the app on the web, and our server.</li>
-        <li><strong>Anthropic:</strong> the AI that writes plans, as described above.</li>
-        <li><strong>Resend:</strong> sending our emails.</li>
-        <li><strong>Apple and Google:</strong> if you sign in with them, and the push services that deliver browser reminders.</li>
-      </ul>
       <p>
-        We may also disclose information if the law requires it, or to protect people&rsquo;s safety. If ProcrastiNation is ever
-        sold or merged, this policy still applies to what we hold, and we&rsquo;ll tell you before anything changes.
+        <strong>1.3 Activity Information.</strong> We collect information about your use of certain features, including
+        the start time, duration and outcome of focus sessions (referred to in the Services as “Start Mode”), the
+        achievements you earn (referred to as “stamps”), and the start times you commit to (referred to as
+        “Declarations”). The signature you draw to make a Declaration is displayed on your device only and is not
+        transmitted to or stored by us.
+      </p>
+      <p>
+        <strong>1.4 Reminder Information.</strong> On iOS, reminders are scheduled locally on your device. If you enable
+        reminders in a web browser, we collect the push subscription issued by your browser, consisting of an endpoint
+        address at your browser’s push service and the associated encryption keys, so that our servers may deliver
+        reminders to that browser. We also maintain a log of the reminders sent, which is retained for approximately two
+        (2) days to prevent duplicate delivery.
+      </p>
+      <p>
+        <strong>1.5 Usage Records.</strong> We record the type and time of each request made to the artificial
+        intelligence features of the Services, in order to enforce usage limits and to prevent abuse.
+      </p>
+      <p>
+        <strong>1.6 Technical Information.</strong> Our service providers automatically record technical information when
+        you use the Services, such as your IP address, device and browser type, and the date and time of each request,
+        in server logs used for security, rate limiting and troubleshooting.
+      </p>
+      <p>
+        <strong>1.7 Device Storage and Analytics.</strong> The Services store your session credentials and certain
+        preferences (for example, whether you have dismissed a tip) in your device’s local storage. We do not use
+        advertising cookies. Our website measures page visits using Vercel Web Analytics, which does not use cookies and
+        does not track you across other websites.
       </p>
 
-      <h2>Your choices</h2>
-      <ul>
-        <li><strong>Download your data:</strong> Settings → Account → Download your data gives you everything in one file.</li>
-        <li><strong>Delete your passport:</strong> Settings → Account → Delete your passport removes your account and everything in it from our database right away. We don&rsquo;t keep backups of the database today; if we start, they&rsquo;ll last at most 7 days, so anything deleted is gone from them within a week.</li>
-        <li><strong>Change or correct</strong> anything in the app itself, and turn reminders and emails off whenever you like.</li>
-        <li>For anything else, including requests under laws like the GDPR or CCPA, write to {contact}.</li>
-      </ul>
+      <h2>2. How We Use Information</h2>
+      <p>We use the information described in Section 1 to:</p>
+      <ol>
+        <li>
+          provide, operate and maintain the Services, including synchronizing your Content across the devices on which
+          you sign in and delivering reminders;
+        </li>
+        <li>provide the artificial intelligence features of the Services, as described in Section 3;</li>
+        <li>
+          enforce the usage limits applicable to your account, and detect, prevent and respond to fraud, abuse, security
+          incidents and violations of our Terms of Use;
+        </li>
+        <li>
+          send you communications concerning your account, such as sign-in links, address confirmations and
+          password-reset messages;
+        </li>
+        <li>respond to your requests and inquiries; and</li>
+        <li>comply with applicable law and legal process.</li>
+      </ol>
+      <p>We do not use your information to train artificial intelligence models.</p>
 
-      <h2>Keeping it safe</h2>
+      <h2>3. Artificial Intelligence Features</h2>
       <p>
-        Everything travels encrypted. In our database every row belongs to one person, and the rules that guard it let only
-        that person read or change it. No system is perfect; if something ever goes wrong with your information, we&rsquo;ll tell
-        you.
+        When you use a feature of the Services that generates plans, steps, dates or suggestions (including the
+        features labeled “Plan it” and “I’m stuck”), we transmit to our artificial intelligence provider, Anthropic, only
+        the information necessary to fulfill that request, which may include: the title and notes of the relevant task;
+        its deadline; the steps of its plan; your responses to any clarifying questions; the reason you select for being
+        stuck and any suggestions previously provided for the same step; the current date and your time zone; and the
+        obstacle you reported in the Citizenship Application. No other information from your account is transmitted.
+        Under Anthropic’s commercial terms, Anthropic does not use information submitted to it through its application
+        programming interface to train its models.
       </p>
 
-      <h2>Age</h2>
-      <p>ProcrastiNation is for people 13 and older. If you think a younger child has an account, tell us at {contact} and we&rsquo;ll delete it.</p>
+      <h2>4. How We Disclose Information</h2>
+      <p>
+        <strong>4.1 Service Providers.</strong> We disclose information to the following service providers, which
+        process it on our behalf solely to provide the services indicated:
+      </p>
+      <ol>
+        <li>
+          Supabase, for database hosting and authentication; information is stored in the United States, in the Oregon
+          region of Amazon Web Services;
+        </li>
+        <li>Vercel, for hosting the website, the web application and our servers, and for website analytics;</li>
+        <li>Anthropic, for the artificial intelligence features described in Section 3;</li>
+        <li>Resend, for delivering account emails;</li>
+        <li>Apple and Google, for authentication, if you elect to sign in with either of them; and</li>
+        <li>
+          the push service operated by the vendor of your web browser (such as Google, Mozilla, Microsoft or Apple), for
+          delivering browser reminders.
+        </li>
+      </ol>
+      <p>
+        <strong>4.2 Legal Requirements and Protection of Rights.</strong> We may disclose information where we believe in
+        good faith that disclosure is required by law, regulation or legal process, or is necessary to protect the
+        rights, property or safety of any person.
+      </p>
+      <p>
+        <strong>4.3 Business Transfers.</strong> In connection with a merger, acquisition, financing or sale of all or
+        part of the Services, information may be transferred to a successor, subject to this Privacy Policy. We will
+        notify you before your information becomes subject to a different privacy policy.
+      </p>
 
-      <h2>Changes</h2>
-      <p>If this policy changes in a way that matters, we&rsquo;ll say so in the app before it takes effect. Questions: {contact}.</p>
+      <h2>5. Data Retention</h2>
+      <p>
+        We retain your account information and Content for as long as your account exists. When you delete your
+        account, the account and all associated Content are deleted from our production database immediately. We do not
+        currently maintain backups of our database; if we do so in the future, backups will be retained for no longer
+        than seven (7) days, such that deleted information is removed from them within that period. Anonymous passports
+        that are never saved may be deleted after an extended period of inactivity. Reminder logs are retained as
+        described in Section 1.4, and our service providers may retain server logs in accordance with their own
+        retention policies.
+      </p>
+
+      <h2>6. Your Rights and Choices</h2>
+      <ol>
+        <li>
+          <strong>Access and portability.</strong> You may obtain a copy of your account information and Content at any
+          time through Settings → Account → Download your data.
+        </li>
+        <li>
+          <strong>Deletion.</strong> You may delete your account and all associated Content at any time through Settings →
+          Account → Delete your passport.
+        </li>
+        <li>
+          <strong>Correction.</strong> You may correct or update your Content and settings within the Services.
+        </li>
+        <li>
+          <strong>Reminders.</strong> You may disable reminders at any time within the Services or in the settings of your
+          device or browser.
+        </li>
+        <li>
+          <strong>Additional rights.</strong> Depending on where you reside, you may have additional rights under
+          applicable law, including the right to request access to, correction of or deletion of your personal
+          information, and the right not to be discriminated against for exercising those rights. You may submit a
+          request at any time to {contact}. We will verify and respond to requests within the time required by
+          applicable law.
+        </li>
+      </ol>
+
+      <h2>7. Security</h2>
+      <p>
+        We maintain reasonable administrative, technical and organizational measures designed to protect information,
+        including encryption of data in transit and database access controls under which each record is accessible only
+        to the account to which it belongs. No method of transmission or storage is completely secure, and we cannot
+        guarantee absolute security. In the event of a security incident affecting your personal information, we will
+        notify you in accordance with applicable law.
+      </p>
+
+      <h2>8. Children’s Privacy</h2>
+      <p>
+        The Services are not directed to children under the age of thirteen (13), and we do not knowingly collect
+        personal information from children under the age of thirteen (13). If we learn that we have collected personal
+        information from such a child, we will delete it. If you believe that a child under the age of thirteen (13) has
+        provided us with personal information, please contact us at {contact}.
+      </p>
+
+      <h2>9. Location of Processing</h2>
+      <p>
+        We are located in the United States, and information is stored and processed in the United States. If you access
+        the Services from outside the United States, you acknowledge that your information will be transferred to,
+        stored and processed in the United States.
+      </p>
+
+      <h2>10. Changes to This Privacy Policy</h2>
+      <p>
+        We may amend this Privacy Policy from time to time. If we make material changes, we will provide notice within
+        the Services before the changes take effect. The effective date above indicates when this Privacy Policy was
+        last revised. Your continued use of the Services after the effective date of an amended Privacy Policy
+        constitutes your acknowledgment of it.
+      </p>
+
+      <h2>11. Contact</h2>
+      <p>
+        Questions, requests and complaints regarding this Privacy Policy may be directed to Alex Anderson,
+        ProcrastiNation, New York, New York, at {contact}.
+      </p>
     </LegalPage>
   );
 }
