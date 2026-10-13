@@ -123,7 +123,103 @@ body {
 .strip-stamp { flex: none; margin-right: 40px; opacity: 0.85; }
 @keyframes strip-drift { to { transform: translateX(-50%); } }
 
+/* Pick your nudge (ToneCarousel.jsx): each tone as a lock screen of its reminders, the one in front
+   with the other two partly behind it. */
+.tone-stage { position: relative; display: grid; overflow: hidden; padding: 6px 0 14px; touch-action: pan-y; }
+.tone-tile {
+  grid-area: 1 / 1;
+  justify-self: center;
+  width: min(380px, 76%);
+  transition: transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 450ms, filter 450ms;
+}
+.tone-tile[data-place='0'] { z-index: 2; }
+.tone-tile[data-place='-1'], .tone-tile[data-place='1'] { z-index: 1; opacity: 0.5; filter: saturate(0.6); cursor: pointer; }
+.tone-tile[data-place='-1'] { transform: translateX(-58%) scale(0.84); }
+.tone-tile[data-place='1'] { transform: translateX(58%) scale(0.84); }
+.tone-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  border-radius: 999px;
+  border: 1px solid var(--page-border);
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 6px 18px -10px rgba(11, 15, 28, 0.5);
+}
+.tone-arrow:hover { background: var(--page); }
+.tone-arrow:focus-visible, .tone-pick:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* Centered on the front tile's edges. */
+.tone-arrow[data-side='left'] { left: calc(50% - min(190px, 38%) - 22px); }
+.tone-arrow[data-side='right'] { right: calc(50% - min(190px, 38%) - 22px); }
+.tone-pick {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--page-border);
+  color: var(--ink-soft);
+}
+.tone-pick[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+
+.lock-screen {
+  --tone-ink: var(--stamp-forest);
+  padding: 22px 14px 16px;
+  border-radius: 30px;
+  border: 1px solid var(--page-border);
+  text-align: center;
+  background:
+    radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tone-ink) 30%, transparent), transparent 70%),
+    repeating-linear-gradient(135deg, var(--security-line) 0 1px, transparent 1px 7px),
+    var(--page);
+  box-shadow: 0 22px 44px -30px rgba(11, 15, 28, 0.6);
+}
+.lock-screen[data-tone='drill'] { --tone-ink: var(--stamp-terracotta); }
+.lock-screen[data-tone='roast'] { --tone-ink: var(--stamp-violet); }
+.lock-mode {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--tone-ink);
+  border: 1px solid color-mix(in srgb, var(--tone-ink) 55%, transparent);
+}
+.lock-date { margin-top: 12px; font-size: 0.9rem; color: var(--ink-soft); }
+.lock-time { font-size: 4rem; line-height: 1; margin-top: 2px; }
+.notif {
+  text-align: left;
+  padding: 10px 14px 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--page-border) 80%, transparent);
+  background: color-mix(in srgb, var(--card) 84%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 20px -14px rgba(11, 15, 28, 0.55);
+}
+.notif-head { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--muted); }
+.notif-icon { border-radius: 5px; }
+.notif-title { margin-top: 6px; font-weight: 600; font-size: 0.95rem; line-height: 1.3; }
+.notif-body { margin-top: 2px; font-size: 0.95rem; line-height: 1.38; color: var(--ink-soft); }
+.notif-actions { display: flex; gap: 8px; margin-top: 10px; }
+.notif-actions span {
+  flex: 1;
+  padding: 7px 0;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .strip-track { animation: none; }
+  .tone-tile { transition: none; }
   .land[data-land] { opacity: 1; animation: none; }
 }
