@@ -4,8 +4,8 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 const TIMEOUT_MS = 90_000; // plans usually take 10–20s; the server allows 60s
 
 export class ApiError extends Error {
-  /** HTTP status, or 0 when the request never got a response. */
-  constructor(message: string, readonly status: number) {
+  /** HTTP status, or 0 when the request never got a response. `limit`: which limit a 429 hit ('daily' or 'free'). */
+  constructor(message: string, readonly status: number, readonly limit?: string) {
     super(message);
   }
 }
@@ -33,7 +33,7 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     clearTimeout(timer);
   }
 
-  const json = (await response.json().catch(() => ({}))) as { error?: string };
-  if (!response.ok) throw new ApiError(json.error ?? `HTTP ${response.status}`, response.status);
+  const json = (await response.json().catch(() => ({}))) as { error?: string; limit?: string };
+  if (!response.ok) throw new ApiError(json.error ?? `HTTP ${response.status}`, response.status, json.limit);
   return json as T;
 }

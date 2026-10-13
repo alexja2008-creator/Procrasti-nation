@@ -26,7 +26,7 @@ type Phase =
 /** `freeAgain`: the day their free plans come back (the next 30.5-day window). */
 const failure = (e: unknown, freeAgain: string) =>
   e instanceof ApiError && e.status === 429
-    ? { message: copy.limit(freeAgain), canRetry: false }
+    ? { message: e.limit === 'daily' ? copy.dailyLimit : copy.limit(freeAgain), canRetry: false }
     : { message: copy.failed, canRetry: true };
 
 const close = () => (router.canGoBack() ? router.back() : router.replace('/'));

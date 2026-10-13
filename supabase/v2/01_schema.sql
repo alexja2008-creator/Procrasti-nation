@@ -435,21 +435,22 @@ CREATE POLICY "Owners log their plan generations" ON plan_generations FOR INSERT
 
 -- ------------------------------------------------------------
 -- 9. ai_requests: one row per metered AI request: "I'm stuck" and a plan's
---    clarifying questions (daily caps), and each plan request (one at a
---    time, so a burst can't outrun the free tier's count). The site's
+--    clarifying questions (daily caps), each plan request (one at a
+--    time, so a burst can't outrun the free tier's count), and dating a
+--    plan's steps ('dates', a daily cap). The site's
 --    routes count these. Insert and read only, like plan_generations, so a
 --    cap can't be reset by deleting rows.
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS ai_requests (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  kind TEXT NOT NULL CHECK (kind IN ('unstick', 'clarify', 'plan')),
+  kind TEXT NOT NULL CHECK (kind IN ('unstick', 'clarify', 'plan', 'dates')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- Where the table already exists with fewer kinds (staging), widen the check.
 ALTER TABLE ai_requests DROP CONSTRAINT IF EXISTS ai_requests_kind_check;
-ALTER TABLE ai_requests ADD CONSTRAINT ai_requests_kind_check CHECK (kind IN ('unstick', 'clarify', 'plan'));
+ALTER TABLE ai_requests ADD CONSTRAINT ai_requests_kind_check CHECK (kind IN ('unstick', 'clarify', 'plan', 'dates'));
 
 CREATE INDEX IF NOT EXISTS ai_requests_user_idx ON ai_requests (user_id, kind, created_at DESC);
 

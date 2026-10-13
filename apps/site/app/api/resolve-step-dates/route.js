@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { requireAuth } from '../../../lib/authMiddleware';
 import { callClaude, AIError, MODELS, resolveToday } from '../../../lib/ai';
+import { DAY_MS, logAndCount } from '../../../lib/limits';
 import { DATES_SCHEMA, buildDatesPrompt } from '../../../lib/prompts/dates';
 
 export const maxDuration = 60;
 
+// Dating a plan's steps, per person per 24 hours: three times the plans' daily limit (re-plans date
+// again), so only a script reaches it. The app spreads the steps evenly when this refuses.
+const DATES_DAILY_LIMIT = 60;
+
 export async function POST(request) {
   try {
-    const { error: authError } = await requireAuth(request);
+    const { user, token, error: authError } = await requireAuth(request);
     if (authError) {
       return NextResponse.json({ error: authError }, { status: 401 });
     }
@@ -28,6 +34,13 @@ export async function POST(request) {
     }
     if (deadline && String(deadline).length > 200) {
       return NextResponse.json({ error: 'deadline is too long' }, { status: 400 });
+    }
+
+    const userSupabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+    });
+    if ((await logAndCount(userSupabase, user.id, 'dates', DAY_MS)) > DATES_DAILY_LIMIT) {
+      return NextResponse.json({ error: 'Daily limit reached. Try again tomorrow.', limit: 'daily' }, { status: 429 });
     }
 
     const todayInfo = resolveToday(today);
@@ -51,8 +64,9 @@ export async function POST(request) {
     return NextResponse.json({ dates });
   } catch (error) {
     if (error instanceof AIError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json({ error: error.message }, { status: error.status === 429 ? 503 : error.status });
     }
+    console.error('Error in resolve-step-dates API:', error?.code ?? error?.message);
     return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
   }
 }

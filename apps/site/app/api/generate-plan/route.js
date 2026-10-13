@@ -5,31 +5,21 @@ import { callClaude, AIError, MODELS, PLAN_EFFORT, resolveToday } from '../../..
 import { CLARIFY_SCHEMA, PLAN_SCHEMA, buildClarificationPrompt, buildPlanPrompt } from '../../../lib/prompts/plan';
 import { trialDaysRemaining } from '../../../lib/trial';
 import { FREE_PLANS_PER_WINDOW, planWindow } from '../../../lib/core';
+import { DAY_MS, logAndCount } from '../../../lib/limits';
 
 export const maxDuration = 60;
 
-const DAY_MS = 24 * 60 * 60 * 1000;
 // Clarifying questions are free, but an anonymous passport costs nothing to make, so they're capped.
 const CLARIFY_DAILY_LIMIT = 20;
 // One plan at a time per person: a burst of parallel requests can't all pass the free tier's count.
 const ONE_PLAN_AT_A_TIME_MS = 20 * 1000;
+// Plans built in the last 24 hours, for everyone, the trial and Pro included (Alex, 2026-10-13): no
+// person needs more, and a script on one account can't run up the AI bill.
+const PLANS_DAILY_LIMIT = 20;
 
-/**
- * Logs this request first, then counts the person's requests of that kind since `sinceMs` ago,
- * this one included, so parallel requests can't all slip under (RLS: insert and read own rows).
- */
-async function logAndCount(db, userId, kind, sinceMs) {
-  const { error: logError } = await db.from('ai_requests').insert({ user_id: userId, kind });
-  if (logError) throw logError;
-  const { count, error } = await db
-    .from('ai_requests')
-    .select('id', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .eq('kind', kind)
-    .gte('created_at', new Date(Date.now() - sinceMs).toISOString());
-  if (error) throw error;
-  return count;
-}
+// `limit` tells the app which limit it hit: 'daily' (back tomorrow) or 'free' (the free plans' window).
+const dailyLimitReached = () =>
+  NextResponse.json({ error: 'Daily limit reached. Try again tomorrow.', limit: 'daily' }, { status: 429 });
 
 export async function POST(request) {
   try {
@@ -67,7 +57,7 @@ export async function POST(request) {
     // Clarification checks don't count against the free plans, but they're capped per day.
     if (checkClarification) {
       if ((await logAndCount(userSupabase, user.id, 'clarify', DAY_MS)) > CLARIFY_DAILY_LIMIT) {
-        return NextResponse.json({ error: 'Daily limit reached. Try again tomorrow.' }, { status: 429 });
+        return dailyLimitReached();
       }
       const result = await callClaude({
         model: MODELS.plan,
@@ -81,6 +71,14 @@ export async function POST(request) {
     if ((await logAndCount(userSupabase, user.id, 'plan', ONE_PLAN_AT_A_TIME_MS)) > 1) {
       return NextResponse.json({ error: 'A plan is already being made. Try again in a moment.' }, { status: 409 });
     }
+
+    const { count: builtToday, error: dailyError } = await userSupabase
+      .from('plan_generations')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', new Date(Date.now() - DAY_MS).toISOString());
+    if (dailyError) throw dailyError;
+    if (builtToday >= PLANS_DAILY_LIMIT) return dailyLimitReached();
 
     // The free tier's plans (not in trial, not subscribed). An anonymous passport costs nothing to
     // make, so it never gets the no-card trial: its free plans are all it has until the real trial.
@@ -100,7 +98,7 @@ export async function POST(request) {
         if (countError) throw countError;
         if (count >= FREE_PLANS_PER_WINDOW) {
           return NextResponse.json(
-            { error: 'Free plan limit reached for now. Upgrade to Pro for unlimited plans.' },
+            { error: 'Free plan limit reached for now. Upgrade to Pro for unlimited plans.', limit: 'free' },
             { status: 429 }
           );
         }
@@ -140,7 +138,8 @@ export async function POST(request) {
     return NextResponse.json({ plan });
   } catch (error) {
     if (error instanceof AIError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      // The app reads 429 as one of our limits; an upstream rate limit is just "try again".
+      return NextResponse.json({ error: error.message }, { status: error.status === 429 ? 503 : error.status });
     }
     console.error('Error in generate-plan API:', error);
     return NextResponse.json(

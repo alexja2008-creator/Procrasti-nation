@@ -419,7 +419,7 @@ for (const baseline of baselines) {
     await t.test('AI requests can be logged and counted, never erased', async () => {
       await as(db, U1, async () => {
         await db.query(`INSERT INTO ai_requests (user_id, kind) VALUES ($1, 'unstick')`, [U1]);
-        for (const kind of ['clarify', 'plan']) {
+        for (const kind of ['clarify', 'plan', 'dates']) {
           await db.query(`INSERT INTO ai_requests (user_id, kind) VALUES ($1, $2)`, [U1, kind]);
         }
         await assert.rejects(db.query(`INSERT INTO ai_requests (user_id, kind) VALUES ($1, 'anything')`, [U1]), /ai_requests_kind_check/);

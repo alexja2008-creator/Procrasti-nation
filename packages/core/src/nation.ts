@@ -549,6 +549,8 @@ export const voice = {
     dueBy: (day: string) => `Due ${day}`,
     notFound: 'That task isn’t here anymore.',
     limit: (day: string) => `You’ve used your free plans for now. Two more on ${day}.`,
+    /** The daily limit (20 plans, 20 rounds of questions), for everyone, the trial and Pro included. */
+    dailyLimit: 'That’s today’s limit for Plan it. It’s back tomorrow.',
     /** The Oath's plan: the wait is the application being processed. */
     processing: 'Processing your application…',
     processingHint: 'Making your task smaller. Usually 10 to 20 seconds.',
