@@ -1,5 +1,6 @@
 import SiteHeader from '../components/landing/SiteHeader';
 import Hero from '../components/landing/Hero';
+import StampStrip from '../components/landing/StampStrip';
 import HowItWorks from '../components/landing/HowItWorks';
 import Features from '../components/landing/Features';
 import Tones from '../components/landing/Tones';
@@ -14,6 +15,7 @@ export default function Home() {
       <SiteHeader />
       <main>
         <Hero />
+        <StampStrip />
         <HowItWorks />
         <Features />
         <Tones />

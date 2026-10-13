@@ -1,3 +1,4 @@
+import Entries from './Entries';
 import Phone from './Phone';
 
 const HIGHLIGHTS = [
@@ -17,13 +18,6 @@ const HIGHLIGHTS = [
   },
 ];
 
-const CARDS = [
-  { title: 'Reminders in your tone', body: 'At the time you set, in your browser now and on iPhone with the app. Start five minutes right from the notification.' },
-  { title: 'Notes that become tasks', body: 'Lecture notes, packing lists, ideas. Any line can turn into a checkbox that’s a real task on your day.' },
-  { title: 'Territories', body: 'School, work, home. Everything filed where it belongs, and Customs holds whatever you haven’t sorted yet.' },
-  { title: 'Never “overdue”', body: 'Missed days roll forward kindly. Nothing here calls you lazy, because shame is what keeps people stuck.' },
-];
-
 export default function Features() {
   return (
     <section className="mx-auto max-w-6xl px-5 py-16 md:px-8">
@@ -41,14 +35,7 @@ export default function Features() {
           </div>
         ))}
       </div>
-      <div className="mt-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {CARDS.map((c) => (
-          <div key={c.title} className="rounded-2xl border p-6" style={{ background: 'var(--card)', borderColor: 'var(--page-border)' }}>
-            <h3 className="text-lg font-semibold">{c.title}</h3>
-            <p className="mt-2 leading-relaxed" style={{ color: 'var(--ink-soft)' }}>{c.body}</p>
-          </div>
-        ))}
-      </div>
+      <Entries />
     </section>
   );
 }
