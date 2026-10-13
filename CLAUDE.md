@@ -18,7 +18,7 @@ ProcrastiNation helps people start what they're avoiding: an AI planner breaks a
 
 ## Tech Stack
 - **Framework**: Next.js 14 (App Router), JavaScript/JSX
-- **Styling**: Tailwind CSS 3, plus the A2 palette as CSS variables in `app/globals.css` (light and night follow the system)
+- **Styling**: Tailwind CSS 3, plus the A2 night palette as CSS variables in `app/globals.css` (the site is always night, like the app's default)
 - **AI**: Anthropic Claude API (raw `fetch()` — not the SDK)
 - **Auth + DB**: Supabase (Auth + PostgreSQL with RLS); the site checks the app's session token on each API call
 - **File Parsing** (`parse-syllabus`): mammoth (DOCX), unpdf (PDF), base64 (images → Claude vision)
@@ -71,10 +71,10 @@ The Expo app gets the same public key as `EXPO_PUBLIC_VAPID_PUBLIC_KEY`. Develop
 ## Project Structure
 ```
 app/
-  page.jsx                          # Landing page: components/landing/* (Hero, HowItWorks, Features, Tones = @pn/core's nudgeTones as lock screens of reminders in a carousel (ToneCarousel, a client component: arrows, names, swipe, arrow keys), Closing, SiteHeader/Footer, Phone = a framed light/night screenshot from public/screens/, RoundStamp = the app's stamp in SVG, StampStrip = a slow drift of stamps under the hero, Entries = the smaller features as an open passport's visa pages whose stamps land as they scroll into view (Land, a client component; still with reduced motion or no JavaScript))
+  page.jsx                          # Landing page: components/landing/* (Hero, HowItWorks, Features, Tones = @pn/core's nudgeTones as lock screens of reminders in a carousel (ToneCarousel, a client component: arrows, names, swipe, arrow keys), Closing, SiteHeader/Footer, Phone = a framed night screenshot from public/screens/ (the -light shots are kept for a day theme), RoundStamp = the app's stamp in SVG, StampStrip = a slow drift of stamps under the hero, Entries = the smaller features as an open passport's visa pages whose stamps land as they scroll into view (Land, a client component; still with reduced motion or no JavaScript))
   privacy/page.jsx, terms/page.jsx  # Formal; approved by Alex 2026-10-13 (lib/site.js LEGAL_DRAFT = false shows no Draft banner; components/legal/LegalPage, Todo = an open question in [brackets]); written from what the code does: change them with any feature that changes what's collected or who processes it
   layout.jsx                        # Root layout: metadata, A2 fonts, Vercel Analytics (no auth: sign-in is the app's)
-  globals.css                       # Tailwind + the A2 palette as CSS variables (light / night via prefers-color-scheme)
+  globals.css                       # Tailwind + the A2 night palette as CSS variables (always night; `viewport.themeColor` in layout.jsx matches)
   opengraph-image.jsx, icon.svg     # Share preview and favicon
   api/
     generate-plan/route.js          # AI task planning (clarify + generate steps)
@@ -215,7 +215,7 @@ Additive migration with a tested rollback; at cutover a fresh start (`04_fresh_s
 ## Key Patterns
 
 ### Dark Mode
-- **apps/site:** the A2 palette as CSS variables in `app/globals.css`, switched by `prefers-color-scheme`; style with `var(--ink)` and friends. (v1's `useTheme()` ternaries retired with its pages.)
+- **apps/site:** the A2 night palette as CSS variables in `app/globals.css` (always night: Alex, 2026-10-13); style with `var(--ink)` and friends. (v1's `useTheme()` ternaries retired with its pages.)
 - **apps/app (v2) does not use ternaries.** Style with React Native `StyleSheet` and A2 tokens: `const s = useStyles(makeStyles)` with a module-level `makeStyles = (t: Tokens) => ...`, or `useTokens()` for one-off colors. Night is the default (a US passport is navy); Settings → Appearance → Theme picks Night, Day or Match my device, per device (`theme/appearance.tsx`; `hooks/use-color-scheme.ts` turns the choice into the scheme; on iPhone `Appearance.setColorScheme` makes the keyboard and system UI follow). The launch screen is navy. Never hard-code a hex in a component; add a token to `packages/core/src/tokens.ts` instead. Use the `Text` component's `variant` for type roles, and the `Icon` component (SVG strokes), never emoji.
 - v2 copy: nation names for places and rewards (from `@pn/core` `names`/`voice`), plain labels on buttons (`actions`). The AI-plan button is always "Plan it".
 

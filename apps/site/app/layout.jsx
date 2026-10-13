@@ -3,6 +3,9 @@ import { Analytics } from '@vercel/analytics/next';
 
 const description = 'The AI planner that breaks down the task you\'re avoiding into steps small enough to start today.';
 
+// Safari's toolbar and the phone's status bar area match the night page.
+export const viewport = { themeColor: '#161B2E' };
+
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://procrasti-nation.work'),
   title: 'ProcrastiNation: Stop Waiting, Start Doing',

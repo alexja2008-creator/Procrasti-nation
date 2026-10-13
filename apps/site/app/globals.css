@@ -2,49 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
-/* The app's A2 palette (packages/core/src/tokens.ts), light and "night passport". */
+/* The app's A2 "night passport" palette (packages/core/src/tokens.ts). The site is always night (Alex,
+   2026-10-13: a US passport is navy), like the app's default; the day palette lives in tokens.ts if a
+   toggle ever comes. */
 :root {
-  --bg: #F5F1E8;
-  --security-line: rgba(35, 42, 69, 0.025);
-  --ink: #232A45;
-  --ink-soft: #4A4F63;
-  --muted: #5C6070;
-  --accent: #9A7B3C;
-  --primary: #3A6B52;
-  --primary-text: #2F5A44;
-  --on-primary: #FFFFFF;
-  --card: #FBF8F1;
-  --page: #EFE8D8;
-  --page-border: #D8CDB5;
-  --rule: #DDD4C2;
-  --outline: #CFC4AE;
-  --stamp-terracotta: #A8513B;
-  --stamp-violet: #5E5D8F;
-  --stamp-forest: #3A6B52;
-  --bezel: #232A45;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #161B2E;
-    --security-line: rgba(212, 178, 106, 0.04);
-    --ink: #ECE6D8;
-    --ink-soft: #C9C6BC;
-    --muted: #A7AABB;
-    --accent: #D4B26A;
-    --primary: #7CC3A0;
-    --primary-text: #9AD4B6;
-    --on-primary: #0F1F17;
-    --card: #1E2440;
-    --page: #1B2139;
-    --page-border: #2A3150;
-    --rule: #2A3150;
-    --outline: #3A4163;
-    --stamp-terracotta: #E08A70;
-    --stamp-violet: #A3A2D6;
-    --stamp-forest: #7CC3A0;
-    --bezel: #0B0F1C;
-  }
+  color-scheme: dark;
+  --bg: #161B2E;
+  --security-line: rgba(212, 178, 106, 0.04);
+  --ink: #ECE6D8;
+  --ink-soft: #C9C6BC;
+  --muted: #A7AABB;
+  --accent: #D4B26A;
+  --primary: #7CC3A0;
+  --primary-text: #9AD4B6;
+  --on-primary: #0F1F17;
+  --card: #1E2440;
+  --page: #1B2139;
+  --page-border: #2A3150;
+  --rule: #2A3150;
+  --outline: #3A4163;
+  --stamp-terracotta: #E08A70;
+  --stamp-violet: #A3A2D6;
+  --stamp-forest: #7CC3A0;
+  --bezel: #0B0F1C;
 }
 
 html {
