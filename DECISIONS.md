@@ -167,7 +167,8 @@ Each of these looks redundant, over-built or odd, and each exists because the si
 - **The iOS build script builds in `~/Library/Caches`** (`apps/app/scripts/ios-dev-build.sh`), because the repo sits on an iCloud-synced Desktop whose file attributes break code signing. It stays unsigned; signed builds come from EAS Build in Expo's cloud, which never sees the iCloud attributes.
 - **The site calls Claude with raw `fetch()`** (`apps/site/lib/ai.js`), not the SDK.
 - **The app never holds secrets.** It gets only `EXPO_PUBLIC_*` values and calls the site's `/api/*` for anything needing a key.
-- **App styling:** `StyleSheet` with design tokens, never a hard-coded color in a component, and SVG icons, never emoji. **Site styling:** dark mode by JavaScript ternaries, never Tailwind's `dark:` prefix.
+- **App styling:** `StyleSheet` with design tokens, never a hard-coded color in a component, and SVG icons, never emoji. **Site styling:** Tailwind for layout, plus the night palette as CSS variables in `apps/site/app/globals.css` (the site is always night, so no `dark:` prefix and no theme ternaries).
+- **`DESIGN.md` repeats the tokens** that `packages/core/src/tokens.ts` already holds, because design tools and agents read a DESIGN.md at the repo root. `tokens.ts` stays the source of truth; `packages/core/test/design-md.test.ts` fails when the copy drifts.
 - **The site's ESLint was never set up;** `npm run build` is the check there.
 
 ---
