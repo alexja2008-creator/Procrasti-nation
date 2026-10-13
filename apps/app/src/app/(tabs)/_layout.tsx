@@ -1,7 +1,8 @@
-import { usePathname } from 'expo-router';
+import { Redirect, usePathname } from 'expo-router';
 import { TabList, Tabs, TabSlot, TabTrigger } from 'expo-router/ui';
 import { StyleSheet } from 'react-native';
 
+import { useAuth } from '@/auth/auth-provider';
 import { CaptureButton, NavBar, NavItem } from '@/components/nav-bar';
 import { openSearch } from '@/components/search-button';
 import { useIsWide } from '@/hooks/use-is-wide';
@@ -12,6 +13,12 @@ export default function TabsLayout() {
   // Web: ⌘K (Ctrl+K) or / opens search from anywhere; not a second one while it's open.
   const pathname = usePathname();
   useShortcuts(pathname === '/search' ? {} : { 'Mod+K': openSearch, '/': openSearch });
+
+  // A reset link opened while signed out: signing in swaps the signed-out stack for the signed-in
+  // one, which on iPhone drops auth/callback before it can send them on, and they land here.
+  // The new password comes first (both of its buttons clear `recovering`).
+  const { recovering } = useAuth();
+  if (recovering) return <Redirect href="/auth/new-password" />;
 
   const list = (
     <TabList asChild>

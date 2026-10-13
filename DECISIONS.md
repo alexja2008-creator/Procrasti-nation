@@ -104,6 +104,7 @@ More detail: `CLAUDE.md` (layout, data model, patterns), `PN2-HANDOFF.md` (state
 Each of these looks redundant, over-built or odd, and each exists because the simpler version breaks something. Challenge the reasoning if it's wrong; please don't report the code itself as unnecessary.
 
 ### Sign-in and accounts
+- **The tabs redirect to `auth/new-password` while `recovering`** (`apps/app/src/app/(tabs)/_layout.tsx`), although `auth/callback` already does. Signing in swaps the signed-out stack for the signed-in one (`_layout.tsx` wraps it in `SignedInProviders`), and on iPhone that drops the callback screen mid-exchange, so a reset link opened while signed out landed on Today without asking for the new password (TestFlight build 1, 2026-10-13). Web rebuilds from the address bar, so the callback catches it there.
 - **`signOut({ scope: 'local' })`** in `apps/app/src/auth/sign-out.ts`. supabase-js's default signs out *every* device, so leaving a lab computer would sign you out of your phone.
 - **`shouldCreateUser: false`** on sign-in links and texted codes (`apps/app/src/auth/sign-in.ts`, `auth/passport.ts`). Those are for existing accounts; new people go through the Application.
 - **The trial is counted from `user.created_at`** (`apps/site/lib/trial.js`), never from `user_metadata`, because users can write their own metadata. A v1 bug let people give themselves endless trials that way.
