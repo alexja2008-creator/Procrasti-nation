@@ -71,7 +71,7 @@ More detail: `CLAUDE.md` (layout, data model, patterns), `PN2-HANDOFF.md` (state
 - "I'm stuck" is free for everyone (20 a day), because Start Mode is what keeps people.
 - Planned, not built yet: a required 7-day trial with the payment method taken up front; cancelling keeps the free tier.
 - The web launches free-only (2026-10-12): payments arrive with the App Store version through RevenueCat (which can take web payments through Stripe too). v1's Stripe checkout, portal and webhook retire at cutover.
-- Prices (Alex, 2026-10-13; drafted in App Store Connect): **$4.99/month** (product `1A`), **$49.99/year** (`1B`), **$12.99 for 3 months**, called Semester (`1C`). Down from v1's $7.99/month: $4.99 is an impulse buy for a student, $7.99 an instant turn-off.
+- Prices (Alex, 2026-10-13; drafted in App Store Connect): **$4.99/month** (product `1A`), **yearly** (`1B`; was $49.99, lowered so yearly is the clear deal, new price to come), **$12.99 for 3 months**, called Quarterly (`1C`; not "Semester", since a semester outlasts 3 months and the plan would end before finals). Down from v1's $7.99/month: $4.99 is an impulse buy for a student, $7.99 an instant turn-off.
 
 **Legal pages** (`apps/site/app/privacy`, `/terms`; Alex, 2026-10-12)
 - Run by Alex Anderson, New York City; contact procrasti.nation.marketing@gmail.com; 13 and older; New York State law; effective at launch (October 16, 2026; moved up from October 25 by Alex on 2026-10-13).
