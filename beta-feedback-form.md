@@ -129,7 +129,11 @@ Options:
 - Honestly, I'd pay for what's already here
 - I wouldn't pay for any version of this
 
-*Why we ask: Ranks the Pro roadmap against what's built. The Monday email is State of the Union (planned, not built). Daily nudges are already in v2 (reminders and the morning list), and v1's co-working sessions and streak freeze are gone, so none of them are options.*
+**Follow-up (optional): "Anything else that would make it worth paying for?"**
+
+*Type: Paragraph (open text)*
+
+*Why we ask: Ranks the Pro roadmap against what's built, and the follow-up catches what we didn't think to list. The Monday email is State of the Union (planned, not built). Daily nudges are already in v2 (reminders and the morning list), and v1's co-working sessions and streak freeze are gone, so none of them are options.*
 
 ---
 
@@ -241,7 +245,7 @@ Options:
 **After 10 responses:**
 - **NPS (Q7)** = % who gave 9–10 minus % who gave 0–6. The business plan's target is above 50.
 - **Q4 and Q5:** lead the landing page and the videos with what people would miss most and the tone they picked
-- **Q8:** the most-picked option → validate against the roadmap's Next list
+- **Q8:** the most-picked option → validate against the roadmap's Next list; add any suggestion 2+ people wrote in the follow-up to the roadmap's ideas
 - **Q9:** the yearly share → decide whether the trial page leads with yearly, and update the funnel model
 - **Q10:** if 3+ of 10 can't pay on their own → plan the reverse-trial test for launch, not later
 - **Q11:** the dominant user type → sharpen the ICP
