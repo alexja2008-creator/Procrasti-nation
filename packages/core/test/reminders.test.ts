@@ -140,6 +140,12 @@ test('the morning list counts the day and names the first thing to start', () =>
     'morning:2026-10-07',
     'past 8 AM: tomorrow first',
   );
+  const moreSteps = [...tasks, task('s2', { parentId: 'paper', sortOrder: 2, scheduledOn: TODAY }), task('s3', { parentId: 'paper', sortOrder: 3, scheduledOn: TODAY })];
+  assert.equal(
+    planReminders(moreSteps, early, { morning: { on: true, hour: 8, minute: 0 } }).find((r) => r.kind === 'morning')?.title,
+    'Three things today',
+    'a plan counts once, however many of its steps are on',
+  );
   assert.equal(planReminders(tasks, early, { morning: { on: false, hour: 8, minute: 0 } }).filter((r) => r.kind === 'morning').length, 0);
   assert.equal(planReminders([], early, { morning: { on: true, hour: 8, minute: 0 } }).length, 0, 'nothing on: no ring');
 });

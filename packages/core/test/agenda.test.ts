@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { buildToday, stepContext, timeOnItsDay } from '../src/agenda.ts';
+import { buildToday, groupAgenda, planToFinish, startTarget, stepContext, timeOnItsDay } from '../src/agenda.ts';
 import type { Task } from '../src/types.ts';
 
 const TODAY = '2026-10-03';
@@ -120,4 +120,55 @@ test('a task’s time on its day: the reminder when scheduled, the due time when
     null,
     'worked on today, due Friday at 5: no time today',
   );
+});
+
+const plan = (id: string, n: number, fields: Partial<Task> = {}, stepFields: (i: number) => Partial<Task> = () => ({ scheduledOn: TODAY })) => [
+  task(id, fields),
+  ...Array.from({ length: n }, (_, i) => task(`${id}${i + 1}`, { parentId: id, sortOrder: i + 1, source: 'ai', ...stepFields(i + 1) })),
+];
+
+test('Today groups each plan into one item: two plans of seven steps are two things', () => {
+  const tasks = [...plan('a', 7, { dueOn: '2026-10-09' }), ...plan('b', 7), task('loose', { scheduledOn: TODAY })];
+  const view = buildToday(tasks, TODAY);
+  const { items, openCount } = groupAgenda(view, tasks);
+  assert.deepEqual(
+    items.map((i) => (i.kind === 'plan' ? `plan:${i.group.plan.id}:${i.group.steps.length}` : i.entry.task.id)),
+    ['plan:a:7', 'loose', 'plan:b:7'],
+    'in the agenda order, the next small step (a1) joined to its plan',
+  );
+  assert.equal(openCount, 3);
+  const a = items[0].kind === 'plan' ? items[0].group : null;
+  assert.deepEqual([a?.done, a?.total, a?.readyToFinish, a?.steps[0].stepIndex], [0, 7, false, 1]);
+});
+
+test('Today: a plan with every step done waits to be marked done; a finished plan goes last', () => {
+  const tasks = [
+    ...plan('ready', 2, {}, () => ({ scheduledOn: TODAY, ...done(3) })),
+    ...plan('finished', 1, { ...done(3) }, () => ({ scheduledOn: TODAY, ...done(3) })),
+    task('loose', { scheduledOn: TODAY }),
+  ];
+  const { items, openCount } = groupAgenda(buildToday(tasks, TODAY), tasks);
+  const ids = items.map((i) => (i.kind === 'plan' ? i.group.plan.id : i.entry.task.id));
+  assert.deepEqual(ids.slice(-1), ['finished']);
+  const ready = items.find((i) => i.kind === 'plan' && i.group.plan.id === 'ready');
+  assert.equal(ready?.kind === 'plan' && ready.group.readyToFinish, true);
+  assert.equal(openCount, 2, 'the plan waiting to be marked done still counts; the finished one does not');
+});
+
+test('Today: a plan that is itself due lists all its open steps', () => {
+  const tasks = plan('due', 3, { dueOn: TODAY, dueAt: at(3, 17) }, (i) => ({ scheduledOn: i === 1 ? TODAY : '2026-10-06' }));
+  const { items } = groupAgenda(buildToday(tasks, TODAY), tasks);
+  assert.equal(items.length, 1);
+  assert.deepEqual(items[0].kind === 'plan' ? items[0].group.steps.map((e) => e.task.id) : [], ['due1', 'due2', 'due3']);
+});
+
+test('Start on a plan starts its next open step; a plan finishes only when asked', () => {
+  const tasks = [...plan('p', 3, {}, (i) => (i === 1 ? done(2) : {})), task('solo')];
+  assert.equal(startTarget(tasks, 'p'), 'p2', 'the first open step, in step order');
+  assert.equal(startTarget(tasks, 'p3'), 'p3');
+  assert.equal(startTarget(tasks, 'solo'), 'solo');
+  assert.equal(planToFinish(tasks, tasks.find((t) => t.id === 'p2')!), null, 'p3 is still open');
+  const lastOpen = tasks.map((t) => (t.id === 'p2' ? { ...t, ...done(3) } : t));
+  assert.equal(planToFinish(lastOpen, lastOpen.find((t) => t.id === 'p3')!)?.id, 'p', 'checking off the last open step');
+  assert.equal(planToFinish(lastOpen, { id: 'solo', parentId: null }), null);
 });

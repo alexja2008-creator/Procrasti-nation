@@ -3,6 +3,7 @@
 // the day ends, the morning list's time, Start Mode's timer, the plans' and
 // Today's shape, the nudge tone), and Settings can change any of them later.
 
+import { nextOpenStep } from './agenda.ts';
 import { addDays, daysBetween } from './dates.ts';
 import { voice } from './nation.ts';
 import type { QuickAddResult } from './quick-add.ts';
@@ -116,13 +117,7 @@ export function firstWeekOf(tasks: Task[], planId: string, today: LocalDate): { 
 }
 
 /** Their first Declaration is for this: the Oath's plan's first open step, in plan order. */
-export function firstStepOf(tasks: Task[], planId: string): Task | null {
-  return (
-    tasks
-      .filter((t) => t.parentId === planId && !t.deletedAt && !t.completedAt)
-      .sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt))[0] ?? null
-  );
-}
+export const firstStepOf = (tasks: Task[], planId: string): Task | null => nextOpenStep(tasks, planId);
 
 /** The territories a purpose of visit starts someone with (only when they have none). */
 export function territoriesFor(persona: Persona): Pick<List, 'name' | 'kind' | 'ink'>[] {
