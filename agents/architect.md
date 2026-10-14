@@ -61,7 +61,7 @@ For each design decision, document:
 - **No backend server**: All server logic lives in Next.js API routes (`app/api/`)
 - **RLS everywhere**: Service role key only in cron routes, never in client code
 - **Single repo**: No microservices, monolith is fine at current scale
-- **Free tier limits**: 5 AI plans/month for free users
+- **Free tier limits**: 2 AI plans per 30.5-day window for free users (core `FREE_PLANS_PER_WINDOW`)
 
 ---
 

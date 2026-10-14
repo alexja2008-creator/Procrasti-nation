@@ -1,5 +1,16 @@
 import './globals.css';
 import { Analytics } from '@vercel/analytics/next';
+import { Fraunces, IBM_Plex_Mono, Instrument_Sans, Space_Grotesk } from 'next/font/google';
+
+// The A2 fonts, downloaded at build time and served from the site's own domain, so a visitor's
+// browser never contacts Google (a German court fined a site for sending visitors' IP addresses to
+// Google Fonts: LG München, 2022). The same weights the old Google Fonts link asked for; Fraunces
+// keeps its optical size axis, which next/font only offers with the variable weight.
+const fraunces = Fraunces({ subsets: ['latin'], axes: ['opsz'], display: 'swap', variable: '--font-fraunces' });
+const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: '400', display: 'swap', variable: '--font-plex-mono' });
+const instrumentSans = Instrument_Sans({ subsets: ['latin'], weight: ['400', '600'], display: 'swap', variable: '--font-instrument-sans' });
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight: '700', display: 'swap', variable: '--font-space-grotesk' });
+const fontVariables = [fraunces, plexMono, instrumentSans, spaceGrotesk].map((font) => font.variable).join(' ');
 
 const description = 'The AI planner that breaks down the task you\'re avoiding into steps small enough to start today.';
 
@@ -26,15 +37,7 @@ export const metadata = {
 // The marketing site: no sign-in here (that's the app's, at app.procrasti-nation.work).
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500&family=IBM+Plex+Mono&family=Instrument+Sans:wght@400;600&family=Space+Grotesk:wght@700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="en" className={fontVariables}>
       <body>
         {children}
         <Analytics />

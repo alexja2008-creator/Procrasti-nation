@@ -1,7 +1,20 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { authErrorKind, cleanName, cleanUsername, isLongEnoughPassword, isValidUsername, MIN_PASSWORD_LENGTH, NAME_MAX, nameMetadata } from '../src/account.ts';
+import {
+  ageOn,
+  authErrorKind,
+  birthDateOf,
+  cleanName,
+  cleanUsername,
+  isLongEnoughPassword,
+  isOldEnough,
+  isValidUsername,
+  MIN_AGE,
+  MIN_PASSWORD_LENGTH,
+  NAME_MAX,
+  nameMetadata,
+} from '../src/account.ts';
 
 test('passwords need six characters, like v1', () => {
   assert.equal(MIN_PASSWORD_LENGTH, 6);
@@ -85,4 +98,35 @@ test('a name is kept trimmed, in the fields Sign in with Apple fills', () => {
   assert.deepEqual(nameMetadata(' Alex ', ' Anderson '), { given_name: 'Alex', family_name: 'Anderson', full_name: 'Alex Anderson' });
   assert.deepEqual(nameMetadata('Alex'), { given_name: 'Alex', family_name: null, full_name: 'Alex' }, 'no last name clears an old one');
   assert.deepEqual(nameMetadata('Alex', '   '), { given_name: 'Alex', family_name: null, full_name: 'Alex' });
+});
+
+test('a date of birth is a real day, from 1900 to today', () => {
+  const today = '2026-10-14';
+  assert.equal(birthDateOf('4', '9', '2001', today), '2001-04-09');
+  assert.equal(birthDateOf(' 04 ', '09', '2001', today), '2001-04-09', 'spaces and leading zeros are fine');
+  assert.equal(birthDateOf('2', '29', '2008', today), '2008-02-29', 'a leap day in a leap year');
+  assert.equal(birthDateOf('2', '29', '2007', today), null, 'no leap day that year');
+  assert.equal(birthDateOf('4', '31', '2001', today), null);
+  assert.equal(birthDateOf('13', '1', '2001', today), null);
+  assert.equal(birthDateOf('0', '1', '2001', today), null);
+  assert.equal(birthDateOf('1', '1', '1899', today), null, 'before 1900');
+  assert.equal(birthDateOf('10', '15', '2026', today), null, 'tomorrow');
+  assert.equal(birthDateOf('10', '14', '2026', today), '2026-10-14', 'today is a real day (and far too young)');
+  assert.equal(birthDateOf('1', '1', '01', today), null, 'a two-digit year is ambiguous');
+  assert.equal(birthDateOf('', '1', '2001', today), null);
+  assert.equal(birthDateOf('1.5', '1', '2001', today), null);
+});
+
+test('the age check counts whole years, birthdays included', () => {
+  assert.equal(MIN_AGE, 13);
+  assert.equal(ageOn('2013-10-14', '2026-10-14'), 13, 'the 13th birthday itself');
+  assert.equal(ageOn('2013-10-15', '2026-10-14'), 12, 'the day before');
+  assert.ok(isOldEnough('2013-10-14', '2026-10-14'));
+  assert.ok(!isOldEnough('2013-10-15', '2026-10-14'));
+  assert.ok(isOldEnough('1990-01-01', '2026-10-14'));
+  assert.ok(!isOldEnough('2026-10-14', '2026-10-14'));
+  // A leap-day birthday: a year older on 1 March in other years.
+  assert.equal(ageOn('2012-02-29', '2025-02-28'), 12);
+  assert.equal(ageOn('2012-02-29', '2025-03-01'), 13);
+  assert.equal(ageOn('2012-02-29', '2028-02-29'), 16);
 });

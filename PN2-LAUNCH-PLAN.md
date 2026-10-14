@@ -7,7 +7,7 @@ v2 replaces v1 at procrasti-nation.work. The site (`apps/site`) becomes the land
 - **A fresh start:** every account is deleted at cutover, Alex's included (`supabase/v2/04_fresh_start.sql`); citizen numbers restart at 000001. `02_backfill.sql` isn't run.
 - **The web launches free-only.** Everyone gets the free tier (2 plans per 30.5 days from creation). Payments arrive with the App Store version through RevenueCat, which can also take web payments through Stripe.
 - **v1's daily nudge email retires** at cutover.
-- **State of the Union replaces the Weekly Citizen Report, every Monday morning** (the v2 plan said Sunday evening). It isn't built yet: its own plan, after launch (recommended: with a fresh start nobody misses a Monday email in between).
+- **State of the Union replaces the Weekly Citizen Report, every Monday morning** (the v2 plan said Sunday evening). It isn't built yet: its own plan, after launch; each email carries a postal address and a one-click unsubscribe (CAN-SPAM, `DECISIONS.md`) (recommended: with a fresh start nobody misses a Monday email in between).
 
 ## What stays on the site after cutover
 - Pages: the landing page (rewritten for v2), `/privacy`, `/terms`.

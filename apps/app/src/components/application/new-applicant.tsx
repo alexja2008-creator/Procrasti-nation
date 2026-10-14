@@ -1,15 +1,29 @@
-import { APPLICATION_PAGES, cleanName, hoursChange, resumePage, voice, type HeardFrom, type Hours, type Preferences } from '@pn/core';
+import {
+  APPLICATION_PAGES,
+  cleanName,
+  hoursChange,
+  isOldEnough,
+  localDateString,
+  resumePage,
+  voice,
+  type HeardFrom,
+  type Hours,
+  type LocalDate,
+  type Preferences,
+} from '@pn/core';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View, type ScrollView } from 'react-native';
 
 import { openPassport } from '@/auth/passport';
+import { ApplicationForm } from '@/components/application/application-form';
 import { isQuizPage, QuizPages, type QuizPage } from '@/components/application/quiz-pages';
 import { useTurns } from '@/components/application/use-turns';
 import { Button } from '@/components/button';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { passportDeletedHere } from '@/data/account';
+import { isTurnedAway, turnAway } from '@/data/age-check';
 import { loadDraft, saveDraft, type Draft } from '@/data/application-draft';
 import { useTokens } from '@/theme/tokens';
 
@@ -18,16 +32,34 @@ const copy = voice.application;
 /**
  * The Application for someone new, signed out: the questions, answered on this device. Picking
  * where they heard about us opens their anonymous passport; the screen then comes back signed in
- * (`welcome.tsx`), moves these answers into it and carries on at the Oath.
+ * (`welcome.tsx`), moves these answers into it and carries on at the Oath. A device the age check
+ * turned away sees only that (and sign-in, for an existing account).
  */
 export function NewApplicant() {
   const t = useTokens();
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [turnedAway, setTurnedAway] = useState(false);
 
   useEffect(() => {
-    loadDraft().then(setDraft);
+    Promise.all([loadDraft(), isTurnedAway()]).then(([loaded, away]) => {
+      setTurnedAway(away);
+      setDraft(loaded);
+    });
   }, []);
 
+  if (turnedAway) {
+    return (
+      <Screen>
+        <View style={styles.page}>
+          <ApplicationForm
+            title={copy.ineligibleTitle}
+            lead={copy.ineligibleBody}
+            footer={<Button variant="quiet" label={copy.alreadyCitizen} onPress={() => router.push('/sign-in')} />}
+          />
+        </View>
+      </Screen>
+    );
+  }
   if (!draft) {
     return (
       <Screen>
@@ -35,15 +67,15 @@ export function NewApplicant() {
       </Screen>
     );
   }
-  return <Questions initial={draft} />;
+  return <Questions initial={draft} onTurnedAway={() => setTurnedAway(true)} />;
 }
 
-function Questions({ initial }: { initial: Draft }) {
+function Questions({ initial, onTurnedAway }: { initial: Draft; onTurnedAway: () => void }) {
   const t = useTokens();
   const scroll = useRef<ScrollView>(null);
   const [draft, setDraft] = useState(initial);
   // Everything answered already (the passport didn't open last time): back to the last question.
-  const resume = resumePage(initial.preferences, !!initial.name?.first);
+  const resume = resumePage(initial.preferences, !!initial.name?.first, !!initial.agePassed);
   const { turnedTo, go, answer, busy, setBusy, error, setError, settled } = useTurns(isQuizPage(resume) ? resume : 'heardFrom', scroll, copy.saveFailed);
   const page = turnedTo as QuizPage;
   const index = APPLICATION_PAGES.indexOf(page);
@@ -64,6 +96,21 @@ function Questions({ initial }: { initial: Draft }) {
     const updated: Draft = { ...draft, name: { first: cleanName(first), last: cleanName(last) } };
     setDraft(updated);
     await saveDraft(updated);
+  };
+
+  // Old enough: noted in the draft (never the date). Otherwise this device is turned away, and its answers and name go.
+  const onBirth = (born: LocalDate) => {
+    if (isOldEnough(born, localDateString())) {
+      answer(async () => {
+        const updated: Draft = { ...draft, agePassed: true };
+        setDraft(updated);
+        await saveDraft(updated);
+      }, next);
+      return;
+    }
+    if (!settled()) return;
+    setBusy(true);
+    turnAway().then(onTurnedAway);
   };
 
   const onHours = (hours: Hours) =>
@@ -110,6 +157,7 @@ function Questions({ initial }: { initial: Draft }) {
           }
           onAnswer={(patch) => answer(() => keep(patch), next)}
           onName={(name) => answer(() => keepName(name.first, name.last), next)}
+          onBirth={onBirth}
           onHours={onHours}
           onHeardFrom={onHeardFrom}
           next={next}
