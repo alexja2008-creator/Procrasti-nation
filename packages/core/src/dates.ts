@@ -22,7 +22,7 @@ export function localTimeZone(): string | undefined {
 }
 
 /**
- * The user's "today", honoring their day-rollover hour: a night owl with
+ * The user's "today", honoring their day-rollover hour: someone with
  * rollover 3 is still on Tuesday at 2am Wednesday.
  */
 export function logicalDateString(date: Date = new Date(), rolloverHour = 0): string {

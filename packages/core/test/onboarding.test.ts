@@ -13,7 +13,6 @@ import {
   pageNumber,
   resultAudience,
   resumePage,
-  rolloverFor,
   territoriesFor,
 } from '../src/onboarding.ts';
 import { parseQuickAdd } from '../src/quick-add.ts';
@@ -79,8 +78,8 @@ test('a purpose of visit starts the matching territories', () => {
   assert.deepEqual(names('life'), ['Home/home/forest']);
 });
 
-test('hours set when the day ends and the morning list time', () => {
-  assert.deepEqual(['early', 'day', 'night'].map((h) => rolloverFor(h as 'early')), [0, 0, 3]);
+test('hours set the morning list time; every answer ends the day at midnight', () => {
+  assert.deepEqual(['early', 'day', 'night'].map((h) => hoursChange(h as 'early', {}).dayRolloverHour), [0, 0, 0]);
   assert.deepEqual(morningTimeFor('early'), { hour: 7, minute: 0 });
   assert.deepEqual(morningTimeFor('day'), { hour: 8, minute: 0 });
   assert.deepEqual(morningTimeFor('night'), { hour: 10, minute: 0 });
@@ -106,7 +105,7 @@ test('the Oath: a typed date wins, else due when they picked', () => {
 test('changing hours moves the morning list only while it is off', () => {
   assert.deepEqual(hoursChange('night', {}), {
     preferences: { hours: 'night', reminders: { morningList: { on: false, hour: 10, minute: 0 } } },
-    dayRolloverHour: 3,
+    dayRolloverHour: 0,
   });
   const on = { reminders: { morningList: { on: true, hour: 6, minute: 30 } } };
   assert.deepEqual(hoursChange('early', on).preferences.reminders?.morningList, { on: true, hour: 6, minute: 30 });

@@ -139,22 +139,20 @@ export function oathTask(parsed: QuickAddResult, due: OathDue, today: LocalDate)
   return { ...parsed, dueOn };
 }
 
-/** When their day ends: a night owl's late night still counts as today (3 AM); everyone else, midnight. */
-export const rolloverFor = (hours: Hours): number => (hours === 'night' ? 3 : 0);
-
 /** The morning list's time for their hours (it stays off until they turn it on). */
 export const morningTimeFor = (hours: Hours): Pick<MorningList, 'hour' | 'minute'> =>
   ({ early: { hour: 7, minute: 0 }, day: { hour: 8, minute: 0 }, night: { hour: 10, minute: 0 } })[hours];
 
 /**
  * Everything an Hours answer changes (the Application and Settings alike):
- * when the day ends, and the morning list's time while it's still off (once
- * it's on, it keeps the time they chose).
+ * the morning list's time while it's still off (once it's on, it keeps the
+ * time they chose). Every answer ends the day at midnight, night owls too: a
+ * later end is only ever picked in Settings (DECISIONS.md).
  */
 export function hoursChange(hours: Hours, prefs: Partial<Preferences>): { preferences: Partial<Preferences>; dayRolloverHour: number } {
   const morning = morningListOf(prefs);
   return {
     preferences: { hours, reminders: { ...prefs.reminders, morningList: morning.on ? morning : { ...morning, ...morningTimeFor(hours) } } },
-    dayRolloverHour: rolloverFor(hours),
+    dayRolloverHour: 0,
   };
 }

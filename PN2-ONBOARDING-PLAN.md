@@ -56,7 +56,7 @@ One question per page. Big tappable answer cards on passport paper, with a mono 
 1. **Purpose of visit:** School / Work / Both / Life admin.
    - Creates matching territories, but only if they have none yet: School; Work; School + Work; Home.
 2. **Your hours:** Early bird / Daytime / Night owl.
-   - Night owl: the day ends at 3 AM ("a late night still counts as today"). The others end at midnight.
+   - Night owl: the day ends at 3 AM ("a late night still counts as today"). The others end at midnight. *Changed 2026-10-14: every answer ends the day at midnight (DECISIONS.md).*
    - Sets the morning list's time for when it's turned on: 7:00, 8:00 or 10:00 AM.
 3. **What usually stops you?** One question, four plain answers:
    - "I avoid it" (avoid)

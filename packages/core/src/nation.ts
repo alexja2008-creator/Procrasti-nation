@@ -621,7 +621,7 @@ export const voice = {
     hours: [
       { id: 'early', label: 'Early bird', hint: 'Mornings are best' },
       { id: 'day', label: 'Daytime', hint: 'Roughly nine to five' },
-      { id: 'night', label: 'Night owl', hint: 'Late nights. Your day ends at 3 AM, so they still count as today.' },
+      { id: 'night', label: 'Night owl', hint: 'Late nights are best' },
     ],
     styleTitle: 'What usually stops you?',
     styles: [

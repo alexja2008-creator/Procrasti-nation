@@ -35,7 +35,7 @@ Paste this into a new Claude Code session together with the approved plan ("Proc
   - The pages: Welcome (your reserved citizen number), then Purpose of visit, Your hours, What usually stops you, "First, you're not broken" (Alex's self-forgiveness page, from Pychyl & Sirois and Wohl et al. 2010), Nudge tone, and the Oath. The Oath is one real thing they've been putting off, read like quick add; the real Plan it opens on it.
   - It ends with an APPROVED ink stamp.
   - Each answer is saved as it's picked, and the form resumes where it was left. Back works; Skip counts as done.
-  - Purpose creates territories (only when there are none). A night owl's day ends at 3 AM. The morning list's time follows Hours.
+  - Purpose creates territories (only when there are none). Every day ends at midnight, night owls' too (2026-10-14; a later end is Settings → Day ends at). The morning list's time follows Hours.
   - What stops you sets Start Mode's timer and the plan style. "It feels too big" makes Today show just the next step, with "Show everything (N more)".
   - The tone (Diplomat / Drill Sergeant / Roast) gives Start Mode's lines and the morning list (iPhone and Web Push) their words. Roast jokes about the task, never the person.
 - **Settings** (sliders on Passport): every Application answer, Start Mode's timer (Automatic or 2/5/10/25), Day ends at, the Reminders card and Sign out (both moved off Passport). **Sign out now signs out only this device;** supabase-js's default is every device.

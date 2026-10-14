@@ -45,7 +45,7 @@ export function useDeclaration(task: Task) {
   const { session } = useAuth();
   const { settings } = useUserSettings();
   // The moment it opened: times before it are gone (a Declaration is for later). Its days are the
-  // calendar's, not a night owl's rolled-over day: at 12:30 AM, "today at 4 PM" is this afternoon.
+  // calendar's, not a later Day ends at's rolled-over day: at 12:30 AM, "today at 4 PM" is this afternoon.
   const [opened] = useState(() => new Date());
   const today = localDateString(opened);
   const firstDay = task.scheduledOn && task.scheduledOn > today ? task.scheduledOn : today;

@@ -99,6 +99,7 @@ More detail: `CLAUDE.md` (layout, data model, patterns), `PN2-HANDOFF.md` (state
 - A "Declaration signed" stamp for the first Declaration ever (Alex, 2026-10-13: a new Passport looked bare with Approved alone). The Application's first Declaration earns it, so a new citizen starts with two stamps. Undoing that Declaration keeps the stamp. Round stamps sit in the order earned, so it usually lands left of Approved.
 - Notes are capture-first, not an Apple Notes clone. A note's title is its first line. A checklist line is a real task. Deleting a note deletes its checklist tasks, with Undo.
 - Search doesn't tolerate typos and doesn't search territory names (both possible later).
+- **Every day ends at midnight unless the person picks a later end** (Alex, 2026-10-14). Night owl used to end the day at 3 AM; at 1 AM Wednesday Alex saw Today still on Tuesday, with nothing left on it, and took it for a bug. Hours now sets only the morning list's time. A later end (up to 6 AM) is chosen only in Settings → Day ends at, so the app's date differs from the clock only when someone asked for it. Picking an Hours answer in Settings resets it to midnight. Considered and left for later: keeping yesterday open after midnight while its tasks are unfinished.
 - Focus Pods (live video) were dropped: moderating live video wasn't worth the liability. Town Hall will only ever be an anonymous count of people working. **There's nothing one person can say to another anywhere in the app.**
 
 ---
@@ -184,6 +185,7 @@ These are known and written down. Report one only if it's worse than described, 
 - **Web reminders need the browser running** (except Safari on a Mac). Firefox and Safari show no buttons. A snooze whose send fails is dropped.
 - **Search scans the person's own rows:** about 40–100 ms at 10,000 tasks on staging.
 - **The morning list setting is last-write-wins** across devices.
+- **Up past midnight with yesterday's tasks open** (with the day ending at midnight): the Morning Briefing card offers to sort them right away, and Not now then hides it for the rest of that day, the morning included. A daily repeat checked off after midnight moves to the day after, skipping that day's turn.
 - **Upcoming:** a day near the end of the list can't scroll to the top.
 - **Notes:** keys typed within milliseconds of Return can land in the old line (seen only with the Simulator's burst typing). At 320px wide, the web nav bar scrolls sideways by 8px.
 - **Web screen readers** are parked. Known gaps: `aria-selected` on elements with `role="button"` (ignored by screen readers), and no `aria-expanded` on Today's Customs toggle or Upcoming's Month toggle. Native iOS VoiceOver is fine.

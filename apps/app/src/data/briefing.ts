@@ -27,7 +27,7 @@ export function clearPutOff(userId: string): void {
 
 export type Recap = { finished: number; starts: number };
 
-/** When a day of theirs begins: midnight, or their rollover hour (a night owl's day starts at 3 AM). */
+/** When a day of theirs begins: midnight, or their rollover hour (Day ends at 3 AM: their day starts at 3 AM). */
 const dayStart = (day: LocalDate, rolloverHour: number) => {
   const d = parseLocalDate(day);
   d.setHours(rolloverHour, 0, 0, 0);
