@@ -1,0 +1,22 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git push*)",
+            "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-push.sh\""
+          },
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "sh \"${CLAUDE_PROJECT_DIR}/.claude/hooks/check-before-commit.sh\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}
