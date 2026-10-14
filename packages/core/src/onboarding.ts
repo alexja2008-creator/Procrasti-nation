@@ -11,6 +11,7 @@ import type { Hours, List, LocalDate, MorningList, Persona, Preferences, Procras
 
 export type ApplicationPage =
   | 'welcome'
+  | 'name'
   | 'purpose'
   | 'hours'
   | 'style'
@@ -33,6 +34,7 @@ export type ApplicationPage =
  */
 export const APPLICATION_PAGES: readonly ApplicationPage[] = [
   'welcome',
+  'name',
   'purpose',
   'hours',
   'style',
@@ -49,8 +51,8 @@ export const APPLICATION_PAGES: readonly ApplicationPage[] = [
   'save',
 ];
 
-/** "Page n of 9": the questions through the Oath. */
-const NUMBERED: readonly ApplicationPage[] = APPLICATION_PAGES.slice(APPLICATION_PAGES.indexOf('purpose'), APPLICATION_PAGES.indexOf('oath') + 1);
+/** "Page n of 10": the questions, from their name through the Oath. */
+const NUMBERED: readonly ApplicationPage[] = APPLICATION_PAGES.slice(APPLICATION_PAGES.indexOf('name'), APPLICATION_PAGES.indexOf('oath') + 1);
 
 /** "Page 2 of 5", or null for the unnumbered pages. */
 export function pageNumber(page: ApplicationPage): { n: number; of: number } | null {
@@ -62,10 +64,12 @@ export function pageNumber(page: ApplicationPage): { n: number; of: number } | n
  * Where to pick up: the first page not done yet, so leaving halfway (or the
  * app being closed) keeps what's answered. Nothing answered starts at Welcome;
  * the self-forgiveness page counts as seen once the next answer exists, and
- * the result once they've said where they heard about us.
+ * the result once they've said where they heard about us. `named`: they've said
+ * what to call them (kept on the device while signed out, in the passport after).
  */
-export function resumePage(prefs: Partial<Preferences>): ApplicationPage {
-  if (!prefs.persona && !prefs.hours && !prefs.style && !prefs.nudgeTone) return 'welcome';
+export function resumePage(prefs: Partial<Preferences>, named: boolean): ApplicationPage {
+  if (!named && !prefs.persona && !prefs.hours && !prefs.style && !prefs.nudgeTone) return 'welcome';
+  if (!named) return 'name';
   if (!prefs.persona) return 'purpose';
   if (!prefs.hours) return 'hours';
   if (!prefs.style) return 'style';

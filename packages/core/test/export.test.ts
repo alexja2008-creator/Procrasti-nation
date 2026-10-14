@@ -41,7 +41,7 @@ test("a note's checklist lines read as text, ticked or not", () => {
 test('the export: everything kept, nothing deleted, answers in plain words', () => {
   const input: ExportInput = {
     exportedAt: '2026-10-07T20:00:00Z',
-    account: { citizenNumber: 42, email: 'maya@example.com', phone: null, createdAt: '2026-09-01T00:00:00Z', username: 'maya' },
+    account: { citizenNumber: 42, name: 'Maya Reyes', email: 'maya@example.com', phone: null, createdAt: '2026-09-01T00:00:00Z', username: 'maya' },
     settings: {
       userId: 'u',
       citizenNumber: 42,

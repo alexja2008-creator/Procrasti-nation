@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { authErrorKind, cleanUsername, isLongEnoughPassword, isValidUsername, MIN_PASSWORD_LENGTH } from '../src/account.ts';
+import { authErrorKind, cleanName, cleanUsername, isLongEnoughPassword, isValidUsername, MIN_PASSWORD_LENGTH, NAME_MAX, nameMetadata } from '../src/account.ts';
 
 test('passwords need six characters, like v1', () => {
   assert.equal(MIN_PASSWORD_LENGTH, 6);
@@ -77,4 +77,12 @@ test('free plans come in 30.5-day windows from when the account was made', async
   assert.equal(later.start.toISOString(), '2026-06-02T12:00:00.000Z', 'the sixth window (5 × 30.5 days in)');
   assert.equal(later.end.toISOString(), '2026-07-03T00:00:00.000Z');
   assert.equal(planWindow('not a date', new Date('2026-07-01T00:00:00Z')).start.toISOString(), '2026-07-01T00:00:00.000Z', 'no creation time: a window from now');
+});
+
+test('a name is kept trimmed, in the fields Sign in with Apple fills', () => {
+  assert.equal(cleanName('  Mary   Ann  '), 'Mary Ann');
+  assert.equal(cleanName('x'.repeat(60)).length, NAME_MAX);
+  assert.deepEqual(nameMetadata(' Alex ', ' Anderson '), { given_name: 'Alex', family_name: 'Anderson', full_name: 'Alex Anderson' });
+  assert.deepEqual(nameMetadata('Alex'), { given_name: 'Alex', family_name: null, full_name: 'Alex' }, 'no last name clears an old one');
+  assert.deepEqual(nameMetadata('Alex', '   '), { given_name: 'Alex', family_name: null, full_name: 'Alex' });
 });

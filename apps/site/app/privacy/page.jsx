@@ -28,9 +28,11 @@ export default function Privacy() {
 
       <h2>1. Information We Collect</h2>
       <p>
-        <strong>1.1 Account Information.</strong> You may begin using the Services without providing any personal
-        information. When you do, we create an account for you (referred to in the Services as your “passport”) that is
-        identified only by a randomly generated identifier. If you elect to save your passport, we collect a username
+        <strong>1.1 Account Information.</strong> You may begin using the Services by providing only the name you would
+        like us to use: a first name and, if you choose, a last name. We then create an account for you (referred to in
+        the Services as your “passport”) that is identified by a randomly generated identifier. We display your name to
+        you within the Services, including on your passport, and we do not display it to other users. You may change it
+        in the Services at any time. If you elect to save your passport, we collect a username
         and either (a) your email address and, if you choose one, a password, or (b) the email address and name made
         available to us by Apple or Google, if you sign in with that provider. At your election, Apple may provide a
         private relay address in place of your email address. Passwords are stored by our database provider in salted

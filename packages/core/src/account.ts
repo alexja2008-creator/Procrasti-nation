@@ -1,4 +1,4 @@
-// Accounts: the password and username rules, and which plain words fit a Supabase Auth error.
+// Accounts: the password, username and name rules, and which plain words fit a Supabase Auth error.
 
 /** v1's rule and Supabase Auth's default. Older passwords of any length still sign in. */
 export const MIN_PASSWORD_LENGTH = 6;
@@ -15,6 +15,23 @@ export const cleanUsername = (typed: string) =>
     .toLowerCase()
     .replace(/[^a-z0-9_]/g, '')
     .slice(0, USERNAME_MAX);
+
+/**
+ * The name they go by, on their passport and Declarations (Alex, 2026-10-14: asked right after
+ * Welcome, first name required). Kept in the auth profile's own fields, the ones Sign in with
+ * Apple fills, so only they see it: never on `profiles`, which anyone can read.
+ */
+export const NAME_MAX = 40;
+
+/** A name as it's kept: spaces trimmed and run together, cut at the limit. Cleaned on save, so typing "Mary Ann" keeps its space. */
+export const cleanName = (typed: string) => typed.replace(/\s+/g, ' ').trim().slice(0, NAME_MAX);
+
+/** The auth profile's name fields for a first and an optional last name. An empty last name clears an old one (null removes it). */
+export function nameMetadata(first: string, last = ''): { given_name: string; family_name: string | null; full_name: string } {
+  const given = cleanName(first);
+  const family = cleanName(last);
+  return { given_name: given, family_name: family || null, full_name: [given, family].filter(Boolean).join(' ') };
+}
 
 /**
  * A US or Canadian mobile number as typed ("(555) 234-5678", "+1 555 234 5678") in E.164

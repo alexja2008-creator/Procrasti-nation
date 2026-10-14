@@ -3,6 +3,7 @@
 import { buildExport, exportFileName, localDateString, type UserSettings } from '@pn/core';
 import type { User } from '@supabase/supabase-js';
 
+import { personName } from '@/auth/person-name';
 import { forgetDeletedAccount } from '@/auth/sign-out';
 import { fetchLists } from '@/data/lists';
 import { fetchEveryNote } from '@/data/notes';
@@ -39,6 +40,7 @@ export async function downloadMyData(user: User, settings: UserSettings | null):
     exportedAt: new Date().toISOString(),
     account: {
       citizenNumber: settings?.citizenNumber ?? null,
+      name: personName(user).full,
       email: user.email || null,
       phone: user.phone ? `+${user.phone.replace(/^\+/, '')}` : null,
       createdAt: user.created_at ?? null,
