@@ -6,6 +6,7 @@ import {
   linesFor,
   relativeDayPhrase,
   stampKinds,
+  startTarget,
   stepContext,
   voice,
   type StuckReason,
@@ -44,14 +45,25 @@ const LINK_MINUTES = [2, 5, 10, 25];
 export default function StartRoute() {
   const { id, minutes } = useLocalSearchParams<{ id: string; minutes?: string }>();
   const asked = LINK_MINUTES.includes(Number(minutes)) ? Number(minutes) : undefined;
+  const { tasks, status } = useTasks();
+  // A plan starts at its next open step, so the timer comes with that step's words (a reminder's
+  // Start 5 min, Start in its menu or on its page). Decided once, when its tasks are known: Done on
+  // that step mustn't turn the screen back to the plan.
+  const [resolved, setResolved] = useState<{ id: string; target: string } | null>(null);
+  if (resolved?.id !== id && (status !== 'loading' || tasks.some((t) => t.id === id))) setResolved({ id, target: startTarget(tasks, id) });
+  const target = resolved?.id === id ? resolved.target : id;
   // A fresh session and clock for every task, including "Start the next step".
-  return <StartMode key={id} id={id} minutes={asked} />;
+  return <StartMode key={target} id={target} minutes={asked} plan={target === id ? undefined : id} />;
 }
 
 type Phase = 'running' | 'stuck' | 'breather' | 'stamped';
 
-/** Start Mode: one step, a timer and the "just five minutes" contract. Every visit is a Start. `minutes` overrides their default. */
-function StartMode({ id, minutes }: { id: string; minutes?: number }) {
+/**
+ * Start Mode: one step, a timer and the "just five minutes" contract. Every visit is a Start.
+ * `minutes` overrides their default; `plan` is the plan it was opened for, when it started that
+ * plan's next step (a Declaration on the plan is kept by starting it).
+ */
+function StartMode({ id, minutes, plan }: { id: string; minutes?: number; plan?: string }) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const insets = useSafeAreaInsets();
@@ -83,10 +95,15 @@ function StartMode({ id, minutes }: { id: string; minutes?: number }) {
     const listId = effectiveListId(t, new Map(tasks.map((x) => [x.id, x])));
     awardDeclarationKept(userId, t, listId).then(setDeclarationKept, () => undefined);
   });
+  const checkKeptWithPlan = useEffectEvent((t: Task) => {
+    checkKept(t);
+    const planTask = plan ? tasks.find((x) => x.id === plan && !x.deletedAt) : undefined;
+    if (planTask) checkKept(planTask);
+  });
   useEffect(() => {
     if (!live || !userId || keptChecked.current) return;
     keptChecked.current = true;
-    checkKept(live);
+    checkKeptWithPlan(live);
   }, [live, userId]);
 
   const onContract = useEffectEvent(() => haptic(Haptics.ImpactFeedbackStyle.Medium));
