@@ -51,7 +51,7 @@ No database changes beyond `01_schema.sql` and `04_fresh_start.sql` (both writte
 
 **Web checked end to end on staging (2026-10-13, Alex at `127.0.0.1:8081` with the local site as API):** a new citizen (#000007) answered the Application; the Oath made a real 7-step plan (one `plan_generations` row); the first Declaration earned `first-declaration`, then Approved `citizenship` 24 s later; Save your passport by email (the new template) confirmed, though the link was opened outside the browser that asked: the Passport card offered Choose a password, as designed; the username waited for the next sign-in; Forgot your password? → the link → Choose a new password (the username was claimed then); Delete your passport → Welcome with its note, and no row anywhere still points at the account. Testing note: Claude's browser pane won't open supabase.co links; fetch the link, read the `code` it forwards (or `auth.flow_state` on staging), and open `/auth/callback?code=…` in the pane.
 
-## Phase 3: Cutover day, Tuesday 2026-10-13 (moved up from Friday once everything was ready; Alex runs, Claude checks along)
+## Phase 3: Cutover day (done 2026-10-14; Alex ran it, Claude checked along)
 Before the day (Alex):
 - Resend as Supabase's SMTP on production; raise the email rate limit. **Done (2026-10-13):** sender `passport@procrasti-nation.work`, 1,000 emails an hour; the first test (a password recovery) failed with `535 "Invalid username"` until the username was lowercase `resend`, then arrived in Gmail's spam. Against spam: a DMARC record in Vercel's DNS (`_dmarc` TXT `v=DMARC1; p=none;`), and the four auth emails rewritten (`supabase/v2/email-templates/`). Both done 2026-10-13: the DMARC record answers from public DNS; Alex pasted the templates into both projects. Retest from production's Users page: the new reset email reached the inbox at once, SPF, DKIM and DMARC all pass.
 - Supabase production auth: anonymous sign-ins on; Confirm email as decided; Site URL `https://app.procrasti-nation.work`; redirect allow list `https://app.procrasti-nation.work/auth/callback` (plus `procrastination://auth/callback` for the iPhone later).
@@ -74,9 +74,13 @@ Before the day (Alex):
 9. **Smoke test on production (Alex, in real Chrome):** a new passport through the Application and the Oath (a real plan), Start Mode, a reminder that rings in the browser, Save your passport by email (the new email, in the inbox), sign out and back in with the password, an old v1 address redirecting.
 10. **Tidy:** delete `RESEND_API_KEY` from the site's Vercel env (v2's site doesn't send email).
 
+**How it went (2026-10-14):** all ten steps done; the smoke test passed in Chrome. Two things to know next time:
+- **The SQL Editor runs only the highlighted text** when any is highlighted: the first `01_schema.sql` run got its first ~100 lines and failed ("unterminated dollar-quoted string"; nothing applied). A fresh tab, the whole file, nothing highlighted: it ran.
+- **The app's domain had to be connected to Production** (its project's Settings → Domains) after its first production deployment; until then `app.procrasti-nation.work` answered 404.
+
 **If it goes wrong:** before step 5, nothing users see has changed. After it: Vercel → the site project → Deployments → the last v1 deployment → **Instant Rollback**, and set the Root Directory back to `./` (v1 runs on the v2 schema, which only adds). The accounts deleted in step 3 don't come back, which is the point.
 
-**After cutover (the iPhone track):** EAS's production environment gets production's values; the Apple provider on production with `work.procrastination.app`; a production build to TestFlight's external group for the 10 students (Beta App Review: the privacy policy URL is live by then).
+**After cutover (the iPhone track):** the production build is on TestFlight (below). Left: TestFlight's external group for the 10 students.
 
 ## The iPhone track (alongside, students after cutover)
 Alex's Apple Developer account was approved on 2026-10-13. App Store Connect: **"ProcrastiNation: AI Planner"** ("ProcrastiNation" was refused: a 2025 joke app called "Procrasti Nation" holds the name and the bundle id `com.procrastination.app`), bundle id `work.procrastination.app`, SKU `procrastination-ios`. The name under the icon stays ProcrastiNation (`app.json`); the store name can change with any update. Builds: **EAS Build** (Alex, 2026-10-13), `apps/app/eas.json`.
@@ -90,6 +94,8 @@ Alex's Apple Developer account was approved on 2026-10-13. App Store Connect: **
 - **Build 3 (2026-10-13, Alex):** Forgot your password? on the iPhone goes straight to choosing a new one (build 2's fix), and a Declaration earns DECLARATION SIGNED on the Passport.
 - **Build 4 (2026-10-13, Alex):** Night passport by default, and Settings → Appearance → Theme switches Night, Day and Match my device on the iPhone.
 - **TestFlight builds for students point at production,** which exists only after the fresh start; staging builds are for Alex alone.
+- **The production build (2026-10-14):** EAS's production environment holds the same `EXPO_PUBLIC_*` names and values as the app's Vercel project (exact names: a `_PROD` suffix is never read), then `npx eas-cli build --platform ios --profile production --submit` from `apps/app`; no push key (iPhone reminders are local). On Alex's iPhone: Plan it, I'm stuck, reminders and the name work. Staging builds keep failing Plan it, by design, until a staging copy of the site exists.
+- **Next:** App Store Connect → TestFlight → an external group with a public link for the 10 students; the first external build goes through Beta App Review (privacy policy `https://procrasti-nation.work/privacy`, feedback email procrasti.nation.marketing@gmail.com, a demo account if asked).
 
 ## Risks
 - **The Root Directory flip** applies to every branch: flipped early, production breaks; late, the v2 merge deploys the old layout. Do both together.
@@ -102,4 +108,5 @@ Alex's Apple Developer account was approved on 2026-10-13. App Store Connect: **
 - [ ] The site has only the landing page, `/privacy`, `/terms` and the routes v2 uses; every v1 path redirects; the site builds and its tests pass.
 - [ ] The app's web export serves deep links and `sw.js` with `apps/app/vercel.json`.
 - [x] Alex has approved the landing page, the privacy policy and the terms (all 2026-10-13; the landing page after its feature cards became passport visa pages and the tones a carousel of lock screens; to be iterated after launch).
-- [ ] The cutover steps ran in order, and the smoke test passed on production.
+- [x] The cutover steps ran, and the smoke test passed on production (2026-10-14).
+- [ ] The students' TestFlight group has the production build.
