@@ -6,7 +6,7 @@ There are two kinds of decision here, and they're open to challenge in different
 - **Alex decided** (product calls). If you think one is wrong, say so as a *challenge*, not a bug.
 - **Claude chose** (technical calls made while building). These are fair game: if one is wrong, say why and what breaks.
 
-More detail: `CLAUDE.md` (layout, data model, patterns), `PN2-HANDOFF.md` (state of the build, known limits), the `PN2-*-PLAN.md` files (one per feature, each with its decisions), `supabase/v2/README.md` (the database migration), and `apps/site/evals/*/README.md` (the AI quality gates).
+More detail: `CLAUDE.md` (layout, data model, patterns), `docs/archive/handoff-2026-10.md` (state of the build, known limits), the plan files in `docs/plans/` (one per feature, each with its decisions), `supabase/v2/README.md` (the database migration), and `apps/site/evals/*/README.md` (the AI quality gates).
 
 ---
 

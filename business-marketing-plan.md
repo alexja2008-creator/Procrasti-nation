@@ -2,7 +2,7 @@
 
 > Living document. Updated as strategy evolves.
 > Current phase: **v2 launch.** The web app goes live free-only on October 16, 2026. The iPhone app goes to 10 students on TestFlight, then to the App Store with payments.
-> Product and pricing decisions come from `DECISIONS.md` (Pricing) and `PN2-CONVERSION-PLAN.md`; if this document disagrees with them, they win.
+> Product and pricing decisions come from `DECISIONS.md` (Pricing) and `docs/plans/active/conversion.md`; if this document disagrees with them, they win.
 > Numbers marked *estimate* are ours, not data: replace them with real ones as the launch cohorts come in.
 > **Funnel model:** [ProcrastiNation Funnel](https://claude.ai/artifact/4vZQq3U5ktmiaZTUGYc4jv) (private to Alex until shared) runs this plan's numbers from views to revenue and keeps the post log (section 4, Phase 3).
 > Market research sourced from Perplexity (February 2026) — see `/Downloads/i am building a productivity app...pdf`
@@ -62,7 +62,7 @@ PN is now an App Store subscription app, so it's measured against those, not aga
 | Trial → paid, 5–9 days (our 7-day trial) | ~37% | A secondary source citing RevenueCat 2026; unverified |
 | Trial → paid, 17–32 days | 42.5% | RevenueCat 2026 |
 | Yearly subscribers still paying after a year | ~27–28% | RevenueCat 2026 (hard paywall and freemium alike) |
-| Downloads → trial, Prayer Lock (top of class, a 15-minute onboarding) | 43% | `PN2-CONVERSION-PLAN.md` |
+| Downloads → trial, Prayer Lock (top of class, a 15-minute onboarding) | 43% | `docs/plans/active/conversion.md` |
 
 "Hard paywall" means nobody uses the app without a trial or purchase; "freemium" means a free app with an optional upgrade. PN's planned model (a required trial to get in, the free tier for anyone who cancels) acts like a hard paywall at the door.
 
@@ -161,7 +161,7 @@ v1's "The only productivity app that…" is retired: "the only" is a claim we ca
 - Feedback: the TestFlight students (section 8).
 
 ### Phase 2 — The App Store, with payments
-- RevenueCat (Apple's in-app purchase on iPhone, Stripe on the web), the required 7-day trial, Restore purchases, the trial reminder (`PN2-CONVERSION-PLAN.md`, phase 2).
+- RevenueCat (Apple's in-app purchase on iPhone, Stripe on the web), the required 7-day trial, Restore purchases, the trial reminder (`docs/plans/active/conversion.md`, phase 2).
 - Accounts made in Phase 1 are offered the trial once and can skip it; they keep the free tier.
 
 ### Phase 3 — Organic content (the main channel)
@@ -284,7 +284,7 @@ With the required trial on the App Store:
 - Prices drafted in App Store Connect: `1A` monthly and `1B` yearly; `1C` (quarterly) waits until after launch.
 - Retired: v1's `trial_ends_at` in `user_metadata` (people could rewrite their own and give themselves endless trials) and v1's Stripe checkout.
 
-**Planned (`PN2-CONVERSION-PLAN.md`, phase 2):** RevenueCat with a server-side `entitlements` row written by a signed webhook; the trial page; Restore purchases; Ask to Buy; the trial reminder; Settings → Subscription. Alex, in App Store Connect: the Paid Apps agreement, tax and banking; enroll in the Small Business Program (15%).
+**Planned (`docs/plans/active/conversion.md`, phase 2):** RevenueCat with a server-side `entitlements` row written by a signed webhook; the trial page; Restore purchases; Ask to Buy; the trial reminder; Settings → Subscription. Alex, in App Store Connect: the Paid Apps agreement, tax and banking; enroll in the Small Business Program (15%).
 
 ---
 
@@ -309,7 +309,7 @@ With the required trial on the App Store:
 Calendar views (→ Upcoming), Kanban boards (→ Territories), Focus Pods (2026-10-08), Reset Station, the daily email nudges, the Weekly Citizen Report (→ State of the Union), the interactive tutorial (→ the Application), streaks (→ stamps and ranks), friends and public profiles, the FAQ and Stripe checkout. Syllabus import and Google Calendar / .ics export aren't in v2 yet.
 
 ### Next
-1. **Payments and the required trial** (RevenueCat; `PN2-CONVERSION-PLAN.md`, phase 2)
+1. **Payments and the required trial** (RevenueCat; `docs/plans/active/conversion.md`, phase 2)
 2. **The App Store release** after TestFlight
 3. **Funnel analytics,** page by page
 4. **State of the Union** (a Monday morning email)

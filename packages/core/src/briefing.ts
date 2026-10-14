@@ -1,6 +1,6 @@
 // The Morning Briefing: what carried over from before today, and the patches
 // that give each thing a place again. Nothing here is "overdue": a missed day
-// is just a day that passed (PN2-MORNING-PLAN.md).
+// is just a day that passed (docs/plans/shipped/morning-briefing.md).
 
 import { clockOf } from './dates.ts';
 import { bySortOrder, nullsLast, stepsByParent } from './order.ts';

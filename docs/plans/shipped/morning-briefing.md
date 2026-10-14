@@ -35,7 +35,7 @@ Every action applies at once through the tasks store (`update`, rolled back if a
 | `apps/app/src/components/briefing/leftover-row.tsx` | Create | One leftover: title, where it came from ("from Tue", "was due Sat 3 Oct"), the three actions |
 | `apps/app/src/data/briefing.ts` | Create | Not now for today: `pn.briefing.not-now.<userId>` = the day (AsyncStorage, per device) |
 | `apps/app/src/app/(tabs)/index.tsx` | Modify | The card above Customs and the next step (focused Today too) |
-| `CLAUDE.md`, `PN2-HANDOFF.md` | Modify | Structure, storage key, roadmap |
+| `CLAUDE.md`, `docs/archive/handoff-2026-10.md` | Modify | Structure, storage key, roadmap |
 
 No database change: every action is an ordinary task update.
 

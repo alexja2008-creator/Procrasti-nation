@@ -2,7 +2,7 @@
 
 **Built 2026-10-06** in `ceddb0e`, `464c0b4` and `6ff0be2`. Changes from the plan: Expo Go can't schedule local notifications on iOS 27, so the iPhone side runs in a development build (`apps/app/scripts/ios-dev-build.sh`, with a scene-life-cycle config plugin iOS 27 requires and a placeholder bundle id until the real one is chosen); and Done and Snooze with the app closed go through a small Swift add-on (`apps/app/modules/reminder-actions`), because on iOS 27 JavaScript never starts for a button that doesn't open the app. Checked on the Simulator's development build, signed in (rings, Done, Snooze, Start 5 min, tap, delete, re-time, morning list), in Expo Go, and on web (see the handoff). A Done reaches the database when the app next runs: iOS suspends the app right after the tap.
 
-Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
+Read `docs/archive/handoff-2026-10.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
 ## What it is
 
@@ -52,7 +52,7 @@ Technical choices (mine; say if you disagree):
 | App | `apps/app/src/notifications/` (new; `.web.ts` no-ops) | scheduler (reconcile), categories and buttons, response handling, permission |
 | App | `apps/app/src/components/reminder-prompt.tsx`, `components/reminders-card.tsx` (new) | the first-time ask; the Passport card |
 | App | `data/signed-in-providers.tsx`, `(tabs)/passport.tsx`, `data/tasks-store.tsx` | mount the scheduler and handlers; the card; checking off through the shared rule |
-| Docs | `CLAUDE.md`, `PN2-HANDOFF.md` | structure lines, device storage keys, what works, commits |
+| Docs | `CLAUDE.md`, `docs/archive/handoff-2026-10.md` | structure lines, device storage keys, what works, commits |
 
 ## Phases (commit + push `v2` after each)
 

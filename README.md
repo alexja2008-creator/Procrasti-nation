@@ -2,7 +2,7 @@
 
 An app that breaks the task you're avoiding into steps small enough to start, then gets you to start. Built for people whose brains resist traditional productivity systems.
 
-**Live at [procrasti-nation.work](https://procrasti-nation.work)** (v1 until the v2 launch: see `PN2-LAUNCH-PLAN.md`)
+**Live at [procrasti-nation.work](https://procrasti-nation.work)** (v1 until the v2 launch: see `docs/runbooks/launch-2026-10.md`)
 
 ## What's in it (v2)
 
@@ -39,7 +39,7 @@ Environment variables: `apps/site/.env.local` (see `CLAUDE.md` → Environment S
 
 ## Deploying
 
-Two Vercel projects: the site (Root Directory `apps/site`, at procrasti-nation.work) and the app (Root Directory `apps/app`, at app.procrasti-nation.work, configured by `apps/app/vercel.json`). The cutover steps are in `PN2-LAUNCH-PLAN.md`.
+Two Vercel projects: the site (Root Directory `apps/site`, at procrasti-nation.work) and the app (Root Directory `apps/app`, at app.procrasti-nation.work, configured by `apps/app/vercel.json`). The cutover steps are in `docs/runbooks/launch-2026-10.md`.
 
 ## License
 

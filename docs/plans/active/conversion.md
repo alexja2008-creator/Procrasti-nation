@@ -9,11 +9,11 @@
 
 **Still to check live (needs Alex: opening a passport creates an account on staging, which Claude doesn't do):** answering the last question opens the passport and lands on the Oath with the answers moved in; Your first week; the nudge (the system prompt on iOS); Approved → Save your passport by texted code (after Twilio is wired) and by email (confirm the link lands on Choose a password); Later → the Passport card and the Settings row; signing out of an unsaved passport warns; the free-plan limit message after two plans.
 
-**Texted codes are hidden for now (Alex, 2026-10-07):** Twilio requires a paid account to create a Verify service, so "Text me a code" shows only when `EXPO_PUBLIC_AUTH_PROVIDERS` includes `phone`; saving a passport is email + password until then. Flagged for production in `PN2-HANDOFF.md`, open item 8.
+**Texted codes are hidden for now (Alex, 2026-10-07):** Twilio requires a paid account to create a Verify service, so "Text me a code" shows only when `EXPO_PUBLIC_AUTH_PROVIDERS` includes `phone`; saving a passport is email + password until then. Flagged for production in `docs/archive/handoff-2026-10.md`, open item 8.
 
 **Before anonymous sign-ins reach production:** a `profiles` insert policy that refuses anonymous users (today only the app keeps them from claiming a name; the API wouldn't stop a script). Database review, and rehearsal against the production structure.
 
-Read `PN2-HANDOFF.md`, `CLAUDE.md` and `PN2-ONBOARDING-PLAN.md` (the Citizenship Application this builds on) first.
+Read `docs/archive/handoff-2026-10.md`, `CLAUDE.md` and `docs/plans/shipped/onboarding.md` (the Citizenship Application this builds on) first.
 
 ## Why
 
@@ -97,7 +97,7 @@ Existing accounts that haven't done the Application start at 1 already signed in
   - Phone: `updateUser({ phone })` texts a code; `verifyOtp({ phone, token, type: 'phone_change' })` attaches the number. The code field is `oneTimeCode` (iOS) / `one-time-code` (web), so it autofills. Then a gentle nudge to add a second way back (email or Apple), since carriers recycle numbers.
   - Email + password: the username is saved to `profiles` at once; `updateUser({ email })` sends a confirmation they can open whenever, on any device, while they keep using the app (Supabase attaches an email only once it's confirmed, so nobody can claim someone else's); then **Choose a password** (the existing `auth/new-password` screen).
 - **Signing in to an existing account** from an anonymous passport replaces it (a warning first if the passport has tasks).
-- **The sign-in screen** keeps Sign in, Forgot and the link (`PN2-PASSWORDS-PLAN.md`) and gains **Text me a code** (`signInWithOtp({ phone, options: { shouldCreateUser: false } })`, then `verifyOtp` with `type: 'sms'`; an unknown number hears the same "on its way"); its Create account form becomes Save your passport's, and "New here?" starts the Application instead.
+- **The sign-in screen** keeps Sign in, Forgot and the link (`docs/plans/shipped/passwords.md`) and gains **Text me a code** (`signInWithOtp({ phone, options: { shouldCreateUser: false } })`, then `verifyOtp` with `type: 'sms'`; an unknown number hears the same "on its way"); its Create account form becomes Save your passport's, and "New here?" starts the Application instead.
 - **Texted codes: cost and fraud.** Supabase sends them through **Twilio Verify**: about $0.058 per successful US verification (a failed attempt still costs the ~$0.008 text). Sessions last, so it's mostly once per device. SMS pumping (codes triggered to premium numbers abroad) is the risk: only US and Canada numbers at first, Twilio's fraud guard, limits per number and per IP, and Turnstile on the web. Phone numbers also go in the privacy policy and the App Store privacy label.
 - **Abuse:** anonymous sign-ins are free to create, and each can make the Oath's plan. Supabase caps them per IP (default 30 an hour); add Cloudflare Turnstile on the web, and Apple's App Attest on iOS if abuse shows up. A plan costs cents, so the exposure is bounded.
 - **Cleanup:** a scheduled job deletes anonymous passports untouched for 30 days with no subscription (database review: what cascades).

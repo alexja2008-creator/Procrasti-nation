@@ -1,4 +1,4 @@
-// Declarations: a start time signed for one task (PN2-DECLARATIONS-PLAN.md). The time is the
+// Declarations: a start time signed for one task (docs/plans/shipped/declarations.md). The time is the
 // task's own When (`scheduledOn` + `remindAt`), so every reminder path already rings it;
 // `declaredAt` says it was signed. Any other change of When withdraws it (`whenPatch`).
 

@@ -2,7 +2,7 @@
 
 **Built 2026-10-06** in `e95600f`, `8a7937a` and `b8e72be`; checked on web (phone and laptop widths, day and night) and the iOS Simulator.
 
-Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
+Read `docs/archive/handoff-2026-10.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
 ## What it is
 
@@ -62,7 +62,7 @@ Technical choices (mine; say if you disagree):
 | App | `apps/app/src/components/territory/` (new) | `territory-view` (page body), `territory-card`, `territory-sheet` (pick one: list + Customs + New), `territory-edit-sheet` (name, kind, ink, Delete) |
 | App | `apps/app/src/components/icon.tsx` | `book`, `briefcase`, `house`, `flag` glyphs |
 | App | `task/[id].tsx`, `row-menu.tsx`, `capture.tsx`, `(tabs)/index.tsx`, `upcoming/day-section.tsx`, `start/[id].tsx` | Territory field; "File in…"; capture preset + `#tag` chip; territory in row meta; effective territory on stamps |
-| Docs | `CLAUDE.md`, `PN2-HANDOFF.md` | structure lines, what works, commits, next steps |
+| Docs | `CLAUDE.md`, `docs/archive/handoff-2026-10.md` | structure lines, what works, commits, next steps |
 
 ## Phases (commit + push `v2` after each)
 

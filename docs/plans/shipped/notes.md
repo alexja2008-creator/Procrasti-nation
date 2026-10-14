@@ -2,7 +2,7 @@
 
 **Built 2026-10-06** in `87ae8cf`, `d7c40b5` and `33a2386`; checked on web (phone and laptop widths, day and night) and the iOS Simulator.
 
-Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
+Read `docs/archive/handoff-2026-10.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
 ## What it is
 
@@ -53,7 +53,7 @@ Technical choices (mine; say if you disagree):
 | App | `(tabs)/territories.tsx`, `territory/territory-view.tsx`, `territory/customs-card.tsx` (or a sibling `notes-card`) | Notes card and page; a territory's Notes section |
 | App | `components/capture.tsx` | Task / Note switch |
 | App | `(tabs)/index.tsx`, `upcoming/day-section.tsx` | checklist tasks show their note's title as meta |
-| Docs | `CLAUDE.md`, `PN2-HANDOFF.md` | structure lines, schema note, what works, commits |
+| Docs | `CLAUDE.md`, `docs/archive/handoff-2026-10.md` | structure lines, schema note, what works, commits |
 
 ## Phases (commit + push `v2` after each)
 
