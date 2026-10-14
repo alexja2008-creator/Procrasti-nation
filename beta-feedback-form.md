@@ -122,13 +122,14 @@ Options:
 
 Options:
 - More than 2 AI plans a month (what Pro gives you today)
+- A Monday email with your week and what's next
 - Import my syllabus and get every assignment planned
 - Task templates for common situations (studying, job hunting, projects)
 - A check-in halfway through a plan that adjusts the rest
 - Honestly, I'd pay for what's already here
 - I wouldn't pay for any version of this
 
-*Why we ask: Ranks the Pro roadmap against what's built. Daily nudges are already in v2 (reminders and the morning list), and v1's co-working sessions and streak freeze are gone, so none of them are options.*
+*Why we ask: Ranks the Pro roadmap against what's built. The Monday email is State of the Union (planned, not built). Daily nudges are already in v2 (reminders and the morning list), and v1's co-working sessions and streak freeze are gone, so none of them are options.*
 
 ---
 
