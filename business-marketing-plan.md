@@ -344,8 +344,8 @@ Calendar views (→ Upcoming), Kanban boards (→ Territories), Focus Pods (2026
 ## 8. Beta Feedback (TestFlight)
 
 - 10 students on TestFlight, on production, after cutover.
-- `beta-feedback-form.md` was written for v1 (planner, dashboard, boards); it needs a v2 pass before it goes out.
-- **Target responses:** all 10.
+- The form: `beta-feedback-form.md` (rewritten for v2, 2026-10-14), sent after about a week with the app. Bugs go through TestFlight's own feedback.
+- **Target responses:** all 10. Its decision gate (4 of 10 started something, NPS ≥ 30) decides the App Store and the content push.
 
 ### What We're Listening For
 | Signal | Indicates |
