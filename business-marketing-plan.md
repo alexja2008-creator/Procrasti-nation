@@ -4,6 +4,7 @@
 > Current phase: **v2 launch.** The web app goes live free-only on October 16, 2026. The iPhone app goes to 10 students on TestFlight, then to the App Store with payments.
 > Product and pricing decisions come from `DECISIONS.md` (Pricing) and `PN2-CONVERSION-PLAN.md`; if this document disagrees with them, they win.
 > Numbers marked *estimate* are ours, not data: replace them with real ones as the launch cohorts come in.
+> **Funnel model:** [ProcrastiNation Funnel](https://claude.ai/artifact/4vZQq3U5ktmiaZTUGYc4jv) (private to Alex until shared) runs this plan's numbers from views to revenue and keeps the post log (section 4, Phase 3).
 > Market research sourced from Perplexity (February 2026) — see `/Downloads/i am building a productivity app...pdf`
 
 ---
@@ -167,6 +168,8 @@ v1's "The only productivity app that…" is retired: "the only" is a claim we ca
 **Beachhead: students, especially those with ADHD or executive function challenges.**
 
 **The plan: 150 TikToks and 150 Instagram Reels, plus word of mouth.** No paid ads (section 0).
+
+**Track it in the [funnel model](https://claude.ai/artifact/4vZQq3U5ktmiaZTUGYc4jv):** log each post's views as it goes out (and update them as they climb), plus the TikTok and Instagram answers to "Where did you hear about us?". It projects the rest of the plan from the real numbers and holds the assumptions below.
 
 **Expectations (*estimate*, October 2026; replace with real numbers after the first 20–30 posts):**
 On a new account, each 1,000 views brings about 5–15 profile visits, 1–4 link clicks and **0.3–1.5 sign-ups** (0.03–0.15% of views). Some viewers search for the app instead of tapping, so tracked numbers run low.
