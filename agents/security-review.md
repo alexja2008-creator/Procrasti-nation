@@ -12,7 +12,7 @@ You are a security specialist for ProcrastiNation, a Next.js 14 productivity app
 
 ## Attack Surface — This Project
 
-### API Routes (13 endpoints)
+### API Routes (v1 endpoints plus v2's; not exhaustive)
 | Route | Auth Required | Risk Area |
 |-------|--------------|-----------|
 | /api/generate-plan | Yes (user) | AI prompt injection, rate limiting (5/mo free) |
@@ -27,6 +27,8 @@ You are a security specialist for ProcrastiNation, a Next.js 14 productivity app
 | /api/friends/unread | Yes (user) | Data leakage |
 | /api/cron/nudge | CRON_SECRET | Service role DB access, email sending |
 | /api/cron/weekly-report | CRON_SECRET | Service role DB access, email sending |
+| /api/cron/push | CRON_SECRET | Service role DB access; sends Web Push reminders (task titles) to each person's own browsers only |
+| /api/push/action | Signed snooze token (no session) | Service role, but only for the one task the HMAC token names; 7-day expiry; 20 pending snoozes per person |
 
 ### High-Risk Areas
 1. **Supabase RLS** — All user data protected by Row Level Security. If bypassed, full data exposure.
@@ -58,7 +60,7 @@ You are a security specialist for ProcrastiNation, a Next.js 14 productivity app
 - [ ] **API routes return generic errors** — Never expose internal error details, stack traces, or DB error messages to clients
 - [ ] **File upload validation** — Syllabus parser checks file type and size before processing
 - [ ] **AI prompt boundaries** — User input sent to Claude API is wrapped in clear delimiters to reduce prompt injection risk
-- [ ] **Rate limiting on AI routes** — Free tier capped at 3 plans/month (check this is enforced server-side, not just client-side)
+- [ ] **Rate limiting on AI routes** — Free tier capped at 5 plans/month (check this is enforced server-side, not just client-side)
 - [ ] **Friend nudge rate limit** — 3 per sender→receiver per 24h (verify this is checked before inserting, not just in UI)
 - [ ] **Username input sanitized** — `/api/profile/[username]` and `/api/friends/search` sanitize the input before querying
 
@@ -125,7 +127,7 @@ Respond with a JSON array of steps.`
 
 - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in client code — these are intentionally public
 - `.env.local` listed in `.gitignore` — that's correct, secrets stay local
-- Supabase anon key in `lib/supabase.js` — this is the public anon key, not the service role key
+- Supabase anon key in the app (`EXPO_PUBLIC_SUPABASE_ANON_KEY`) — this is the public anon key, not the service role key
 - Console.log in cron routes — intentional for monitoring (but verify no PII is logged)
 
 ---

@@ -57,13 +57,7 @@ For everything else, use grep-based analysis:
 - Check for dynamic usage (string interpolation, bracket notation) before removing
 
 ### 4. Oversized Files — Split (CAREFUL)
-Known oversized files that need splitting:
-| File | Lines | Target |
-|------|-------|--------|
-| app/planner/page.jsx | 1,185 | Extract step editor, clarification UI, recurrence picker into components |
-| app/dashboard/page.jsx | 826 | Extract stats cards, board view, archive section into components |
-| components/TutorialModal.jsx | 549 | Extract individual tutorial steps into sub-components |
-| app/page.jsx | 555 | Extract hero, pricing, features sections into components |
+Known oversized files: none since v1's pages retired on `v2` (2026-10-12). In `apps/app`, keep files under 400 lines (the code review checklist).
 
 When splitting:
 - New components go in `components/` (PascalCase)
@@ -116,7 +110,7 @@ When splitting an oversized page:
 2. **Create the component file** — `components/[Name].jsx` with `'use client'` if needed
 3. **Move JSX + related state** — If state is only used by this section, move it into the component
 4. **Pass shared state as props** — If parent and child both need the data, keep state in parent
-5. **Import dark mode** — Each component needs its own `useTheme()` import
+5. **Styles** — In the app, each component builds its own `makeStyles` and calls `useStyles`
 6. **Verify** — Build passes, UI looks identical, dark mode works
 
 ---

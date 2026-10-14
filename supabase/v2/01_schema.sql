@@ -1,0 +1,602 @@
+-- ============================================================
+-- ProcrastiNation 2.0 — core schema
+--
+-- ADDITIVE ONLY. The live v1 site ignores every table and column added
+-- here, so this file is safe on production before cutover. It is
+-- idempotent (safe to run twice). Run on STAGING first; reverse with
+-- 99_rollback.sql. Steps are NOT converted here; that's 02_backfill.sql,
+-- run once at cutover.
+--
+-- Conventions:
+--   *_on       local calendar DATE        *_at   TIMESTAMPTZ
+--   deleted_at soft delete (offline sync needs tombstones)
+--   sort_order float, so a row can move between two others without
+--              renumbering the rest
+-- ============================================================
+
+-- Shared updated_at trigger (v1 section 2 already created it on prod).
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Rejects list_id / task_id / note_id references to rows the writer doesn't own.
+-- Runs as the invoking user, so RLS hides other users' rows and the
+-- EXISTS check fails for them. FKs alone would accept a foreign id.
+CREATE OR REPLACE FUNCTION v2_check_owned_refs()
+RETURNS TRIGGER AS $$
+DECLARE
+  r JSONB := to_jsonb(NEW);
+BEGIN
+  IF r->>'list_id' IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM lists WHERE id = (r->>'list_id')::uuid AND user_id = NEW.user_id
+  ) THEN
+    RAISE EXCEPTION 'list % not found', r->>'list_id' USING ERRCODE = 'foreign_key_violation';
+  END IF;
+  IF r->>'task_id' IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM tasks WHERE id = (r->>'task_id')::uuid AND user_id = NEW.user_id
+  ) THEN
+    RAISE EXCEPTION 'task % not found', r->>'task_id' USING ERRCODE = 'foreign_key_violation';
+  END IF;
+  IF r->>'note_id' IS NOT NULL AND NOT EXISTS (
+    SELECT 1 FROM notes WHERE id = (r->>'note_id')::uuid AND user_id = NEW.user_id
+  ) THEN
+    RAISE EXCEPTION 'note % not found', r->>'note_id' USING ERRCODE = 'foreign_key_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ------------------------------------------------------------
+-- 1. user_settings: private per-user settings (Citizenship Application
+--    answers, timezone, citizen number). Owner-only. Deliberately NOT on
+--    `profiles`, which is publicly readable and requires a username.
+-- ------------------------------------------------------------
+CREATE SEQUENCE IF NOT EXISTS citizen_number_seq;
+
+CREATE TABLE IF NOT EXISTS user_settings (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  -- No DEFAULT: the trigger below assigns it (a default as well drew two numbers per citizen).
+  citizen_number BIGINT NOT NULL UNIQUE,
+  timezone TEXT,
+  day_rollover_hour SMALLINT NOT NULL DEFAULT 0 CHECK (day_rollover_hour BETWEEN 0 AND 6),
+  preferences JSONB NOT NULL DEFAULT '{}'::jsonb,
+  onboarding_completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER SEQUENCE citizen_number_seq OWNED BY user_settings.citizen_number;
+-- Where the table was made with the old default (staging, 2026-10): drop it.
+ALTER TABLE user_settings ALTER COLUMN citizen_number DROP DEFAULT;
+
+-- Existing users get citizen numbers in signup order, so early users
+-- get the low numbers. New users get theirs when the app first creates
+-- their row (lazily, so the live signup path is untouched).
+INSERT INTO user_settings (user_id, citizen_number, created_at)
+SELECT u.id,
+       (SELECT COALESCE(max(citizen_number), 0) FROM user_settings) + row_number() OVER (ORDER BY u.created_at, u.id),
+       now()
+FROM auth.users u
+WHERE NOT EXISTS (SELECT 1 FROM user_settings s WHERE s.user_id = u.id);
+
+SELECT setval(
+  'citizen_number_seq',
+  GREATEST((SELECT COALESCE(max(citizen_number), 0) FROM user_settings), 1),
+  (SELECT count(*) > 0 FROM user_settings)
+);
+
+-- Citizen numbers are assigned by the database and never change.
+CREATE OR REPLACE FUNCTION user_settings_guard_citizen_number()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    NEW.citizen_number := nextval('citizen_number_seq');
+  ELSE
+    NEW.citizen_number := OLD.citizen_number;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS user_settings_citizen_number ON user_settings;
+CREATE TRIGGER user_settings_citizen_number
+  BEFORE INSERT OR UPDATE ON user_settings
+  FOR EACH ROW EXECUTE FUNCTION user_settings_guard_citizen_number();
+
+DROP TRIGGER IF EXISTS user_settings_updated_at ON user_settings;
+CREATE TRIGGER user_settings_updated_at
+  BEFORE UPDATE ON user_settings
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE user_settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners manage their settings" ON user_settings;
+CREATE POLICY "Owners manage their settings" ON user_settings FOR ALL
+  USING (user_id = (SELECT auth.uid()))
+  WITH CHECK (user_id = (SELECT auth.uid()));
+
+-- ------------------------------------------------------------
+-- 2. lists: Territories. Tasks with list_id NULL sit in Customs.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS lists (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL CHECK (char_length(name) BETWEEN 1 AND 80),
+  kind TEXT NOT NULL DEFAULT 'custom' CHECK (kind IN ('school', 'work', 'home', 'custom')),
+  ink TEXT NOT NULL DEFAULT 'forest' CHECK (ink IN ('terracotta', 'violet', 'forest')),
+  sort_order DOUBLE PRECISION NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  deleted_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS lists_user_idx ON lists (user_id, sort_order);
+
+DROP TRIGGER IF EXISTS lists_updated_at ON lists;
+CREATE TRIGGER lists_updated_at
+  BEFORE UPDATE ON lists
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE lists ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners manage their lists" ON lists;
+CREATE POLICY "Owners manage their lists" ON lists FOR ALL
+  USING (user_id = (SELECT auth.uid()))
+  WITH CHECK (user_id = (SELECT auth.uid()));
+
+-- ------------------------------------------------------------
+-- 3. tasks: v2 columns. Plan steps and subtasks become child rows
+--    (parent_id, one level deep). The v1 columns (steps, step_dates,
+--    recurrence, due_date, ...) stay untouched for the live site and are
+--    dropped later by a separate contract migration.
+-- ------------------------------------------------------------
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS list_id UUID REFERENCES lists(id) ON DELETE SET NULL;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES tasks(id) ON DELETE CASCADE;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS notes TEXT;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_on DATE;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS due_at TIMESTAMPTZ;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS remind_at TIMESTAMPTZ;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS rrule TEXT;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS estimate_minutes INTEGER CHECK (estimate_minutes > 0);
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS scheduled_on DATE;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS sort_order DOUBLE PRECISION NOT NULL DEFAULT 0;
+-- `source` predates v2: the schools feature uses 'self' | 'assignment', and the
+-- teacher RLS policy reads it. v2 keeps the column and widens the allowed values
+-- ('self' still means typed by the person; 'ai' marks AI-built plan steps).
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'self';
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_source_check;
+ALTER TABLE tasks ADD CONSTRAINT tasks_source_check
+  CHECK (source IN ('self', 'assignment', 'ai', 'syllabus', 'lms', 'reminders'));
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS external_id TEXT;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
+-- A Declaration: when they signed for the task's When (scheduled_on + remind_at) as their start
+-- time. The app clears it whenever the When changes; a Declaration always has a time.
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS declared_at TIMESTAMPTZ;
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_declared_has_time;
+ALTER TABLE tasks ADD CONSTRAINT tasks_declared_has_time CHECK (declared_at IS NULL OR remind_at IS NOT NULL);
+-- Backfill bookkeeping: which v1 rows were converted, and which child
+-- rows came from a v1 step (its 1-based position in the steps array).
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS v1_backfilled_at TIMESTAMPTZ;
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS legacy_step_index INTEGER;
+
+CREATE INDEX IF NOT EXISTS tasks_user_parent_idx ON tasks (user_id, parent_id, sort_order);
+CREATE INDEX IF NOT EXISTS tasks_parent_idx ON tasks (parent_id) WHERE parent_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS tasks_list_idx ON tasks (list_id) WHERE list_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS tasks_user_scheduled_idx ON tasks (user_id, scheduled_on) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS tasks_remind_idx ON tasks (remind_at) WHERE remind_at IS NOT NULL AND deleted_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS tasks_external_idx ON tasks (user_id, source, external_id) WHERE external_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS tasks_legacy_step_idx ON tasks (parent_id, legacy_step_index) WHERE legacy_step_index IS NOT NULL;
+
+-- A parent must belong to the same user and be top-level, and a task
+-- that has children can't become a child (keeps nesting one level deep).
+CREATE OR REPLACE FUNCTION tasks_check_owned_refs()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.parent_id IS NOT NULL THEN
+    IF NEW.parent_id = NEW.id OR NOT EXISTS (
+      SELECT 1 FROM tasks WHERE id = NEW.parent_id AND user_id = NEW.user_id AND parent_id IS NULL
+    ) THEN
+      RAISE EXCEPTION 'parent task % not found', NEW.parent_id USING ERRCODE = 'foreign_key_violation';
+    END IF;
+    IF TG_OP = 'UPDATE' AND EXISTS (SELECT 1 FROM tasks WHERE parent_id = NEW.id) THEN
+      RAISE EXCEPTION 'task % has subtasks and cannot become a subtask', NEW.id USING ERRCODE = 'check_violation';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS tasks_owned_refs ON tasks;
+CREATE TRIGGER tasks_owned_refs
+  BEFORE INSERT OR UPDATE OF parent_id, list_id, user_id ON tasks
+  FOR EACH ROW EXECUTE FUNCTION tasks_check_owned_refs();
+
+-- (tasks_owned_list, which checks list_id and note_id, is created in section 4
+-- once the notes table exists.)
+
+-- ------------------------------------------------------------
+-- 4. notes: capture-first notes, optionally attached to a task or list.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS notes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  list_id UUID REFERENCES lists(id) ON DELETE SET NULL,
+  task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
+  body TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  deleted_at TIMESTAMPTZ
+);
+
+CREATE INDEX IF NOT EXISTS notes_user_idx ON notes (user_id, updated_at DESC);
+CREATE INDEX IF NOT EXISTS notes_list_idx ON notes (list_id) WHERE list_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS notes_task_idx ON notes (task_id) WHERE task_id IS NOT NULL;
+
+DROP TRIGGER IF EXISTS notes_updated_at ON notes;
+CREATE TRIGGER notes_updated_at
+  BEFORE UPDATE ON notes
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS notes_owned_refs ON notes;
+CREATE TRIGGER notes_owned_refs
+  BEFORE INSERT OR UPDATE OF list_id, task_id, user_id ON notes
+  FOR EACH ROW EXECUTE FUNCTION v2_check_owned_refs();
+
+ALTER TABLE notes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners manage their notes" ON notes;
+CREATE POLICY "Owners manage their notes" ON notes FOR ALL
+  USING (user_id = (SELECT auth.uid()))
+  WITH CHECK (user_id = (SELECT auth.uid()));
+
+-- Live checklist lines: a task can be a checkbox in a note. The note's body
+-- holds the line's place; the task holds its text and done state.
+ALTER TABLE tasks ADD COLUMN IF NOT EXISTS note_id UUID REFERENCES notes(id) ON DELETE SET NULL;
+CREATE INDEX IF NOT EXISTS tasks_note_idx ON tasks (note_id) WHERE note_id IS NOT NULL;
+
+DROP TRIGGER IF EXISTS tasks_owned_list ON tasks;
+CREATE TRIGGER tasks_owned_list
+  BEFORE INSERT OR UPDATE OF list_id, note_id, user_id ON tasks
+  FOR EACH ROW EXECUTE FUNCTION v2_check_owned_refs();
+
+-- How many live notes each territory holds (list_id NULL: notes without one),
+-- so the app can show counts while it loads notes 25 at a time. Runs as the
+-- caller (security_invoker), so RLS limits it to their own notes.
+CREATE OR REPLACE VIEW note_counts WITH (security_invoker = true) AS
+  SELECT list_id, count(*)::int AS notes
+  FROM notes
+  WHERE deleted_at IS NULL
+  GROUP BY list_id;
+
+-- ------------------------------------------------------------
+-- 5. stamps: rewards. Awarded on-device (offline-first), so clients
+--    insert them; there's nothing to gain by forging your own stamps.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS stamps (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
+  list_id UUID REFERENCES lists(id) ON DELETE SET NULL,
+  kind TEXT NOT NULL CHECK (char_length(kind) BETWEEN 1 AND 40),
+  earned_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS stamps_user_idx ON stamps (user_id, earned_at DESC);
+CREATE INDEX IF NOT EXISTS stamps_task_idx ON stamps (task_id) WHERE task_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS stamps_list_idx ON stamps (list_id) WHERE list_id IS NOT NULL;
+-- Milestone stamps are earned once. Two devices racing to award the first
+-- one get a unique violation, which the app treats as "already earned".
+DROP INDEX IF EXISTS stamps_once_idx;
+CREATE UNIQUE INDEX stamps_once_idx ON stamps (user_id, kind) WHERE kind IN ('first-start', 'citizenship', 'first-declaration');
+
+DROP TRIGGER IF EXISTS stamps_owned_refs ON stamps;
+CREATE TRIGGER stamps_owned_refs
+  BEFORE INSERT OR UPDATE OF list_id, task_id, user_id ON stamps
+  FOR EACH ROW EXECUTE FUNCTION v2_check_owned_refs();
+
+ALTER TABLE stamps ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners manage their stamps" ON stamps;
+CREATE POLICY "Owners manage their stamps" ON stamps FOR ALL
+  USING (user_id = (SELECT auth.uid()))
+  WITH CHECK (user_id = (SELECT auth.uid()));
+
+-- ------------------------------------------------------------
+-- 6. start_sessions: every Start Mode session. Powers the "starts"
+--    metric, ranks and the North Star (weekly starters). Kept when the
+--    task is deleted.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS start_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
+  started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  ended_at TIMESTAMPTZ CHECK (ended_at IS NULL OR ended_at >= started_at),
+  planned_minutes SMALLINT NOT NULL CHECK (planned_minutes BETWEEN 1 AND 180),
+  outcome TEXT CHECK (outcome IN ('done', 'kept-going', 'stopped', 'stuck')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS start_sessions_user_idx ON start_sessions (user_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS start_sessions_task_idx ON start_sessions (task_id) WHERE task_id IS NOT NULL;
+
+DROP TRIGGER IF EXISTS start_sessions_updated_at ON start_sessions;
+CREATE TRIGGER start_sessions_updated_at
+  BEFORE UPDATE ON start_sessions
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+DROP TRIGGER IF EXISTS start_sessions_owned_refs ON start_sessions;
+CREATE TRIGGER start_sessions_owned_refs
+  BEFORE INSERT OR UPDATE OF task_id, user_id ON start_sessions
+  FOR EACH ROW EXECUTE FUNCTION v2_check_owned_refs();
+
+ALTER TABLE start_sessions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners manage their start sessions" ON start_sessions;
+CREATE POLICY "Owners manage their start sessions" ON start_sessions FOR ALL
+  USING (user_id = (SELECT auth.uid()))
+  WITH CHECK (user_id = (SELECT auth.uid()));
+
+-- ------------------------------------------------------------
+-- 7. push_tokens: Expo push tokens (iOS) and Web Push subscriptions
+--    (the browser's push endpoint in `token`, its encryption keys in
+--    `keys`). The app deletes its row on sign-out. A browser belongs to
+--    one account at a time (save_web_push, below).
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS push_tokens (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  platform TEXT NOT NULL CHECK (platform IN ('ios', 'android', 'web')),
+  token TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (user_id, token)
+);
+
+DROP TRIGGER IF EXISTS push_tokens_updated_at ON push_tokens;
+CREATE TRIGGER push_tokens_updated_at
+  BEFORE UPDATE ON push_tokens
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE push_tokens ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners manage their push tokens" ON push_tokens;
+CREATE POLICY "Owners manage their push tokens" ON push_tokens FOR ALL
+  USING (user_id = (SELECT auth.uid()))
+  WITH CHECK (user_id = (SELECT auth.uid()));
+
+ALTER TABLE push_tokens ADD COLUMN IF NOT EXISTS keys JSONB;
+ALTER TABLE push_tokens DROP CONSTRAINT IF EXISTS push_tokens_web_keys;
+ALTER TABLE push_tokens ADD CONSTRAINT push_tokens_web_keys CHECK (
+  -- coalesce: a CHECK that comes out NULL (no keys at all) would pass.
+  platform <> 'web' OR coalesce(jsonb_typeof(keys->'p256dh') = 'string' AND jsonb_typeof(keys->'auth') = 'string', false)
+);
+-- One account per browser, and the sender's lookup by platform.
+CREATE UNIQUE INDEX IF NOT EXISTS push_tokens_web_endpoint_idx ON push_tokens (token) WHERE platform = 'web';
+CREATE INDEX IF NOT EXISTS push_tokens_platform_idx ON push_tokens (platform, user_id);
+
+-- Saves this browser's Web Push subscription for the signed-in person. If
+-- someone else used this browser before and their sign-out never reached
+-- the server, their row goes, so their reminders stop ringing here (RLS
+-- would hide it from a plain delete; hence SECURITY DEFINER).
+CREATE OR REPLACE FUNCTION save_web_push(endpoint TEXT, key_p256dh TEXT, key_auth TEXT)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  me UUID := auth.uid();
+BEGIN
+  IF me IS NULL THEN
+    RAISE EXCEPTION 'not signed in' USING ERRCODE = 'insufficient_privilege';
+  END IF;
+  IF endpoint IS NULL OR endpoint !~ '^https://' OR length(endpoint) > 2000
+     OR coalesce(length(key_p256dh), 0) NOT BETWEEN 1 AND 200 OR coalesce(length(key_auth), 0) NOT BETWEEN 1 AND 200 THEN
+    RAISE EXCEPTION 'not a push subscription' USING ERRCODE = 'invalid_parameter_value';
+  END IF;
+  DELETE FROM push_tokens WHERE platform = 'web' AND token = endpoint AND user_id <> me;
+  INSERT INTO push_tokens (user_id, platform, token, keys)
+  VALUES (me, 'web', endpoint, jsonb_build_object('p256dh', key_p256dh, 'auth', key_auth))
+  ON CONFLICT (user_id, token) DO UPDATE SET keys = EXCLUDED.keys, updated_at = now();
+END;
+$$;
+
+REVOKE ALL ON FUNCTION save_web_push(TEXT, TEXT, TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION save_web_push(TEXT, TEXT, TEXT) TO authenticated;
+
+-- ------------------------------------------------------------
+-- 8. plan_generations: one row per AI plan built. The free tier's
+--    monthly allowance counts these (counting tasks stopped working once
+--    quick add made most tasks non-AI). Insert and read only: no update or
+--    delete policy, so nobody can reset their own count.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS plan_generations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS plan_generations_user_idx ON plan_generations (user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS plan_generations_task_idx ON plan_generations (task_id) WHERE task_id IS NOT NULL;
+
+DROP TRIGGER IF EXISTS plan_generations_owned_refs ON plan_generations;
+CREATE TRIGGER plan_generations_owned_refs
+  BEFORE INSERT OR UPDATE OF task_id, user_id ON plan_generations
+  FOR EACH ROW EXECUTE FUNCTION v2_check_owned_refs();
+
+ALTER TABLE plan_generations ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners read their plan generations" ON plan_generations;
+CREATE POLICY "Owners read their plan generations" ON plan_generations FOR SELECT
+  USING (user_id = (SELECT auth.uid()));
+DROP POLICY IF EXISTS "Owners log their plan generations" ON plan_generations;
+CREATE POLICY "Owners log their plan generations" ON plan_generations FOR INSERT
+  WITH CHECK (user_id = (SELECT auth.uid()));
+
+-- ------------------------------------------------------------
+-- 9. ai_requests: one row per metered AI request: "I'm stuck" and a plan's
+--    clarifying questions (daily caps), each plan request (one at a
+--    time, so a burst can't outrun the free tier's count), and dating a
+--    plan's steps ('dates', a daily cap). The site's
+--    routes count these. Insert and read only, like plan_generations, so a
+--    cap can't be reset by deleting rows.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS ai_requests (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('unstick', 'clarify', 'plan', 'dates')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Where the table already exists with fewer kinds (staging), widen the check.
+ALTER TABLE ai_requests DROP CONSTRAINT IF EXISTS ai_requests_kind_check;
+ALTER TABLE ai_requests ADD CONSTRAINT ai_requests_kind_check CHECK (kind IN ('unstick', 'clarify', 'plan', 'dates'));
+
+CREATE INDEX IF NOT EXISTS ai_requests_user_idx ON ai_requests (user_id, kind, created_at DESC);
+
+ALTER TABLE ai_requests ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners read their AI requests" ON ai_requests;
+CREATE POLICY "Owners read their AI requests" ON ai_requests FOR SELECT
+  USING (user_id = (SELECT auth.uid()));
+DROP POLICY IF EXISTS "Owners log their AI requests" ON ai_requests;
+CREATE POLICY "Owners log their AI requests" ON ai_requests FOR INSERT
+  WITH CHECK (user_id = (SELECT auth.uid()));
+
+-- ------------------------------------------------------------
+-- 10. Search: tasks (title, then the Notes field) and notes (their text,
+--     without checklist tokens). The app keeps only what's on the go, so
+--     finding anything older happens here.
+--
+--     No full-text (GIN) index: under RLS Postgres can't use one, because
+--     the @@ operator isn't leakproof. Instead each query is bounded to the
+--     person's own rows (an explicit user_id filter, which the user indexes
+--     serve) and matches within them. Measured on staging: ~40-100 ms for a
+--     typical search in an account of 10,000 tasks, ~300 ms for a word that
+--     matches 9,000 of them. If accounts grow far past that, store the
+--     tsvectors in generated columns.
+-- ------------------------------------------------------------
+
+-- One group of matches for the signed-in person: 'open' or 'done' tasks, or
+-- 'notes'. Runs as the caller under RLS, and filters to their own rows
+-- explicitly so each query only reads that person's rows. Each word
+-- matches as a prefix after English stemming ("read ch" finds "Reading
+-- chapter 4"); everything but letters and digits is dropped first, so typed
+-- input can't break the query, and only its first 200 characters count.
+-- `in_list` narrows to a territory (a plan's steps count as in their plan's).
+-- A snippet shows the match («like this») for notes, and for tasks found by
+-- their Notes field. A task carries its plan's title and its note's first
+-- line (`parent_title`, `note_title`), since neither may be loaded on the
+-- device. Best match first; at most 100 rows a call (the app asks for 26).
+CREATE OR REPLACE FUNCTION search_items(
+  query TEXT,
+  kind TEXT,
+  in_list UUID DEFAULT NULL,
+  max_rows INT DEFAULT 26,
+  skip INT DEFAULT 0
+)
+RETURNS TABLE (id UUID, rank REAL, snippet TEXT, item JSONB)
+LANGUAGE plpgsql STABLE
+SET search_path = public, pg_temp
+AS $$
+#variable_conflict use_column
+DECLARE
+  q tsquery;
+  marks CONSTANT TEXT := 'StartSel=«, StopSel=», MaxWords=18, MinWords=6, ShortWord=2, MaxFragments=1, FragmentDelimiter=" … "';
+BEGIN
+  SELECT to_tsquery('english', string_agg(w || ':*', ' & '))
+    INTO q
+    FROM regexp_split_to_table(lower(regexp_replace(left(coalesce(query, ''), 200), '[^[:alnum:]]+', ' ', 'g')), ' ') AS w
+    WHERE w <> '';
+  -- Nothing searchable (empty, or only words like "the").
+  IF q IS NULL OR numnode(q) = 0 THEN
+    RETURN;
+  END IF;
+
+  IF kind IN ('open', 'done') THEN
+    RETURN QUERY
+    SELECT t.id,
+           ts_rank(setweight(to_tsvector('english', t.title), 'A') || setweight(to_tsvector('english', coalesce(t.notes, '')), 'B'), q),
+           CASE WHEN NOT to_tsvector('english', t.title) @@ q
+                THEN ts_headline('english', coalesce(t.notes, ''), q, marks) END,
+           (SELECT to_jsonb(r) FROM (SELECT t.id, t.user_id, t.list_id, t.parent_id, t.note_id, t.title, t.notes, t.status,
+                   t.due_on, t.due_at, t.remind_at, t.rrule, t.estimate_minutes, t.scheduled_on, t.sort_order, t.source,
+                   t.external_id, t.completed_at, t.created_at, t.updated_at, t.deleted_at,
+                   p.title AS parent_title, split_part(nn.body, E'\n', 1) AS note_title) r)
+      FROM tasks t
+      LEFT JOIN tasks p ON p.id = t.parent_id
+      LEFT JOIN notes nn ON nn.id = t.note_id
+     WHERE t.user_id = (SELECT auth.uid())
+       AND t.deleted_at IS NULL
+       AND (setweight(to_tsvector('english', t.title), 'A') || setweight(to_tsvector('english', coalesce(t.notes, '')), 'B')) @@ q
+       AND (t.completed_at IS NOT NULL) = (kind = 'done')
+       AND (in_list IS NULL OR CASE WHEN t.parent_id IS NULL THEN t.list_id ELSE p.list_id END = in_list)
+     ORDER BY 2 DESC, t.completed_at DESC NULLS LAST, t.updated_at DESC, t.id
+     LIMIT least(greatest(max_rows, 0), 100) OFFSET greatest(skip, 0);
+  ELSIF kind = 'notes' THEN
+    RETURN QUERY
+    SELECT n.id,
+           ts_rank(to_tsvector('english', regexp_replace(n.body, '\[\[task:[0-9a-f-]+\]\]', ' ', 'g')), q),
+           -- From the text under the title (a match in the title alone needs no snippet).
+           CASE WHEN to_tsvector('english', b.rest) @@ q THEN ts_headline('english', b.rest, q, marks) END,
+           (SELECT to_jsonb(r) FROM (SELECT n.id, n.user_id, n.list_id, n.task_id, n.body, n.created_at, n.updated_at, n.deleted_at) r)
+      FROM notes n
+      CROSS JOIN LATERAL (
+        SELECT CASE WHEN strpos(n.body, E'\n') > 0
+                    THEN regexp_replace(substr(n.body, strpos(n.body, E'\n') + 1), '\[\[task:[0-9a-f-]+\]\]', ' ', 'g')
+                    ELSE '' END AS rest
+      ) b
+     WHERE n.user_id = (SELECT auth.uid())
+       AND n.deleted_at IS NULL
+       AND to_tsvector('english', regexp_replace(n.body, '\[\[task:[0-9a-f-]+\]\]', ' ', 'g')) @@ q
+       AND (in_list IS NULL OR n.list_id = in_list)
+     ORDER BY 2 DESC, n.updated_at DESC, n.id
+     LIMIT least(greatest(max_rows, 0), 100) OFFSET greatest(skip, 0);
+  ELSE
+    RAISE EXCEPTION 'unknown search kind %', kind USING ERRCODE = 'invalid_parameter_value';
+  END IF;
+END;
+$$;
+
+-- ------------------------------------------------------------
+-- 11. push_sends: every reminder the Web Push sender has sent, so none
+--     rings twice (it runs every minute and looks back a few minutes in
+--     case a run was missed). Server only: RLS on and no policies, so only
+--     the service role reaches it. The sender prunes rows after 2 days.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS push_sends (
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  -- core's reminder id: task:<id>:<ms>, due:<id>:<ms>, morning:<day>, snooze:<id>:<ms>
+  reminder_id TEXT NOT NULL,
+  sent_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, reminder_id)
+);
+
+CREATE INDEX IF NOT EXISTS push_sends_sent_idx ON push_sends (sent_at);
+
+ALTER TABLE push_sends ENABLE ROW LEVEL SECURITY;
+
+-- ------------------------------------------------------------
+-- 12. push_snoozes: Snooze 10 min pressed on a web reminder. The sender
+--     rings it at ring_at with the same words (while the task is still
+--     open), then deletes it. Server only, like push_sends.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS push_snoozes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  task_id UUID NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+  ring_at TIMESTAMPTZ NOT NULL,
+  -- The occurrence it's for (a repeat's day).
+  day DATE,
+  title TEXT NOT NULL CHECK (length(title) <= 500),
+  body TEXT NOT NULL DEFAULT '' CHECK (length(body) <= 500),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS push_snoozes_ring_idx ON push_snoozes (ring_at);
+CREATE INDEX IF NOT EXISTS push_snoozes_task_idx ON push_snoozes (task_id);
+CREATE INDEX IF NOT EXISTS push_snoozes_user_idx ON push_snoozes (user_id);
+
+ALTER TABLE push_snoozes ENABLE ROW LEVEL SECURITY;
+
+-- Not yet: `integrations` (LMS feed URLs, encrypted with Supabase Vault)
+-- lands with Phase 5.

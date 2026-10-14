@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "app-web",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "export PATH=\"$HOME/.nvm/versions/node/$(ls ~/.nvm/versions/node | tail -1)/bin:$PATH\" && cd apps/app && npx expo start --port 8081 < /dev/null"
+      ],
+      "port": 8081
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "export PATH=\"$HOME/.nvm/versions/node/$(ls ~/.nvm/versions/node | tail -1)/bin:$PATH\" && cd apps/site && npm run dev"
+      ],
+      "port": 3000
+    }
+  ]
+}

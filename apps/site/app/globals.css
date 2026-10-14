@@ -1,0 +1,205 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* The app's A2 "night passport" palette (packages/core/src/tokens.ts). The site is always night (Alex,
+   2026-10-13: a US passport is navy), like the app's default; the day palette lives in tokens.ts if a
+   toggle ever comes. */
+:root {
+  color-scheme: dark;
+  --bg: #161B2E;
+  --security-line: rgba(212, 178, 106, 0.04);
+  --ink: #ECE6D8;
+  --ink-soft: #C9C6BC;
+  --muted: #A7AABB;
+  --accent: #D4B26A;
+  --primary: #7CC3A0;
+  --primary-text: #9AD4B6;
+  --on-primary: #0F1F17;
+  --card: #1E2440;
+  --page: #1B2139;
+  --page-border: #2A3150;
+  --rule: #2A3150;
+  --outline: #3A4163;
+  --stamp-terracotta: #E08A70;
+  --stamp-violet: #A3A2D6;
+  --stamp-forest: #7CC3A0;
+  --bezel: #0B0F1C;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  /* The passport's faint security lines. */
+  background: repeating-linear-gradient(135deg, var(--security-line) 0 1px, transparent 1px 7px), var(--bg);
+  color: var(--ink);
+  font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+}
+
+.font-display { font-family: 'Fraunces', Georgia, serif; font-weight: 500; }
+.font-mono-pn { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+.eyebrow { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.75rem; letter-spacing: 0.18em; color: var(--muted); }
+
+/* The privacy policy and terms. */
+.legal h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 1.6rem; line-height: 1.25; margin: 2.75rem 0 0.75rem; }
+.legal h3 { font-weight: 600; font-size: 1.1rem; margin: 1.75rem 0 0.5rem; }
+.legal p, .legal li { color: var(--ink-soft); line-height: 1.7; }
+.legal p + p { margin-top: 0.9rem; }
+.legal ul { list-style: disc; padding-left: 1.4rem; margin: 0.75rem 0; display: grid; gap: 0.4rem; }
+.legal ol { list-style: lower-alpha; padding-left: 1.6rem; margin: 0.75rem 0; display: grid; gap: 0.4rem; }
+.legal strong { color: var(--ink); font-weight: 600; }
+.legal a { color: var(--primary-text); text-decoration: underline; }
+.todo { background: var(--page); color: var(--stamp-terracotta); border-radius: 4px; padding: 0 4px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.9em; }
+
+/* The passport's visa pages (components/landing/Entries.jsx): an open spread on a laptop, pages one
+   after the other on a phone. */
+.passport-spread {
+  display: grid;
+  border: 1px solid var(--page-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: repeating-linear-gradient(135deg, var(--security-line) 0 1px, transparent 1px 7px), var(--page);
+  box-shadow: 0 18px 40px -28px rgba(11, 15, 28, 0.45);
+}
+.passport-page { position: relative; padding: 22px 24px 16px; }
+.passport-page + .passport-page { border-top: 1px dashed var(--outline); }
+@media (min-width: 768px) {
+  .passport-spread { grid-template-columns: 1fr 1fr; }
+  .passport-page { padding: 26px 36px 18px; }
+  /* The binding: a shadow into the fold from both pages. */
+  .passport-page:first-child { box-shadow: inset -18px 0 22px -20px rgba(11, 15, 28, 0.35); }
+  .passport-page + .passport-page { border-top: 0; border-left: 1px solid var(--page-border); box-shadow: inset 18px 0 22px -20px rgba(11, 15, 28, 0.35); }
+}
+.page-head, .page-num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.7rem; letter-spacing: 0.2em; color: var(--muted); }
+.page-num { text-align: center; margin-top: 10px; }
+.entry { display: grid; grid-template-columns: 1fr auto; gap: 8px 18px; align-items: center; padding: 22px 0; }
+.entry + .entry { border-top: 1px dashed var(--outline); }
+.entry-stamp { width: 84px; height: 84px; transform: rotate(var(--tilt)); }
+.entry-stamp svg { width: 100%; height: 100%; }
+@media (min-width: 640px) { .entry-stamp { width: 104px; height: 104px; } }
+
+/* A stamp coming down onto the page (Land.jsx), timed like the app's (motion.stamp, then motion.quick):
+   it accelerates in from twice its size, squashes a little on impact, and settles. */
+.land[data-land='waiting'] { opacity: 0; }
+.land[data-land='landed'] { animation: stamp-land 560ms both; }
+@keyframes stamp-land {
+  0% { opacity: 0; transform: rotate(var(--tilt)) scale(1.9); animation-timing-function: cubic-bezier(0.32, 0, 0.67, 0); }
+  37% { opacity: 1; }
+  75% { transform: rotate(var(--tilt)) scale(0.94); animation-timing-function: cubic-bezier(0.5, 1, 0.89, 1); }
+  100% { opacity: 1; transform: rotate(var(--tilt)) scale(1); }
+}
+
+/* The drifting strip of stamps under the hero (StampStrip.jsx). */
+.stamp-strip {
+  overflow: hidden;
+  padding: 18px 0 34px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+.strip-track { display: flex; width: max-content; animation: strip-drift 70s linear infinite; }
+.stamp-strip:hover .strip-track { animation-play-state: paused; }
+.strip-stamp { flex: none; margin-right: 40px; opacity: 0.85; }
+@keyframes strip-drift { to { transform: translateX(-50%); } }
+
+/* Pick your nudge (ToneCarousel.jsx): each tone as a lock screen of its reminders, the one in front
+   with the other two partly behind it. */
+.tone-stage { position: relative; display: grid; overflow: hidden; padding: 6px 0 14px; touch-action: pan-y; }
+.tone-tile {
+  grid-area: 1 / 1;
+  justify-self: center;
+  width: min(380px, 76%);
+  transition: transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 450ms, filter 450ms;
+}
+.tone-tile[data-place='0'] { z-index: 2; }
+.tone-tile[data-place='-1'], .tone-tile[data-place='1'] { z-index: 1; opacity: 0.5; filter: saturate(0.6); cursor: pointer; }
+.tone-tile[data-place='-1'] { transform: translateX(-58%) scale(0.84); }
+.tone-tile[data-place='1'] { transform: translateX(58%) scale(0.84); }
+.tone-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  border-radius: 999px;
+  border: 1px solid var(--page-border);
+  background: var(--card);
+  color: var(--ink);
+  box-shadow: 0 6px 18px -10px rgba(11, 15, 28, 0.5);
+}
+.tone-arrow:hover { background: var(--page); }
+.tone-arrow:focus-visible, .tone-pick:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* Centered on the front tile's edges. */
+.tone-arrow[data-side='left'] { left: calc(50% - min(190px, 38%) - 22px); }
+.tone-arrow[data-side='right'] { right: calc(50% - min(190px, 38%) - 22px); }
+.tone-pick {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--page-border);
+  color: var(--ink-soft);
+}
+.tone-pick[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+
+.lock-screen {
+  --tone-ink: var(--stamp-forest);
+  padding: 22px 14px 16px;
+  border-radius: 30px;
+  border: 1px solid var(--page-border);
+  text-align: center;
+  background:
+    radial-gradient(120% 70% at 50% 0%, color-mix(in srgb, var(--tone-ink) 30%, transparent), transparent 70%),
+    repeating-linear-gradient(135deg, var(--security-line) 0 1px, transparent 1px 7px),
+    var(--page);
+  box-shadow: 0 22px 44px -30px rgba(11, 15, 28, 0.6);
+}
+.lock-screen[data-tone='drill'] { --tone-ink: var(--stamp-terracotta); }
+.lock-screen[data-tone='roast'] { --tone-ink: var(--stamp-violet); }
+.lock-mode {
+  display: inline-block;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.18em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--tone-ink);
+  border: 1px solid color-mix(in srgb, var(--tone-ink) 55%, transparent);
+}
+.lock-date { margin-top: 12px; font-size: 0.9rem; color: var(--ink-soft); }
+.lock-time { font-size: 4rem; line-height: 1; margin-top: 2px; }
+.notif {
+  text-align: left;
+  padding: 10px 14px 12px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--page-border) 80%, transparent);
+  background: color-mix(in srgb, var(--card) 84%, transparent);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 20px -14px rgba(11, 15, 28, 0.55);
+}
+.notif-head { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--muted); }
+.notif-icon { border-radius: 5px; }
+.notif-title { margin-top: 6px; font-weight: 600; font-size: 0.95rem; line-height: 1.3; }
+.notif-body { margin-top: 2px; font-size: 0.95rem; line-height: 1.38; color: var(--ink-soft); }
+.notif-actions { display: flex; gap: 8px; margin-top: 10px; }
+.notif-actions span {
+  flex: 1;
+  padding: 7px 0;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .strip-track { animation: none; }
+  .tone-tile { transition: none; }
+  .land[data-land] { opacity: 1; animation: none; }
+}

@@ -40,10 +40,10 @@ For each design decision, document:
 ## Current Architecture
 
 ### Stack
-- **Frontend**: Next.js 14 App Router, all pages `'use client'`
-- **Styling**: Tailwind CSS 3 (class-based dark mode via `useTheme()`)
+- **Frontend**: the Expo app (`apps/app`, React Native + web); `apps/site` is the landing page and the API (v1's pages retired on `v2`)
+- **Styling**: the app uses A2 tokens (`useStyles` / `useTokens`); the site uses Tailwind plus the A2 palette as CSS variables
 - **Database**: Supabase PostgreSQL with RLS on all tables
-- **Auth**: Supabase Auth with trial/free/pro tiers via `useAuth()`
+- **Auth**: Supabase Auth in the app (`src/auth/`); the site's routes check the app's session token (`lib/authMiddleware.js`)
 - **AI**: Anthropic Claude API via raw `fetch()` (not SDK)
 - **Email**: Resend
 - **Hosting**: Vercel Hobby tier, auto-deploy from `main`
@@ -101,14 +101,14 @@ For each design decision, document:
 
 ### Frontend
 - **Component composition**: Build pages from small, focused components
-- **Custom hooks**: Extract reusable logic (useTheme, useAuth already exist)
-- **Context for global state**: Only theme and auth — don't add more unless truly app-wide
-- **Ternary dark mode**: `darkMode ? 'dark-class' : 'light-class'`, never `dark:` prefix
+- **Custom hooks**: Extract reusable logic into `apps/app/src/hooks/`
+- **Context for global state**: the app's providers (auth, tasks, lists, notes, settings, reminders); don't add more unless truly app-wide
+- **No hard-coded colors**: A2 tokens in the app, CSS variables on the site
 
 ### Backend (API Routes)
 - **Flat route handlers**: Parse request → validate → do work → respond
 - **Raw fetch to external APIs**: Anthropic, Resend — no SDKs
-- **Supabase client per request**: Import from `lib/supabase.js` (anon) or create inline (service role)
+- **Supabase client per request**: the user's client from `lib/authMiddleware.js`, or a service-role client created inline (cron and admin routes)
 
 ### Data
 - **JSONB for flexible data**: steps, step_dates, recurrence — all JSONB columns

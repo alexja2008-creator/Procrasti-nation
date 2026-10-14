@@ -1,0 +1,277 @@
+{
+  "summary": {
+    "label": "haiku__v3",
+    "config": "haiku",
+    "cases": 16,
+    "errors": 0,
+    "passRate": "8/16",
+    "over25Words": 0,
+    "latencyP50s": 0.907,
+    "latencyP95s": 1.514,
+    "avg_overall": 3.5,
+    "avg_tiny": 4.19,
+    "avg_concrete": 4.31,
+    "avg_noDecisions": 3.31,
+    "avg_specific": 3.69,
+    "avg_progress": 3.25,
+    "avg_fitsReason": 3.31
+  },
+  "results": [
+    {
+      "id": "paper-intro",
+      "latencyMs": 901,
+      "words": 11,
+      "action": "Open a blank document and write: \"World War One began because\"",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "The sentence starter is low-friction, but it leaves the student to finish the thought, which means choosing a cause, and it doesn't say to keep writing or to accept an ugly ending, which a perfectionist may need."
+      }
+    },
+    {
+      "id": "paper-outline",
+      "latencyMs": 1181,
+      "words": 15,
+      "action": "Open a blank document and type 'Section 2: Alliances' and 'Section 3: Militarism' as headers.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 4,
+        "notes": "It shrinks the task to typing two headers, but that is a very small bit of progress and does not break down the 'too big' feeling by starting the first bullet (e.g., typing 'Bullet 1: Triple Alliance vs. Triple Entente') or tell them where to open the doc."
+      }
+    },
+    {
+      "id": "orgo-problems",
+      "latencyMs": 1514,
+      "words": 14,
+      "action": "Open your textbook to page 242 and copy problem 1 onto paper, nothing else.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 4,
+        "notes": "The action is tiny and physical, but it doesn't address the 'not in the mood' boredom (no novelty, hook, or low-pressure framing), and copying the problem is only modest progress; the page number may also be invented and it assumes a textbook and paper are at hand."
+      }
+    },
+    {
+      "id": "email-prof",
+      "latencyMs": 1383,
+      "words": 18,
+      "action": "Open your email and start a new message to Professor Alvarez with subject line \"Lab Report Extension Request.\"",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 5,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It gives a clear first move with a ready-made subject line, but it stops before any body text and doesn't supply an opening sentence, so an avoider may still stall on what to write after the subject line."
+      }
+    },
+    {
+      "id": "resume-dates",
+      "latencyMs": 967,
+      "words": 17,
+      "action": "Open your email and find the summer camp job offer letter for the dates and job title.",
+      "grade": {
+        "tiny": 3,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 3,
+        "notes": "It assumes the missing item is the dates and title and that an offer letter exists in email, so searching could stall the student without a clear stopping point, and it doesn't directly address the vague 'missing something' or the avoider's reluctance to start."
+      }
+    },
+    {
+      "id": "desk",
+      "latencyMs": 1338,
+      "words": 17,
+      "action": "Set a timer for two minutes and move three random items off your desk into a box.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 4,
+        "noDecisions": 2,
+        "specific": 3,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 3,
+        "notes": "It asks the student to find a box and pick 'random' items, which adds decisions and friction, and it never addresses the lack of mood (e.g., by naming one exact item like trash or cups to grab first)."
+      }
+    },
+    {
+      "id": "gatsby-reading",
+      "latencyMs": 821,
+      "words": 18,
+      "action": "Open your book to page 40 and write down the first sentence you see about the green light.",
+      "grade": {
+        "tiny": 3,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 3,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 3,
+        "notes": "Page 40 may not contain any green light sentence, so the student may have to scan and judge, which adds decisions and risks stalling; it also swaps the step's 'longing' quotes for green light and doesn't shrink the 20-page scope in a clearly doable way."
+      }
+    },
+    {
+      "id": "bio-slides",
+      "latencyMs": 855,
+      "words": 16,
+      "action": "Open your presentation and create three blank slides titled Finding 1, Finding 2, and Finding 3.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It gives a clear starting point, but it doesn't say which finding goes first or tell the student to type the actual finding into the title, so a perfectionist may still stall and the placeholder titles only partly advance the real work."
+      }
+    },
+    {
+      "id": "fafsa",
+      "latencyMs": 804,
+      "words": 12,
+      "action": "Open fafsa.gov and check which documents you need for your specific situation.",
+      "grade": {
+        "tiny": 3,
+        "concrete": 3,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 3,
+        "notes": "The action is vague and open-ended: 'check which documents you need for your specific situation' requires reading and judgment and can take well over two minutes, and it doesn't name a concrete first click or a specific document (e.g., FSA ID, SSN, tax return) to match the student's 'I'm missing something' blocker."
+      }
+    },
+    {
+      "id": "calc-pset",
+      "latencyMs": 796,
+      "words": 12,
+      "action": "Open your textbook to page where related rates examples are worked out.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 3,
+        "noDecisions": 3,
+        "specific": 2,
+        "progress": 2,
+        "fitsReason": 3,
+        "overall": 3,
+        "notes": "The action is vague (no actual page number or section named, so the student must hunt for it) and opening a book only weakly advances problems 1-4 or clarifies what exactly is missing."
+      }
+    },
+    {
+      "id": "dentist",
+      "latencyMs": 764,
+      "words": 16,
+      "action": "Find your dentist's phone number or website and write it down on a piece of paper.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 2,
+        "overall": 3,
+        "notes": "It doesn't address the 'not in the mood' barrier and adds friction by asking for a written copy plus a phone-or-website choice, while the progress it yields is modest since the student still has to make the call."
+      }
+    },
+    {
+      "id": "cover-letter-again",
+      "latencyMs": 885,
+      "words": 14,
+      "action": "List three specific reasons you want to work at Deloitte—no perfect sentences, just fragments.",
+      "grade": {
+        "tiny": 3,
+        "concrete": 4,
+        "noDecisions": 2,
+        "specific": 3,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 3,
+        "notes": "Asking for three specific reasons requires a student who doesn't know where to begin to come up with content and choose among options, which is a hard thinking task and may stall them; it also doesn't say where to write them or offer a prompt, and it is only lightly tied to Deloitte beyond the name."
+      }
+    },
+    {
+      "id": "dorm-kitchen",
+      "latencyMs": 907,
+      "words": 13,
+      "action": "Open a box and put just your mugs and glasses inside right now.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 5,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It assumes a box is already at hand and leaves small choices (which box, which mugs and glasses), so it isn't fully decision-free, though shrinking the job to one category does answer \"too big\" well."
+      }
+    },
+    {
+      "id": "conclusion",
+      "latencyMs": 1422,
+      "words": 11,
+      "action": "Open your essay and read just your conclusion paragraph aloud once.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 4,
+        "noDecisions": 5,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 2,
+        "overall": 3,
+        "notes": "Reading the conclusion aloud is tiny and clear, but it does nothing to address the 'not in the mood' boredom (no novelty or hook) and only moderately advances the revision, since it doesn't produce any edit or mark on the page."
+      }
+    },
+    {
+      "id": "krebs",
+      "latencyMs": 724,
+      "words": 16,
+      "action": "Open your textbook or class notes to the Krebs cycle section and read the first paragraph.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It leaves the student a choice between textbook and notes and may not be findable in two minutes, and reading a first paragraph is fairly passive, so it doesn't clearly produce visible progress like writing the cycle's first step down."
+      }
+    },
+    {
+      "id": "thesis-methods",
+      "latencyMs": 923,
+      "words": 14,
+      "action": "Open a blank document and type: \"Survey design: We used a 15-question online questionnaire.\"",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 3,
+        "specific": 3,
+        "progress": 3,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It invents a specific fact (15-question online questionnaire) that may not match the student's real survey, and it opens a blank document instead of the thesis file, so the student must reconcile or correct it and the sentence isn't guaranteed to be usable text."
+      }
+    }
+  ]
+}
