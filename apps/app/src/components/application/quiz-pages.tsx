@@ -17,8 +17,10 @@ import { StyleSheet, View } from 'react-native';
 
 import { ApplicationForm } from '@/components/application/application-form';
 import { ChoiceCards, type Choice } from '@/components/application/choice-cards';
+import { NamePage } from '@/components/application/name-page';
 import { Button } from '@/components/button';
 import { Icon, type IconName } from '@/components/icon';
+import type { NameParts } from '@/components/name-fields';
 import { Text } from '@/components/text';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
@@ -41,14 +43,16 @@ const HELP_ICONS: Record<HelpCard, IconName> = {
 };
 
 /** The Application's questions, Welcome through "Where did you hear about us?": the pages anyone answers, signed out or in. */
-export type QuizPage = Extract<ApplicationPage, 'welcome' | 'purpose' | 'hours' | 'style' | 'notBroken' | 'tone' | 'result' | 'help' | 'heardFrom'>;
+export type QuizPage = Extract<ApplicationPage, 'welcome' | 'name' | 'purpose' | 'hours' | 'style' | 'notBroken' | 'tone' | 'result' | 'help' | 'heardFrom'>;
 
 export const isQuizPage = (page: ApplicationPage): page is QuizPage =>
-  ['welcome', 'purpose', 'hours', 'style', 'notBroken', 'tone', 'result', 'help', 'heardFrom'].includes(page);
+  ['welcome', 'name', 'purpose', 'hours', 'style', 'notBroken', 'tone', 'result', 'help', 'heardFrom'].includes(page);
 
 type Props = {
   page: QuizPage;
   prefs: Partial<Preferences>;
+  /** What they've said to call them so far (empty fields if nothing yet). */
+  name: NameParts;
   busy: boolean;
   error: string | null;
   /** Under Welcome's text: the reserved citizen number, once there's a passport. */
@@ -57,6 +61,8 @@ type Props = {
   welcomeFooter: ReactNode;
   /** Saves one answer, then turns the page. */
   onAnswer: (patch: Partial<Preferences>) => void;
+  /** Saves their name, then turns the page. */
+  onName: (name: NameParts) => void;
   onHours: (hours: Hours) => void;
   /** The last question: what happens next differs signed out (the passport opens) and in. */
   onHeardFrom: (heardFrom: HeardFrom) => void;
@@ -64,7 +70,7 @@ type Props = {
   back: () => void;
 };
 
-export function QuizPages({ page, prefs, busy, error, welcomeNote, welcomeFooter, onAnswer, onHours, onHeardFrom, next, back }: Props) {
+export function QuizPages({ page, prefs, name, busy, error, welcomeNote, welcomeFooter, onAnswer, onName, onHours, onHeardFrom, next, back }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const backButton = <Button variant="quiet" label={copy.back} onPress={back} disabled={busy} />;
@@ -82,6 +88,8 @@ export function QuizPages({ page, prefs, busy, error, welcomeNote, welcomeFooter
           {welcomeNote}
         </ApplicationForm>
       );
+    case 'name':
+      return <NamePage initial={name} busy={busy} error={error} onContinue={onName} back={back} />;
     case 'purpose':
       return (
         <ApplicationForm page={page} title={copy.purposeTitle} lead={copy.pickOne} error={error} footer={backButton}>

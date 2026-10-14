@@ -17,6 +17,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
 import { isUnsaved } from '@/auth/passport';
+import { personName } from '@/auth/person-name';
 import { signOut } from '@/auth/sign-out';
 import { ChoiceCards, type Choice } from '@/components/application/choice-cards';
 import { Button } from '@/components/button';
@@ -26,6 +27,7 @@ import { RemindersCard } from '@/components/reminders-card';
 import { SavePassport } from '@/components/save-passport';
 import { Screen } from '@/components/screen';
 import { DeleteSheet } from '@/components/settings/delete-sheet';
+import { NameSheet } from '@/components/settings/name-sheet';
 import { PasswordSheet } from '@/components/settings/password-sheet';
 import { SettingRow } from '@/components/settings/setting-row';
 import { SettingsCard } from '@/components/settings/settings-card';
@@ -53,7 +55,7 @@ const tones: Choice<NudgeToneId>[] = (Object.keys(nudgeTones) as NudgeToneId[]).
 const TIMERS: StartMinutes[] = [2, 5, 10, 25];
 const DAY_ENDS = [0, 1, 2, 3, 4, 5, 6];
 
-type Picking = 'purpose' | 'hours' | 'style' | 'tone' | 'timer' | 'dayEnds' | 'theme' | 'username' | 'password' | 'save' | 'signOut' | 'delete' | null;
+type Picking = 'name' | 'purpose' | 'hours' | 'style' | 'tone' | 'timer' | 'dayEnds' | 'theme' | 'username' | 'password' | 'save' | 'signOut' | 'delete' | null;
 
 const labelOf = <T extends string>(choices: readonly { id: T; label: string }[], id: T | undefined) =>
   choices.find((c) => c.id === id)?.label ?? copy.notSet;
@@ -66,6 +68,7 @@ export default function SettingsScreen() {
   const { c } = s.t;
   const { session } = useAuth();
   const unsaved = isUnsaved(session?.user);
+  const name = personName(session?.user);
   // Signed in with an email, or a texted code (a passport saved by phone has no email).
   const signedInAs = session?.user.email || (session?.user.phone ? formatPhone(`+${session.user.phone.replace(/^\+/, '')}`) : null);
   const { settings, savePreferences, saveSettings } = useUserSettings();
@@ -136,6 +139,7 @@ export default function SettingsScreen() {
       ) : null}
 
       <SettingsCard label={copy.applicationLabel}>
+        <SettingRow label={copy.name} value={name.full ?? copy.notSet} onPress={() => setPicking('name')} />
         <SettingRow label={copy.purpose} value={labelOf(answers.purposes, prefs.persona)} onPress={() => setPicking('purpose')} />
         <SettingRow label={copy.hours} value={labelOf(answers.hours, prefs.hours)} onPress={() => setPicking('hours')} />
         <SettingRow label={copy.style} value={labelOf(answers.styles, prefs.style)} onPress={() => setPicking('style')} />
@@ -240,6 +244,8 @@ export default function SettingsScreen() {
             ))}
           </View>
         </Sheet>
+      ) : picking === 'name' ? (
+        <NameSheet current={{ first: name.first ?? '', last: name.last ?? '' }} onClose={() => setPicking(null)} />
       ) : picking === 'username' && userId ? (
         <UsernameSheet userId={userId} current={username} onSaved={setUsername} onClose={() => setPicking(null)} />
       ) : picking === 'password' ? (

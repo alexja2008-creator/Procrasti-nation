@@ -20,9 +20,11 @@ import { parseQuickAdd } from '../src/quick-add.ts';
 test('the questions are numbered through the Oath; the rest are not', () => {
   assert.deepEqual(
     APPLICATION_PAGES.map((p) => pageNumber(p)?.n ?? null),
-    [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, null, null, null, null, null],
+    [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, null, null, null, null, null],
   );
-  assert.equal(pageNumber('oath')?.of, 9);
+  assert.deepEqual(APPLICATION_PAGES.slice(0, 3), ['welcome', 'name', 'purpose'], 'their name comes first, right after Welcome');
+  assert.equal(pageNumber('name')?.n, 1);
+  assert.equal(pageNumber('oath')?.of, 10);
 });
 
 test('how PN helps: what answers their reason comes first', () => {
@@ -60,14 +62,17 @@ test("your first week: the Oath's steps on their days, today through six days on
 });
 
 test('coming back picks up at the first page not done', () => {
-  assert.equal(resumePage({}), 'welcome');
-  assert.equal(resumePage({ reminders: { morningList: { on: true, hour: 8, minute: 0 } } }), 'welcome', 'other settings are not answers');
-  assert.equal(resumePage({ persona: 'school' }), 'hours');
-  assert.equal(resumePage({ persona: 'school', hours: 'night' }), 'style');
-  assert.equal(resumePage({ persona: 'school', hours: 'night', style: 'avoid' }), 'notBroken', 'the self-forgiveness page is seen before the tone');
-  assert.equal(resumePage({ persona: 'school', hours: 'night', style: 'avoid', nudgeTone: 'roast' }), 'result', 'then the result and how PN helps');
-  assert.equal(resumePage({ persona: 'school', hours: 'night', style: 'avoid', nudgeTone: 'roast', heardFrom: 'tiktok' }), 'oath');
-  assert.equal(resumePage({ hours: 'day' }), 'purpose');
+  assert.equal(resumePage({}, false), 'welcome');
+  assert.equal(resumePage({ reminders: { morningList: { on: true, hour: 8, minute: 0 } } }, false), 'welcome', 'other settings are not answers');
+  assert.equal(resumePage({}, true), 'purpose', 'named, nothing else yet');
+  assert.equal(resumePage({ persona: 'school' }, true), 'hours');
+  assert.equal(resumePage({ persona: 'school', hours: 'night' }, true), 'style');
+  assert.equal(resumePage({ persona: 'school', hours: 'night', style: 'avoid' }, true), 'notBroken', 'the self-forgiveness page is seen before the tone');
+  assert.equal(resumePage({ persona: 'school', hours: 'night', style: 'avoid', nudgeTone: 'roast' }, true), 'result', 'then the result and how PN helps');
+  assert.equal(resumePage({ persona: 'school', hours: 'night', style: 'avoid', nudgeTone: 'roast', heardFrom: 'tiktok' }, true), 'oath');
+  assert.equal(resumePage({ hours: 'day' }, true), 'purpose');
+  const answered = { persona: 'school', hours: 'night', style: 'avoid', nudgeTone: 'roast', heardFrom: 'tiktok' } as const;
+  assert.equal(resumePage(answered, false), 'name', 'answers from before the name page was added: asked for it first');
 });
 
 test('a purpose of visit starts the matching territories', () => {

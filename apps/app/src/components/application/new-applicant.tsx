@@ -1,4 +1,4 @@
-import { APPLICATION_PAGES, hoursChange, resumePage, voice, type HeardFrom, type Hours, type Preferences } from '@pn/core';
+import { APPLICATION_PAGES, cleanName, hoursChange, resumePage, voice, type HeardFrom, type Hours, type Preferences } from '@pn/core';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View, type ScrollView } from 'react-native';
@@ -43,7 +43,7 @@ function Questions({ initial }: { initial: Draft }) {
   const scroll = useRef<ScrollView>(null);
   const [draft, setDraft] = useState(initial);
   // Everything answered already (the passport didn't open last time): back to the last question.
-  const resume = resumePage(initial.preferences);
+  const resume = resumePage(initial.preferences, !!initial.name?.first);
   const { turnedTo, go, answer, busy, setBusy, error, setError, settled } = useTurns(isQuizPage(resume) ? resume : 'heardFrom', scroll, copy.saveFailed);
   const page = turnedTo as QuizPage;
   const index = APPLICATION_PAGES.indexOf(page);
@@ -52,9 +52,16 @@ function Questions({ initial }: { initial: Draft }) {
 
   const keep = async (preferences: Partial<Preferences>, dayRolloverHour?: number) => {
     const updated: Draft = {
+      ...draft,
       preferences: { ...draft.preferences, ...preferences },
       dayRolloverHour: dayRolloverHour ?? draft.dayRolloverHour,
     };
+    setDraft(updated);
+    await saveDraft(updated);
+  };
+
+  const keepName = async (first: string, last: string) => {
+    const updated: Draft = { ...draft, name: { first: cleanName(first), last: cleanName(last) } };
     setDraft(updated);
     await saveDraft(updated);
   };
@@ -85,6 +92,7 @@ function Questions({ initial }: { initial: Draft }) {
         <QuizPages
           page={page}
           prefs={draft.preferences}
+          name={draft.name ?? { first: '', last: '' }}
           busy={busy}
           error={error}
           welcomeNote={
@@ -101,6 +109,7 @@ function Questions({ initial }: { initial: Draft }) {
             </>
           }
           onAnswer={(patch) => answer(() => keep(patch), next)}
+          onName={(name) => answer(() => keepName(name.first, name.last), next)}
           onHours={onHours}
           onHeardFrom={onHeardFrom}
           next={next}

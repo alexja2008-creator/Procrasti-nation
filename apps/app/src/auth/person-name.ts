@@ -1,10 +1,13 @@
+import { nameMetadata } from '@pn/core';
 import type { User } from '@supabase/supabase-js';
+
+import { supabase } from '@/lib/supabase';
 
 type NameMetadata = { given_name?: string; family_name?: string; full_name?: string; name?: string };
 
 /**
- * The person's name from their auth profile (Apple shares it on first sign-in;
- * the Citizenship Application will ask for it). All null for email-only users.
+ * The person's name from their auth profile: the Citizenship Application asks for it (and Apple
+ * shares it on first sign-in). All null for an account from before the Application asked.
  */
 export function personName(user: User | null | undefined): { first: string | null; last: string | null; full: string | null } {
   const m = (user?.user_metadata ?? {}) as NameMetadata;
@@ -15,4 +18,10 @@ export function personName(user: User | null | undefined): { first: string | nul
     last: m.family_name?.trim() || (words.length > 1 ? words.slice(1).join(' ') : null),
     full,
   };
+}
+
+/** Keeps what to call them in their auth profile, private to them (the session updates with it); throws if it didn't save. */
+export async function saveName(first: string, last: string): Promise<void> {
+  const { error } = await supabase.auth.updateUser({ data: nameMetadata(first, last) });
+  if (error) throw error;
 }

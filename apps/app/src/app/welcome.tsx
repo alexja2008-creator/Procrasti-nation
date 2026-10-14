@@ -20,7 +20,7 @@ import { ActivityIndicator, StyleSheet, TextInput, View, type ScrollView } from 
 
 import { useAuth } from '@/auth/auth-provider';
 import { isUnsaved } from '@/auth/passport';
-import { personName } from '@/auth/person-name';
+import { personName, saveName } from '@/auth/person-name';
 import { DeclarePage, FirstWeekPage, NudgePage } from '@/components/application/after-oath';
 import { ApplicationForm } from '@/components/application/application-form';
 import { NewApplicant } from '@/components/application/new-applicant';
@@ -55,6 +55,7 @@ export default function ApplicationScreen() {
 /** Signed in: first, any answers given signed out move into the passport (then they're cleared). */
 function Arrival() {
   const t = useTokens();
+  const { session } = useAuth();
   const { settings, status, savePreferences, saveSettings } = useUserSettings();
   const [moved, setMoved] = useState(false);
   const started = useRef(false);
@@ -63,8 +64,10 @@ function Arrival() {
     try {
       const draft = await loadDraft();
       if (hasAnswers(draft) && !settings?.onboardingCompletedAt) {
-        await savePreferences(draft.preferences);
+        if (Object.keys(draft.preferences).length > 0) await savePreferences(draft.preferences);
         if (draft.dayRolloverHour !== undefined) await saveSettings({ dayRolloverHour: draft.dayRolloverHour });
+        // Their name, unless the account already has one (an existing account signed in to).
+        if (draft.name?.first && !personName(session?.user).first) await saveName(draft.name.first, draft.name.last);
       }
       await clearDraft();
     } catch {
@@ -102,8 +105,9 @@ function Application() {
   const { lists, status: listsStatus, add } = useLists();
   const { tasks, today, add: addTask } = useTasks();
   const prefs: Partial<Preferences> = settings?.preferences ?? {};
+  const name = personName(session?.user);
   const scroll = useRef<ScrollView>(null);
-  const { turnedTo, go, answer, busy, setBusy, error, setError } = useTurns(resumePage(prefs), scroll, copy.saveFailed);
+  const { turnedTo, go, answer, busy, setBusy, error, setError } = useTurns(resumePage(prefs, !!name.first), scroll, copy.saveFailed);
   const unsaved = isUnsaved(session?.user);
   // The Oath: what they typed, when it's due, and the task once it's made.
   const [oathText, setOathText] = useState('');
@@ -173,6 +177,7 @@ function Application() {
     <QuizPages
       page={page}
       prefs={prefs}
+      name={{ first: name.first ?? '', last: name.last ?? '' }}
       busy={busy}
       error={error}
       welcomeNote={
@@ -189,6 +194,7 @@ function Application() {
         </>
       }
       onAnswer={(patch) => answer(() => savePreferences(patch), next)}
+      onName={(typed) => answer(() => saveName(typed.first, typed.last), next)}
       onHours={pickHours}
       onHeardFrom={(heardFrom) => answer(() => savePreferences({ heardFrom }), next)}
       next={next}
@@ -255,7 +261,7 @@ function Application() {
     <View style={s.approved} accessibilityLiveRegion="polite">
       <LandingStamp ink={c.stamp.forest} lines={voice.stampText.approved} size={270} style={s.stamp} />
       <Text variant="pageTitle" accessibilityRole="header" style={s.centered}>
-        {copy.approvedTitle(personName(session?.user).first)}
+        {copy.approvedTitle(name.first)}
       </Text>
       <Text variant="lead" color={c.inkSoft} style={s.centered}>
         {planned ? copy.approvedBodyOath(citizenNo) : copy.approvedBody(citizenNo)}
