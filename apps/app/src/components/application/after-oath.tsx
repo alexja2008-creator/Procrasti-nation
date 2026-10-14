@@ -112,7 +112,7 @@ export function DeclarePage({ step, onContinue, onDrawing }: DeclareProps) {
 export function NudgePage({ declared, onContinue }: { declared?: Task | null; onContinue: () => void }) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
-  // The calendar's day, as the Declaration was signed in (a night owl's day hasn't rolled over at 1 AM).
+  // The calendar's day, as the Declaration was signed in (with a later Day ends at, their day hasn't rolled over at 1 AM).
   const [today] = useState(() => localDateString(new Date()));
   const { settings, savePreferences } = useUserSettings();
   const { permission, allow, dismissAsk } = useReminders();

@@ -43,7 +43,7 @@ function agendaOrder(a: AgendaEntry, b: AgendaEntry): number {
   );
 }
 
-/** `rolloverHour` is when the person's day ends (a night owl's Tuesday can end at 3am). */
+/** `rolloverHour` is when the person's day ends (with Day ends at 3 AM, Tuesday lasts until 3am Wednesday). */
 export function buildToday(tasks: Task[], today: LocalDate, rolloverHour = 0): TodayView {
   const live = tasks.filter((t) => !t.deletedAt);
   const byId = new Map(live.map((t) => [t.id, t]));
