@@ -1,0 +1,276 @@
+{
+  "summary": {
+    "config": "sonnet-low",
+    "cases": 16,
+    "errors": 0,
+    "passRate": "11/16",
+    "over25Words": 0,
+    "latencyP50s": 1.971,
+    "latencyP95s": 2.737,
+    "avg_overall": 3.69,
+    "avg_tiny": 4.44,
+    "avg_concrete": 4.5,
+    "avg_noDecisions": 3.38,
+    "avg_specific": 4,
+    "avg_progress": 3.63,
+    "avg_fitsReason": 3.38
+  },
+  "results": [
+    {
+      "id": "paper-intro",
+      "latencyMs": 2647,
+      "words": 22,
+      "action": "Open a blank document and type this ugly sentence: \"World War I started because of...\" then finish it with whatever comes first.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It gives a clear starting sentence, but 'whatever comes first' leaves a small content choice, and the prompt could name the document or tie more directly to the thesis so the sentence becomes the intro's closing thesis line."
+      }
+    },
+    {
+      "id": "paper-outline",
+      "latencyMs": 2719,
+      "words": 19,
+      "action": "Open a blank document, type \"Section 2: Alliances\" at the top, then write one bullet naming the Triple Entente.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It shrinks the step well, but it assumes a blank document is needed (the student may already have one) and leaves open what to write in the bullet beyond naming the Triple Entente, so it might not clearly be a paragraph point."
+      }
+    },
+    {
+      "id": "orgo-problems",
+      "latencyMs": 2737,
+      "words": 19,
+      "action": "Open your chapter 7 problem set to problem 1 and copy its first reaction's starting molecule onto scratch paper.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 4,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 2,
+        "overall": 3,
+        "notes": "The action is tiny and specific, but it ignores the 'not in the mood' boredom barrier with nothing to make it engaging, and the phrasing 'first reaction's starting molecule' is slightly awkward and ambiguous, while drawing one molecule gives only minimal momentum into actually solving."
+      }
+    },
+    {
+      "id": "email-prof",
+      "latencyMs": 2727,
+      "words": 20,
+      "action": "Open a new email, type \"Professor Alvarez\" in the To line, and write \"Hi Professor Alvarez,\" as the first line.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It gets the draft started with a low-barrier physical action, but it only covers the greeting and subject line is missing, so it leaves the hardest part (what to say) untouched and may not fully resolve 'where to begin' beyond the first line."
+      }
+    },
+    {
+      "id": "resume-dates",
+      "latencyMs": 2719,
+      "words": 21,
+      "action": "Open your resume and type \"Summer Camp Counselor, [camp name]\" as a new line, leaving dates and details blank for now.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 3,
+        "overall": 4,
+        "notes": "It doesn't engage with the vague 'I'm missing something' (e.g. missing dates, title, or details), and it still asks the student to open the file, find where the line goes, and fill in the camp name and a title they may not have settled on."
+      }
+    },
+    {
+      "id": "desk",
+      "latencyMs": 2595,
+      "words": 21,
+      "action": "Pick up every piece of trash on your desk and drop it in one pile on the floor by the bin.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 5,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 2,
+        "overall": 3,
+        "notes": "It ignores the 'not in the mood' blocker by offering no low-effort hook, and the odd 'pile on the floor by the bin' instruction adds a decision about what counts as trash and creates extra mess instead of simply putting it in the bin."
+      }
+    },
+    {
+      "id": "gatsby-reading",
+      "latencyMs": 2011,
+      "words": 22,
+      "action": "Open your Gatsby copy to page 40 and read just that one page, putting a pencil mark beside any line about wanting.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 5,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "Reading a full page and deciding which lines count as 'wanting' requires judgment and may take longer than two minutes, and it doesn't clearly tie to the 'longing' quotes or guarantee a mark gets made."
+      }
+    },
+    {
+      "id": "bio-slides",
+      "latencyMs": 1626,
+      "words": 19,
+      "action": "Open a blank slide deck and type your three findings as rough, messy titles, one per slide, typos welcome.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 5,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It assumes the student already has the three findings in hand and leaves wording choices open, and opening a deck and creating three slides may take longer than two minutes, though the 'typos welcome' framing suits a perfectionist well."
+      }
+    },
+    {
+      "id": "fafsa",
+      "latencyMs": 1969,
+      "words": 20,
+      "action": "Open a note and list the FAFSA items you're missing, such as your FSA ID, tax records, or parent info.",
+      "grade": {
+        "tiny": 3,
+        "concrete": 3,
+        "noDecisions": 2,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 3,
+        "notes": "The student doesn't know what they're missing, so this asks them to inventory and diagnose the gap, which is a thinking task for an overwhelmed student, instead of giving one physical step like opening studentaid.gov to the FSA ID login or a fixed checklist."
+      }
+    },
+    {
+      "id": "calc-pset",
+      "latencyMs": 1950,
+      "words": 21,
+      "action": "Open problem 1 and write every number and rate it gives, with units, plus a quick sketch labeling the changing quantity.",
+      "grade": {
+        "tiny": 3,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 3,
+        "overall": 3,
+        "notes": "The action bundles two tasks (listing givens and sketching), which likely runs past two minutes, and it doesn't address the vague 'missing something' (e.g., not knowing which formula or what's unknown) beyond hoping the givens surface it."
+      }
+    },
+    {
+      "id": "dentist",
+      "latencyMs": 1919,
+      "words": 21,
+      "action": "Pick up your phone, search your dentist's name, and tap the number so it's on screen, no need to press call.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 3,
+        "overall": 4,
+        "notes": "It's a low-friction, concrete first step that gets the number on screen, but it doesn't address the 'not in the mood' feeling (e.g., by reframing it as mood-independent) and leaves a small hidden decision about how to find the dentist and which result to tap."
+      }
+    },
+    {
+      "id": "cover-letter-again",
+      "latencyMs": 1890,
+      "words": 21,
+      "action": "Open a blank doc and type a terrible sentence beginning \"I want to intern at Deloitte because...\" and finish it badly.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 3,
+        "fitsReason": 3,
+        "overall": 3,
+        "notes": "It overlaps with the earlier suggestion (open a blank doc and type a line), leaves the student to invent the sentence content (a decision), and the sentence ending is vague, so it's only a modest step forward for a student who doesn't know where to begin."
+      }
+    },
+    {
+      "id": "dorm-kitchen",
+      "latencyMs": 1708,
+      "words": 18,
+      "action": "Grab one empty box or bag, set it on the kitchen counter, and put your mugs in it.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It requires finding or choosing a box or bag (and assumes the student has mugs), which adds a small decision and a possible hurdle, though shrinking the task to one item category does fit the 'too big' feeling."
+      }
+    },
+    {
+      "id": "conclusion",
+      "latencyMs": 1928,
+      "words": 21,
+      "action": "Open your essay, scroll to the conclusion, and type one ugly, rough sentence below it that says what your essay proved.",
+      "grade": {
+        "tiny": 4,
+        "concrete": 4,
+        "noDecisions": 3,
+        "specific": 4,
+        "progress": 4,
+        "fitsReason": 3,
+        "overall": 4,
+        "notes": "It doesn't really address the 'not in the mood' feeling or boredom (no novelty or low-pressure hook), and composing a sentence that says what the essay proved still requires some thinking and decisions about content."
+      }
+    },
+    {
+      "id": "krebs",
+      "latencyMs": 1904,
+      "words": 22,
+      "action": "Open your bio notes or textbook to the Krebs cycle page and write \"Krebs cycle\" at the top of a blank page.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 5,
+        "noDecisions": 4,
+        "specific": 3,
+        "progress": 3,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It is easy to start and answers 'where to begin', but writing a title on a blank page moves the student only slightly toward understanding the Krebs cycle, and it leaves open whether to use notes or textbook and what to do next."
+      }
+    },
+    {
+      "id": "thesis-methods",
+      "latencyMs": 1971,
+      "words": 21,
+      "action": "Open your draft and type one rough, messy sentence saying how many people took your survey and how you found them.",
+      "grade": {
+        "tiny": 5,
+        "concrete": 4,
+        "noDecisions": 4,
+        "specific": 5,
+        "progress": 4,
+        "fitsReason": 4,
+        "overall": 4,
+        "notes": "It relies on the student recalling participant count and recruitment method without a prompt for what to do if unsure, and it doesn't explicitly address the 'too big' feeling beyond shrinking to one sentence."
+      }
+    }
+  ]
+}

@@ -13,7 +13,7 @@ You are a PostgreSQL and Supabase specialist for ProcrastiNation, a Next.js 14 p
 
 ### Connection
 - **Host**: Supabase (tmigxhhnhledszjdgnwk.supabase.co)
-- **Client (anon)**: `lib/supabase.js` — used in client code, respects RLS
+- **Client (anon)**: `apps/app/src/lib/supabase.ts` in the app, and the user's client from `apps/site/lib/authMiddleware.js` in API routes — both respect RLS
 - **Client (service role)**: Created inline in cron routes only — bypasses RLS
 - **Migrations**: Run manually in Supabase SQL Editor (file: `supabase-migrations.sql`)
 
@@ -83,7 +83,7 @@ You are a PostgreSQL and Supabase specialist for ProcrastiNation, a Next.js 14 p
 
 ### Supabase Query (client-side, with RLS)
 ```javascript
-import { supabase } from '../lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 const { data, error } = await supabase
   .from('tasks')

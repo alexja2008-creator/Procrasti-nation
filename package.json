@@ -1,29 +1,17 @@
 {
-  "name": "procrastination",
-  "version": "1.0.0",
+  "name": "procrastination-repo",
   "private": true,
+  "description": "Not an npm workspace: apps/site (Next 14, React 18) and apps/app (Expo SDK 57, React 19) each keep their own node_modules. packages/core is dependency-free TS imported by apps/app via the @pn/core alias.",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.97.0",
-    "@vercel/analytics": "^1.6.1",
-    "lucide-react": "^0.378.0",
-    "mammoth": "^1.11.0",
-    "next": "14.2.35",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "resend": "^6.9.2",
-    "unpdf": "^1.4.0"
-  },
-  "devDependencies": {
-    "autoprefixer": "^10.4.19",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.35",
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.3"
+    "install:all": "npm --prefix apps/site ci && npm --prefix apps/app ci",
+    "site:dev": "npm --prefix apps/site run dev",
+    "site:build": "npm --prefix apps/site run build",
+    "app:web": "npm --prefix apps/app run web",
+    "app:ios": "npm --prefix apps/app run ios",
+    "app:check": "cd apps/app && npx tsc --noEmit && npx expo lint",
+    "evals": "cd apps/site && node --no-warnings evals/plan-quality/run.mjs",
+    "core:test": "node --test packages/core/test/*.test.ts",
+    "db:test": "npm --prefix supabase/v2 test",
+    "site:test": "npm --prefix apps/site test"
   }
 }

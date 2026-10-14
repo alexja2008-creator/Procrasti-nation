@@ -86,7 +86,7 @@ Use the format below. Be specific — exact file paths, component names, column 
 - Pages go in `app/[feature]/page.jsx` with `'use client'` directive
 - Components go in `components/[Name].jsx` (PascalCase)
 - API routes go in `app/api/[feature]/route.js`
-- All pages import `useTheme` and `useAuth` from `../providers`
+- App screens use `useStyles` / `useTokens` and the data stores (`useTasks`, `useAuth` from `apps/app/src`)
 
 ### Size Limits
 - No file over 400 lines — plan for extraction if approaching
