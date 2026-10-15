@@ -70,6 +70,7 @@ More detail: `CLAUDE.md` and each folder's own `CLAUDE.md` (rules and patterns),
 
 **Pricing**
 - Free tier: 2 AI plans per 30.5-day window, counted from the account's creation (not calendar months).
+- **Beta Pro** (Alex, 2026-10-15, after a family tester hit the free limit on his third plan): until the close of November 15, 2026 in New York, every account, unsaved passports included, plans without the monthly limit, so testers can try everything. The 20-a-day cap still holds. `BETA_PRO_UNTIL` in `packages/core/src/account.ts`; the plan route checks `inBetaPro()`.
 - A 10-day Pro trial is counted from the account's creation date. Anonymous accounts get no trial.
 - "I'm stuck" is free for everyone (20 a day), because Start Mode is what keeps people.
 - Plans are capped at 20 a day for everyone, the trial and Pro included (Alex, 2026-10-13): no person needs more, and it stops one account from running up the AI bill. "Unlimited" means no monthly count; the Terms allow usage limits. Dating steps is capped at 60 a day.

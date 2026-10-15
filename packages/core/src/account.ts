@@ -36,6 +36,33 @@ export function suggestUsername(email: string): string {
   return isValidUsername(name) ? name : '';
 }
 
+/** Save your passport's username box: its text, and whether that's a username of their own (typed, or waiting from before). */
+export interface UsernameBox {
+  text: string;
+  own: boolean;
+}
+
+/**
+ * An email typed or pasted into the username box, moved to the email box. `typed` is the box's new
+ * text, `box` what it held just before, `start` what it held when this run of typing began (null
+ * for a paste), `email` the email box. What was in the box before the email isn't part of it; a
+ * username of their own stays (else one is suggested); an email box already holding the address,
+ * completed, keeps it. `moved` is the address that moved.
+ */
+export function moveEmailFromUsername(typed: string, box: UsernameBox, start: UsernameBox | null, email: string) {
+  const from = start ?? box;
+  let before = '';
+  if (from.text && typed.startsWith(from.text)) before = from.text;
+  else if (box.text && typed.startsWith(box.text) && looksLikeEmail(typed.slice(box.text.length))) before = box.text;
+  // Only when what's left is an email of its own ("maya_reyes" then "@" is one email, not two parts).
+  if (!looksLikeEmail(typed.slice(before.length))) before = '';
+  const moved = typed.slice(before.length);
+  const kept = before && before === box.text && before !== from.text ? cleanUsername(before) : from.own ? from.text : null;
+  const nextEmail = email && email.startsWith(moved) ? email : moved;
+  const suggested = kept === null ? suggestUsername(nextEmail) : '';
+  return { email: nextEmail, username: kept ?? suggested, own: kept !== null, moved, suggested: suggested !== '' };
+}
+
 /**
  * The name they go by, on their passport and Declarations (Alex, 2026-10-14: asked right after
  * Welcome, first name required). Kept in the auth profile's own fields, the ones Sign in with
@@ -100,12 +127,29 @@ export function formatPhone(e164: string): string {
 export const FREE_PLANS_PER_WINDOW = 2;
 const PLAN_WINDOW_MS = 30.5 * 86_400_000;
 
+/**
+ * Beta Pro (Alex, 2026-10-15): during the beta every account, unsaved passports included, plans
+ * without the free tier's monthly limit, so testers can try everything. It ends at the close of
+ * November 15, 2026 in New York (EST, UTC−5). The daily cap still holds for everyone.
+ */
+export const BETA_PRO_UNTIL = '2026-11-16T05:00:00Z';
+
+export const inBetaPro = (now: Date = new Date()) => now.getTime() < Date.parse(BETA_PRO_UNTIL);
+
 /** The free-plan window `now` falls in, for an account created at `createdAt` (ISO). */
 export function planWindow(createdAt: string, now: Date = new Date()): { start: Date; end: Date } {
   const born = Date.parse(createdAt);
   const k = Number.isFinite(born) ? Math.max(0, Math.floor((now.getTime() - born) / PLAN_WINDOW_MS)) : 0;
   const start = Number.isFinite(born) ? born + k * PLAN_WINDOW_MS : now.getTime();
   return { start: new Date(start), end: new Date(start + PLAN_WINDOW_MS) };
+}
+
+/**
+ * Where the free tier's count starts at `now`: its window's start, but never before beta Pro
+ * ended, so plans made during the beta don't use up the free plans after it.
+ */
+export function freePlansCountFrom(createdAt: string, now: Date = new Date()): Date {
+  return new Date(Math.max(planWindow(createdAt, now).start.getTime(), Date.parse(BETA_PRO_UNTIL)));
 }
 
 /** The keys of `voice.authErrors`. */

@@ -21,7 +21,10 @@ type Props = Pick<TextInputProps, 'onSubmitEditing' | 'returnKeyType' | 'submitB
   ref?: Ref<TextInput>;
 };
 
-/** A username as it's typed (lowercase; letters, digits, underscores), with whether it's free under it. */
+/**
+ * A username as it's typed (lowercase; letters, digits, underscores), with whether it's free under
+ * it. With `onEmail`, the box shows exactly what's typed until it's left.
+ */
 export function UsernameField({ value, onChange, onEmail, status, ref, ...rest }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;

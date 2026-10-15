@@ -1,6 +1,6 @@
-import { authErrorKind, cleanUsername, formatPhone, isServerFailure, isValidUsername, normalizePhone, suggestUsername, voice } from '@pn/core';
+import { authErrorKind, cleanUsername, formatPhone, isServerFailure, isValidUsername, moveEmailFromUsername, normalizePhone, suggestUsername, voice } from '@pn/core';
 import { useRef, useState } from 'react';
-import { AccessibilityInfo, StyleSheet, TextInput, View } from 'react-native';
+import { AccessibilityInfo, Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
 import { confirmSaveCode, pendingEmail, sendSaveCode, sendSaveLink } from '@/auth/passport';
@@ -62,8 +62,9 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
   });
   // Their own username (typed, or already waiting) isn't replaced by one suggested from the email.
   const [usernameOwn, setUsernameOwn] = useState(() => username !== '');
-  // Typed into the username box here, as opposed to suggested or waiting from before.
-  const [typedHere, setTypedHere] = useState(false);
+  // What the username box held when they began typing in it (suggested, waiting or their own), so
+  // an email typed after it moves without it.
+  const typingFrom = useRef<{ text: string; own: boolean } | null>(null);
   // An email typed into the username box moved to the email box: what moved, and whether a
   // username came from it. The note shows while the email box still starts with it.
   const [moved, setMoved] = useState<{ from: string; suggested: boolean } | null>(null);
@@ -163,23 +164,20 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
 
   /** An email typed into the username box (a tired person types it into the first box they see). */
   const moveEmail = (typed: string) => {
-    // A username in the box they didn't type here (suggested, or waiting from before) isn't part of it.
-    const address = !typedHere && username && typed.startsWith(username) ? typed.slice(username.length) : typed;
-    // One waiting from before stays; otherwise the username comes from the email.
-    const keep = usernameOwn && !typedHere;
-    const suggested = keep ? '' : suggestUsername(address);
+    const next = moveEmailFromUsername(typed, { text: username, own: usernameOwn }, typingFrom.current, email);
+    typingFrom.current = null;
     setMethod('email');
     setError(null);
-    setEmail(address);
+    setEmail(next.email);
     setEmailTaken(false);
-    if (!keep) {
-      setUsername(suggested);
-      setUsernameOwn(false);
-    }
-    setTypedHere(false);
-    setMoved({ from: address, suggested: suggested !== '' });
-    // Focus moves without a word otherwise (the note's live region only speaks on Android).
-    AccessibilityInfo.announceForAccessibility(suggested ? `${copy.emailMoved} ${copy.usernameFromEmail}` : copy.emailMoved);
+    setUsername(next.username);
+    setUsernameOwn(next.own);
+    setMoved({ from: next.moved, suggested: next.suggested });
+    // Focus moves without a word otherwise (the note's live region only speaks on Android). Queued on
+    // iOS, so VoiceOver reading the email box doesn't cut it off.
+    const said = next.suggested ? `${copy.emailMoved} ${copy.usernameFromEmail}` : copy.emailMoved;
+    if (Platform.OS === 'ios') AccessibilityInfo.announceForAccessibilityWithOptions(said, { queue: true });
+    else AccessibilityInfo.announceForAccessibility(said);
     // The rest of the address is typed where it belongs.
     setTimeout(() => emailRef.current?.focus(), 0);
   };
@@ -187,10 +185,11 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
   const typeUsername = (typed: string) => {
     // Leaving the box tidies it to the username; that's not a choice of their own.
     if (typed === username) return;
+    if (!typingFrom.current) typingFrom.current = { text: username, own: usernameOwn };
     setUsername(typed);
     // Cleared, it follows the email again.
     setUsernameOwn(typed !== '');
-    setTypedHere(typed !== '');
+    if (typed === '') typingFrom.current = null;
     setMoved(null);
   };
 
@@ -315,20 +314,26 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
       )}
       {/* Second: an email typed here moves up to the email box, and the username comes from it. */}
       {label(signIn.usernameLabel)}
-      <UsernameField
-        ref={usernameRef}
-        value={username}
-        onChange={typeUsername}
-        onEmail={moveEmail}
-        status={usernameStatus}
-        returnKeyType="send"
-        onSubmitEditing={method === 'phone' ? textCode : sendLink}
-        editable={!busy}
-      />
-      {/* Always there, so a screen reader on the web hears the note when it appears. */}
-      <Text variant="meta" color={c.muted} accessibilityLiveRegion="polite">
-        {movedNote}
-      </Text>
+      <View>
+        <UsernameField
+          ref={usernameRef}
+          value={username}
+          onChange={typeUsername}
+          onEmail={moveEmail}
+          status={usernameStatus}
+          returnKeyType="send"
+          onSubmitEditing={method === 'phone' ? textCode : sendLink}
+          editable={!busy}
+        />
+        {/* Always there (empty, no height), so a screen reader on the web hears the note when it appears. */}
+        <View accessibilityLiveRegion="polite">
+          {movedNote ? (
+            <Text variant="meta" color={c.muted} style={s.note}>
+              {movedNote}
+            </Text>
+          ) : null}
+        </View>
+      </View>
       {errorText}
       {method === 'phone' ? (
         <Button label={busy ? copy.sendingCode : copy.textMeACode} disabled={busy} onPress={textCode} />
@@ -372,6 +377,7 @@ const makeStyles = (t: Tokens) => ({
   ...StyleSheet.create({
     column: { gap: 10 },
     label: { marginTop: 4 },
+    note: { marginTop: 6 },
     input: {
       minHeight: 50,
       paddingHorizontal: 14,
