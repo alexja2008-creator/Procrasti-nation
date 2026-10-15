@@ -103,6 +103,9 @@ More detail: `CLAUDE.md` and each folder's own `CLAUDE.md` (rules and patterns),
 - **Every day ends at midnight unless the person picks a later end** (Alex, 2026-10-14). Night owl used to end the day at 3 AM; at 1 AM Wednesday Alex saw Today still on Tuesday, with nothing left on it, and took it for a bug. Hours now sets only the morning list's time. A later end (up to 6 AM) is chosen only in Settings → Day ends at, so the app's date differs from the clock only when someone asked for it. Picking an Hours answer in Settings resets it to midnight. Considered and left for later: keeping yesterday open after midnight while its tasks are unfinished.
 - Focus Pods (live video) were dropped: moderating live video wasn't worth the liability. Town Hall will only ever be an anonymous count of people working. **There's nothing one person can say to another anywhere in the app.**
 
+**How changes ship**
+- **CI isn't a required check on `main`** (Alex, 2026-10-14). Every pull request still runs `.github/workflows/ci.yml` (core, db and site tests, the app's type check and lint) and nothing red gets merged; GitHub's branch settings just don't enforce it.
+
 ---
 
 ## Looks wrong, isn't (Claude chose)

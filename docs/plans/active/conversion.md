@@ -43,7 +43,7 @@ The Application tailors the app, but nothing in it sells the app, and v2 has no 
 - **The competition is free and preinstalled** (Notes, Reminders). Nobody moves their notes into an app that might lock them out, so the free tier after cancelling (decision 2) has to be said out loud.
 - **Students and payment.** Some have no card; under-18s buy through Ask to Buy (a parent approves). That's also an opening (parents approve study tools), but a pending approval must not leave them stuck.
 - **Motivation is seasonal** (midterms, finals), not daily devotion: a semester-length plan may fit better than monthly or yearly.
-- **The growth plan is organic** (`business-marketing-plan.md`: TikTok, Reddit, word of mouth, $20–40 per user). Free users are what spreads; Prayer Lock's paid funnel doesn't need them.
+- **The growth plan is organic** (the business plan, kept privately per `docs/external.md`: TikTok, Reddit, word of mouth, $20–40 per user). Free users are what spreads; Prayer Lock's paid funnel doesn't need them.
 - **The voice.** Guilt works for Prayer Lock's audience; it backfires on procrastination.
 
 **The hybrid (required trial to get in, free tier on the way out):** it captures most of a hard paywall's conversion while keeping people who cancel as free users who keep their data, can convert later and can still recommend the app. Its weak spots, and the fix for each (**all four adopted by Alex**; the semester plan's price comes later):
