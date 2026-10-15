@@ -25,7 +25,7 @@ app/
     cron/push/route.js              # Web Push sender, every minute (Supabase Cron): what came due per person, in their timezone, to each of their browsers
     push/action/route.js            # Snooze 10 min from a web notification (signed token, no session)
     unsubscribe/route.js            # Signed one-click unsubscribe (kept for State of the Union's email)
-    parse-syllabus/route.js         # Syllabus file → JSON assignments (unused until v2's syllabus import)
+    parse-syllabus/route.js         # Syllabus file → JSON assignments; off (404, SYLLABUS_IMPORT_ON) until v2's syllabus import
 next.config.js                      # Security headers; v1's old paths redirect (307) to the app
 middleware.js                       # CORS for /api/* (the app's origins)
 
