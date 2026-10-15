@@ -6,6 +6,14 @@ What changed for people using PN, newest first, in their words. One entry per re
 
 - (Repo only) Docs and Claude Code setup reorganized; no change to the app.
 
+## 2026-10-15: Saving your passport
+
+- Save your passport is now the last step of the Citizenship Application, with no Later: a passport that isn't saved lives in one browser and is lost if that browser is cleared. Sending the email link is enough to carry on; open it whenever you like.
+- Passports started before today that were never saved ask to be saved the next time you open the app.
+- Until you open the link, Today, Passport and Settings show where it went, with Send it again and Use a different email.
+- If your email already has a passport, you can sign in to that one instead.
+- The privacy policy and terms say saving comes before continuing (revised October 15).
+
 ## 2026-10-14: ProcrastiNation 2.0 on the web
 
 - A new app at app.procrasti-nation.work, replacing v1. Everyone starts fresh through the Citizenship Application.
