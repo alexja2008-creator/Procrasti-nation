@@ -1,5 +1,5 @@
-import { authErrorKind, formatPhone, isServerFailure, isValidUsername, normalizePhone, voice } from '@pn/core';
-import { useState } from 'react';
+import { authErrorKind, formatPhone, isServerFailure, isValidUsername, normalizePhone, suggestUsername, voice } from '@pn/core';
+import { useRef, useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
@@ -59,6 +59,11 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
     const waiting = session?.user.user_metadata?.pending_username;
     return typeof waiting === 'string' ? waiting : '';
   });
+  // Their own username (typed, or already waiting) isn't replaced by one suggested from the email.
+  const [usernameOwn, setUsernameOwn] = useState(() => username !== '');
+  // An email typed into the username box was moved to the email box: say so under it.
+  const [moved, setMoved] = useState(false);
+  const emailRef = useRef<TextInput>(null);
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -140,6 +145,32 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
       setEmailTaken(authErrorKind(e instanceof Error ? e : null) === 'accountExists');
       return friendlyAuthError(e, copy.saveFailed);
     });
+  };
+
+  /** The email box; the username follows it until they choose their own. */
+  const typeEmail = (text: string) => {
+    setEmail(text);
+    setEmailTaken(false);
+    if (!usernameOwn) setUsername(suggestUsername(text));
+  };
+
+  /** An email typed into the username box (a tired person types it into the first box they see). */
+  const moveEmail = (typed: string) => {
+    setMethod('email');
+    setUsernameOwn(false);
+    setEmail(typed);
+    setEmailTaken(false);
+    setUsername(suggestUsername(typed));
+    setMoved(true);
+    // The rest of the address is typed where it belongs.
+    setTimeout(() => emailRef.current?.focus(), 0);
+  };
+
+  const typeUsername = (name: string) => {
+    setUsername(name);
+    // Cleared, it follows the email again.
+    setUsernameOwn(name !== '');
+    setMoved(false);
   };
 
   const errorText = error ? (
@@ -253,8 +284,6 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
 
   return (
     <View style={s.column}>
-      {label(signIn.usernameLabel)}
-      <UsernameField value={username} onChange={setUsername} status={usernameStatus} returnKeyType="next" editable={!busy} />
       {method === 'phone' ? (
         <>
           {label(copy.phoneLabel)}
@@ -280,11 +309,9 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
         <>
           {label(signIn.emailLabel)}
           <TextInput
+            ref={emailRef}
             value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              setEmailTaken(false);
-            }}
+            onChangeText={typeEmail}
             placeholder={signIn.emailPlaceholder}
             placeholderTextColor={c.muted}
             keyboardType="email-address"
@@ -300,6 +327,22 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
           />
         </>
       )}
+      {/* Second: an email typed here moves up to the email box, and the username comes from it. */}
+      {label(signIn.usernameLabel)}
+      <UsernameField
+        value={username}
+        onChange={typeUsername}
+        onEmail={moveEmail}
+        status={usernameStatus}
+        returnKeyType="send"
+        onSubmitEditing={method === 'phone' ? textCode : sendLink}
+        editable={!busy}
+      />
+      {moved ? (
+        <Text variant="meta" color={c.muted} accessibilityLiveRegion="polite">
+          {copy.emailMoved}
+        </Text>
+      ) : null}
       {errorText}
       {method === 'phone' ? (
         <Button label={busy ? copy.sendingCode : copy.textMeACode} disabled={busy} onPress={textCode} />

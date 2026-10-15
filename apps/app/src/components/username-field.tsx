@@ -1,4 +1,4 @@
-import { cleanUsername, USERNAME_MAX, voice } from '@pn/core';
+import { cleanUsername, looksLikeEmail, USERNAME_MAX, voice } from '@pn/core';
 import { useState, type Ref } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
@@ -11,12 +11,14 @@ const copy = voice.signIn;
 type Props = Pick<TextInputProps, 'onSubmitEditing' | 'returnKeyType' | 'submitBehavior' | 'editable' | 'autoFocus'> & {
   value: string;
   onChange: (username: string) => void;
+  /** An email typed here ("dad@…") goes to the caller whole, not stripped to "dad" (Save your passport moves it). */
+  onEmail?: (typed: string) => void;
   status: UsernameStatus;
   ref?: Ref<TextInput>;
 };
 
 /** A username as it's typed (lowercase; letters, digits, underscores), with whether it's free under it. */
-export function UsernameField({ value, onChange, status, ref, ...rest }: Props) {
+export function UsernameField({ value, onChange, onEmail, status, ref, ...rest }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const [focused, setFocused] = useState(false);
@@ -33,7 +35,7 @@ export function UsernameField({ value, onChange, status, ref, ...rest }: Props) 
       <TextInput
         ref={ref}
         value={value}
-        onChangeText={(typed) => onChange(cleanUsername(typed))}
+        onChangeText={(typed) => (onEmail && looksLikeEmail(typed) ? onEmail(typed.trim()) : onChange(cleanUsername(typed)))}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         placeholder={copy.usernamePlaceholder}

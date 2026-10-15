@@ -7,10 +7,12 @@ import {
   birthDateOf,
   cleanName,
   cleanUsername,
+  looksLikeEmail,
   isLongEnoughPassword,
   isOldEnough,
   isServerFailure,
   isValidUsername,
+  suggestUsername,
   MIN_AGE,
   MIN_PASSWORD_LENGTH,
   NAME_MAX,
@@ -140,4 +142,24 @@ test('a failure on Supabase’s side is a 5xx, never the person’s mistake', ()
   assert.equal(isServerFailure({ status: 0 }), false, 'offline');
   assert.equal(isServerFailure({}), false);
   assert.equal(isServerFailure(null), false);
+});
+
+test('an email typed into the username box is spotted, a handle isn’t', () => {
+  assert.equal(looksLikeEmail('dad@'), true, 'as soon as the @ is typed');
+  assert.equal(looksLikeEmail('dad.smith@gmail.com'), true);
+  assert.equal(looksLikeEmail(' dad@gmail.com '), true);
+  assert.equal(looksLikeEmail('@maya_reyes'), false, 'a social handle starts with @');
+  assert.equal(looksLikeEmail('maya_reyes'), false);
+  assert.equal(looksLikeEmail('dad smith@'), false, 'not an address');
+});
+
+test('a username is suggested from the part of an email before the @', () => {
+  assert.equal(suggestUsername('dad@gmail.com'), 'dad');
+  assert.equal(suggestUsername('Dad.Smith+pn@gmail.com'), 'dad_smith', 'dots as underscores, the +tag dropped');
+  assert.equal(suggestUsername('mary-ann..lee@school.edu'), 'mary_ann_lee', 'runs of separators become one');
+  assert.equal(suggestUsername('.x.y.@a.com'), 'x_y', 'no underscores at the ends');
+  assert.equal(suggestUsername('jo@x.com'), '', 'too short to be a username');
+  assert.equal(suggestUsername('averyveryverylongname1234@x.com'), 'averyveryverylongnam', 'cut at 20');
+  assert.equal(suggestUsername('dad@'), 'dad', 'while the email is still being typed');
+  assert.equal(suggestUsername(''), '');
 });

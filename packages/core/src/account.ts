@@ -19,6 +19,24 @@ export const cleanUsername = (typed: string) =>
     .slice(0, USERNAME_MAX);
 
 /**
+ * Typed into a username box, the start of an email ("dad@…"), not a handle like "@maya": Save
+ * your passport moves it to the email box (a tired person types their email into the first box).
+ */
+export const looksLikeEmail = (typed: string) => /^[^\s@]+@/.test(typed.trim());
+
+/**
+ * A username suggested from an email: the part before the @ (and before any +tag), with dots and
+ * dashes as underscores ("Dad.Smith+pn@gmail.com" → "dad_smith"); '' when that's too short for one.
+ */
+export function suggestUsername(email: string): string {
+  const local = email.trim().split('@')[0].split('+')[0];
+  const name = cleanUsername(local.replace(/[.\-\s]+/g, '_'))
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return isValidUsername(name) ? name : '';
+}
+
+/**
  * The name they go by, on their passport and Declarations (Alex, 2026-10-14: asked right after
  * Welcome, first name required). Kept in the auth profile's own fields, the ones Sign in with
  * Apple fills, so only they see it: never on `profiles`, which anyone can read.
