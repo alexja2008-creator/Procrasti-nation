@@ -70,6 +70,7 @@ Pages marked **new**; the rest exist today. Everything before 15 runs on the ano
 |---|---|---|
 | 1 | Welcome | "Citizenship Application" + **Begin** (creates the anonymous passport), and "Already a citizen? Sign in" |
 | 1a | What should we call you? | added 2026-10-14 (Alex): first name required, last name optional; on the passport, Today's greeting, Approved and Declarations; Settings → Name changes it |
+| 1b | Date of birth | added 2026-10-14 (the legal audit, COPPA): the age check before any account; neutral, checked on the device, never kept; under 13 the device is turned away (`DECISIONS.md`) |
 | 2 | Purpose of visit | as now |
 | 3 | Your hours | as now |
 | 4 | What usually stops you? | as now |
@@ -123,6 +124,7 @@ Existing accounts that haven't done the Application start at 1 already signed in
    - Alex, in Supabase (staging now, production at launch): turn on **Anonymous sign-ins**; Turnstile for the web; a **Twilio account with a Verify service**, its keys under Authentication → Providers → Phone, and US / Canada only in Twilio's geo permissions.
 2. **Payments** (needs the Apple Developer account, App Store Connect products, RevenueCat and a privacy policy page):
    - `entitlements` + webhook (database review + security review), the trial page with Apple's purchase sheet and Stripe on the web, Restore purchases, Ask to Buy, the trial reminder, Settings → Subscription (manage / restore);
+   - the renewal terms right by each subscribe button (California's auto-renewal law, ROSCA, Apple 3.1.2): the amount, how often, renews automatically until cancelled, how to cancel, and that the trial turns into a paid subscription on its last day unless cancelled; links to the Terms and the privacy policy on the paywall;
    - Save your passport with Apple / Google; the anonymous-passport cleanup job;
    - the plan route reads entitlements; the created-at trial goes.
 3. **Polish and measure:**

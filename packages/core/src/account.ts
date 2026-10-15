@@ -1,4 +1,6 @@
-// Accounts: the password, username and name rules, and which plain words fit a Supabase Auth error.
+// Accounts: the password, username and name rules, the age check, and which plain words fit a Supabase Auth error.
+
+import type { LocalDate } from './types.ts';
 
 /** v1's rule and Supabase Auth's default. Older passwords of any length still sign in. */
 export const MIN_PASSWORD_LENGTH = 6;
@@ -32,6 +34,32 @@ export function nameMetadata(first: string, last = ''): { given_name: string; fa
   const family = cleanName(last);
   return { given_name: given, family_name: family || null, full_name: [given, family].filter(Boolean).join(' ') };
 }
+
+/**
+ * The age check before a passport (COPPA; the Terms say 13 and older): a date of birth, asked
+ * without saying what age is needed, checked on the device and never kept or sent. A device that
+ * fails stays turned away, so a different year can't just be typed in.
+ */
+export const MIN_AGE = 13;
+
+const daysIn = (year: number, month: number) => new Date(Date.UTC(year, month, 0)).getUTCDate();
+
+/** A date of birth as typed (month, day, year) as YYYY-MM-DD, or null unless it's a real day from 1900 to `today`. */
+export function birthDateOf(month: string, day: string, year: string, today: LocalDate): LocalDate | null {
+  if (!/^\d{1,2}$/.test(month.trim()) || !/^\d{1,2}$/.test(day.trim()) || !/^\d{4}$/.test(year.trim())) return null;
+  const [m, d, y] = [Number(month), Number(day), Number(year)];
+  if (y < 1900 || m < 1 || m > 12 || d < 1 || d > daysIn(y, m)) return null;
+  const born = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  return born <= today ? born : null;
+}
+
+/** Whole years from `born` to `today` (both YYYY-MM-DD). A 29 February birthday counts on 1 March in other years. */
+export function ageOn(born: LocalDate, today: LocalDate): number {
+  const years = Number(today.slice(0, 4)) - Number(born.slice(0, 4));
+  return today.slice(5) < born.slice(5) ? years - 1 : years;
+}
+
+export const isOldEnough = (born: LocalDate, today: LocalDate) => ageOn(born, today) >= MIN_AGE;
 
 /**
  * A US or Canadian mobile number as typed ("(555) 234-5678", "+1 555 234 5678") in E.164

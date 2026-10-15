@@ -116,7 +116,7 @@ Never duplicate server data in localStorage. Boards are the one legacy exception
 
 ### Auth & Limits
 - Check if feature is gated by trial/free/pro tier
-- Free tier: 5 AI plans/month. If the feature uses AI, it counts
+- Free tier: 2 AI plans per 30.5-day window. If the feature uses AI, it counts
 - If Pro-only, plan the UpgradeModal trigger
 
 ### API Routes

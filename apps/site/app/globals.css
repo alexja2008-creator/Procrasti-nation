@@ -35,15 +35,15 @@ body {
   /* The passport's faint security lines. */
   background: repeating-linear-gradient(135deg, var(--security-line) 0 1px, transparent 1px 7px), var(--bg);
   color: var(--ink);
-  font-family: 'Instrument Sans', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-instrument-sans), system-ui, -apple-system, sans-serif;
 }
 
-.font-display { font-family: 'Fraunces', Georgia, serif; font-weight: 500; }
-.font-mono-pn { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
-.eyebrow { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.75rem; letter-spacing: 0.18em; color: var(--muted); }
+.font-display { font-family: var(--font-fraunces), Georgia, serif; font-weight: 500; }
+.font-mono-pn { font-family: var(--font-plex-mono), ui-monospace, monospace; }
+.eyebrow { font-family: var(--font-plex-mono), ui-monospace, monospace; font-size: 0.75rem; letter-spacing: 0.18em; color: var(--muted); }
 
 /* The privacy policy and terms. */
-.legal h2 { font-family: 'Fraunces', Georgia, serif; font-weight: 500; font-size: 1.6rem; line-height: 1.25; margin: 2.75rem 0 0.75rem; }
+.legal h2 { font-family: var(--font-fraunces), Georgia, serif; font-weight: 500; font-size: 1.6rem; line-height: 1.25; margin: 2.75rem 0 0.75rem; }
 .legal h3 { font-weight: 600; font-size: 1.1rem; margin: 1.75rem 0 0.5rem; }
 .legal p, .legal li { color: var(--ink-soft); line-height: 1.7; }
 .legal p + p { margin-top: 0.9rem; }
@@ -51,7 +51,7 @@ body {
 .legal ol { list-style: lower-alpha; padding-left: 1.6rem; margin: 0.75rem 0; display: grid; gap: 0.4rem; }
 .legal strong { color: var(--ink); font-weight: 600; }
 .legal a { color: var(--primary-text); text-decoration: underline; }
-.todo { background: var(--page); color: var(--stamp-terracotta); border-radius: 4px; padding: 0 4px; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.9em; }
+.todo { background: var(--page); color: var(--stamp-terracotta); border-radius: 4px; padding: 0 4px; font-family: var(--font-plex-mono), ui-monospace, monospace; font-size: 0.9em; }
 
 /* The passport's visa pages (components/landing/Entries.jsx): an open spread on a laptop, pages one
    after the other on a phone. */
@@ -72,7 +72,7 @@ body {
   .passport-page:first-child { box-shadow: inset -18px 0 22px -20px rgba(11, 15, 28, 0.35); }
   .passport-page + .passport-page { border-top: 0; border-left: 1px solid var(--page-border); box-shadow: inset 18px 0 22px -20px rgba(11, 15, 28, 0.35); }
 }
-.page-head, .page-num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 0.7rem; letter-spacing: 0.2em; color: var(--muted); }
+.page-head, .page-num { font-family: var(--font-plex-mono), ui-monospace, monospace; font-size: 0.7rem; letter-spacing: 0.2em; color: var(--muted); }
 .page-num { text-align: center; margin-top: 10px; }
 .entry { display: grid; grid-template-columns: 1fr auto; gap: 8px 18px; align-items: center; padding: 22px 0; }
 .entry + .entry { border-top: 1px dashed var(--outline); }
@@ -137,7 +137,7 @@ body {
 .tone-arrow[data-side='left'] { left: calc(50% - min(190px, 38%) - 22px); }
 .tone-arrow[data-side='right'] { right: calc(50% - min(190px, 38%) - 22px); }
 .tone-pick {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
   font-size: 0.75rem;
   letter-spacing: 0.06em;
   padding: 6px 12px;
@@ -163,7 +163,7 @@ body {
 .lock-screen[data-tone='roast'] { --tone-ink: var(--stamp-violet); }
 .lock-mode {
   display: inline-block;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
   font-size: 0.68rem;
   letter-spacing: 0.18em;
   padding: 3px 10px;

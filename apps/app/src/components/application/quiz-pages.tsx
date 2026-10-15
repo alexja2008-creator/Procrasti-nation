@@ -7,6 +7,7 @@ import {
   type HeardFrom,
   type HelpCard,
   type Hours,
+  type LocalDate,
   type NudgeToneId,
   type Persona,
   type Preferences,
@@ -16,6 +17,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ApplicationForm } from '@/components/application/application-form';
+import { BirthPage } from '@/components/application/birth-page';
 import { ChoiceCards, type Choice } from '@/components/application/choice-cards';
 import { NamePage } from '@/components/application/name-page';
 import { Button } from '@/components/button';
@@ -43,10 +45,10 @@ const HELP_ICONS: Record<HelpCard, IconName> = {
 };
 
 /** The Application's questions, Welcome through "Where did you hear about us?": the pages anyone answers, signed out or in. */
-export type QuizPage = Extract<ApplicationPage, 'welcome' | 'name' | 'purpose' | 'hours' | 'style' | 'notBroken' | 'tone' | 'result' | 'help' | 'heardFrom'>;
+export type QuizPage = Extract<ApplicationPage, 'welcome' | 'name' | 'birth' | 'purpose' | 'hours' | 'style' | 'notBroken' | 'tone' | 'result' | 'help' | 'heardFrom'>;
 
 export const isQuizPage = (page: ApplicationPage): page is QuizPage =>
-  ['welcome', 'name', 'purpose', 'hours', 'style', 'notBroken', 'tone', 'result', 'help', 'heardFrom'].includes(page);
+  ['welcome', 'name', 'birth', 'purpose', 'hours', 'style', 'notBroken', 'tone', 'result', 'help', 'heardFrom'].includes(page);
 
 type Props = {
   page: QuizPage;
@@ -63,6 +65,8 @@ type Props = {
   onAnswer: (patch: Partial<Preferences>) => void;
   /** Saves their name, then turns the page. */
   onName: (name: NameParts) => void;
+  /** The age check: a real date of birth, never kept (old enough turns the page; otherwise turned away). */
+  onBirth: (born: LocalDate) => void;
   onHours: (hours: Hours) => void;
   /** The last question: what happens next differs signed out (the passport opens) and in. */
   onHeardFrom: (heardFrom: HeardFrom) => void;
@@ -70,7 +74,7 @@ type Props = {
   back: () => void;
 };
 
-export function QuizPages({ page, prefs, name, busy, error, welcomeNote, welcomeFooter, onAnswer, onName, onHours, onHeardFrom, next, back }: Props) {
+export function QuizPages({ page, prefs, name, busy, error, welcomeNote, welcomeFooter, onAnswer, onName, onBirth, onHours, onHeardFrom, next, back }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const backButton = <Button variant="quiet" label={copy.back} onPress={back} disabled={busy} />;
@@ -90,6 +94,8 @@ export function QuizPages({ page, prefs, name, busy, error, welcomeNote, welcome
       );
     case 'name':
       return <NamePage initial={name} busy={busy} error={error} onContinue={onName} back={back} />;
+    case 'birth':
+      return <BirthPage busy={busy} error={error} onContinue={onBirth} back={back} />;
     case 'purpose':
       return (
         <ApplicationForm page={page} title={copy.purposeTitle} lead={copy.pickOne} error={error} footer={backButton}>

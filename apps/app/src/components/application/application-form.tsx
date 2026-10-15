@@ -8,7 +8,8 @@ import { useStyles, type Tokens } from '@/theme/tokens';
 const copy = voice.application;
 
 type Props = {
-  page: ApplicationPage;
+  /** Which page, for its number; none for a page outside the Application's order. */
+  page?: ApplicationPage;
   title: string;
   lead?: string;
   children?: ReactNode;
@@ -21,7 +22,7 @@ type Props = {
 export function ApplicationForm({ page, title, lead, children, footer, error }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
-  const number = pageNumber(page);
+  const number = page ? pageNumber(page) : null;
 
   return (
     <View style={s.wrap}>
