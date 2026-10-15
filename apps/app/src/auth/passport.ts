@@ -2,6 +2,7 @@
 // saved later with a texted code or an email + password, keeping the same account and data.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { User } from '@supabase/supabase-js';
+import { useSyncExternalStore } from 'react';
 
 import { authRedirectUrl } from '@/auth/sign-in';
 import { supabase } from '@/lib/supabase';
@@ -20,6 +21,47 @@ export async function openPassport() {
 export const passportOpenedHere = () => openedHere;
 
 export const isUnsaved = (user: User | undefined | null) => !!user?.is_anonymous;
+
+/** Unsaved with no save link out: kept on Save your passport, since an unsaved passport lives in one browser or phone. */
+export const needsSave = (user: User | undefined | null) => !!user?.is_anonymous && !user.new_email;
+
+// The gate's memory for this run of the app, by passport. Held: Save your passport is open on the
+// Application, so a link sent from it doesn't open the gate before "Open the link we sent" shows.
+// Let in: its Continue was tapped (the link is out, or couldn't be sent on our side, so a mail
+// outage never locks anyone out; Save your passport comes back the next time the app opens).
+const held = new Set<string>();
+const lettingIn = new Set<string>();
+const gateListeners = new Set<() => void>();
+let gateVersion = 0;
+const gateChanged = () => {
+  gateVersion += 1;
+  gateListeners.forEach((listener) => listener());
+};
+const subscribeGate = (listener: () => void) => {
+  gateListeners.add(listener);
+  return () => {
+    gateListeners.delete(listener);
+  };
+};
+const gateSnapshot = () => gateVersion;
+
+export function holdForSave(userId: string) {
+  if (held.has(userId)) return;
+  held.add(userId);
+  gateChanged();
+}
+
+export function letIn(userId: string) {
+  lettingIn.add(userId);
+  gateChanged();
+}
+
+/** The gate: an unsaved passport stays on Save your passport until a link is out and its Continue is tapped. */
+export function useMustSave(user: User | undefined | null): boolean {
+  useSyncExternalStore(subscribeGate, gateSnapshot);
+  if (!user?.is_anonymous || lettingIn.has(user.id)) return false;
+  return needsSave(user) || held.has(user.id);
+}
 
 /** Save with a phone: texts a code to attach the number (`+1…`). */
 export async function sendSaveCode(phone: string) {

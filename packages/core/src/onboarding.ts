@@ -71,17 +71,40 @@ export function pageNumber(page: ApplicationPage): { n: number; of: number } | n
  * what to call them (kept on the device while signed out, in the passport after).
  * `ageChecked`: they've passed the age check (the date itself is never kept), which
  * nobody gets past without, answers from before it existed included.
+ * `passport`, signed in: `unsaved`, an anonymous passport that hasn't sent a save link, which
+ * can't reach Today until it does; `finished`, the Application done or skipped (such a passport
+ * only needs saving); `planned`, the Oath's plan exists, so the Oath isn't asked twice (a second
+ * plan would cost a second free one).
  */
-export function resumePage(prefs: Partial<Preferences>, named: boolean, ageChecked: boolean): ApplicationPage {
+export function resumePage(
+  prefs: Partial<Preferences>,
+  named: boolean,
+  ageChecked: boolean,
+  passport: { unsaved?: boolean; finished?: boolean; planned?: boolean } = {},
+): ApplicationPage {
   if (!named && !ageChecked && !prefs.persona && !prefs.hours && !prefs.style && !prefs.nudgeTone) return 'welcome';
   if (!named) return 'name';
   if (!ageChecked) return 'birth';
+  if (passport.unsaved && passport.finished) return 'save';
   if (!prefs.persona) return 'purpose';
   if (!prefs.hours) return 'hours';
   if (!prefs.style) return 'style';
   if (!prefs.nudgeTone) return 'notBroken';
   if (!prefs.heardFrom) return 'result';
+  if (passport.planned) return passport.unsaved ? 'save' : 'approved';
   return 'oath';
+}
+
+/**
+ * The page after `page`. A passport that finished the Application unsaved, from before the name
+ * page or the age check existed, answers just those and then saves (not the questions and the
+ * Oath again).
+ */
+export function nextPage(page: ApplicationPage, finishedUnsaved = false, ageChecked = false): ApplicationPage {
+  if (finishedUnsaved && page === 'name') return ageChecked ? 'save' : 'birth';
+  if (finishedUnsaved && page === 'birth') return 'save';
+  const i = APPLICATION_PAGES.indexOf(page);
+  return APPLICATION_PAGES[Math.min(i + 1, APPLICATION_PAGES.length - 1)];
 }
 
 /** Your result: the fact is about students for school, about adults otherwise. */

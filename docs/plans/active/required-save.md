@@ -1,6 +1,6 @@
 # Plan: Saving the passport is required
 
-**Status: draft, 2026-10-15. Waiting on Alex's answers to the open questions under Decisions.**
+**Status: approved 2026-10-15.** Alex answered the open questions (below) and phase 1 started. He approves the legal wording in the PR.
 
 ## Overview
 
@@ -12,23 +12,23 @@ This plan makes saving the last step of the Application, with no Later. Sending 
 
 - **Production's Change Email Address template:** the subject is still Supabase's default. Set the subject to "Confirm your email to save your passport" and the body to `supabase/v2/email-templates/change-email.html`. Check the other three templates against `supabase/v2/email-templates/README.md`, and check staging's templates too. Requiring an email gets nobody saved if the email looks like phishing.
 
-## Decisions (proposed, for Alex to confirm)
+## Decisions (Alex, 2026-10-15)
 
 1. **No Later.** Save your passport is the last page of the Application. For an unsaved passport, it's the only way into Today. Sending the link is enough to carry on; confirming it isn't required. That keeps `DECISIONS.md`'s rule that nobody waits on an email. Texted codes and Apple join as ways to save when they're turned on.
 2. **Skip skips the questions, not saving.** On the Application's Welcome, Skip takes an unsaved passport to Save your passport instead of Today. Apple and Google accounts are already saved, so nothing changes for them. In practice an unsaved passport only sees Skip when its answers failed to move from the device.
 3. **Passports already past the Application unsaved** see Save your passport the next time they open the app. There are three on production today.
 4. **Coming back resumes at Save.** Today, someone who leaves on Approved or Save starts again at the Oath (`resumePage`), so they'd be asked for the Oath twice and a second plan would use up a second free plan. Once the passport holds a plan, the Application resumes after the Oath.
 5. **"Sign in instead" on the save page.** If their email already has a passport (`email_exists` → "There's already a passport for that email…"), the page offers Sign in. They see the existing warning that signing out of an unsaved passport loses it. With no Later, they'd be stuck without this.
-6. **When sending fails on our side, let them in.** If Supabase or Resend can't send (a server error, not a bad address or "too many tries"), the person goes on to Today and the card below asks them to try again. A mail outage must never lock new people out of the app.
+6. **When sending fails on our side, let them in.** If Supabase or Resend can't send (a server error, not a bad address or "too many tries"), the person goes on to Today for this run of the app, and Save your passport comes back the next time they open it. A mail outage must never lock new people out of the app.
 7. **Until it's confirmed, a card on Today** (not only on Passport): "Check your email", the address, **Send it again**, **Use a different email**, and a line about the spam folder. Quiet, no red, no guilt. Passport and Settings show the same state.
 8. **The iPhone gets the same rule.** Apple's guideline 5.1.1(v) asks that apps without "significant account-based features" work without a login, and that apps not require personal information unless the core function needs it. PN syncs across the phone and the web, which is the case for an account. The anonymous passport still gets people through the whole Application and the Oath before asking. Before App Store review, **Sign in with Apple becomes the first way to save on the iPhone** (one tap, and Hide My Email avoids sharing an address). That needs the Apple provider on production and the Sign in with Apple key, both already open items in `STATUS.md`, plus "Allow manual linking" in Supabase Auth: `linkIdentity` with Apple's ID token, which supabase-js 2.117 has, attaches it to the anonymous passport. If App Review still objects, Later comes back on the iPhone only (one line); the web keeps the rule.
 9. **Legal, in the same PR:** privacy policy §1.1 ("If you elect to save your passport…") and Terms §3.1 ("You may use the Services without registering…") describe saving as optional. Both are rewritten (drafts below), Alex approves them, and `LEGAL_EFFECTIVE` moves to the ship date.
 10. **`DECISIONS.md`** ("Accounts and sign-in": "They save it later") and `conversion.md`'s decision 5 ("Later is allowed; it comes back") are marked as replaced by this plan.
 
-**Open questions (Alex):**
-- **Q1. Can the Today card be dismissed?** Recommendation: no. It stays until the email is confirmed, but it's one line and a button.
-- **Q2. If the email still isn't confirmed after a few days, does the full save page come back?** Recommendation: not yet. Measure first with the query under Data, then decide.
-- **Q3. Does the iPhone get the rule in the same release as the web?** Recommendation: yes. Typing an email works on the iPhone today, and the students are mostly on iPhone. Apple sign-in is added before App Store review (decision 8).
+**Answered (Alex, 2026-10-15):**
+- **The Today card can't be dismissed.** It stays until the email is confirmed: one line and a button.
+- **The full save page doesn't come back for an unconfirmed email, for now.** Measure first with the query under Data, then decide.
+- **The iPhone gets the rule in the same release as the web.** Typing an email works there today, and the students are mostly on iPhone. Apple sign-in is added before App Store review (decision 8).
 
 ## Files to create or modify
 
@@ -85,9 +85,8 @@ group by 1;
 ```
 
 - **Copy drafts** (`nation.ts`, no-guilt voice):
-  - Save page lead: "Keep it safe, and sign in on your laptop or a new phone. One email and you're in." (replaces "It takes a moment.")
   - Sign in instead: "Already have a passport? Sign in"
-  - Couldn't send: "We couldn't send the link just now. Carry on; we'll ask again on Today."
+  - Couldn't send: "We couldn't send the link just now. Carry on, and we'll ask again next time you open ProcrastiNation."
   - Today card: "Check your email" / "We sent a link to {email}. Open it to save your passport. Not there? Check spam, or send it again." / **Send it again** / **Use a different email**
 - **Privacy policy §1.1, draft:** "You may begin using the Services by providing only the name you would like us to use… Before you continue past the Citizenship Application, you save your passport by providing a username and either (a) your email address and, if you choose one, a password, or (b) the email address and name made available to us by Apple or Google…"
 - **Terms §3.1, draft:** "You may answer the Citizenship Application without registering, in which case we create an anonymous account… To continue using the Services after the Application, you save your passport by associating it with a username and a sign-in method. Until the sign-in method is confirmed, your passport is accessible only from the device or browser where you created it…"

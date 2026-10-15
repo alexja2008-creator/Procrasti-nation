@@ -17,7 +17,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@/auth/auth-provider';
-import { passportOpenedHere } from '@/auth/passport';
+import { passportOpenedHere, useMustSave } from '@/auth/passport';
 import { clearDraft } from '@/data/application-draft';
 import { SignedInProviders } from '@/data/signed-in-providers';
 import { AppearanceProvider, useAppearance } from '@/theme/appearance';
@@ -99,7 +99,8 @@ function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
  * The screens each state allows. Signed out: the Citizenship Application (someone new starts
  * there; its anonymous passport opens on the way to the Oath) and sign-in. Signed in, the
  * Application comes first until it's done or skipped (an error loading settings never traps
- * anyone in it).
+ * anyone in it), and an unsaved passport stays on its last page, Save your passport, until a
+ * save link is out and its Continue is tapped (`useMustSave`).
  */
 function AppStack({ signedIn }: { signedIn: boolean }) {
   const { session } = useAuth();
@@ -107,8 +108,9 @@ function AppStack({ signedIn }: { signedIn: boolean }) {
   // A passport opened moments ago in this run of the app (not a cold start, whose links must still work).
   const justOpened = !!session?.user.is_anonymous && passportOpenedHere();
   const done = !!settings?.onboardingCompletedAt;
-  // While settings load, a just-opened passport stays on the Application (no flash of Today).
-  const applying = signedIn && (status === 'ready' ? !done : status === 'loading' && justOpened);
+  const mustSave = useMustSave(session?.user);
+  // While settings load, a just-opened or unsaved passport stays on the Application (no flash of Today).
+  const applying = signedIn && (status === 'ready' ? !done || mustSave : status === 'loading' && (justOpened || mustSave));
 
   // Answers given signed out belong to nobody once they've signed in to an account that's done the Application.
   useEffect(() => {

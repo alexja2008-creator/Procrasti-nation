@@ -1,10 +1,11 @@
-import { authErrorKind, formatPhone, isValidUsername, normalizePhone, voice } from '@pn/core';
+import { authErrorKind, formatPhone, isServerFailure, isValidUsername, normalizePhone, voice } from '@pn/core';
 import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
 import { confirmSaveCode, sendSaveCode, sendSaveLink } from '@/auth/passport';
 import { enabledMethods, friendlyAuthError, isValidEmail } from '@/auth/sign-in';
+import { signOut } from '@/auth/sign-out';
 import { Button } from '@/components/button';
 import { Text } from '@/components/text';
 import { UsernameField } from '@/components/username-field';
@@ -17,20 +18,27 @@ const signIn = voice.signIn;
 /** Texted codes wait for a paid Twilio account (EXPO_PUBLIC_AUTH_PROVIDERS includes `phone`). */
 const PHONE = enabledMethods.has('phone');
 
-type Step = { kind: 'form' } | { kind: 'code'; phone: string } | { kind: 'emailSent'; email: string } | { kind: 'saved'; phone: string };
+type Step =
+  | { kind: 'form' }
+  | { kind: 'code'; phone: string }
+  | { kind: 'emailSent'; email: string }
+  | { kind: 'saved'; phone: string }
+  /** The link or code couldn't be sent on our side: they carry on, and it's asked again next time. */
+  | { kind: 'deferred' }
+  /** Their email already has a passport: leave this unsaved one to sign in to that one. */
+  | { kind: 'leave' };
 
 type Props = {
-  /** Saved, or the email link sent: carry on (the Application finishes; a sheet closes). */
+  /** Saved, the email link sent, or let in when sending failed: carry on (the Application finishes; a sheet closes). */
   onDone: () => void;
-  /** "Later": not now (the Application only). */
-  onLater?: () => void;
 };
 
 /**
  * Save your passport: a username, then a texted code (the quick way) or an email + password.
- * Keeps the same account, so everything in the anonymous passport stays.
+ * Keeps the same account, so everything in the anonymous passport stays. There's no Later: the
+ * Application can't finish without it (`DECISIONS.md`).
  */
-export function SavePassport({ onDone, onLater }: Props) {
+export function SavePassport({ onDone }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const { session } = useAuth();
@@ -43,6 +51,8 @@ export function SavePassport({ onDone, onLater }: Props) {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // The email already has a passport: offer to sign in to it instead.
+  const [emailTaken, setEmailTaken] = useState(false);
   const usernameStatus = useUsernameCheck(step.kind === 'form' ? username : '');
 
   const run = async (work: () => Promise<void>, failed: (e: unknown) => string) => {
@@ -58,6 +68,18 @@ export function SavePassport({ onDone, onLater }: Props) {
   };
   const rateLimitedOr = (fallback: string) => (e: unknown) =>
     authErrorKind(e instanceof Error ? e : null) === 'rateLimited' ? voice.authErrors.rateLimited : fallback;
+
+  /** Sends; when it fails on our side (not theirs), they carry on instead (Continue lets them in). False if so. */
+  const sendOrDefer = async (send: () => Promise<void>) => {
+    try {
+      await send();
+      return true;
+    } catch (e) {
+      if (!isServerFailure(e as { status?: unknown })) throw e;
+      setStep({ kind: 'deferred' });
+      return false;
+    }
+  };
 
   /** Checks the username is still free (the hint may be a moment old). */
   const usernameReady = async () => {
@@ -77,7 +99,7 @@ export function SavePassport({ onDone, onLater }: Props) {
     if (!e164) return setError(copy.invalidPhone);
     return run(async () => {
       if (!(await usernameReady())) return;
-      await sendSaveCode(e164);
+      if (!(await sendOrDefer(() => sendSaveCode(e164)))) return;
       setCode('');
       setStep({ kind: 'code', phone: e164 });
     }, rateLimitedOr(copy.codeFailed));
@@ -95,11 +117,15 @@ export function SavePassport({ onDone, onLater }: Props) {
   const sendLink = () => {
     const address = email.trim();
     if (!isValidEmail(address)) return setError(signIn.invalidEmail);
+    setEmailTaken(false);
     return run(async () => {
       if (!userId || !(await usernameReady())) return;
-      await sendSaveLink(userId, address, username);
+      if (!(await sendOrDefer(() => sendSaveLink(userId, address, username)))) return;
       setStep({ kind: 'emailSent', email: address });
-    }, (e) => friendlyAuthError(e, copy.saveFailed));
+    }, (e) => {
+      setEmailTaken(authErrorKind(e instanceof Error ? e : null) === 'accountExists');
+      return friendlyAuthError(e, copy.saveFailed);
+    });
   };
 
   const errorText = error ? (
@@ -113,13 +139,32 @@ export function SavePassport({ onDone, onLater }: Props) {
     </Text>
   );
 
-  if (step.kind === 'saved' || step.kind === 'emailSent') {
+  if (step.kind === 'saved' || step.kind === 'emailSent' || step.kind === 'deferred') {
     return (
       <View style={s.column} accessibilityLiveRegion="polite">
         <Text variant="body" color={c.inkSoft}>
-          {step.kind === 'saved' ? copy.savedPhone(formatPhone(step.phone)) : copy.emailSent(step.email)}
+          {step.kind === 'saved' ? copy.savedPhone(formatPhone(step.phone)) : step.kind === 'emailSent' ? copy.emailSent(step.email) : copy.sendLater}
         </Text>
         <Button label={copy.next} onPress={onDone} />
+      </View>
+    );
+  }
+
+  if (step.kind === 'leave') {
+    return (
+      <View style={s.column} accessibilityLiveRegion="polite">
+        <Text variant="body" color={c.inkSoft}>
+          {copy.signInInsteadBody}
+        </Text>
+        {errorText}
+        <Button
+          label={copy.signOutToSignIn}
+          disabled={busy}
+          onPress={() => run(signOut, () => voice.authErrors.offline)}
+        />
+        <View style={s.quiet}>
+          <Button variant="quiet" label={copy.keepThisOne} disabled={busy} onPress={() => setStep({ kind: 'form' })} />
+        </View>
       </View>
     );
   }
@@ -185,7 +230,10 @@ export function SavePassport({ onDone, onLater }: Props) {
           {label(signIn.emailLabel)}
           <TextInput
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(text) => {
+              setEmail(text);
+              setEmailTaken(false);
+            }}
             placeholder={signIn.emailPlaceholder}
             placeholderTextColor={c.muted}
             keyboardType="email-address"
@@ -219,7 +267,17 @@ export function SavePassport({ onDone, onLater }: Props) {
             }}
           />
         ) : null}
-        {onLater ? <Button variant="quiet" label={copy.later} disabled={busy} onPress={onLater} /> : null}
+        {emailTaken && method === 'email' ? (
+          <Button
+            variant="quiet"
+            label={copy.signInInstead}
+            disabled={busy}
+            onPress={() => {
+              setError(null);
+              setStep({ kind: 'leave' });
+            }}
+          />
+        ) : null}
       </View>
     </View>
   );

@@ -8,8 +8,9 @@ export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.procrasti
 export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'procrasti.nation.marketing@gmail.com';
 
 // When the privacy policy and terms take effect, or last changed: the launch (2026-10-13), then
-// 2026-10-14 for the policy's name and age-check paragraphs (Alex). Move it with each revision.
-export const LEGAL_EFFECTIVE = 'October 14, 2026';
+// 2026-10-14 for the policy's name and age-check paragraphs (Alex), then 2026-10-15 for saving the
+// passport before Today (policy 1.1, terms 3.1). Move it with each revision.
+export const LEGAL_EFFECTIVE = 'October 15, 2026';
 
 // While this is true the privacy policy and terms say "Draft" at the top. Alex approved both on
 // 2026-10-13; set it back to true while a rewrite awaits review. Open questions show as [bracketed] marks (<Todo>).

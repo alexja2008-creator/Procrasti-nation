@@ -9,6 +9,7 @@ import {
   cleanUsername,
   isLongEnoughPassword,
   isOldEnough,
+  isServerFailure,
   isValidUsername,
   MIN_AGE,
   MIN_PASSWORD_LENGTH,
@@ -129,4 +130,14 @@ test('the age check counts whole years, birthdays included', () => {
   assert.equal(ageOn('2012-02-29', '2025-02-28'), 12);
   assert.equal(ageOn('2012-02-29', '2025-03-01'), 13);
   assert.equal(ageOn('2012-02-29', '2028-02-29'), 16);
+});
+
+test('a failure on Supabase’s side is a 5xx, never the person’s mistake', () => {
+  assert.equal(isServerFailure({ status: 500 }), true, 'its email provider refused to send');
+  assert.equal(isServerFailure({ status: 503 }), true);
+  assert.equal(isServerFailure({ status: 422 }), false, 'an email that already has a passport');
+  assert.equal(isServerFailure({ status: 429 }), false, 'too many tries');
+  assert.equal(isServerFailure({ status: 0 }), false, 'offline');
+  assert.equal(isServerFailure({}), false);
+  assert.equal(isServerFailure(null), false);
 });

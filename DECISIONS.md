@@ -57,7 +57,8 @@ More detail: `CLAUDE.md` and each folder's own `CLAUDE.md` (rules and patterns),
 - Row actions (Start, Plan it, Move to…, File in…) live behind press and hold (right-click on web), with a permanent hint under the list. There's no Start button on every row.
 
 **Accounts and sign-in**
-- New people answer the Citizenship Application signed out. An **anonymous account** (Supabase anonymous sign-in) opens just before the Oath, so nobody waits on an email. They save it later with a username plus an email or a texted code.
+- New people answer the Citizenship Application signed out. An **anonymous account** (Supabase anonymous sign-in) opens just before the Oath, so nobody waits on an email.
+- **Saving the passport is required** (Alex, 2026-10-15, after family testers tapped Later and never came back): Save your passport is the Application's last page, with no Later, and an unsaved passport can't reach Today until a save link is out (`docs/plans/active/required-save.md`). Sending the link is enough; confirming it isn't required to carry on. Skip skips the questions, not saving. When sending fails on our side (a 5xx), they're let in for that run of the app, so a mail outage never locks anyone out. The iPhone gets the same rule; Sign in with Apple becomes its first way to save before App Store review (guideline 5.1.1(v)).
 - Passwords need at least 6 characters (the same as v1 and Supabase's default).
 - New accounts confirm their email before the first sign-in.
 - Usernames: 3 to 20 characters, lowercase letters, numbers and underscores (v1's rule).
