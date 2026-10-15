@@ -46,7 +46,7 @@ VAPID_SUBJECT=https://procrasti-nation.work
 ## Limits and access
 
 - Metered AI requests go through `logAndCount` in `lib/limits.js`: log first, then count, so parallel requests can't slip under a cap. `ai_requests` and `plan_generations` are insert-and-read only.
-- Free tier: 2 plans per 30.5 days from account creation (core `planWindow`). Everyone is capped at 20 plans a day. "I'm stuck" is free for everyone at 20 a day. A 429 carries `limit: 'daily' | 'free'`; Anthropic's own 429 becomes a 503.
+- Free tier: 2 plans per 30.5 days from account creation (core `planWindow`), not counting plans made during beta Pro (`freePlansCountFrom`). **Beta Pro:** until the close of 2026-11-15 in New York (core `BETA_PRO_UNTIL` / `inBetaPro`), nobody has a monthly limit. Everyone is capped at 20 plans a day; a plan is logged with its task only if the task is theirs, so every plan counts. "I'm stuck" is free for everyone at 20 a day. A 429 carries `limit: 'daily' | 'free'`; Anthropic's own 429 becomes a 503.
 - Trial: 10 days of Pro from `user.created_at` (`lib/trial.js`). Anonymous passports get none. Payments come later through RevenueCat; the web is free-only for now.
 - Four routes create a service-role client, inline and only after their own check: `cron/push` (`Authorization: Bearer <CRON_SECRET>`), `push/action` (a signed snooze token, no session), `unsubscribe` (a signed link) and `account/delete` (the session plus a typed DELETE; `auth.admin.deleteUser` needs the service role). Nowhere else.
 - CORS for `/api/*` is an allowlist in `middleware.js`: the site's origin, `app.procrasti-nation.work`, and `localhost:8081` / `127.0.0.1:8081` in development.

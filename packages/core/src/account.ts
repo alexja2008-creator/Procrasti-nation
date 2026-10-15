@@ -82,12 +82,29 @@ export function formatPhone(e164: string): string {
 export const FREE_PLANS_PER_WINDOW = 2;
 const PLAN_WINDOW_MS = 30.5 * 86_400_000;
 
+/**
+ * Beta Pro (Alex, 2026-10-15): during the beta every account, unsaved passports included, plans
+ * without the free tier's monthly limit, so testers can try everything. It ends at the close of
+ * November 15, 2026 in New York (EST, UTC−5). The daily cap still holds for everyone.
+ */
+export const BETA_PRO_UNTIL = '2026-11-16T05:00:00Z';
+
+export const inBetaPro = (now: Date = new Date()) => now.getTime() < Date.parse(BETA_PRO_UNTIL);
+
 /** The free-plan window `now` falls in, for an account created at `createdAt` (ISO). */
 export function planWindow(createdAt: string, now: Date = new Date()): { start: Date; end: Date } {
   const born = Date.parse(createdAt);
   const k = Number.isFinite(born) ? Math.max(0, Math.floor((now.getTime() - born) / PLAN_WINDOW_MS)) : 0;
   const start = Number.isFinite(born) ? born + k * PLAN_WINDOW_MS : now.getTime();
   return { start: new Date(start), end: new Date(start + PLAN_WINDOW_MS) };
+}
+
+/**
+ * Where the free tier's count starts at `now`: its window's start, but never before beta Pro
+ * ended, so plans made during the beta don't use up the free plans after it.
+ */
+export function freePlansCountFrom(createdAt: string, now: Date = new Date()): Date {
+  return new Date(Math.max(planWindow(createdAt, now).start.getTime(), Date.parse(BETA_PRO_UNTIL)));
 }
 
 /** The keys of `voice.authErrors`. */
