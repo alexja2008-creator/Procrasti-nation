@@ -8,7 +8,7 @@
 
 **Still to check live** (each needs Alex, since Claude doesn't type real passwords or create accounts): sign in with the password on another device; a wrong password; create an account with a throwaway address (one email) → confirm → Application with a `profiles` row; a taken username; Forgot → reset link → Choose a new password. **Phase 3** (password managers on web, night theme pass) follows those checks.
 
-Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
+Read `docs/archive/handoff-2026-10.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
 ## Why
 
@@ -89,7 +89,7 @@ Confirmed by Alex on 2026-10-07:
 | App | `apps/app/src/app/auth/new-password.tsx` (new), `_layout.tsx` | the screen, reachable while signed in (Application or not) |
 | App | `apps/app/src/app/settings.tsx`, `components/settings/password-sheet.tsx`, `username-sheet.tsx` (new) | Account → Password, Username |
 | App | `apps/app/src/auth/auth-provider.tsx` | `ensureProfile` after sign-in |
-| Docs | `CLAUDE.md`, `PN2-HANDOFF.md` | auth section, structure, Supabase settings |
+| Docs | `CLAUDE.md`, `docs/archive/handoff-2026-10.md` | auth section, structure, Supabase settings |
 
 No database or site changes: `profiles` and its policies already exist (v1).
 

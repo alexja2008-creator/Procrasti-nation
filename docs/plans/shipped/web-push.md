@@ -2,7 +2,7 @@
 
 **Status: approved 2026-10-07** (decisions below confirmed by Alex). **Built** in `da8692b` (server) and `9a1d37c` (browser, cron schedule, dev script), and **checked end to end on 2026-10-07** in Google Chrome against staging (real pushes through Google's push service; see the handoff). Not exercised: the browser's own permission prompt and the first-time ask on web (the test granted permission directly), Firefox and Safari.
 
-Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with screenshots.
+Read `docs/archive/handoff-2026-10.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with screenshots.
 
 ## What it is
 
@@ -94,7 +94,7 @@ Technical choices (mine; say if you disagree):
 | App | `src/notifications/permission.web.ts`, `scheduler.web.ts`, `responses.web.ts` | real web versions (subscribe, keep the subscription fresh, unsubscribe on sign-out; clicks and Start from the service worker) |
 | App | `src/components/reminders-card.tsx`, `reminder-prompt.tsx` | web states, Turn off here |
 | Scripts | `apps/site/scripts/push-cron-dev.sh` (new) | calls the local sender every minute |
-| Docs | `CLAUDE.md`, `PN2-HANDOFF.md` | structure, env vars, deploy checklist, what works |
+| Docs | `CLAUDE.md`, `docs/archive/handoff-2026-10.md` | structure, env vars, deploy checklist, what works |
 
 ## Phases (commit + push `v2` after each)
 

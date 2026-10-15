@@ -6,7 +6,7 @@ There are two kinds of decision here, and they're open to challenge in different
 - **Alex decided** (product calls). If you think one is wrong, say so as a *challenge*, not a bug.
 - **Claude chose** (technical calls made while building). These are fair game: if one is wrong, say why and what breaks.
 
-More detail: `CLAUDE.md` (layout, data model, patterns), `PN2-HANDOFF.md` (state of the build, known limits), the `PN2-*-PLAN.md` files (one per feature, each with its decisions), `supabase/v2/README.md` (the database migration), and `apps/site/evals/*/README.md` (the AI quality gates).
+More detail: `CLAUDE.md` and each folder's own `CLAUDE.md` (rules and patterns), `docs/architecture.md` (layout and data model), `STATUS.md` (what's live and what's next), `docs/archive/handoff-2026-10.md` (the full build history), the plan files in `docs/plans/` (one per feature, each with its decisions), `supabase/v2/README.md` (the database migration), and `apps/site/evals/*/README.md` (the AI quality gates).
 
 ---
 
@@ -108,6 +108,9 @@ More detail: `CLAUDE.md` (layout, data model, patterns), `PN2-HANDOFF.md` (state
 - **Every day ends at midnight unless the person picks a later end** (Alex, 2026-10-14). Night owl used to end the day at 3 AM; at 1 AM Wednesday Alex saw Today still on Tuesday, with nothing left on it, and took it for a bug. Hours now sets only the morning list's time. A later end (up to 6 AM) is chosen only in Settings → Day ends at, so the app's date differs from the clock only when someone asked for it. Picking an Hours answer in Settings resets it to midnight. Considered and left for later: keeping yesterday open after midnight while its tasks are unfinished.
 - Focus Pods (live video) were dropped: moderating live video wasn't worth the liability. Town Hall will only ever be an anonymous count of people working. **There's nothing one person can say to another anywhere in the app.**
 
+**How changes ship**
+- **CI isn't a required check on `main`** (Alex, 2026-10-14). Every pull request still runs `.github/workflows/ci.yml` (core, db and site tests, the app's type check and lint) and nothing red gets merged; GitHub's branch settings just don't enforce it.
+
 ---
 
 ## Looks wrong, isn't (Claude chose)
@@ -172,7 +175,7 @@ Each of these looks redundant, over-built or odd, and each exists because the si
 ### Setup and style
 - **Not an npm workspace:** the site is on React 18 and the Expo app on React 19, so each has its own `node_modules`. `packages/core` is shared through a tsconfig alias.
 - **Core imports end in `.ts`,** because its tests run directly on TypeScript with `node --test`.
-- **The iOS build script builds in `~/Library/Caches`** (`apps/app/scripts/ios-dev-build.sh`), because the repo sits on an iCloud-synced Desktop whose file attributes break code signing. It stays unsigned; signed builds come from EAS Build in Expo's cloud, which never sees the iCloud attributes.
+- **The iOS build script builds in `~/Library/Caches`** (`apps/app/scripts/ios-dev-build.sh`), because the repo used to sit on an iCloud-synced Desktop whose file attributes broke code signing (it moved to `~/PNDEV` on 2026-10-14). Building outside the repo also keeps generated native folders out of git. It stays unsigned; signed builds come from EAS Build in Expo's cloud, which never sees the iCloud attributes.
 - **The site calls Claude with raw `fetch()`** (`apps/site/lib/ai.js`), not the SDK.
 - **The app never holds secrets.** It gets only `EXPO_PUBLIC_*` values and calls the site's `/api/*` for anything needing a key.
 - **App styling:** `StyleSheet` with design tokens, never a hard-coded color in a component, and SVG icons, never emoji. **Site styling:** Tailwind for layout, plus the night palette as CSS variables in `apps/site/app/globals.css` (the site is always night, so no `dark:` prefix and no theme ternaries).

@@ -1,276 +1,79 @@
-# ProcrastiNation – Claude Code Guide
+# ProcrastiNation: Claude Code guide
 
-## Repo Layout (v2 branch)
-ProcrastiNation 2.0 is being rebuilt on the `v2` branch (`main` still has the old root layout and is what production deploys). On `v2`:
+ProcrastiNation (PN) helps people start what they're avoiding: an AI planner ("Plan it") breaks a task into steps small enough to begin, and the app nudges them to start. v2 went live on the web on 2026-10-14 (merged to `main`; the privacy policy and terms are effective 2026-10-14, `LEGAL_EFFECTIVE` in `apps/site/lib/site.js`); the iPhone app is on TestFlight. Students first.
+
+**Read first:** `STATUS.md` (what's live, this week, open items for Alex). Before changing product behavior or removing code that looks redundant: `DECISIONS.md`.
+
+## Map
+
 ```
-apps/site      # The Next.js app described below (moved here unchanged): marketing site + /api/* backend
-apps/app       # NEW Expo SDK 57 app (expo-router, TypeScript) → App Store + web. See apps/app/README.md
-packages/core  # Shared, dependency-free TS: A2 tokens, nation naming/voice, date helpers, data types (@pn/core)
+apps/site       Next.js 14 (React 18, JS): the landing page, legal pages and the /api/* backend   → apps/site/CLAUDE.md
+apps/app        Expo SDK 57 (React 19, TS, expo-router): the app for iPhone and the web           → apps/app/CLAUDE.md
+packages/core   @pn/core: dependency-free TS for tokens, voice, dates, planning, reminders       → packages/core/CLAUDE.md
+supabase        the database: v2 migration, tests, scripts, auth email templates               → supabase/CLAUDE.md
+docs            architecture reference, gotchas, runbooks, plans, archive
+.claude         shared settings and hooks, subagents (agents/), design skills (skills/)
 ```
-- **Not an npm workspace.** The site is on React 18 and the Expo app on React 19, so each app has its own `node_modules`; `packages/core` is imported by `apps/app` through the `@pn/core` tsconfig alias plus Metro `watchFolders`. Root `package.json` only holds convenience scripts (`npm run site:dev`, `app:web`, `app:check`, `evals`).
-- **The Expo app never holds secrets.** It gets only `EXPO_PUBLIC_*` values (see `apps/app/.env.example`; real values in gitignored `apps/app/.env.local`) and calls `apps/site`'s `/api/*` routes for anything needing a key.
-- **v2 auth:** someone new answers the Citizenship Application signed out and gets an **anonymous passport** (Supabase anonymous sign-in, needs "Anonymous sign-ins" on in the project) on the way to the Oath; they **save it** later with a username plus a texted code (Twilio Verify via Supabase's phone provider; US and Canada) or an email link then a password (the username waits in `user_metadata.pending_username` until the email confirms; `ensureProfile` makes the `profiles` row once they're not anonymous). Existing accounts sign in with email + password (Supabase Auth keeps the hashes; v1 passwords work as they are), a texted code, or a magic link (each for existing accounts only; an unknown address or number hears the same "on its way"). Changing a password signs out the account's other sessions (Supabase). Forgot password (the reset link's `PASSWORD_RECOVERY` sends the callback to `auth/new-password`), a magic link for existing accounts only (PKCE; an unknown address hears the same "on its way"), Sign in with Apple (native on iOS via `signInWithIdToken` + nonce; OAuth on web), Google (OAuth). Supabase Auth's redirect allow list must include every callback form: `work.procrastination.app://auth/callback` (the iPhone app; the scheme is the bundle id, since another App Store app already uses "procrastination" names), `exp://**` (Expo Go), `http://localhost:8081/auth/callback`, and the production web URL. Expo Go lacks the Apple native module, so Apple sign-in needs a development build.
-- **v2 → site API:** the app calls `apps/site` `/api/*` with the Supabase access token (`src/lib/api.ts`). CORS lives in `apps/site/middleware.js` (allowlist: the site's origin, `app.procrasti-nation.work`, and `localhost:8081` / `127.0.0.1:8081` in development; the second is the same app under its own storage, a signed-out window for testing). For local work, `apps/site/.env.development.local` (gitignored) points the site at the staging Supabase project so it accepts staging sessions.
-- **Design:** `DESIGN.md` (repo root) writes A2 out for design tools and agents: tokens, components, motion, voice, do's and don'ts. `packages/core/src/tokens.ts` stays the source of truth, and `packages/core/test/design-md.test.ts` fails when the two drift, so change them together. Design skills live in `.claude/skills` (pinned in `skills-lock.json`; `npx skills update -p` updates them): `design-taste-frontend` (A2 is an existing brand: run it with `--keep palette,type`), `redesign-existing-projects`, and Vercel's `web-design-guidelines` (skip its Title Case copy rules). The taste skill's working files land in `.taste-skill/` (gitignored).
-- Everything below this section describes `apps/site` unless it says otherwise; paths are relative to `apps/site/`. On `v2` the site is the landing page plus the API (v1's pages retired 2026-10-12).
 
-## Project Overview
-ProcrastiNation helps people start what they're avoiding: an AI planner breaks a task into steps small enough to begin, and the app nudges them to start. On `v2`, `apps/site` is the marketing site and the API the app calls; v1's pages (planner, dashboard, calendar, syllabus, reset station, friends, profile, FAQ) and its emails were retired on 2026-10-12 (`PN2-LAUNCH-PLAN.md`) and redirect to the app. `main` still runs v1 until the v2 merge.
+Each folder's own `CLAUDE.md` loads when you work in it. Not an npm workspace: the site and the app each keep their own `node_modules` (React 18 vs 19); `apps/app` imports `packages/core` through the `@pn/core` alias.
 
-## Tech Stack
-- **Framework**: Next.js 14 (App Router), JavaScript/JSX
-- **Styling**: Tailwind CSS 3, plus the A2 night palette as CSS variables in `app/globals.css` (the site is always night, like the app's default)
-- **AI**: Anthropic Claude API (raw `fetch()` — not the SDK)
-- **Auth + DB**: Supabase (Auth + PostgreSQL with RLS); the site checks the app's session token on each API call
-- **File Parsing** (`parse-syllabus`): mammoth (DOCX), unpdf (PDF), base64 (images → Claude vision)
-- **Web Push**: web-push + VAPID
-- **Analytics**: Vercel Analytics
-- **Hosting**: Vercel (Hobby tier)
-- **Domain**: procrasti-nation.work (the app: app.procrasti-nation.work)
+## Commands (from the root)
 
-## Dev Commands
-Site (run inside `apps/site`):
 ```bash
-npm run dev      # Start dev server at http://localhost:3000
-npm run build    # Production build
-npm start        # Run production build
-npm run lint     # ESLint (never configured; opens an interactive setup, so use build to check)
+npm run install:all     # npm ci in apps/site and apps/app
+npm run site:dev        # site + API at http://localhost:3000
+npm run app:web         # app at http://localhost:8081
+npm run app:check       # app type check + lint
+npm run core:test       # @pn/core tests
+npm run db:test         # migration tests on real Postgres (PGlite)
+npm run site:test       # Web Push helpers
+npm run evals           # plan-quality eval (costs about $1; only for prompt or model changes)
 ```
 
-App (run inside `apps/app`):
-```bash
-npx expo start --web            # Web at http://localhost:8081
-npx expo start --ios            # iOS Simulator in Expo Go (needs Xcode, license accepted)
-npx tsc --noEmit && npx expo lint
-npx expo install <pkg>          # Always, instead of npm install, for SDK-compatible versions
-sh scripts/ios-dev-build.sh     # iOS development build on the Simulator (notifications, Swift add-ons); METRO_PORT=… for another Metro
-```
-Web Push in development (run inside `apps/site`): `npm test` (push helpers), and `sh scripts/push-cron-dev.sh` calls the local sender every minute (Supabase Cron does it in production). The sender and the Snooze route need the **staging** service-role key in `.env.development.local`. The browser pane in the Claude app has no push service (notifications are blocked there), so end-to-end checks use a real Chrome at `localhost:8081`: a throwaway profile started with `--remote-debugging-port=9333` and driven by `apps/app/scripts/chrome-cdp.mjs`.
-Expo Go can't schedule local notifications on iOS 27 (SpringBoard drops them), so reminders need the development build. `npx expo run:ios` fails inside this repo because the Desktop is synced with iCloud (its file attributes break code signing); the script builds a copy in `~/Library/Caches/procrastination-ios` instead, unsigned and without the Sign in with Apple entitlement. Signed builds for TestFlight and the App Store come from EAS Build (project `@procrastination.work/procrastination`; `apps/app/eas.json`: `staging` reads EAS's preview environment, `production` its production one, each holding the `EXPO_PUBLIC_*` values since `.env.local` isn't uploaded; build numbers are kept by EAS). App Store Connect: "ProcrastiNation: AI Planner" ("ProcrastiNation" was taken), bundle id `work.procrastination.app`, SKU `procrastination-ios`. `plugins/with-scene-lifecycle.js` adopts the scene life cycle iOS 27 requires (SDK 57's generated app delegate doesn't).
+Node comes from nvm. If `node` isn't found: `export PATH="$HOME/.nvm/versions/node/$(ls ~/.nvm/versions/node | tail -1)/bin:$PATH"`.
 
-Note: nvm is installed. If node isn't found, run:
-```bash
-export PATH="$HOME/.nvm/versions/node/$(ls ~/.nvm/versions/node | tail -1)/bin:$PATH"
-```
+## Rules that always hold
 
-## Environment Setup
-Requires `apps/site/.env.local` (Next only reads it from its own folder) with:
-```
-ANTHROPIC_API_KEY=sk-ant-...
-NEXT_PUBLIC_SUPABASE_URL=https://tmigxhhnhledszjdgnwk.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=anon_key
-SUPABASE_SERVICE_ROLE_KEY=service_role_key
-CRON_SECRET=secret_for_cron_auth   # the Web Push sender (Supabase Cron) and unsubscribe links
-NEXT_PUBLIC_BASE_URL=https://procrasti-nation.work
-NEXT_PUBLIC_APP_URL=https://app.procrasti-nation.work   # optional (that's the default); http://localhost:8081 in development
-VAPID_PUBLIC_KEY=...          # Web Push (v2); generate: node -e 'console.log(require("web-push").generateVAPIDKeys())'
-VAPID_PRIVATE_KEY=...
-VAPID_SUBJECT=https://procrasti-nation.work
-```
-The Expo app gets the same public key as `EXPO_PUBLIC_VAPID_PUBLIC_KEY`. Development keys live in the gitignored `apps/site/.env.development.local` and `apps/app/.env.local`; production needs its own pair in both Vercel projects. `RESEND_API_KEY` isn't used by the site since v1's emails retired (State of the Union will bring email back, each one with a postal address and a one-click unsubscribe: CAN-SPAM, `DECISIONS.md`).
+- **`main` is production.** Both Vercel projects deploy from it. Never push to `main` or force-push; changes reach it through a pull request with CI green. Commit and push feature branches freely. A hook in `.claude/settings.json` blocks Claude's pushes to `main` and force-pushes; CI isn't a required check on GitHub (`DECISIONS.md`).
+- **No secrets in `apps/app`.** It only gets `EXPO_PUBLIC_*` values; anything needing a key goes through `apps/site`'s `/api/*`.
+- **AI changes are gated.** Any change to a prompt or a model passes its eval in `apps/site/evals/` first. Plans are built on Sonnet, never Haiku.
+- **Never decide access from `user_metadata`**: people can write it themselves. Trials count from `user.created_at`.
+- **Local calendar dates never use `toISOString()`** (that's UTC); use core's `localDateString`.
+- **Private data never goes on `profiles`**, which is publicly readable. It goes in owner-only tables like `user_settings`.
+- **No guilt in copy:** never "overdue", "failed" or red for missed things. Nation names for places and rewards, plain verbs on buttons; the AI button is always "Plan it". All copy lives in `@pn/core`.
+- **The privacy policy follows the code.** Any change to what's collected or who processes it changes `apps/site/app/privacy` in the same PR.
+- **Databases:** staging gets production's structure only, never users' data. Don't use the production service-role key to explore; ask Alex first. Alex applies SQL to production.
+- **`DESIGN.md` and `packages/core/src/tokens.ts` change together**; a test fails when they drift.
+- **The repo is public.** No business plans, beta responses, analytics exports or personal data in it.
 
-## Project Structure
-```
-app/
-  page.jsx                          # Landing page: components/landing/* (Hero, HowItWorks, Features, Tones = @pn/core's nudgeTones as lock screens of reminders in a carousel (ToneCarousel, a client component: arrows, names, swipe, arrow keys), Closing, SiteHeader/Footer, Phone = a framed night screenshot from public/screens/ (the -light shots are kept for a day theme), RoundStamp = the app's stamp in SVG, StampStrip = a slow drift of stamps under the hero, Entries = the smaller features as an open passport's visa pages whose stamps land as they scroll into view (Land, a client component; still with reduced motion or no JavaScript))
-  privacy/page.jsx, terms/page.jsx  # Formal; approved by Alex 2026-10-13 (lib/site.js LEGAL_DRAFT = false shows no Draft banner; components/legal/LegalPage, Todo = an open question in [brackets]); written from what the code does: change them with any feature that changes what's collected or who processes it
-  layout.jsx                        # Root layout: metadata, A2 fonts (self-hosted: next/font, never Google Fonts' link), Vercel Analytics (no auth: sign-in is the app's)
-  globals.css                       # Tailwind + the A2 night palette as CSS variables (always night; `viewport.themeColor` in layout.jsx matches)
-  opengraph-image.jsx, icon.svg     # Share preview and favicon
-  api/
-    generate-plan/route.js          # AI task planning (clarify + generate steps)
-    resolve-step-dates/route.js     # Relative timing → absolute calendar dates
-    unstick/route.js                # Start Mode "I'm stuck" → one 2-minute action (free, 20/day via ai_requests)
-    account/delete/route.js         # Delete your passport: session + typed DELETE, then auth.admin.deleteUser (every table cascades)
-    cron/push/route.js              # Web Push sender, every minute (Supabase Cron): what came due per person, in their timezone, to each of their browsers
-    push/action/route.js            # Snooze 10 min from a web notification (signed token, no session)
-    unsubscribe/route.js            # Signed one-click unsubscribe (kept for State of the Union's email)
-    parse-syllabus/route.js         # Syllabus file → JSON assignments (unused until v2's syllabus import)
-next.config.js                      # Security headers; v1's old paths redirect (307) to the app
-middleware.js                       # CORS for /api/* (the app's origins)
+## How work runs here
 
-components/
-  Logo.jsx                          # The PN mark + wordmark (`color` / `accent` props follow the page's palette)
-  landing/, legal/                  # The landing page's sections; the legal pages' layout
+- **Plans:** a feature touching three or more files, or with unclear scope, gets a plan in `docs/plans/active/` from `docs/plans/TEMPLATE.md`, approved by Alex before coding. When it ships, add a "Built" note and move it to `docs/plans/shipped/`.
+- **Subagents** (`.claude/agents/`): `code-reviewer` before each commit, `security-reviewer` after API, auth or upload changes, `database-reviewer` for SQL and Supabase queries, `build-fixer` when a build or type check fails, `docs-keeper` after shipping.
+- **Decisions:** when Alex makes a product call, or a fix adds code that only looks redundant, add it to `DECISIONS.md`.
+- **After shipping:** update `STATUS.md` and `CHANGELOG.md` (in users' words), and `docs/architecture.md` if files, tables, routes or storage keys changed.
 
-lib/
-  site.js                           # APP_URL, CONTACT_EMAIL (procrasti.nation.marketing@gmail.com), LEGAL_EFFECTIVE (the launch date), LEGAL_DRAFT
-  ai.js                             # callClaude(), model constants, resolveToday()
-  prompts/plan.js                   # Adherence planner prompts + JSON schemas
-  prompts/unstick.js                # "I'm stuck" prompt + schema (gated by evals/unstick)
-  prompts/dates.js                  # Step "when" → calendar date prompt
-  authMiddleware.js                 # The app's session token → user, for each API route
-  trial.js                          # trialDaysRemaining(user): 10 days from auth created_at
-  unsubscribe.js                    # Signed unsubscribe links + List-Unsubscribe headers
-  core.js                           # Re-exports @pn/core (packages/core TS; Next compiles it), so the server plans exactly as the app does
-  push.js                           # Web Push: send (web-push + VAPID), payloads (Start 5 min / Snooze 10 min, never Done), withTimeZone, snooze tokens
-test/push.test.mjs                  # npm test: snooze tokens, the zone switch, payloads
-scripts/push-cron-dev.sh            # Development stand-in for Supabase Cron
-evals/                              # plan-quality and unstick evals (gate any prompt or model change)
-```
+## Where things are documented
 
-### apps/app (Expo, v2)
-```
-src/app/_layout.tsx               # Root Stack: A2 fonts, AuthProvider; AppStack's Stack.Protected gates: sign-in, then the Citizenship Application until `onboarding_completed_at` (a settings load error never traps anyone), Plan it reachable from both
-src/app/welcome.tsx               # The Citizenship Application (onboarding; PN2-CONVERSION-PLAN.md): Welcome → What should we call you? (application/name-page: first name required, last optional; signed out it waits in the draft, then goes into the auth profile's `given_name` / `family_name` / `full_name` via `saveName` in auth/person-name, the fields Apple fills: private, never on `profiles`) → Date of birth (application/birth-page: the age check before any account, COPPA: core `birthDateOf` / `isOldEnough`, `MIN_AGE` = 13; a neutral screen, checked on the device, never kept; under the age `data/age-check` turns the device away for good, and a signed-in account (Apple / Google) is deleted; Skip shows only once it's passed) → Purpose → Hours → What stops you → "you're not broken" → Nudge tone → Your result → How PN helps → Where did you hear (signed out so far: application/new-applicant, answers on the device) → the anonymous passport opens → the Oath (the real Plan it, ?oath=1) → Your first week → Your first Declaration (its first step; components/declare) → a nudge (names the Declaration's time) → APPROVED stamp → Save your passport (anonymous only); each answer saved as picked, resumes where left, Skip (signed in) counts as done
-src/app/settings.tsx              # Settings (sliders on Passport): the Application's answers (Name first: settings/name-sheet), Start Mode timer, Day ends at, Appearance (Theme: Night passport, the default / Day passport / Match my device; theme/appearance), the Reminders card, Account (Username, Password: set or change with no email, Download your data, Delete your passport (settings/delete-sheet), Privacy policy and Terms of use (lib/site-pages: the site's pages in the in-app browser), Sign out)
-src/app/sign-in.tsx               # For existing accounts: password (Forgot your password?), a texted code (sign-in/phone-sign-in), a sign-in link, Apple + Google (each method only if in EXPO_PUBLIC_AUTH_PROVIDERS); "New here?" starts the Application
-src/app/auth/callback.tsx         # Where magic links / confirmations / resets / OAuth land; exchanges the PKCE ?code= (a reset goes on to auth/new-password)
-src/app/auth/new-password.tsx     # Choose a new password after a reset link (signed in, Application or not)
-src/auth/                         # auth-provider (session; `recovering` after a reset link; makes the profile from `pending_username` once not anonymous), passport (open the anonymous passport; save it by texted code or email link; sign in by texted code; the choose-a-password flag), sign-in actions (password, reset, link; `friendlyAuthError` via core's `authErrorKind`), apple(.web).ts, sign-out (this device only: supabase-js's default `signOut()` is global and would sign them out of every device; reminders stop first)
-src/lib/supabase.ts               # Anon-key client (PKCE, AsyncStorage, foreground-only token refresh)
-src/app/plan/[id].tsx             # Plan it: clarifying questions → plan preview → saves steps as child tasks
-src/app/task/[id].tsx             # Task detail (tap a row): Start, Declare (components/declare: the signed start time; signature-pad = drawn, never stored), Plan it; title, When/Due/Repeat/Estimate/Territory, steps (add, drag to reorder), notes, delete + Undo; autosaves
-src/app/territory/[id].tsx        # A territory's page on phones (`customs` for Customs, `notes` for Notes): Coming up, Anytime, then its notes; "+" captures into it; Edit
-src/app/search.tsx                # Search (magnifier on Today / Upcoming / Territories; ⌘K or / on web): open and finished tasks and notes from the server as you type, "#chem" narrows (chip), check off with Undo, highlighted snippets, Show more; a panel over the page at laptop width on web
-src/app/note/[id].tsx             # A note (modal; `new` + ?list= to start one): territory chip, title, body of text and live checklist lines (☐, or ⌘⇧L on web); autosaves; an emptied note goes quietly; delete + Undo
-src/app/start/[id].tsx            # Start Mode (full-screen): timer, 5-min contract, I'm stuck, breather, Done → stamp; ?minutes= sets the timer (a reminder's Start 5 min); a plan's id starts its next open step (core `startTarget`, decided once so Done doesn't turn back to the plan)
-src/hooks/use-start-session.ts    # Start Mode session: clock, start_sessions rows, resume after close, keep-awake
-src/hooks/use-drag-reorder.ts     # Drag-handle reordering (steps, territories): one row written per move, VoiceOver Move up/down
-src/hooks/use-check-off.ts        # Check off on lists that hide finished items (Upcoming, territories): offers Undo
-src/hooks/use-search.ts           # As-you-type search: three groups after a pause, stale answers dropped, Show more; found tasks join the task store (to check them off)
-src/hooks/use-auto-height.ts      # Multiline inputs that grow and shrink with their text (web textareas only grow on their own)
-src/hooks/use-username-check.ts   # Whether a username is free, a moment after typing stops
-src/hooks/use-passport-status.ts  # Unsaved passport? Owes the password that finishes saving it? (refreshes the session while a save link is out)
-src/data/                         # briefing (the Morning Briefing's Not now, and yesterday's recap: finished tasks and starts, counts only), account (Download your data: one JSON file built on the device via core's buildExport; Delete your passport: the route, then forgetDeletedAccount), user-settings, application-draft (the Application's answers before a passport), profile (usernames on v1's public `profiles`), tasks (+ store), lists (+ store: territories), notes (+ store: pages of 25 per scope, server counts), note-titles, paging, search, plans, starts, stamps, unstick, active-start, signed-in-providers
-src/lib/web-styles.ts             # noFocusRing, oneRowOnWeb, switchThumbOnWeb: web-only fixes (casts; RN's types lack them)
-src/notifications/                # Reminders: reminders-provider (sync after a pause in changes and on foreground, the first-time ask, opens what a tap / Start 5 min asks for, Turn off here on web, clears on sign-out), scheduler (iOS: reconciles pending notifications with core's `reminderChanges`; web: keeps the browser subscribed, the server sends), responses (iOS: Done / Snooze / Start / tap, each once, Dones wait in an outbox until saved; web: clicks the service worker posts), buttons (the `task` category), permission (web: allowed + push service reachable + not turned off here), web-push (subscribe / save via `save_web_push` / unsubscribe), time-given (the store says a task got a time)
-public/sw.js                      # Web Push service worker (plain JS, served at /sw.js): shows reminders; click → the task (morning list → Today), Start 5 min → Start Mode, Snooze 10 min → the site's /api/push/action; no Done on the web (Alex). public/notification-icon.png
-modules/reminder-actions/         # Swift add-on (local Expo module): with the app closed iOS hands Done and Snooze to native code only (JS never starts without a window), so it schedules Snooze itself and keeps each Done in UserDefaults until the app opens
-src/lib/api.ts                    # apiPost() to apps/site with the session token
-src/lib/save-file(.web).ts        # a file for the person: the share sheet on iPhone (expo-file-system + expo-sharing), a download on web
-src/app/(tabs)/_layout.tsx        # Headless expo-router/ui tabs + custom NavBar
-src/app/(tabs)/index.tsx          # Today: the Morning Briefing card (components/briefing: what carried over from before today, each given a place: Today / Pick a day / Let it go, a behind plan Re-spread; Not now for the day; a long one, 10+ things to decide with a plan counting once, opens on Pick three: three suggested for today (briefing/pick-row), the rest wait and the card rests for the day; no Move all to today at 10+), next step (or "Up next"), agenda (core `groupAgenda`: each plan one row, components/plan-row: "2/7" where the checkbox would be, Show steps, and once every step is done "Mark plan done"; a plan counts once in "N things today" and the morning list), Customs (style "overwhelmed": just the next step + "Show everything (N more)" for that visit); tap a row → detail, press and hold / right-click → Start / Plan it / Move to… / File in…
-src/app/(tabs)/passport.tsx       # Passport: citizen no., stamps (components/passport/stamp-page: round stamps laid down in the order earned, then the small-steps count; shrinks to fit), rank from real starts, the Declarations page (components/passport/declarations-page: a count stamp and the latest kept, Show all; never what wasn't kept); the sliders open Settings (where the Reminders card and Sign out live)
-src/app/(tabs)/upcoming.tsx       # Upcoming: 7 days, then busy days to 8 weeks, then Later; DUE markers; week strip (pinned) + Month toggle on phones, month calendar beside the list at ≥900px; pick a day → scroll; "+" per day → quick add for that day
-src/app/(tabs)/territories.tsx    # Territories: Customs card, Notes card, territory cards (ink, kind, open count, notes, next item; drag to reorder), New territory + starters; list and page side by side at ≥900px
-src/components/                   # NavBar, SearchButton (the magnifier), search/* (result-groups, highlighted), Capture (the + sheet: Task / Note switch), NextStepCard, TaskRow, RowMenu (Start / Plan it / Move to… / File in…, owns its sheets), Sheet, Chip, MonthCalendar (optional dots), NoticeBar, Stamp, start/*, task/*, upcoming/* (day-section, week-strip), territory/* (card, customs-card, view, sheet = picker, edit-sheet), note/* (note-editor = blocks + caret placement, checklist-row, note-row, notes-card, notes-view, note-capture), Screen (scroll ref, pinned children, laptop side column), ReminderPrompt (the first-time ask), RemindersCard, application/* (ApplicationForm = a passport-form page, ChoiceCards = radio cards), settings/* (SettingsCard, SettingRow, password-sheet, username-sheet), SavePassport (username, then texted code or email link), PassportSaveCard (on Passport until saved), application/* (quiz-pages = Welcome through Where did you hear, after-oath = Your first week + the nudge, new-applicant = signed out, use-turns), PasswordField (show / hide, AutoFill hints), UsernameField (cleans as typed, says if it's free), sign-in/SentPanel ("Check your email."), LandingStamp (an ink stamp landing with a haptic: Done, Approved), Text, Icon
-src/theme/tokens.ts               # useTokens() / useStyles() over @pn/core palettes
-```
-**Loading data:** Supabase returns at most 1,000 rows per request and a cut-off list fails silently (the newest tasks just vanish), so anything that can grow goes through `fetchAllPages` (`data/paging.ts`). The tasks store loads what's on the go (open tasks, today's finished ones, plan steps), never history; a note's ticked checklist lines load with the note (`loadNoteLines`). Notes load 25 at a time per scope (every note, or one territory's) with Show older; counts come from the `note_counts` view; a note older than the loaded pages is fetched on its own (a checklist task's note on Today, a note opened from a link).
-Device storage (AsyncStorage, per device): `pn.appearance` (the Theme: `night` (default when unset), `day` or `system`; read before the first screen, and by `public/index.html` on the web to paint the background before the app loads), `pn.application.draft` (the Application's answers and name while signed out, and whether the age check was passed: never the date), `pn.age-check.turned-away` (the age check turned this device away: kept through sign-out and deletion), `pn.age-check.passed.<userId>` (this account passed it), `pn.passport.choose-password.<userId>` (an email save link went out from here: ask for the password once it's confirmed), `pn.stamped.first-start.<userId>`, `pn.briefing.not-now.<userId>` (the day the Morning Briefing card was put off: Not now, or three picked), `pn.start.active.<userId>` (Start Mode session in progress, for resume), `pn.notes.checklist-learned.<userId>` (hides the "make a line a task" tip once they've used ☐ or hidden it), `pn.reminders.not-now.<userId>` (they said Not now to reminders: stop asking), `pn.reminders.done-outbox` (a reminder's Done not saved yet: offline, signed out, or Expo Go), `pn.reminders.handled` (the last 50 reminder responses handled, so a reload never repeats one), `pn.reminders.web-off` (web: "Turn off here", per browser); iOS UserDefaults `pn.reminders.done-queue` (the Swift add-on's Dones from while the app was closed). Web keyboard shortcuts go through `useShortcuts` (`use-shortcuts.web.ts`; no-op on native): plain keys ("Escape", "Space") are ignored while typing; "Mod+Shift+L"-style combos (⌘ or Ctrl) fire in fields too. It listens in the capture phase because React Native Web's TextInput stops keydown from bubbling. ⌘K and / (search) are registered in the tabs layout.
+| What | Where |
+|---|---|
+| File-by-file map, data model, storage keys | `docs/architecture.md` |
+| Simulator, browser and Supabase gotchas; running locally | `docs/dev-gotchas.md` |
+| Deploys, the launch cutover, the iPhone track | `docs/runbooks/` |
+| Feature plans, active and shipped | `docs/plans/` |
+| Design system for tools and agents | `DESIGN.md` |
+| The database migration | `supabase/v2/README.md` |
+| AI quality gates | `apps/site/evals/*/README.md` |
+| Things that live outside the repo | `docs/external.md` |
+| The full build history (2026-10 handoff) | `docs/archive/handoff-2026-10.md` |
 
-### packages/core
-`src/tokens.ts` (A2 palettes for light/"night passport", fonts, type scale, spacing, radii, motion), `src/nation.ts` (names, plain action labels, ranks, nudge tones, voice strings incl. `application` and `settings`, `toneLines` / `linesFor(tone)`: the nudging lines (Start Mode lead, five-minute check-in, "you started", the morning list) in Diplomat / Drill Sergeant / Roast, citizen number + passport code lines), `src/onboarding.ts` (the Application's pages (questions numbered 1–11, their name through the Oath; the age check is 2), `resumePage(prefs, named, ageChecked)`, `helpCardsFor(style)`, `resultAudience(persona)`, `firstWeekOf` (the Oath's steps by day), `firstStepOf` (its first open step: the first Declaration), `territoriesFor(persona)`, `morningTimeFor`, `hoursChange` (shared with Settings; every answer ends the day at midnight), `oathTask` (a typed date wins, else the picked due)), `src/dates.ts` (local-date helpers, day rollover, RRULE labels), `src/types.ts` (draft v2 data model), `src/agenda.ts` (Today: agenda, next step, up next, step context; `groupAgenda` (plans as one item), `startTarget` / `nextOpenStep`, `planToFinish` (the last step checked off: ask, via a notice action, before the plan is marked done)), `src/upcoming.ts` (`buildUpcoming`: days, DUE markers, Later; calendar dot counts; section for a picked day), `src/territories.ts` (`isInCustoms` (Today shares it), `effectiveListId` (steps live in their plan's territory), `buildTerritories`, `buildTerritory`, `matchTerritory` for #tags; a note's checklist tasks stay out of Customs and territory lists), `src/notes.ts` (the note body format: plain lines, a checklist line is the token `[[task:<uuid>]]` and its task owns the words and done state; parse/serialize, title = first line, line ↔ checklist edits, `buildNotes` summaries with progress, paging order `byRecency` / `withinPages`, `NOTES_PAGE` = 25), `src/search.ts` (`parseSearch`: the first #tag naming a territory narrows, other #words are words; `hasSearchWords`; `splitHighlights` for «snippets»; `SEARCH_PAGE` = 25), `src/order.ts` (internal ordering helpers), `src/quick-add.ts` (`scheduleOf` turns a parse into task fields), `src/planning.ts`, `src/briefing.ts` (the Morning Briefing: `briefingOf(tasks, today)` = what carried over (open one-offs whose day, or with none their deadline, has passed; never repeats), plans with missed steps and loose tasks; `todayPatch` / `dayPatch` / `letGoPatch` (a passed deadline comes off when it gets a later day or none) / `respreadPatches` (a plan's open steps from today to its deadline via `fallbackStepDates`) / `undoPatch`; `picksOf` (what a long one offers for today: loose things and each plan's next step, deadlines ahead first, then the oldest), `isLongBriefing` (`LONG_BRIEFING` = 10 things to decide), `PICK_MOST` = 3), `src/declarations.ts` (Declarations: a start time signed for a task, which is its When plus `declaredAt`; `canDeclare` (open one-offs), `declarePatch`, `isDeclared` (today or later), `keepsDeclaration` (Start Mode from 15 min before to 60 after), `declaredWhen`, `startSoon`), `src/plan-offer.ts` (`suggestsPlan(title)`: whether a title sounds bigger than one sitting, read by its lead verb first so errands stay errands ("Email Dr. Ruiz about the quiz"); `offersPlan(task, hasPlan)`: the row's Plan it pill, never on steps, repeats, a note's checklist lines or estimates of 30 min or less; labeled titles in `test/plan-offer-cases.ts`, judge a change on a fresh unseen batch), `src/start-mode.ts` (wall-clock timer math, default minutes by style, stuck reasons, stamp kinds), `src/when.ts` (date/time/repeat chips, Monday-first month grid and week strip, when/due/repeat patches), `src/reminders.ts` (`planReminders`: a task's time on its day and each time a repeat comes round, timed deadlines, the morning list (what Today will show that morning, plus how many things will have carried over; nothing on, no ring; opening it opens the Morning Briefing), the next 14 days, soonest 64 (iOS's cap); ids `task:` / `due:` / `snooze:<taskId>:<ms>`, `morning:<day>`; `reminderChanges` diffs the plan against what's pending (open tasks' snoozes stay, other features' ids are left alone); `snoozeOf` (+10 min), `morningListOf` (off, 8:00 AM), `remindersDue(tasks, since, now)` (what a server sender rings each run; the caller switches to the person's timezone)), `src/tasks.ts` (`checkOff`: a one-off finishes, a repeat moves on; shared by every checkbox and a reminder's Done), `src/export.ts` (`buildExport`: the Download your data file, `noteAsText`: checklist lines as [x] / [ ] text), `src/account.ts` (`MIN_PASSWORD_LENGTH` = 6, `isValidUsername` / `cleanUsername` (v1's rule), `cleanName` / `nameMetadata` (`NAME_MAX` = 40), the age check (`MIN_AGE` = 13, `birthDateOf`, `ageOn`, `isOldEnough`), `normalizePhone` / `formatPhone` (US and Canada), `planWindow` / `FREE_PLANS_PER_WINDOW` (2 plans per 30.5 days from creation), `authErrorKind`: Supabase Auth's error codes first, then messages); `parseWhen` in `quick-add.ts` reads a schedule on its own ("fri 6pm"), and `parseQuickAdd(text, now, { day, lists })` captures into a preset day unless the text names a date, and files "#chem" in a matching territory (unknown #words stay in the title). Tests: `npm run core:test`.
+## Design work
 
-## Database (Supabase)
-
-### `tasks` table
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID | PK |
-| user_id | UUID | FK → auth.users, used in RLS |
-| title | TEXT | Task name |
-| description | TEXT | AI analysis |
-| status | TEXT | 'in_progress' or 'completed' |
-| steps | JSONB | Array of step objects |
-| completed_steps | INT | Count completed |
-| total_steps | INT | Total count |
-| start_time | TIMESTAMP | When task was started |
-| completed_at | TIMESTAMP | Null if in progress |
-| due_date | TIMESTAMP | Optional deadline |
-| priority | INT | 1=Low, 2=Medium, 3=High, null=unset |
-| recurrence | JSONB | `{ type, startDate }` or null |
-| step_dates | JSONB | `{ stepId: "YYYY-MM-DD" }` or null |
-| created_at | TIMESTAMP | Immutable — use for staleness checks |
-| updated_at | TIMESTAMP | Auto-trigger resets on every write |
-| last_nudge_sent | TIMESTAMP | Last nudge email timestamp |
-| start_commitment, first_interaction_at | TIMESTAMPTZ | Commitment device; first engagement |
-| assignment_id | UUID | FK → assignments (schools feature), null for personal tasks |
-| source | TEXT NOT NULL | 'self' (default) or 'assignment'; a teacher RLS policy reads it. v2 widens it, never drops it |
-
-### Schools tables (in production, not documented elsewhere)
-`organizations`, `org_memberships`, `classes`, `enrollments`, `class_invites`, `assignment_templates`, `assignments`, plus `reset_sessions`. Teachers can SELECT students' `tasks` where `source = 'assignment'` via `is_teacher_of_assignment()`. The full structure is in a pg_dump at `supabase/v2/.local/prod-schema.sql` (gitignored; regenerate with `supabase/v2/scripts/dump-prod-schema.sh`).
-
-### `profiles` email preferences
-`email_reminders_enabled`, `email_reports_enabled` (BOOLEAN, default true) — set false by `/api/unsubscribe`. v1's email crons are retired; State of the Union will read `email_reports_enabled`.
-
-### `profiles` billing and visibility
-- `stripe_customer_id`, `stripe_subscription_status` were written only by v1's Stripe routes (service role; retired with v1, payments return through RevenueCat); a trigger rejects users setting them (`supabase/migrations/profiles_billing_1_before_deploy.sql`).
-- API callers can read only `id, user_id, username, display_name, created_at` (`profiles_billing_2_after_deploy.sql`). The signed-in user reads their own status with `supabase.rpc('my_subscription_status')`. A new profiles column is hidden from the API until it's granted there.
-
-### `streaks` table
-id, user_id, current_streak, highest_streak, last_completed_date, updated_at
-
-### `focus_pods` table (retired)
-Focus Pods (Whereby video rooms) were removed on 2026-10-08: no page or route uses this table. It stays until the cutover contract migration drops the v1-only tables.
-
-All tables have RLS policies filtering by `user_id`.
-
-### v2 data model (`supabase/v2/`, not yet on production)
-Additive migration with a tested rollback; at cutover a fresh start (`04_fresh_start.sql`: every account deleted, citizen numbers from 000001; Alex, 2026-10-12: v1 has one real user) instead of the backfill; see `supabase/v2/README.md` and run `npm test` there (real Postgres via PGlite; also runs against the real production structure when the local dump exists).
-- **Web Push:** `push_tokens` web rows hold the browser's endpoint in `token` and its keys in `keys` (CHECKed); one account per browser (partial unique index), saved through `save_web_push(endpoint, key_p256dh, key_auth)` (SECURITY DEFINER: removes the same browser from another account). `push_sends` (what the sender sent, so nothing rings twice; pruned after 2 days) and `push_snoozes` (web snoozes waiting to ring) are server only: RLS on, no policies. `03_push_cron.sql` schedules the sender (Supabase Cron + pg_net, CRON_SECRET from Vault) once at deploy.
-- `user_settings` (PK `user_id`): `citizen_number` (DB-assigned in signup order, immutable), `timezone`, `day_rollover_hour`, `preferences` JSONB (Citizenship Application answers: `persona`, `hours`, `style`, `nudgeTone`; `startMinutes` only when chosen in Settings; `reminders.morningList` = `{ on, hour, minute }` from the Reminders card), `onboarding_completed_at` (set on Approved or Skip; null sends a signed-in person to the Application). Saves check a row changed (a dead session goes out anonymous and RLS would match nothing). **Owner-only; private settings never go on `profiles`, which is publicly readable.**
-- `lists` (Territories; `list_id` NULL = Customs), `notes`, `stamps`, `start_sessions`, `push_tokens`.
-- `ai_requests`: one row per metered AI request: `'unstick'` (20 a day) and `'clarify'` (a plan's clarifying questions, 20 a day), `'plan'` (one plan at a time, 20 s, so a burst can't outrun the free count), and `'dates'` (dating a plan's steps, 60 a day; the app spreads the steps evenly when refused). Plans themselves are capped at 20 built per 24 hours for everyone, the trial and Pro included (`plan_generations`). A 429 carries `limit: 'daily' | 'free'` so the app says the right thing; Anthropic's own 429 becomes a 503. Helper: `apps/site/lib/limits.js`. The routes log first, then count. Insert and read only.
-- `stamps`: `'first-start'`, `'citizenship'` (the Application answered, not skipped) and `'first-declaration'` (the first Declaration signed, usually the Application's; Undo doesn't take it back) are unique per user (`stamps_once_idx`); `'task-done'` repeats (one per Done in Start Mode); `'declaration-kept'` once per Declaration (the app checks for one earned since `declared_at`).
-- `tasks.declared_at` (TIMESTAMPTZ): a Declaration, signed for the task's When (`scheduled_on` + `remind_at`); CHECK `tasks_declared_has_time` (never without `remind_at`). Every When change clears it (core `whenPatch`). v1's `start_commitment` is separate and retires with v1.
-- `plan_generations`: one row per AI plan built; the free tier (2 per 30.5-day window) counts these in `/api/generate-plan` (insert and read only, so the count can't be reset). **v2's route needs this table: apply `01_schema.sql` to production before the v2 site deploys.**
-- `tasks` gains `list_id`, `parent_id` (steps/subtasks are child rows, one level deep), `notes`, `due_on`, `due_at`, `remind_at`, `rrule`, `estimate_minutes`, `scheduled_on`, `sort_order` (float), `external_id`, `deleted_at`, and widens the existing `source` to `self | assignment | ai | syllabus | lms | reminders` (backfilled steps are `ai`; parents keep theirs). v1 columns (`steps`, `step_dates`, `recurrence`, `due_date`) stay until a later contract migration.
-- Naming: `*_on` = local DATE, `*_at` = TIMESTAMPTZ; soft deletes via `deleted_at` (sync needs tombstones).
-- `tasks.note_id` → `notes` (ON DELETE SET NULL; partial index): a note's live checklist line. The note's body holds `[[task:<uuid>]]` tokens; the task row holds the title and done state, so ticking it on Today shows ticked in the note. Refiling a note refiles its checklist tasks; deleting a note soft-deletes its live ones (Undo brings back both).
-- `search_items(query, kind, in_list, max_rows, skip)`: search, one group at a time (`'open'` / `'done'` tasks, `'notes'`), as the caller under RLS plus an explicit `user_id = auth.uid()`. English stemming with every word as a prefix; punctuation dropped; checklist tokens never match; `#territory` includes its plans' steps; «snippets»; tasks carry `parent_title` and `note_title`. **No GIN index:** under RLS Postgres can't use one (`@@` isn't leakproof), so each query scans the person's own rows (≈40–100 ms at 10,000 tasks on staging); store tsvectors in generated columns if accounts outgrow that.
-- `note_counts` view (`security_invoker`, so RLS applies): live notes per `list_id` (NULL = no territory), for the counts on the Territories tab while notes load 25 at a time.
-- Triggers reject `list_id`/`task_id`/`parent_id`/`note_id` pointing at another user's rows (an FK alone would accept them).
-
-## Key Patterns
-
-### Dark Mode
-- **apps/site:** the A2 night palette as CSS variables in `app/globals.css` (always night: Alex, 2026-10-13); style with `var(--ink)` and friends. (v1's `useTheme()` ternaries retired with its pages.)
-- **apps/app (v2) does not use ternaries.** Style with React Native `StyleSheet` and A2 tokens: `const s = useStyles(makeStyles)` with a module-level `makeStyles = (t: Tokens) => ...`, or `useTokens()` for one-off colors. Night is the default (a US passport is navy); Settings → Appearance → Theme picks Night, Day or Match my device, per device (`theme/appearance.tsx`; `hooks/use-color-scheme.ts` turns the choice into the scheme; on iPhone `Appearance.setColorScheme` makes the keyboard and system UI follow). The launch screen is navy. Never hard-code a hex in a component; add a token to `packages/core/src/tokens.ts` instead. Use the `Text` component's `variant` for type roles, and the `Icon` component (SVG strokes), never emoji.
-- v2 copy: nation names for places and rewards (from `@pn/core` `names`/`voice`), plain labels on buttons (`actions`). The AI-plan button is always "Plan it".
-
-### Auth and access
-- The site has no sign-in of its own: each API route reads the app's Supabase session token (`lib/authMiddleware.js`).
-- Free tier: 2 AI plans per 30.5-day window from the account's creation (core `planWindow`, `FREE_PLANS_PER_WINDOW`); an anonymous passport gets no trial. The web launches free-only (payments come with the App Store version, through RevenueCat).
-- Trial: 10 days of Pro from sign-up, counted from `user.created_at` by `trialDaysRemaining()` in `lib/trial.js`. Never decide access from `user_metadata`: users can write it themselves.
-
-### Styling
-- Tailwind utility classes plus the CSS variables above; no CSS modules or styled-components
-- Fonts are self-hosted with `next/font/google` in `app/layout.jsx` (CSS variables `--font-fraunces`, `--font-plex-mono`, `--font-instrument-sans`, `--font-space-grotesk`); never link fonts.googleapis.com or another font CDN (visitors' IP addresses would go to Google: `DECISIONS.md`)
-- Responsive breakpoints: `md:` and `lg:`
-
-### API Communication
-- The app calls `/api/*` with its session token (`apps/app/src/lib/api.ts`); CORS lives in `middleware.js`
-- Server calls Anthropic through `callClaude()` in `lib/ai.js` (raw `fetch()`, structured JSON output). Models: `MODELS.plan` = `claude-sonnet-5-5` (plans, clarifying questions, syllabus; "I'm stuck" at low effort), `MODELS.fast` = `claude-haiku-4-5` (step dates, short copy). Never build plans on Haiku.
-- Plan prompts live in `lib/prompts/plan.js`; any prompt/model change must pass `evals/plan-quality` (see its README) before shipping. The "I'm stuck" prompt (`lib/prompts/unstick.js`) is gated the same way by `evals/unstick`
-- Clients send `today` (local YYYY-MM-DD) and `timeZone` so the AI resolves relative dates correctly; never use `toISOString()` for local calendar dates
-- Cron routes secured with `Authorization: Bearer <CRON_SECRET>`
-- Service role client created inline in cron routes to bypass RLS
-
-### Naming Conventions
-- Components: PascalCase
-- Functions/variables: camelCase
-- File names: lowercase with hyphens for directories, `.jsx` for React files
-
-## Decisions
-
-`DECISIONS.md` (repo root) collects Alex's product decisions and the deliberate code an outside reviewer could mistake for a bug or over-engineering (local-only sign-out, `fetchAllPages`, settings saves that confirm a row changed, …), plus known limits and what's out of scope. It's what a second reviewer reads first. When Alex makes a product call, or a fix adds code that only looks redundant, add it there. Before removing defensive code, check it isn't listed.
-
-## Agent Instructions
-
-Specialized agent instructions live in the `agents/` directory. Read the relevant file before performing that task.
-
-| Agent | File | When to use |
-|-------|------|-------------|
-| Code Review | `agents/code-review.md` | Before every commit and push. Read the file, run the checklist against the diff, report findings, and fix issues before committing. |
-| Architect | `agents/architect.md` | When planning new features, refactors, or making data model/API/state management decisions. Read the file before proposing designs. |
-| Database Review | `agents/database-review.md` | When writing SQL migrations, designing tables, adding Supabase queries, or reviewing cron route DB logic. Read the file before proposing schema changes. |
-| Doc Updater | `agents/doc-updater.md` | After shipping features, adding files, changing schema, or modifying env vars. Read the file, then update CLAUDE.md and MEMORY.md to match reality. |
-| E2E Runner | `agents/e2e-runner.md` | After shipping major features or before big deploys. Requires Playwright setup (see file). Run critical user journey tests. |
-| Build Error Resolver | `agents/build-error-resolver.md` | When `npm run build` or `npm run lint` fails. Read the file, diagnose the error, apply minimal fixes only, rebuild to verify. |
-| Planner | `agents/planner.md` | When a feature request touches 3+ files or has unclear scope. Read the file, produce a phased plan with specific file paths, then get approval before coding. |
-| Refactor Cleaner | `agents/refactor-cleaner.md` | When cleaning up dead code, splitting oversized files, or removing unused dependencies. Read the file, follow the safety checklist, build after each batch. |
-| Security Review | `agents/security-review.md` | After writing API routes, auth changes, file upload code, or before Stripe integration. Read the file, audit for vulnerabilities, fix before committing. |
-
-When adding new agent files, update this table.
+`DESIGN.md` writes the A2 "Vintage Passport" system out for design tools and agents; `packages/core/src/tokens.ts` stays the source of truth. Design skills live in `.claude/skills/`, pinned in `skills-lock.json` (`npx skills update -p` updates them): `design-taste-frontend` (A2 is an existing brand, so run it with `--keep palette,type`; its working files go to the gitignored `.taste-skill/`), `redesign-existing-projects`, and Vercel's `web-design-guidelines` (skip its Title Case copy rules).
 
 ## Deployment
-- **Platform**: Vercel (Hobby tier)
-- **Auto-deploy**: From `main` branch (git user.email must be alexja2008@gmail.com)
-- **Domain**: procrasti-nation.work, bought through Vercel (registrar Name.com); DNS is Vercel's (`ns1/ns2.vercel-dns.com`): records live under Vercel → Domains, and a domain added to a Vercel project needs no record by hand
-- **Cron**: none on Vercel since v1's emails retired; the Web Push sender runs from Supabase Cron (`supabase/v2/03_push_cron.sql`)
-- **Env vars**: the site's vars above in its Vercel project (`WHEREBY_API_KEY` and, after the v2 merge, `RESEND_API_KEY` are no longer used: delete them there)
-- **The app's project** (`apps/app`, at `app.procrasti-nation.work`): `apps/app/vercel.json` builds the web export (`npx expo export --platform web` → `dist`), serves real files first and every other path as `index.html`, and keeps `sw.js` uncached; it needs "Include files outside the Root Directory" on (the build reads `packages/core`) and the `EXPO_PUBLIC_*` vars.
-- **Web Push at the v2 deploy:** production VAPID keys in both Vercel projects (`VAPID_*` on the site, `EXPO_PUBLIC_VAPID_PUBLIC_KEY` on the app), then `select vault.create_secret('<CRON_SECRET>', 'push_cron_secret');` and `supabase/v2/03_push_cron.sql` on production. The app's Vercel project rewrites every path to `index.html` (a notification can open `/task/<id>` in a new tab) and serves `/sw.js` from the export's root (`apps/app/vercel.json`).
-- **v2 merge:** the Vercel project's Root Directory must flip to `apps/site` at the same moment `v2` merges to `main` (the setting applies to every branch, so flipping it early breaks production). Until then, `v2` pushes produce failing previews. The Expo web build will get its own Vercel project at `app.procrasti-nation.work`.
+
+- Two Vercel projects on the Hobby tier: the site (Root Directory `apps/site`, procrasti-nation.work) and the app (`procrastination-app`, Root Directory `apps/app`, app.procrasti-nation.work). Both need "Include files outside the Root Directory" (they read `packages/core`). Git commits must use Alex's GitHub identity to deploy.
+- Domain bought through Vercel; DNS is Vercel's, so records live under Vercel → Domains.
+- The Web Push sender runs every minute from Supabase Cron (`supabase/v2/03_push_cron.sql`); there are no Vercel crons.
+- iPhone builds come from EAS Build (`apps/app/eas.json`: `staging` and `production` profiles). App Store Connect: "ProcrastiNation: AI Planner", bundle id `work.procrastination.app`.

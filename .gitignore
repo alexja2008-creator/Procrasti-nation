@@ -43,3 +43,12 @@ supabase/v2/.env.staging
 
 # design-taste-frontend's working files (directions dealt, screenshots)
 .taste-skill/
+
+# Personal Claude Code settings and instructions (shared ones live in .claude/settings.json and CLAUDE.md)
+.claude/settings.local.json
+CLAUDE.local.md
+.claude/worktrees/
+
+# iCloud and Finder conflict copies ("file 2.ts"); the repo lives outside iCloud since 2026-10-14
+* 2
+* 2.*

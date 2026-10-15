@@ -2,7 +2,7 @@
 
 **Built 2026-10-06** in `c87e8a5`, `bb8aad3` and `5a4b398`; checked on web (phone and laptop widths, day and night) and the iOS Simulator.
 
-Read `PN2-HANDOFF.md` and `CLAUDE.md` first. This plan was approved for implementation in a fresh session; build all three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
+Read `docs/archive/handoff-2026-10.md` and `CLAUDE.md` first. This plan was approved for implementation in a fresh session; build all three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
 ## What it is
 
@@ -56,7 +56,7 @@ Laptop width (≥ 900 px, `useIsWide`): two columns, the month calendar on the l
 | App | `apps/app/src/components/screen.tsx` | allow passing a ScrollView ref (or render Upcoming's own ScrollView) so the list can scroll to a day |
 | App | `apps/app/src/components/capture.tsx` | `open({ day?: LocalDate })`; a "for {day}" chip; apply the preset day when the parse has no date |
 | App | `apps/app/src/components/row-menu.tsx` + `app/(tabs)/index.tsx` | "Move to…" item → `DateSheet` → `update(task, whenPatch(day, time))` |
-| Docs | `CLAUDE.md`, `PN2-HANDOFF.md` | structure lines, what works, commits, next steps |
+| Docs | `CLAUDE.md`, `docs/archive/handoff-2026-10.md` | structure lines, what works, commits, next steps |
 
 ## Phases (commit + push `v2` after each)
 

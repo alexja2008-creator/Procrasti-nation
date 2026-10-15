@@ -218,7 +218,7 @@ export const voice = {
     focusedSubtitle: 'Just this one for now. The rest can wait.',
     showEverything: (n: number) => `Show everything (${n} more)`,
   },
-  /** Declarations: a start time signed for one task (PN2-DECLARATIONS-PLAN.md). */
+  /** Declarations: a start time signed for one task (docs/plans/shipped/declarations.md). */
   declaration: {
     /** The row menu's item. */
     action: 'Declare a start',
@@ -247,7 +247,7 @@ export const voice = {
     /** Start Mode, on starting in time. */
     kept: 'Declaration kept. That’s a stamp in your passport.',
   },
-  /** The Morning Briefing: what carried over from before today (PN2-MORNING-PLAN.md). Never "overdue". */
+  /** The Morning Briefing: what carried over from before today (docs/plans/shipped/morning-briefing.md). Never "overdue". */
   briefing: {
     /** The card on Today. */
     carriedOver: (n: number) => (n === 1 ? 'One thing carried over' : `${spell(n)} things carried over`),
@@ -721,7 +721,7 @@ export const voice = {
     firstWeekTitle: 'Your first week',
     firstWeekLead: 'Small steps on their days. You don’t have to do them all: just the next one.',
     firstWeekNone: 'Your plan’s steps are on Today and Upcoming, each on its day.',
-    /** The Oath's first step, declared: a start time signed (PN2-DECLARATIONS-PLAN.md). */
+    /** The Oath's first step, declared: a start time signed (docs/plans/shipped/declarations.md). */
     declareTitle: 'Your first Declaration',
     declareLead: (step: string) => `When will you start “${step}”? Pick a time and sign. You’ll get a nudge then.`,
     nudgeTitle: 'A nudge for your next step?',

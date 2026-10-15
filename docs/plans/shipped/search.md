@@ -2,7 +2,7 @@
 
 **Built 2026-10-06** in `8ca3ea6`, `98b42ab` and `b5386ed`; checked on web (phone and laptop widths, day and night) and the iOS Simulator. One change from the plan: no GIN indexes (see Technical choices).
 
-Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
+Read `docs/archive/handoff-2026-10.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
 ## What it is
 
@@ -52,7 +52,7 @@ Technical choices (mine; say if you disagree):
 | App | `apps/app/src/app/search.tsx` (new), `components/search/` (new) | the search page: field, territory chip, grouped results, Show more, empty / no-match / error states |
 | App | `components/search-button.tsx` (new); `(tabs)/index.tsx`, `upcoming.tsx`, `territories.tsx` | the magnifier in each header |
 | App | `app/_layout.tsx`, `(tabs)/_layout.tsx` | the `search` route; ⌘K and / on web |
-| Docs | `CLAUDE.md`, `PN2-HANDOFF.md` | structure lines, schema note, what works, commits |
+| Docs | `CLAUDE.md`, `docs/archive/handoff-2026-10.md` | structure lines, schema note, what works, commits |
 
 ## Phases (commit + push `v2` after each)
 

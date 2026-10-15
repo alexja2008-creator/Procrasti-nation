@@ -6,7 +6,7 @@
 
 **Still to check live (Alex: Claude doesn't permanently delete data):** delete a throwaway passport and confirm Welcome's note and that its rows are gone on staging.
 
-Read `PN2-HANDOFF.md` and `CLAUDE.md` first.
+Read `docs/archive/handoff-2026-10.md` and `CLAUDE.md` first.
 
 ## Why
 
@@ -58,7 +58,7 @@ Settings → Account → **Download your data** builds the file on the device fr
 | App | `apps/app/src/lib/save-file.ts` / `.web.ts` (new) | share sheet on iPhone, download on web (`expo-file-system`, `expo-sharing`) |
 | App | `apps/app/src/components/settings/delete-sheet.tsx` (new), `settings.tsx` | the two rows and the sheet |
 | App | `apps/app/src/auth/sign-out.ts` | a shared "forget this device" for sign-out and deletion |
-| Docs | `CLAUDE.md`, `PN2-HANDOFF.md` | structure, the route, what's left |
+| Docs | `CLAUDE.md`, `docs/archive/handoff-2026-10.md` | structure, the route, what's left |
 
 ## Phases (commit + push `v2` after each)
 

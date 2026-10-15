@@ -10,9 +10,9 @@
 - The Oath: creating the task, opening Plan it, and coming back without a plan.
 - Settings: on the iPhone, it showed and changed the answers.
 
-**Checked with a live session (2026-10-07):** on web, accepting a plan from the Oath, Settings saves landing, the focused Today (its notices fixed in `87c6ce9`) and the tone lines in Start Mode; on the iPhone, Alex's own run through the Application, the Approved stamp and Passport's stamps (layout fixes in `87c6ce9`, `bca5ef6`, `8890c13`). Details in `PN2-HANDOFF.md`, section 5.
+**Checked with a live session (2026-10-07):** on web, accepting a plan from the Oath, Settings saves landing, the focused Today (its notices fixed in `87c6ce9`) and the tone lines in Start Mode; on the iPhone, Alex's own run through the Application, the Approved stamp and Passport's stamps (layout fixes in `87c6ce9`, `bca5ef6`, `8890c13`). Details in `docs/archive/handoff-2026-10.md`, section 5.
 
-Read `PN2-HANDOFF.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
+Read `docs/archive/handoff-2026-10.md` and `CLAUDE.md` first. Build in three phases, committing and pushing each to `v2`, then check in with web and iOS screenshots.
 
 ## What it is
 
@@ -138,7 +138,7 @@ Saves go through `savePreferences`, plus a small `saveSettings` for the rollover
 | App | `(tabs)/index.tsx` | overwhelmed Today |
 | App | `start/[id].tsx`, `notifications/scheduler*.ts` | tone lines |
 | Site | `apps/site/lib/push.js` / cron | the morning list's words by tone (from preferences) |
-| Docs | `CLAUDE.md`, `PN2-HANDOFF.md` | structure, what works |
+| Docs | `CLAUDE.md`, `docs/archive/handoff-2026-10.md` | structure, what works |
 
 ## Phases (commit + push `v2` after each)
 

@@ -2,7 +2,7 @@
 // Expo dev server with NEXT_PUBLIC_APP_URL=http://localhost:8081.
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.procrasti-nation.work';
 
-// v1's pages, retired with v2 (PN2-LAUNCH-PLAN.md). Old bookmarks and links land in the app.
+// v1's pages, retired with v2 (docs/runbooks/launch-2026-10.md). Old bookmarks and links land in the app.
 const V1_PAGES = ['planner', 'dashboard', 'calendar', 'syllabus', 'reset-station', 'friends', 'profile', 'faq', 'focus-pods'];
 
 /** @type {import('next').NextConfig} */
