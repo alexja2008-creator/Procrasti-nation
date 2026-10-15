@@ -106,8 +106,13 @@ const passwordKey = (userId: string) => `pn.passport.choose-password.${userId}`;
 /** True once their email is confirmed and this device still owes them the password step. */
 export async function owesPassword(user: User | undefined | null): Promise<boolean> {
   if (!user || user.is_anonymous || !user.email) return false;
+  return owesPasswordFor(user.id);
+}
+
+/** This device sent `userId`'s save link and still owes them the password step (their email must be confirmed). */
+export async function owesPasswordFor(userId: string): Promise<boolean> {
   try {
-    return (await AsyncStorage.getItem(passwordKey(user.id))) === '1';
+    return (await AsyncStorage.getItem(passwordKey(userId))) === '1';
   } catch {
     return false;
   }
