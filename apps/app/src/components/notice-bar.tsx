@@ -6,7 +6,7 @@ import { Text } from '@/components/text';
 import { useTasks } from '@/data/tasks-store';
 import { useTokens } from '@/theme/tokens';
 
-/** The tasks store's short-lived note ("Deleted …", "Walk Biscuit · back tomorrow"), with Undo when there is one. */
+/** The tasks store's short-lived note ("Deleted …", "Walk Biscuit · back tomorrow"), with Undo or its one action when there is one. */
 export function NoticeBar() {
   const t = useTokens();
   const { notice } = useTasks();
@@ -17,6 +17,7 @@ export function NoticeBar() {
         {notice.text}
       </Text>
       {notice.undo ? <Button variant="quiet" label={voice.task.undo} onPress={notice.undo} /> : null}
+      {notice.action ? <Button variant="quiet" label={notice.action.label} onPress={notice.action.run} /> : null}
     </View>
   );
 }

@@ -1,6 +1,6 @@
 # ProcrastiNation: Claude Code guide
 
-ProcrastiNation (PN) helps people start what they're avoiding: an AI planner ("Plan it") breaks a task into steps small enough to begin, and the app nudges them to start. v2 went live on the web on 2026-10-14 (merged to `main`; the legal pages took effect 2026-10-13); the iPhone app is on TestFlight. Students first.
+ProcrastiNation (PN) helps people start what they're avoiding: an AI planner ("Plan it") breaks a task into steps small enough to begin, and the app nudges them to start. v2 went live on the web on 2026-10-14 (merged to `main`; the privacy policy and terms are effective 2026-10-14, `LEGAL_EFFECTIVE` in `apps/site/lib/site.js`); the iPhone app is on TestFlight. Students first.
 
 **Read first:** `STATUS.md` (what's live, this week, open items for Alex). Before changing product behavior or removing code that looks redundant: `DECISIONS.md`.
 
@@ -34,7 +34,7 @@ Node comes from nvm. If `node` isn't found: `export PATH="$HOME/.nvm/versions/no
 
 ## Rules that always hold
 
-- **`main` is production.** Both Vercel projects deploy from it. Never push to `main` or force-push; changes reach it through a pull request with CI green. Commit and push feature branches freely. A hook in `.claude/settings.json` enforces this.
+- **`main` is production.** Both Vercel projects deploy from it. Never push to `main` or force-push; changes reach it through a pull request with CI green. Commit and push feature branches freely. A hook in `.claude/settings.json` blocks Claude's pushes to `main` and force-pushes; CI isn't a required check on GitHub (`DECISIONS.md`).
 - **No secrets in `apps/app`.** It only gets `EXPO_PUBLIC_*` values; anything needing a key goes through `apps/site`'s `/api/*`.
 - **AI changes are gated.** Any change to a prompt or a model passes its eval in `apps/site/evals/` first. Plans are built on Sonnet, never Haiku.
 - **Never decide access from `user_metadata`**: people can write it themselves. Trials count from `user.created_at`.

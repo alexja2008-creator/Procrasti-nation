@@ -12,7 +12,8 @@ const arc = (r, sweep) => `M ${60 - r} 60 A ${r} ${r} 0 0 ${sweep} ${60 + r} 60`
 
 export default function RoundStamp({ ink, rim = 'PROCRASTINATION', lines, date, size = 120, className = '', style }) {
   const id = `stamp${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
-  const mono = "'IBM Plex Mono', ui-monospace, monospace";
+  // A style, not the fontFamily attribute: SVG presentation attributes don't take var() everywhere.
+  const mono = { fontFamily: 'var(--font-plex-mono), ui-monospace, monospace' };
   return (
     <svg width={size} height={size} viewBox="0 0 120 120" aria-hidden="true" className={className} style={style}>
       <defs>
@@ -21,16 +22,16 @@ export default function RoundStamp({ ink, rim = 'PROCRASTINATION', lines, date, 
       </defs>
       <circle cx="60" cy="60" r="57" fill="none" stroke={ink} strokeWidth="1.8" strokeDasharray="3.5 2.5" />
       <circle cx="60" cy="60" r="50" fill="none" stroke={ink} strokeWidth="1.4" />
-      <text fill={ink} fontFamily={mono} fontSize={RIM_SIZE} letterSpacing="1.6" textAnchor="middle">
+      <text fill={ink} style={mono} fontSize={RIM_SIZE} letterSpacing="1.6" textAnchor="middle">
         <textPath href={`#${id}top`} startOffset="50%">{rim}</textPath>
       </text>
-      <text x="60" y="59" fill={ink} textAnchor="middle" fontFamily={mono} fontWeight="500" fontSize={fit(lines[0], 84)} letterSpacing={LETTER}>
+      <text x="60" y="59" fill={ink} textAnchor="middle" style={mono} fontWeight="500" fontSize={fit(lines[0], 84)} letterSpacing={LETTER}>
         {lines[0]}
       </text>
-      <text x="60" y="74" fill={ink} textAnchor="middle" fontFamily={mono} fontWeight="500" fontSize={fit(lines[1], 56)} letterSpacing={LETTER}>
+      <text x="60" y="74" fill={ink} textAnchor="middle" style={mono} fontWeight="500" fontSize={fit(lines[1], 56)} letterSpacing={LETTER}>
         {lines[1]}
       </text>
-      <text fill={ink} fontFamily={mono} fontSize="8" letterSpacing="1.4" textAnchor="middle">
+      <text fill={ink} style={mono} fontSize="8" letterSpacing="1.4" textAnchor="middle">
         <textPath href={`#${id}bottom`} startOffset="50%">{date}</textPath>
       </text>
     </svg>

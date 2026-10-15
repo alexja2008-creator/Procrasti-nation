@@ -34,7 +34,7 @@ VAPID_PRIVATE_KEY=...
 VAPID_SUBJECT=https://procrasti-nation.work
 ```
 
-`.env.development.local` points `next dev` at the **staging** Supabase project (so it accepts staging sessions) and holds development VAPID keys and staging's service-role key. Both files are gitignored. The app gets the same public key as `EXPO_PUBLIC_VAPID_PUBLIC_KEY`.
+`.env.development.local` points `next dev` at the **staging** Supabase project (so it accepts staging sessions) and holds development VAPID keys and staging's service-role key. Both files are gitignored. The app gets the same public key as `EXPO_PUBLIC_VAPID_PUBLIC_KEY`. Production has its own VAPID pair, in both Vercel projects.
 
 ## Calling Claude
 
@@ -48,12 +48,13 @@ VAPID_SUBJECT=https://procrasti-nation.work
 - Metered AI requests go through `logAndCount` in `lib/limits.js`: log first, then count, so parallel requests can't slip under a cap. `ai_requests` and `plan_generations` are insert-and-read only.
 - Free tier: 2 plans per 30.5 days from account creation (core `planWindow`). Everyone is capped at 20 plans a day. "I'm stuck" is free for everyone at 20 a day. A 429 carries `limit: 'daily' | 'free'`; Anthropic's own 429 becomes a 503.
 - Trial: 10 days of Pro from `user.created_at` (`lib/trial.js`). Anonymous passports get none. Payments come later through RevenueCat; the web is free-only for now.
-- Cron and push routes check `Authorization: Bearer <CRON_SECRET>`; the service-role client is created inline there and nowhere else.
+- Four routes create a service-role client, inline and only after their own check: `cron/push` (`Authorization: Bearer <CRON_SECRET>`), `push/action` (a signed snooze token, no session), `unsubscribe` (a signed link) and `account/delete` (the session plus a typed DELETE; `auth.admin.deleteUser` needs the service role). Nowhere else.
 - CORS for `/api/*` is an allowlist in `middleware.js`: the site's origin, `app.procrasti-nation.work`, and `localhost:8081` / `127.0.0.1:8081` in development.
 
 ## Conventions
 
 - Tailwind utility classes plus the CSS variables; no CSS modules or styled-components. Breakpoints `md:` and `lg:`.
+- Fonts are self-hosted with `next/font/google` in `app/layout.jsx` (CSS variables `--font-fraunces`, `--font-plex-mono`, `--font-instrument-sans`, `--font-space-grotesk`); never link fonts.googleapis.com or another font CDN (visitors' IP addresses would go to Google: `DECISIONS.md`).
 - Components PascalCase, functions camelCase, `.jsx` for React files.
 - The legal pages are formal, approved by Alex on 2026-10-13, and written from what the code does. `lib/site.js` holds `LEGAL_EFFECTIVE` and `LEGAL_DRAFT`.
-- `parse-syllabus` and `unsubscribe` are kept for features coming back (syllabus import, the Monday email).
+- `parse-syllabus` and `unsubscribe` are kept for features coming back (syllabus import, the Monday email). Every marketing email carries a postal address and a one-click unsubscribe (CAN-SPAM, `DECISIONS.md`).

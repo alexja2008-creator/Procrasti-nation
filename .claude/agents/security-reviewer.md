@@ -22,7 +22,7 @@ The app (`apps/app`) talks to Supabase directly with the anon key, so **RLS is t
 
 ## Must fix
 - A secret in source or in the app bundle. Tracked files and git history are public.
-- A route that acts before checking the session (`lib/authMiddleware.js`) or `CRON_SECRET`; a service-role client in any other route.
+- A route that acts before checking the session (`lib/authMiddleware.js`) or `CRON_SECRET`; a service-role client in any route but the four that need one (`cron/push`, `push/action`, `unsubscribe`, `account/delete`), or one used before its route's own check.
 - A table without RLS, a policy that doesn't bind rows to `auth.uid()`, or a foreign key between user-owned rows without its ownership trigger.
 - Private data on `profiles` (publicly readable) or a new `profiles` column granted to the API.
 - Access decided from `user_metadata`.

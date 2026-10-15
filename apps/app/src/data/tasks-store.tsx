@@ -1,5 +1,6 @@
 import {
   checkOff,
+  planToFinish,
   logicalDateString,
   scheduleOf,
   parseLocalDate,
@@ -17,8 +18,8 @@ import { fetchActiveTasks, fetchNoteTasks, fileNoteTasks, insertTask, refileTask
 import { useUserSettings } from '@/data/user-settings';
 import { timeGiven } from '@/notifications/time-given';
 
-/** A short-lived note on Today, optionally with Undo. */
-export type Notice = { text: string; undo?: () => void };
+/** A short-lived note on Today, with Undo or one other action ("Mark plan done") when there is one. */
+export type Notice = { text: string; undo?: () => void; action?: { label: string; run: () => void } };
 
 type Store = {
   tasks: Task[];
@@ -149,7 +150,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
 
   useEffect(() => {
     if (!notice) return;
-    const timer = setTimeout(() => setNotice(null), notice.undo ? 10_000 : 4000);
+    const timer = setTimeout(() => setNotice(null), notice.undo || notice.action ? 10_000 : 4000);
     return () => clearTimeout(timer);
   }, [notice]);
 
@@ -243,6 +244,12 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
       const done = checkOff(task, today);
       patch = done.patch;
       if (done.movedTo) setNotice({ text: voice.today.movedOn(task.title, relativeDayPhrase(done.movedTo, today)) });
+      // A plan's last open step: ask before marking the plan done (Alex, 2026-10-14). Today's row keeps asking.
+      const plan = planToFinish(tasks, task);
+      if (plan) {
+        const steps = tasks.filter((t) => t.parentId === plan.id && !t.deletedAt).length;
+        setNotice({ text: voice.today.allStepsDone(steps), action: { label: voice.today.markPlanDone, run: () => (setNotice(null), toggle(plan)) } });
+      }
     }
     replace(task.id, { ...task, ...patch });
     const { saving, latest } = queueWrite(task.id, () => updateTask(task.id, patch));

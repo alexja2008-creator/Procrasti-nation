@@ -4,18 +4,18 @@ As of 2026-10-14. Rewrite this file every Monday (replace, don't append); histor
 
 ## Live
 
-- **Web:** v2 merged to `main` on 2026-10-14 (PR #12). procrasti-nation.work is the landing page, privacy policy and terms; app.procrasti-nation.work is the app. Free-only; v1's pages redirect to the app. The same day: the Application asks for a name (PR #16); every day ends at midnight unless chosen otherwise (PR #14, merged just before).
-- **iPhone:** TestFlight builds 1–4 run on staging and were checked on Alex's iPhone (reminders, password reset, Declarations stamp, theme). Students get a production build.
-- **Beta:** 10 students on TestFlight; the feedback form is ready (kept privately; see `docs/external.md`), sent after about a week. Go/no-go gate: at least 4 of 10 started something they'd avoided, and NPS of 30 or more.
+- **Web:** v2 merged to `main` on 2026-10-14 (PR #12). procrasti-nation.work is the landing page, privacy policy and terms; app.procrasti-nation.work is the app. Free-only; v1's pages redirect to the app. The same day: the Application asks for a name (PR #16); every day ends at midnight unless chosen otherwise (PR #14, merged just before); the legal audit's fixes, including the age check before any account (PR #13); a plan is one row on Today (PR #17).
+- **iPhone:** TestFlight builds 1–4 ran on staging and were checked on Alex's iPhone (reminders, password reset, Declarations stamp, theme). The production build is on TestFlight too (2026-10-14, checked on Alex's iPhone).
+- **Beta:** 10 students lined up; TestFlight's external group for them isn't set up yet (`docs/runbooks/launch-2026-10.md`, The iPhone track). The feedback form is ready (kept privately; see `docs/external.md`), sent after about a week. Go/no-go gate: at least 4 of 10 started something they'd avoided, and NPS of 30 or more.
 
 ## This week
 
-- Restructure (this branch): docs moved into `docs/`, short CLAUDE.md files, v2 subagents, CI, hooks. The repo moved out of iCloud to `~/PNDEV/Procrasti-nation`.
+- Restructure (`chore/restructure-for-launch`): docs moved into `docs/`, short CLAUDE.md files, v2 subagents, CI, hooks. The repo moved out of iCloud to `~/PNDEV/Procrasti-nation`.
 
 ## Open items for Alex
 
-- [ ] Confirm the cutover's production smoke test passed (`docs/runbooks/launch-2026-10.md`, Phase 3, step 9) and that step 10 (delete `RESEND_API_KEY` from the site's Vercel env) is done.
-- [ ] Before students get a build: `work.procrastination.app://auth/callback` on production's Supabase redirect list, the Apple provider on production, production values in EAS's production environment, then a production build to an external TestFlight group.
+- [ ] Confirm the cutover's step 10 is done: `RESEND_API_KEY` deleted from the site's Vercel env (`docs/runbooks/launch-2026-10.md`, Phase 3). The smoke test passed on 2026-10-14.
+- [ ] Before students get the build: `work.procrastination.app://auth/callback` on production's Supabase redirect list and the Apple provider on production (if not done at cutover), then TestFlight's external group with a public link for the 10 students (the first external build goes through Beta App Review).
 - [ ] After the move: copy Claude Code's project memory to the new path, check push and the test suites from `~/PNDEV`, then delete the iCloud copy (`~/PNDEV/LOCAL-ONLY-CHECKLIST.md`).
 - [ ] Payments: App Store Connect's Paid Apps agreement, tax and banking; the Small Business Program (15%); a RevenueCat account.
 - [ ] Before App Store review: a Sign in with Apple key, so deleting a passport can revoke the Apple token.

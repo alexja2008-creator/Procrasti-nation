@@ -43,7 +43,7 @@ The Application tailors the app, but nothing in it sells the app, and v2 has no 
 - **The competition is free and preinstalled** (Notes, Reminders). Nobody moves their notes into an app that might lock them out, so the free tier after cancelling (decision 2) has to be said out loud.
 - **Students and payment.** Some have no card; under-18s buy through Ask to Buy (a parent approves). That's also an opening (parents approve study tools), but a pending approval must not leave them stuck.
 - **Motivation is seasonal** (midterms, finals), not daily devotion: a semester-length plan may fit better than monthly or yearly.
-- **The growth plan is organic** (the business plan, kept privately per `docs/external.md`: TikTok, Reddit, word of mouth, $20–40 per user). Free users are what spreads; Prayer Lock's paid funnel doesn't need them.
+- **The growth plan is organic** (the business plan, kept privately per `docs/external.md`: TikTok, Reddit, word of mouth). Free users are what spreads; Prayer Lock's paid funnel doesn't need them.
 - **The voice.** Guilt works for Prayer Lock's audience; it backfires on procrastination.
 
 **The hybrid (required trial to get in, free tier on the way out):** it captures most of a hard paywall's conversion while keeping people who cancel as free users who keep their data, can convert later and can still recommend the app. Its weak spots, and the fix for each (**all four adopted by Alex**; the semester plan's price comes later):
@@ -70,6 +70,7 @@ Pages marked **new**; the rest exist today. Everything before 15 runs on the ano
 |---|---|---|
 | 1 | Welcome | "Citizenship Application" + **Begin** (creates the anonymous passport), and "Already a citizen? Sign in" |
 | 1a | What should we call you? | added 2026-10-14 (Alex): first name required, last name optional; on the passport, Today's greeting, Approved and Declarations; Settings → Name changes it |
+| 1b | Date of birth | added 2026-10-14 (the legal audit, COPPA): the age check before any account; neutral, checked on the device, never kept; under 13 the device is turned away (`DECISIONS.md`) |
 | 2 | Purpose of visit | as now |
 | 3 | Your hours | as now |
 | 4 | What usually stops you? | as now |
@@ -123,6 +124,7 @@ Existing accounts that haven't done the Application start at 1 already signed in
    - Alex, in Supabase (staging now, production at launch): turn on **Anonymous sign-ins**; Turnstile for the web; a **Twilio account with a Verify service**, its keys under Authentication → Providers → Phone, and US / Canada only in Twilio's geo permissions.
 2. **Payments** (needs the Apple Developer account, App Store Connect products, RevenueCat and a privacy policy page):
    - `entitlements` + webhook (database review + security review), the trial page with Apple's purchase sheet and Stripe on the web, Restore purchases, Ask to Buy, the trial reminder, Settings → Subscription (manage / restore);
+   - the renewal terms right by each subscribe button (California's auto-renewal law, ROSCA, Apple 3.1.2): the amount, how often, renews automatically until cancelled, how to cancel, and that the trial turns into a paid subscription on its last day unless cancelled; links to the Terms and the privacy policy on the paywall;
    - Save your passport with Apple / Google; the anonymous-passport cleanup job;
    - the plan route reads entitlements; the created-at trial goes.
 3. **Polish and measure:**

@@ -70,7 +70,7 @@ export default function Logo({ size = 'md', darkText = false, color, accent }) {
       {/* Wordmark */}
       <span
         className={`${text} font-bold tracking-tight leading-none ${baseColor}`}
-        style={{ fontFamily: "'Space Grotesk', sans-serif", transform: 'skewX(-5deg)', display: 'inline-block', color }}
+        style={{ fontFamily: 'var(--font-space-grotesk), sans-serif', transform: 'skewX(-5deg)', display: 'inline-block', color }}
       >
         Procrasti<span className={accent ? undefined : 'text-emerald-400'} style={{ color: accent }}>Nation</span>
       </span>

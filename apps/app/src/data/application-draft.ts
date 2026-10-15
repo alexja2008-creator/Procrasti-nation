@@ -7,7 +7,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEY = 'pn.application.draft';
 
-export type Draft = { preferences: Partial<Preferences>; dayRolloverHour?: number; name?: { first: string; last: string } };
+export type Draft = {
+  preferences: Partial<Preferences>;
+  dayRolloverHour?: number;
+  name?: { first: string; last: string };
+  /** Passed the age check (data/age-check): the date of birth itself is never kept. */
+  agePassed?: boolean;
+};
 
 const EMPTY: Draft = { preferences: {} };
 
@@ -17,7 +23,7 @@ export async function loadDraft(): Promise<Draft> {
     const parsed = raw ? (JSON.parse(raw) as Partial<Draft>) : null;
     if (!parsed || typeof parsed.preferences !== 'object' || !parsed.preferences) return EMPTY;
     const name = typeof parsed.name?.first === 'string' ? { first: parsed.name.first, last: String(parsed.name.last ?? '') } : undefined;
-    return { ...EMPTY, ...parsed, name };
+    return { ...EMPTY, ...parsed, name, agePassed: parsed.agePassed === true };
   } catch {
     return EMPTY;
   }

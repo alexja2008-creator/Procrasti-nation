@@ -199,6 +199,13 @@ export const voice = {
     savedTo: (where: string) => `Saved to ${where}.`,
   },
   today: {
+    /** A plan on Today: its steps behind a toggle, progress where a checkbox would be (Alex, 2026-10-14). */
+    stepsProgress: (done: number, total: number) => `${done} of ${total} steps`,
+    stepsProgressSpoken: (done: number, total: number) => `${done} of ${total} steps done`,
+    showSteps: (n: number) => (n === 1 ? 'Show step' : `Show steps (${n})`),
+    hideSteps: 'Hide steps',
+    allStepsDone: (total: number) => (total === 1 ? 'Its step is done. Mark the plan done?' : `All ${total} steps done. Mark the plan done?`),
+    markPlanDone: 'Mark plan done',
     emptyHint: 'Capture anything: “Walk Biscuit every day 6pm”, “Essay due fri”, or just “Buy stamps”.',
     captureCta: 'Capture something',
     loadFailed: 'Couldn’t load your day. Check your connection.',
@@ -614,6 +621,15 @@ export const voice = {
     nameLead: 'It goes on your passport. Only you see it, and you can change it in Settings.',
     firstName: 'First name',
     lastName: 'Last name (optional)',
+    /** The age check (core `MIN_AGE`): it never says what age is needed, and the date is never kept. */
+    birthTitle: 'Date of birth',
+    birthLead: 'Every passport asks. It’s checked on this device and never saved.',
+    birthMonth: 'Month',
+    birthDay: 'Day',
+    birthYear: 'Year',
+    birthInvalid: 'That date doesn’t look right. Enter it as MM / DD / YYYY.',
+    ineligibleTitle: 'Sorry, you’re not eligible.',
+    ineligibleBody: 'ProcrastiNation can’t issue you a passport.',
     purposeTitle: 'Purpose of visit',
     purposes: [
       { id: 'school', label: 'School', hint: 'Classes, assignments, exams' },

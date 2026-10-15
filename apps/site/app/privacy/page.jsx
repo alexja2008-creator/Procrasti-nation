@@ -192,6 +192,13 @@ export default function Privacy() {
         information from such a child, we will delete it. If you believe that a child under the age of thirteen (13) has
         provided us with personal information, please contact us at {contact}.
       </p>
+      <p>
+        Before an account is created, the Services ask for your date of birth to confirm that you meet the minimum age
+        set out in our <Link href="/terms">Terms of Use</Link>. Your date of birth is checked on your device and is
+        neither stored nor transmitted to us; your device retains only the result of the check. If you do not meet the
+        minimum age, no account is created, and an account that has already been created, for example through Apple
+        or Google sign-in, is deleted.
+      </p>
 
       <h2>9. Location of Processing</h2>
       <p>

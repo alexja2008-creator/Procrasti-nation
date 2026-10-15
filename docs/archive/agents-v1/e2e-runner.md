@@ -112,7 +112,7 @@ test.describe('AI Planner', () => {
 ### Auth is Required for Most Flows
 - Almost every page requires a signed-in user
 - Use a test account or mock Supabase auth for repeatable tests
-- Trial status affects what features are available (free = 5 plans/month)
+- Trial status affects what features are available (free = 2 plans per 30.5-day window)
 
 ### AI Responses Are Non-Deterministic
 - AI plan generation returns different steps each time

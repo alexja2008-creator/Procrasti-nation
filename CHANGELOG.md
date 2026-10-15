@@ -16,3 +16,6 @@ What changed for people using PN, newest first, in their words. One entry per re
 - Free: 2 AI plans per month-long window, and "I'm stuck" for everyone.
 - The Citizenship Application asks what to call you, right after Welcome. You can change it in Settings → Name.
 - Every day ends at midnight unless you pick a later end in Settings → Day ends at. Night owls no longer see yesterday's Today after midnight.
+- A plan is one row on Today, showing how far along it is ("2/7"), with Show steps to open it. Start on a plan starts its next step, and a plan with every step done asks before it's marked done.
+- The Application asks for your date of birth, checked on your device and never kept: PN is for 13 and older.
+- The site's fonts load from procrasti-nation.work itself, not from Google. The privacy policy and terms were revised the same day.

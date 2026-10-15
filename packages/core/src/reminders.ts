@@ -8,7 +8,7 @@
 // What rings: a task's time on its day (each time a repeat comes round), a
 // deadline with a time, and the optional morning list.
 
-import { buildToday } from './agenda.ts';
+import { buildToday, groupAgenda } from './agenda.ts';
 import { briefingOf } from './briefing.ts';
 import { addDays, atLocalTime, clockOf, describeRRule, formatTime, localDateString, logicalDateString, nextOccurrence, occurrenceOnOrAfter } from './dates.ts';
 import { linesFor, voice, type NudgeTone } from './nation.ts';
@@ -147,7 +147,8 @@ export function planReminders(tasks: Task[], now: Date, options: ReminderOptions
         // What Today will show that morning if nothing changes before then.
         const view = buildToday(live, logicalDateString(new Date(at), rolloverHour), rolloverHour);
         const ahead = view.agenda.filter((e) => !e.done);
-        const count = ahead.length + (view.nextStep ? 1 : 0) + (view.upNext ? 1 : 0);
+        // Counted as Today counts: a plan once, however many of its steps are on.
+        const count = groupAgenda(view, live).openCount;
         const first = view.nextStep ?? view.upNext ?? ahead[0];
         // What will have carried over by then; opening the notification opens the Morning Briefing.
         const carried = briefingOf(live, logicalDateString(new Date(at), rolloverHour)).count;

@@ -15,7 +15,7 @@ You review changes to ProcrastiNation v2: an Expo app (`apps/app`, TypeScript), 
 
 ## Must fix (block the commit)
 - A secret outside `process.env`, or anything but `EXPO_PUBLIC_*` values in `apps/app`.
-- An API route that reads or writes user data without the session check (`lib/authMiddleware.js`), or a service-role client outside the cron and push routes.
+- An API route that reads or writes user data without the session check (`lib/authMiddleware.js`), or a service-role client outside the four routes `apps/site/CLAUDE.md` lists (`cron/push`, `push/action`, `unsubscribe`, `account/delete`), or one used before its route's own check.
 - Access decided from `user_metadata`.
 - A prompt or model change in `apps/site/lib/prompts/` or `lib/ai.js` without a new eval result that matches or beats the README's table.
 - Data loss: a list that can pass 1,000 rows loaded without `fetchAllPages`; writes for one row that can land out of order; a save that can "succeed" without saving.

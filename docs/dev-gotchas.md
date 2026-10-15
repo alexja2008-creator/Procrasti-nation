@@ -6,15 +6,11 @@ Hard-won notes from building v2: simulator and browser quirks, Supabase limits, 
 
 1. Start both preview servers from `.claude/launch.json`: `site` (port 3000; `apps/site/.env.development.local` points it at staging) and `app-web` (port 8081; `apps/app/.env.local` points at staging).
 2. Open `http://localhost:8081`. To sign in inside Claude's browser pane, Alex requests a link there and pastes it from his email into the pane's address bar (a PKCE link only works in the browser that requested it). Alex also has a password on staging.
+   On the iOS Simulator: request the link from the simulator, then open Alex's link with `xcrun simctl openurl booted "<link>"` and tap Open. Only the **newest** link works (each request cancels the previous one), and the link must come from the device that asked for it.
 3. For iOS: from `apps/app`, run `npx expo start --port 8082 < /dev/null`, then `xcrun simctl openurl booted exp://127.0.0.1:8082`.
 
 **iOS development build** (reminders need it: Expo Go can't schedule local notifications on iOS 27): with Metro running, `sh apps/app/scripts/ios-dev-build.sh` (add `METRO_PORT=8083` to point it at another Metro). It builds a copy in `~/Library/Caches/procrastination-ios` (about 8.5 GB with build products; later builds are incremental) (originally because iCloud's file attributes broke code signing in the old Desktop location), and installs `dev.procrastination.local` on the booted Simulator. It's a separate app from Expo Go, so it needs its own sign-in (request the link from it, then open the link on the Simulator).
 
-**Run it locally:**
-1. Start both preview servers from `.claude/launch.json`: `site` (port 3000; `apps/site/.env.development.local` points it at staging) and `app-web` (port 8081; `apps/app/.env.local` points at staging).
-2. Open `http://localhost:8081`. To sign in inside Claude's browser pane, Alex requests a link there and pastes it from his email into the pane's address bar (a PKCE link only works in the browser that requested it).
-   On the iOS Simulator: request the link from the simulator, then open Alex's link with `xcrun simctl openurl booted "<link>"` and tap Open. Only the **newest** link works (each request cancels the previous one), and the link must come from the device that asked for it.
-3. For iOS: from `apps/app`, run `npx expo start --port 8082 < /dev/null`, then `xcrun simctl openurl booted exp://127.0.0.1:8082`.
 
 ## Notes
 
@@ -33,9 +29,9 @@ Hard-won notes from building v2: simulator and browser quirks, Supabase limits, 
 - **Staging test data:** give test rows ids with a recognizable prefix (e.g. `5ea4c000-…`, hex only) so cleanup can soft-delete exactly them (`where id::text like '5ea4c000-%'`) without touching Alex's own data. Restore Alex's account to his own tasks afterwards (17 live tasks, no notes or territories, as of this handoff).
 - **Testing tools:** the browser pane's `type` with a multi-line string doubles text in React Native Web textareas; type each line and press Return between them. iOS Simulator screenshots taken right after a tap can show the screen before it reacts; wait a second. Expo Go's floating gear button sits over the top-right corner (where the magnifier is): drag it away with `touch_path` (press, hold 300 ms, move). When the browser pane is hidden it can't take screenshots or clicks: `form_input`, `find` and DOM checks still work.
 - **macOS shell:** `sed` lacks `\|` alternation (use `-E`), and parallel shell calls can race on the working directory, so use absolute paths.
-- **Site ESLint** was never configured (`npm run lint` opens a setup prompt); use `npm run build` to check the site. The build prints "Dynamic server usage" logs from the friends routes; that's harmless noise.
+- **Site ESLint** was never configured (`npm run lint` opens a setup prompt); use `npm run build` to check the site.
 - **Git:** commits use the noreply author email and still auto-deploy. Pushing `main` deploys to production. Avoid interactive history rewrites.
-- **Crons:** nudge digest daily at 14:00 UTC; weekly report Mondays at 13:00 UTC; both need the `CRON_SECRET` bearer token. The Web Push sender runs every minute from Supabase Cron (`03_push_cron.sql`), since Vercel's cron runs once a day.
+- **Crons:** none on Vercel (v1's nudge digest and weekly report are retired). The Web Push sender runs every minute from Supabase Cron (`03_push_cron.sql`), since Vercel's cron runs once a day on Hobby; it calls `/api/cron/push` with the `CRON_SECRET` bearer token.
 - **A password change signs out the account's other sessions** (Supabase). Setting a password on one device sends every other device back to sign-in.
 - **Claude doesn't open anonymous passports on staging** (that creates an account on a remote service), so the signed-in half of the funnel is Alex's to run: test the signed-out pages at `127.0.0.1:8081` (its own storage, signed out), and stop before answering "Where did you hear about us?".
 - **Never test Sign out on Alex's account with supabase-js's default.** `signOut()` without `{ scope: 'local' }` revokes every session (the app now passes `'local'`). A revoked session keeps working against the database until its access token expires (up to an hour), but the site's routes refuse it at once (`/api/generate-plan` fails), and then the device falls back to sign-in.

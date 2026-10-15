@@ -2,6 +2,7 @@ import {
   buildToday,
   formatDayLabel,
   formatTime,
+  groupAgenda,
   isDeclared,
   names,
   offersPlan,
@@ -24,6 +25,7 @@ import { useCapture } from '@/components/capture';
 import { Icon } from '@/components/icon';
 import { NextStepCard } from '@/components/next-step-card';
 import { NoticeBar } from '@/components/notice-bar';
+import { PlanRow } from '@/components/plan-row';
 import { RowMenu } from '@/components/row-menu';
 import { Screen } from '@/components/screen';
 import { SearchButton } from '@/components/search-button';
@@ -41,12 +43,13 @@ const dueLabel = (dueOn: string, today: string) => voice.today.due(relativeDayPh
 
 /**
  * `planned` holds ids of tasks that already have plan steps; `places` names
- * territories and notes by id (a checklist line names its note).
+ * territories and notes by id (a checklist line names its note). `inPlan`: a
+ * step listed under its plan's row, so its meta leaves the plan's name out.
  */
-function rowFor(entry: AgendaEntry, today: string, planned: Set<string>, places: Map<string, string>): TaskRowItem {
+function rowFor(entry: AgendaEntry, today: string, planned: Set<string>, places: Map<string, string>, inPlan = false): TaskRowItem {
   const t = entry.task;
   const meta: string[] = [];
-  if (entry.parentTitle) meta.push(`${entry.parentTitle} · step ${entry.stepIndex} of ${entry.stepCount}`);
+  if (entry.parentTitle) meta.push(inPlan ? `step ${entry.stepIndex} of ${entry.stepCount}` : `${entry.parentTitle} · step ${entry.stepIndex} of ${entry.stepCount}`);
   else {
     const place = t.noteId ? places.get(t.noteId) : t.listId ? places.get(t.listId) : undefined;
     if (place) meta.push(place);
@@ -83,8 +86,19 @@ export default function TodayScreen() {
   const [showAll, setShowAll] = useState(false);
   // "Show everything" lasts for this visit.
   useFocusEffect(useCallback(() => () => setShowAll(false), []));
+  // Plans whose steps are showing (Show steps), for as long as Today is open.
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+  const onExpand = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
 
   const view = buildToday(tasks, today, rolloverHour);
+  // Each plan is one item, its steps behind it; a plan counts once.
+  const { items, openCount } = groupAgenda(view, tasks);
+  const hasOpen = items.some((i) => (i.kind === 'task' ? !i.entry.done : !i.group.finished));
   const byId = new Map<string, Task>(tasks.map((t) => [t.id, t]));
   const planned = new Set(tasks.flatMap((t) => (t.parentId ? [t.parentId] : [])));
   const places = new Map([...lists.map((l) => [l.id, l.name] as const), ...noteTitles(notes, tasks)]);
@@ -105,7 +119,6 @@ export default function TodayScreen() {
   // One thing to Start: the next plan step, or else the most pressing task.
   const next = view.nextStep ?? view.upNext;
   const isStep = next === view.nextStep;
-  const openCount = view.agenda.filter((e) => !e.done).length + (next ? 1 : 0);
   const nextParent = next?.task.parentId ? byId.get(next.task.parentId) : undefined;
   const nextDueOn = isStep ? nextParent?.dueOn : next?.task.dueOn;
   // "It feels too big": just the next step, the rest a tap away.
@@ -241,7 +254,7 @@ export default function TodayScreen() {
             </Text>
             <View style={s.count}>
               <Text variant="label" color={c.muted} style={s.countText}>
-                {view.agenda.length}
+                {items.length}
               </Text>
             </View>
           </View>
@@ -249,13 +262,13 @@ export default function TodayScreen() {
           <NoticeBar />
 
           {/* Always shown: press and hold is the way to Start or plan any task. */}
-          {view.agenda.some((e) => !e.done) ? (
+          {hasOpen ? (
             <Text variant="meta" color={c.muted} style={s.hint}>
               {voice.rowMenuHint(Platform.OS === 'web')}
             </Text>
           ) : null}
 
-          {view.agenda.length === 0 && !next ? (
+          {items.length === 0 && !next ? (
             <View style={s.empty}>
               <Text variant="body" color={c.inkSoft}>
                 {voice.today.emptyHint}
@@ -264,17 +277,41 @@ export default function TodayScreen() {
             </View>
           ) : (
             <View style={s.list}>
-              {view.agenda.map((entry, i) => (
-                <TaskRow
-                  key={entry.task.id}
-                  item={rowFor(entry, today, planned, places)}
-                  last={i === view.agenda.length - 1}
-                  onToggle={onToggle}
-                  onPlan={onPlan}
-                  onMenu={onMenu}
-                  onOpen={onOpen}
-                />
-              ))}
+              {items.map((item, i) =>
+                item.kind === 'task' ? (
+                  <TaskRow
+                    key={item.entry.task.id}
+                    item={rowFor(item.entry, today, planned, places)}
+                    last={i === items.length - 1}
+                    onToggle={onToggle}
+                    onPlan={onPlan}
+                    onMenu={onMenu}
+                    onOpen={onOpen}
+                  />
+                ) : (
+                  <PlanRow
+                    key={item.group.plan.id}
+                    group={item.group}
+                    item={rowFor({ task: item.group.plan, done: item.group.finished }, today, planned, places)}
+                    expanded={expanded.has(item.group.plan.id)}
+                    onExpand={onExpand}
+                    onFinish={onToggle}
+                    onMenu={onMenu}
+                    onOpen={onOpen}
+                    last={i === items.length - 1}>
+                    {item.group.steps.map((step, j) => (
+                      <TaskRow
+                        key={step.task.id}
+                        item={rowFor(step, today, planned, places, true)}
+                        last={j === item.group.steps.length - 1}
+                        onToggle={onToggle}
+                        onMenu={onMenu}
+                        onOpen={onOpen}
+                      />
+                    ))}
+                  </PlanRow>
+                ),
+              )}
             </View>
           )}
         </>

@@ -5,12 +5,15 @@ import {
   formatCitizenNumber,
   hoursChange,
   isDeclared,
+  isOldEnough,
+  localDateString,
   oathTask,
   parseQuickAdd,
   resumePage,
   territoriesFor,
   voice,
   type Hours,
+  type LocalDate,
   type OathDue,
   type Preferences,
 } from '@pn/core';
@@ -21,6 +24,7 @@ import { ActivityIndicator, StyleSheet, TextInput, View, type ScrollView } from 
 import { useAuth } from '@/auth/auth-provider';
 import { isUnsaved } from '@/auth/passport';
 import { personName, saveName } from '@/auth/person-name';
+import { signOut } from '@/auth/sign-out';
 import { DeclarePage, FirstWeekPage, NudgePage } from '@/components/application/after-oath';
 import { ApplicationForm } from '@/components/application/application-form';
 import { NewApplicant } from '@/components/application/new-applicant';
@@ -32,6 +36,8 @@ import { LandingStamp } from '@/components/landing-stamp';
 import { SavePassport } from '@/components/save-passport';
 import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
+import { deleteMyAccount } from '@/data/account';
+import { hasPassedAgeCheck, isTurnedAway, markAgePassed, turnAway } from '@/data/age-check';
 import { clearDraft, hasAnswers, loadDraft } from '@/data/application-draft';
 import { useLists } from '@/data/lists-store';
 import { awardCitizenship } from '@/data/stamps';
@@ -52,17 +58,31 @@ export default function ApplicationScreen() {
   return session ? <Arrival /> : <NewApplicant />;
 }
 
-/** Signed in: first, any answers given signed out move into the passport (then they're cleared). */
+/**
+ * Signed in: first, any answers given signed out move into the passport (then they're cleared).
+ * On a device the age check turned away, nobody goes on with an Application: they're signed out
+ * (an account that's done it, signed in to, never comes here).
+ */
 function Arrival() {
   const t = useTokens();
   const { session } = useAuth();
   const { settings, status, savePreferences, saveSettings } = useUserSettings();
   const [moved, setMoved] = useState(false);
+  const [ageChecked, setAgeChecked] = useState(false);
   const started = useRef(false);
 
   const move = useEffectEvent(async () => {
+    if (!session) return;
+    if (await isTurnedAway()) {
+      // Signed out, Welcome shows the turned-away page.
+      await signOut().catch(() => undefined);
+      return;
+    }
+    const userId = session.user.id;
     try {
       const draft = await loadDraft();
+      if (draft.agePassed) await markAgePassed(userId);
+      setAgeChecked(await hasPassedAgeCheck(userId));
       if (hasAnswers(draft) && !settings?.onboardingCompletedAt) {
         if (Object.keys(draft.preferences).length > 0) await savePreferences(draft.preferences);
         if (draft.dayRolloverHour !== undefined) await saveSettings({ dayRolloverHour: draft.dayRolloverHour });
@@ -94,10 +114,10 @@ function Arrival() {
       </Screen>
     );
   }
-  return <Application />;
+  return <Application ageCheckedBefore={ageChecked} />;
 }
 
-function Application() {
+function Application({ ageCheckedBefore }: { ageCheckedBefore: boolean }) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const { session } = useAuth();
@@ -107,7 +127,13 @@ function Application() {
   const prefs: Partial<Preferences> = settings?.preferences ?? {};
   const name = personName(session?.user);
   const scroll = useRef<ScrollView>(null);
-  const { turnedTo, go, answer, busy, setBusy, error, setError } = useTurns(resumePage(prefs, !!name.first), scroll, copy.saveFailed);
+  // Nobody gets past the age check without passing it, answers from before it existed included.
+  const [ageChecked, setAgeChecked] = useState(ageCheckedBefore);
+  const { turnedTo, go, answer, settled, busy, setBusy, error, setError } = useTurns(
+    resumePage(prefs, !!name.first, ageCheckedBefore),
+    scroll,
+    copy.saveFailed,
+  );
   const unsaved = isUnsaved(session?.user);
   // The Oath: what they typed, when it's due, and the task once it's made.
   const [oathText, setOathText] = useState('');
@@ -130,6 +156,32 @@ function Application() {
       const change = hoursChange(hours, prefs);
       return Promise.all([savePreferences(change.preferences), saveSettings({ dayRolloverHour: change.dayRolloverHour })]);
     }, next);
+
+  /**
+   * The age check, signed in (an account made with Apple or Google, or a passport opened before the
+   * check existed). Under the age: the device is turned away and the account just told us its age
+   * is deleted, everything in it (the privacy policy's promise); if that fails it's signed out here.
+   */
+  const onBirth = (born: LocalDate) => {
+    if (!session) return;
+    const userId = session.user.id;
+    if (isOldEnough(born, localDateString())) {
+      answer(
+        () => markAgePassed(userId),
+        () => {
+          setAgeChecked(true);
+          next();
+        },
+      );
+      return;
+    }
+    if (!settled()) return;
+    setBusy(true);
+    turnAway()
+      .then(() => deleteMyAccount(userId))
+      .catch(() => signOut())
+      .catch(() => undefined);
+  };
 
   /** Makes the Oath's task (once), then opens Plan it for it; accepting the plan comes back here. */
   const planOath = async () => {
@@ -189,12 +241,14 @@ function Application() {
       }
       welcomeFooter={
         <>
-          <Button variant="quiet" label={copy.skip} onPress={() => finish(true)} disabled={busy} />
+          {/* Skip comes once the age check is passed (Back from it to Welcome), so nobody skips past it. */}
+          {ageChecked ? <Button variant="quiet" label={copy.skip} onPress={() => finish(true)} disabled={busy} /> : <View />}
           <Button label={copy.begin} onPress={next} disabled={busy} />
         </>
       }
       onAnswer={(patch) => answer(() => savePreferences(patch), next)}
       onName={(typed) => answer(() => saveName(typed.first, typed.last), next)}
+      onBirth={onBirth}
       onHours={pickHours}
       onHeardFrom={(heardFrom) => answer(() => savePreferences({ heardFrom }), next)}
       next={next}

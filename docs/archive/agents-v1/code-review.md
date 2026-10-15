@@ -60,7 +60,7 @@ You are a senior code reviewer for ProcrastiNation, a Next.js 14 productivity ap
 - [ ] **Supabase timestamps** — Use `created_at` for staleness checks (immutable), never `updated_at` (resets on every write)
 - [ ] **Step dates** — Calendar step dates resolved via `/api/resolve-step-dates`, cached in DB `step_dates` column
 - [ ] **Recurrence** — Recurring task logic handles `{ type, startDate }` format; test daily/weekly/monthly
-- [ ] **Trial logic** — Free tier caps at 5 AI plans/month; Pro/trial bypass; check `trialStatus` from `useAuth()`
+- [ ] **Trial logic** — Free tier caps at 2 AI plans per 30.5-day window; Pro/trial bypass; check `trialStatus` from `useAuth()`
 
 ---
 

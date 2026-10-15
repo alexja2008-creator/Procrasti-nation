@@ -3,6 +3,7 @@
 // the day ends, the morning list's time, Start Mode's timer, the plans' and
 // Today's shape, the nudge tone), and Settings can change any of them later.
 
+import { nextOpenStep } from './agenda.ts';
 import { addDays, daysBetween } from './dates.ts';
 import { voice } from './nation.ts';
 import type { QuickAddResult } from './quick-add.ts';
@@ -12,6 +13,7 @@ import type { Hours, List, LocalDate, MorningList, Persona, Preferences, Procras
 export type ApplicationPage =
   | 'welcome'
   | 'name'
+  | 'birth'
   | 'purpose'
   | 'hours'
   | 'style'
@@ -29,12 +31,13 @@ export type ApplicationPage =
 
 /**
  * In order. Up to Where did you hear about us, a new person is signed out (answers wait on the
- * device); the anonymous passport opens on the way to the Oath. Save your passport is for an
- * anonymous one only.
+ * device); the anonymous passport opens on the way to the Oath, so the age check (`birth`) comes
+ * before any account. Save your passport is for an anonymous one only.
  */
 export const APPLICATION_PAGES: readonly ApplicationPage[] = [
   'welcome',
   'name',
+  'birth',
   'purpose',
   'hours',
   'style',
@@ -51,7 +54,7 @@ export const APPLICATION_PAGES: readonly ApplicationPage[] = [
   'save',
 ];
 
-/** "Page n of 10": the questions, from their name through the Oath. */
+/** "Page n of 11": the questions, from their name through the Oath. */
 const NUMBERED: readonly ApplicationPage[] = APPLICATION_PAGES.slice(APPLICATION_PAGES.indexOf('name'), APPLICATION_PAGES.indexOf('oath') + 1);
 
 /** "Page 2 of 5", or null for the unnumbered pages. */
@@ -66,10 +69,13 @@ export function pageNumber(page: ApplicationPage): { n: number; of: number } | n
  * the self-forgiveness page counts as seen once the next answer exists, and
  * the result once they've said where they heard about us. `named`: they've said
  * what to call them (kept on the device while signed out, in the passport after).
+ * `ageChecked`: they've passed the age check (the date itself is never kept), which
+ * nobody gets past without, answers from before it existed included.
  */
-export function resumePage(prefs: Partial<Preferences>, named: boolean): ApplicationPage {
-  if (!named && !prefs.persona && !prefs.hours && !prefs.style && !prefs.nudgeTone) return 'welcome';
+export function resumePage(prefs: Partial<Preferences>, named: boolean, ageChecked: boolean): ApplicationPage {
+  if (!named && !ageChecked && !prefs.persona && !prefs.hours && !prefs.style && !prefs.nudgeTone) return 'welcome';
   if (!named) return 'name';
+  if (!ageChecked) return 'birth';
   if (!prefs.persona) return 'purpose';
   if (!prefs.hours) return 'hours';
   if (!prefs.style) return 'style';
@@ -116,13 +122,7 @@ export function firstWeekOf(tasks: Task[], planId: string, today: LocalDate): { 
 }
 
 /** Their first Declaration is for this: the Oath's plan's first open step, in plan order. */
-export function firstStepOf(tasks: Task[], planId: string): Task | null {
-  return (
-    tasks
-      .filter((t) => t.parentId === planId && !t.deletedAt && !t.completedAt)
-      .sort((a, b) => a.sortOrder - b.sortOrder || a.createdAt.localeCompare(b.createdAt))[0] ?? null
-  );
-}
+export const firstStepOf = (tasks: Task[], planId: string): Task | null => nextOpenStep(tasks, planId);
 
 /** The territories a purpose of visit starts someone with (only when they have none). */
 export function territoriesFor(persona: Persona): Pick<List, 'name' | 'kind' | 'ink'>[] {
