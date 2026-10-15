@@ -1,6 +1,6 @@
 # Plan: Saving the passport is required
 
-**Status: approved 2026-10-15.** Alex answered the open questions (below) and phase 1 started. He approves the legal wording in the PR.
+**Status: approved 2026-10-15.** Alex answered the open questions (below) and phase 1 started. Phase 1 is PR #19; Alex approved its legal wording on 2026-10-15, and it merges after his staging check.
 
 ## Overview
 
