@@ -1,12 +1,13 @@
-import { authErrorKind, formatPhone, isServerFailure, isValidUsername, normalizePhone, voice } from '@pn/core';
-import { useState } from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import { authErrorKind, cleanUsername, formatPhone, isServerFailure, isValidUsername, moveEmailFromUsername, normalizePhone, suggestUsername, voice } from '@pn/core';
+import { useRef, useState } from 'react';
+import { AccessibilityInfo, Platform, StyleSheet, TextInput, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
 import { confirmSaveCode, pendingEmail, sendSaveCode, sendSaveLink } from '@/auth/passport';
 import { enabledMethods, friendlyAuthError, isValidEmail } from '@/auth/sign-in';
 import { signOut } from '@/auth/sign-out';
 import { Button } from '@/components/button';
+import { CodeStep, LeaveForOtherPassport, SaveOutcome } from '@/components/save-passport-steps';
 import { SentPanel } from '@/components/sign-in/sent-panel';
 import { Text } from '@/components/text';
 import { UsernameField } from '@/components/username-field';
@@ -40,9 +41,9 @@ type Props = {
 };
 
 /**
- * Save your passport: a username, then a texted code (the quick way) or an email + password.
- * Keeps the same account, so everything in the anonymous passport stays. There's no Later: the
- * Application can't finish without it (`DECISIONS.md`).
+ * Save your passport: an email (or, once texted codes are on, a phone), then a username, which
+ * follows the email until they choose their own. Keeps the same account, so everything in the
+ * anonymous passport stays. There's no Later: the Application can't finish without it (`DECISIONS.md`).
  */
 export function SavePassport({ onDone, changeEmail = false }: Props) {
   const s = useStyles(makeStyles);
@@ -59,6 +60,16 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
     const waiting = session?.user.user_metadata?.pending_username;
     return typeof waiting === 'string' ? waiting : '';
   });
+  // Their own username (typed, or already waiting) isn't replaced by one suggested from the email.
+  const [usernameOwn, setUsernameOwn] = useState(() => username !== '');
+  // What the username box held when they began typing in it (suggested, waiting or their own), so
+  // an email typed after it moves without it.
+  const typingFrom = useRef<{ text: string; own: boolean } | null>(null);
+  // An email typed into the username box moved to the email box: what moved, and whether a
+  // username came from it. The note shows while the email box still starts with it.
+  const [moved, setMoved] = useState<{ from: string; suggested: boolean } | null>(null);
+  const emailRef = useRef<TextInput>(null);
+  const usernameRef = useRef<TextInput>(null);
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
@@ -66,7 +77,9 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
   const [error, setError] = useState<string | null>(null);
   // The email already has a passport: offer to sign in to it instead.
   const [emailTaken, setEmailTaken] = useState(false);
-  const usernameStatus = useUsernameCheck(step.kind === 'form' ? username : '');
+  // The username box shows what's typed (so an email typed there moves whole); this is the username.
+  const name = cleanUsername(username);
+  const usernameStatus = useUsernameCheck(step.kind === 'form' ? name : '');
   const again = useResendSaveLink(session?.user);
 
   const run = async (work: () => Promise<void>, failed: (e: unknown) => string) => {
@@ -97,12 +110,12 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
 
   /** Checks the username is still free (the hint may be a moment old). */
   const usernameReady = async () => {
-    if (!isValidUsername(username)) {
+    if (!isValidUsername(name)) {
       setError(signIn.usernameHint);
       return false;
     }
-    if (await isUsernameTaken(username, userId).catch(() => false)) {
-      setError(signIn.usernameTaken(username));
+    if (await isUsernameTaken(name, userId).catch(() => false)) {
+      setError(signIn.usernameTaken(name));
       return false;
     }
     return true;
@@ -124,7 +137,7 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
       await confirmSaveCode(e164, code.trim());
       // Saved (no longer anonymous), so the public username can be claimed now. One taken in the
       // meantime can be chosen again in Settings.
-      if (userId) await saveUsername(userId, username).catch(() => undefined);
+      if (userId) await saveUsername(userId, name).catch(() => undefined);
       setStep({ kind: 'saved', phone: e164 });
     }, rateLimitedOr(copy.wrongCode));
 
@@ -134,12 +147,50 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
     setEmailTaken(false);
     return run(async () => {
       if (!userId || !(await usernameReady())) return;
-      if (!(await sendOrDefer(() => sendSaveLink(userId, address, username)))) return;
+      if (!(await sendOrDefer(() => sendSaveLink(userId, address, name)))) return;
       setStep({ kind: 'emailSent', email: address });
     }, (e) => {
       setEmailTaken(authErrorKind(e instanceof Error ? e : null) === 'accountExists');
       return friendlyAuthError(e, copy.saveFailed);
     });
+  };
+
+  /** The email box; the username follows it until they choose their own. */
+  const typeEmail = (text: string) => {
+    setEmail(text);
+    setEmailTaken(false);
+    if (!usernameOwn) setUsername(suggestUsername(text));
+  };
+
+  /** An email typed into the username box (a tired person types it into the first box they see). */
+  const moveEmail = (typed: string) => {
+    const next = moveEmailFromUsername(typed, { text: username, own: usernameOwn }, typingFrom.current, email);
+    typingFrom.current = null;
+    setMethod('email');
+    setError(null);
+    setEmail(next.email);
+    setEmailTaken(false);
+    setUsername(next.username);
+    setUsernameOwn(next.own);
+    setMoved({ from: next.moved, suggested: next.suggested });
+    // Focus moves without a word otherwise (the note's live region only speaks on Android). Queued on
+    // iOS, so VoiceOver reading the email box doesn't cut it off.
+    const said = next.suggested ? `${copy.emailMoved} ${copy.usernameFromEmail}` : copy.emailMoved;
+    if (Platform.OS === 'ios') AccessibilityInfo.announceForAccessibilityWithOptions(said, { queue: true });
+    else AccessibilityInfo.announceForAccessibility(said);
+    // The rest of the address is typed where it belongs.
+    setTimeout(() => emailRef.current?.focus(), 0);
+  };
+
+  const typeUsername = (typed: string) => {
+    // Leaving the box tidies it to the username; that's not a choice of their own.
+    if (typed === username) return;
+    if (!typingFrom.current) typingFrom.current = { text: username, own: usernameOwn };
+    setUsername(typed);
+    // Cleared, it follows the email again.
+    setUsernameOwn(typed !== '');
+    if (typed === '') typingFrom.current = null;
+    setMoved(null);
   };
 
   const errorText = error ? (
@@ -154,27 +205,12 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
   );
 
   if (step.kind === 'saved' || step.kind === 'emailSent' || step.kind === 'deferred') {
-    return (
-      <View style={s.column} accessibilityLiveRegion="polite">
-        <Text variant="body" color={c.inkSoft}>
-          {step.kind === 'saved' ? copy.savedPhone(formatPhone(step.phone)) : step.kind === 'emailSent' ? copy.emailSent(step.email) : copy.sendLater}
-        </Text>
-        <Button label={copy.next} onPress={onDone} />
-      </View>
-    );
+    const text = step.kind === 'saved' ? copy.savedPhone(formatPhone(step.phone)) : step.kind === 'emailSent' ? copy.emailSent(step.email) : copy.sendLater;
+    return <SaveOutcome text={text} onDone={onDone} />;
   }
 
-  if (step.kind === 'waiting' && !session?.user.is_anonymous) {
-    // Opened meanwhile (another tab syncs the saved session here): nothing is waiting any more.
-    return (
-      <View style={s.column} accessibilityLiveRegion="polite">
-        <Text variant="body" color={c.inkSoft}>
-          {copy.emailConfirmed}
-        </Text>
-        <Button label={copy.next} onPress={onDone} />
-      </View>
-    );
-  }
+  // Opened meanwhile (another tab syncs the saved session here): nothing is waiting any more.
+  if (step.kind === 'waiting' && !session?.user.is_anonymous) return <SaveOutcome text={copy.emailConfirmed} onDone={onDone} />;
 
   if (step.kind === 'waiting') {
     return (
@@ -203,58 +239,34 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
 
   if (step.kind === 'leave') {
     return (
-      <View style={s.column} accessibilityLiveRegion="polite">
-        <Text variant="body" color={c.inkSoft}>
-          {copy.signInInsteadBody}
-        </Text>
-        {errorText}
-        <Button
-          label={copy.signOutToSignIn}
-          disabled={busy}
-          onPress={() => run(signOut, () => voice.authErrors.offline)}
-        />
-        <View style={s.quiet}>
-          <Button variant="quiet" label={copy.keepThisOne} disabled={busy} onPress={() => setStep({ kind: 'form' })} />
-        </View>
-      </View>
+      <LeaveForOtherPassport
+        busy={busy}
+        error={errorText}
+        onLeave={() => run(signOut, () => voice.authErrors.offline)}
+        onKeep={() => setStep({ kind: 'form' })}
+      />
     );
   }
 
+  const movedNote = moved && email.startsWith(moved.from) ? (moved.suggested ? `${copy.emailMoved} ${copy.usernameFromEmail}` : copy.emailMoved) : '';
+
   if (step.kind === 'code') {
     return (
-      <View style={s.column}>
-        <Text variant="body" color={c.inkSoft}>
-          {copy.codeSent(formatPhone(step.phone))}
-        </Text>
-        {label(copy.codeLabel)}
-        <TextInput
-          value={code}
-          onChangeText={(t) => setCode(t.replace(/\D/g, '').slice(0, 8))}
-          keyboardType="number-pad"
-          textContentType="oneTimeCode"
-          autoComplete="one-time-code"
-          autoFocus
-          maxLength={8}
-          editable={!busy}
-          accessibilityLabel={copy.codeLabel}
-          returnKeyType="done"
-          onSubmitEditing={() => confirm(step.phone)}
-          style={[s.input, s.code]}
-        />
-        {errorText}
-        <Button label={busy ? copy.savingPassport : copy.confirmCode} disabled={busy || code.length < 6} onPress={() => confirm(step.phone)} />
-        <View style={s.quiet}>
-          <Button variant="quiet" label={copy.newCode} disabled={busy} onPress={textCode} />
-          <Button variant="quiet" label={copy.differentNumber} disabled={busy} onPress={() => setStep({ kind: 'form' })} />
-        </View>
-      </View>
+      <CodeStep
+        phone={step.phone}
+        code={code}
+        onCode={setCode}
+        busy={busy}
+        error={errorText}
+        onConfirm={() => confirm(step.phone)}
+        onNewCode={textCode}
+        onDifferentNumber={() => setStep({ kind: 'form' })}
+      />
     );
   }
 
   return (
     <View style={s.column}>
-      {label(signIn.usernameLabel)}
-      <UsernameField value={username} onChange={setUsername} status={usernameStatus} returnKeyType="next" editable={!busy} />
       {method === 'phone' ? (
         <>
           {label(copy.phoneLabel)}
@@ -268,8 +280,9 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
             autoComplete="tel"
             editable={!busy}
             accessibilityLabel={copy.phoneLabelSpoken}
-            returnKeyType="send"
-            onSubmitEditing={textCode}
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => usernameRef.current?.focus()}
             style={s.input}
           />
           <Text variant="meta" color={c.muted}>
@@ -280,11 +293,9 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
         <>
           {label(signIn.emailLabel)}
           <TextInput
+            ref={emailRef}
             value={email}
-            onChangeText={(text) => {
-              setEmail(text);
-              setEmailTaken(false);
-            }}
+            onChangeText={typeEmail}
             placeholder={signIn.emailPlaceholder}
             placeholderTextColor={c.muted}
             keyboardType="email-address"
@@ -294,12 +305,35 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
             autoCorrect={false}
             editable={!busy}
             accessibilityLabel={signIn.emailLabelSpoken}
-            returnKeyType="send"
-            onSubmitEditing={sendLink}
+            returnKeyType="next"
+            submitBehavior="submit"
+            onSubmitEditing={() => usernameRef.current?.focus()}
             style={s.input}
           />
         </>
       )}
+      {/* Second: an email typed here moves up to the email box, and the username comes from it. */}
+      {label(signIn.usernameLabel)}
+      <View>
+        <UsernameField
+          ref={usernameRef}
+          value={username}
+          onChange={typeUsername}
+          onEmail={moveEmail}
+          status={usernameStatus}
+          returnKeyType="send"
+          onSubmitEditing={method === 'phone' ? textCode : sendLink}
+          editable={!busy}
+        />
+        {/* Always there (empty, no height), so a screen reader on the web hears the note when it appears. */}
+        <View accessibilityLiveRegion="polite">
+          {movedNote ? (
+            <Text variant="meta" color={c.muted} style={s.note}>
+              {movedNote}
+            </Text>
+          ) : null}
+        </View>
+      </View>
       {errorText}
       {method === 'phone' ? (
         <Button label={busy ? copy.sendingCode : copy.textMeACode} disabled={busy} onPress={textCode} />
@@ -343,6 +377,7 @@ const makeStyles = (t: Tokens) => ({
   ...StyleSheet.create({
     column: { gap: 10 },
     label: { marginTop: 4 },
+    note: { marginTop: 6 },
     input: {
       minHeight: 50,
       paddingHorizontal: 14,
@@ -355,7 +390,6 @@ const makeStyles = (t: Tokens) => ({
       // 16px keeps mobile Safari from zooming into the field.
       fontSize: 16,
     },
-    code: { fontFamily: t.fonts.mono, fontSize: 22, letterSpacing: 6 },
     quiet: { alignItems: 'flex-start', marginLeft: -8 },
   }),
 });

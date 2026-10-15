@@ -7,10 +7,12 @@ import {
   birthDateOf,
   cleanName,
   cleanUsername,
+  looksLikeEmail,
   isLongEnoughPassword,
   isOldEnough,
   isServerFailure,
   isValidUsername,
+  suggestUsername,
   MIN_AGE,
   MIN_PASSWORD_LENGTH,
   NAME_MAX,
@@ -140,6 +142,55 @@ test('a failure on Supabase’s side is a 5xx, never the person’s mistake', ()
   assert.equal(isServerFailure({ status: 0 }), false, 'offline');
   assert.equal(isServerFailure({}), false);
   assert.equal(isServerFailure(null), false);
+});
+
+test('an email typed into the username box is spotted, a handle isn’t', () => {
+  assert.equal(looksLikeEmail('dad@'), true, 'as soon as the @ is typed');
+  assert.equal(looksLikeEmail('dad.smith@gmail.com'), true);
+  assert.equal(looksLikeEmail(' dad@gmail.com '), true);
+  assert.equal(looksLikeEmail('@maya_reyes'), false, 'a social handle starts with @');
+  assert.equal(looksLikeEmail('maya_reyes'), false);
+  assert.equal(looksLikeEmail('dad smith@'), false, 'not an address');
+});
+
+test('a username is suggested from the part of an email before the @', () => {
+  assert.equal(suggestUsername('dad@gmail.com'), 'dad');
+  assert.equal(suggestUsername('Dad.Smith+pn@gmail.com'), 'dad_smith', 'dots as underscores, the +tag dropped');
+  assert.equal(suggestUsername('mary-ann..lee@school.edu'), 'mary_ann_lee', 'runs of separators become one');
+  assert.equal(suggestUsername('.x.y.@a.com'), 'x_y', 'no underscores at the ends');
+  assert.equal(suggestUsername('jo@x.com'), '', 'too short to be a username');
+  assert.equal(suggestUsername('averyveryverylongname1234@x.com'), 'averyveryverylongnam', 'cut at 20');
+  assert.equal(suggestUsername('dad@'), 'dad', 'while the email is still being typed');
+  assert.equal(suggestUsername(''), '');
+});
+
+test('an email in the username box moves whole, without what was there before it', async () => {
+  const { moveEmailFromUsername: move } = await import('../src/account.ts');
+  const empty = { text: '', own: false };
+  // Typed into an empty box, one key at a time: the box shows it as typed.
+  assert.deepEqual(move('maya.reyes@', { text: 'maya.reyes', own: true }, empty, ''), {
+    email: 'maya.reyes@', username: 'maya_reyes', own: false, moved: 'maya.reyes@', suggested: true,
+  });
+  assert.equal(move('maya.reyes1@gmail.com', empty, null, '').email, 'maya.reyes1@gmail.com', 'pasted: whole, not cut at 20');
+  // A username waiting from before ("Use a different email"): it stays, typed or pasted after.
+  const waiting = { text: 'maya_reyes', own: true };
+  const typedAfter = move('maya_reyesnew@', { text: 'maya_reyesnew', own: true }, waiting, '');
+  assert.equal(typedAfter.email, 'new@');
+  assert.equal(typedAfter.username, 'maya_reyes');
+  const pastedAfter = move('maya_reyesnew@x.com', waiting, null, '');
+  assert.equal(pastedAfter.email, 'new@x.com');
+  assert.equal(pastedAfter.username, 'maya_reyes');
+  // A suggested username, then their email typed again: the email box keeps its whole address.
+  const again = move('daddad@', { text: 'daddad', own: true }, { text: 'dad', own: false }, 'dad@gmail.com');
+  assert.equal(again.email, 'dad@gmail.com');
+  assert.equal(again.username, 'dad');
+  // Their own username, then an email pasted after it: both kept apart.
+  const own = move('maya_rdad@gmail.com', { text: 'maya_r', own: true }, empty, '');
+  assert.equal(own.email, 'dad@gmail.com');
+  assert.equal(own.username, 'maya_r');
+  assert.equal(own.own, true);
+  // Their username then just "@": all of it is the email.
+  assert.equal(move('maya_reyes@', { text: 'maya_reyes', own: true }, empty, '').email, 'maya_reyes@');
 });
 
 const BETA_PRO_UNTIL = '2026-11-16T05:00:00Z';

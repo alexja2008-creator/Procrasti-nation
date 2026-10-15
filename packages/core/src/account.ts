@@ -19,6 +19,51 @@ export const cleanUsername = (typed: string) =>
     .slice(0, USERNAME_MAX);
 
 /**
+ * Typed into a username box, the start of an email ("dad@…"), not a handle like "@maya": Save
+ * your passport moves it to the email box (a tired person types their email into the first box).
+ */
+export const looksLikeEmail = (typed: string) => /^[^\s@]+@/.test(typed.trim());
+
+/**
+ * A username suggested from an email: the part before the @ (and before any +tag), with dots and
+ * dashes as underscores ("Dad.Smith+pn@gmail.com" → "dad_smith"); '' when that's too short for one.
+ */
+export function suggestUsername(email: string): string {
+  const local = email.trim().split('@')[0].split('+')[0];
+  const name = cleanUsername(local.replace(/[.\-\s]+/g, '_'))
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return isValidUsername(name) ? name : '';
+}
+
+/** Save your passport's username box: its text, and whether that's a username of their own (typed, or waiting from before). */
+export interface UsernameBox {
+  text: string;
+  own: boolean;
+}
+
+/**
+ * An email typed or pasted into the username box, moved to the email box. `typed` is the box's new
+ * text, `box` what it held just before, `start` what it held when this run of typing began (null
+ * for a paste), `email` the email box. What was in the box before the email isn't part of it; a
+ * username of their own stays (else one is suggested); an email box already holding the address,
+ * completed, keeps it. `moved` is the address that moved.
+ */
+export function moveEmailFromUsername(typed: string, box: UsernameBox, start: UsernameBox | null, email: string) {
+  const from = start ?? box;
+  let before = '';
+  if (from.text && typed.startsWith(from.text)) before = from.text;
+  else if (box.text && typed.startsWith(box.text) && looksLikeEmail(typed.slice(box.text.length))) before = box.text;
+  // Only when what's left is an email of its own ("maya_reyes" then "@" is one email, not two parts).
+  if (!looksLikeEmail(typed.slice(before.length))) before = '';
+  const moved = typed.slice(before.length);
+  const kept = before && before === box.text && before !== from.text ? cleanUsername(before) : from.own ? from.text : null;
+  const nextEmail = email && email.startsWith(moved) ? email : moved;
+  const suggested = kept === null ? suggestUsername(nextEmail) : '';
+  return { email: nextEmail, username: kept ?? suggested, own: kept !== null, moved, suggested: suggested !== '' };
+}
+
+/**
  * The name they go by, on their passport and Declarations (Alex, 2026-10-14: asked right after
  * Welcome, first name required). Kept in the auth profile's own fields, the ones Sign in with
  * Apple fills, so only they see it: never on `profiles`, which anyone can read.

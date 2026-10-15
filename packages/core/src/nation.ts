@@ -758,6 +758,9 @@ export const voice = {
     useEmail: 'Use email and a password instead',
     usePhone: 'Text me a code instead',
     sendEmailLink: 'Send the link',
+    /** An email typed into the username box moves to the email box, and the username comes from it. */
+    emailMoved: 'That’s an email, so it went in the email box.',
+    usernameFromEmail: 'The username comes from it; change it if you like.',
     /** Supabase sends one save link a minute: the form's button waits out the rest. */
     sendIn: (seconds: number) => `Send in ${seconds}s`,
     emailSent: (email: string) =>
