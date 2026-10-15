@@ -11,7 +11,11 @@ const copy = voice.signIn;
 type Props = Pick<TextInputProps, 'onSubmitEditing' | 'returnKeyType' | 'submitBehavior' | 'editable' | 'autoFocus'> & {
   value: string;
   onChange: (username: string) => void;
-  /** An email typed here ("dad@…") goes to the caller whole, not stripped to "dad" (Save your passport moves it). */
+  /**
+   * An email typed here ("dad@…") goes to the caller whole (Save your passport moves it). With it,
+   * the box shows what's typed, cleaned to a username only on leaving the box, so the address
+   * arrives with its dots and +tag; the caller cleans it for the check and the save.
+   */
   onEmail?: (typed: string) => void;
   status: UsernameStatus;
   ref?: Ref<TextInput>;
@@ -22,25 +26,35 @@ export function UsernameField({ value, onChange, onEmail, status, ref, ...rest }
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const [focused, setFocused] = useState(false);
+  // The username the status line is about (the box may still show what was typed).
+  const shown = onEmail ? cleanUsername(value) : value;
   const [line, color] =
     status === 'checking'
       ? [copy.usernameChecking, c.muted]
       : status === 'free'
-        ? [copy.usernameFree(value), c.primaryText]
+        ? [copy.usernameFree(shown), c.primaryText]
         : status === 'taken'
-          ? [copy.usernameTaken(value), c.error]
+          ? [copy.usernameTaken(shown), c.error]
           : [copy.usernameHint, c.muted];
   return (
     <View style={s.column}>
       <TextInput
         ref={ref}
         value={value}
-        onChangeText={(typed) => (onEmail && looksLikeEmail(typed) ? onEmail(typed.trim()) : onChange(cleanUsername(typed)))}
+        onChangeText={(typed) => {
+          if (!onEmail) return onChange(cleanUsername(typed));
+          if (looksLikeEmail(typed)) return onEmail(typed.trim());
+          onChange(typed);
+        }}
         onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
+        onBlur={() => {
+          setFocused(false);
+          if (onEmail) onChange(cleanUsername(value));
+        }}
         placeholder={copy.usernamePlaceholder}
         placeholderTextColor={c.muted}
-        maxLength={USERNAME_MAX}
+        // Uncut while it may be an email being typed; the username is cut to the limit when cleaned.
+        maxLength={onEmail ? undefined : USERNAME_MAX}
         textContentType="nickname"
         autoComplete="off"
         autoCapitalize="none"
