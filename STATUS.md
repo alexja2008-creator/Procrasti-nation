@@ -10,13 +10,12 @@ As of 2026-10-14. Rewrite this file every Monday (replace, don't append); histor
 
 ## This week
 
-- Restructure (`chore/restructure-for-launch`): docs moved into `docs/`, short CLAUDE.md files, v2 subagents, CI, hooks. The repo moved out of iCloud to `~/PNDEV/Procrasti-nation`.
+- Restructure (`chore/restructure-for-launch`): docs moved into `docs/`, short CLAUDE.md files, v2 subagents, CI, hooks. The repo moved out of iCloud to `~/PNDEV/Procrasti-nation` (the iCloud copy is in the Trash; Claude Code's memory came across). Merged branches deleted; unmerged ones kept as `archive/*` tags.
 
 ## Open items for Alex
 
 - [ ] Confirm the cutover's step 10 is done: `RESEND_API_KEY` deleted from the site's Vercel env (`docs/runbooks/launch-2026-10.md`, Phase 3). The smoke test passed on 2026-10-14.
 - [ ] Before students get the build: `work.procrastination.app://auth/callback` on production's Supabase redirect list and the Apple provider on production (if not done at cutover), then TestFlight's external group with a public link for the 10 students (the first external build goes through Beta App Review).
-- [ ] After the move: copy Claude Code's project memory to the new path, check push and the test suites from `~/PNDEV`, then delete the iCloud copy (`~/PNDEV/LOCAL-ONLY-CHECKLIST.md`).
 - [ ] Payments: App Store Connect's Paid Apps agreement, tax and banking; the Small Business Program (15%); a RevenueCat account.
 - [ ] Before App Store review: a Sign in with Apple key, so deleting a passport can revoke the Apple token.
 - [ ] Before charging anyone: Vercel Pro (Hobby is non-commercial).
