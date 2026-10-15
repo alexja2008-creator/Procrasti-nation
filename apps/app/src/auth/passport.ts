@@ -25,6 +25,9 @@ export const isUnsaved = (user: User | undefined | null) => !!user?.is_anonymous
 /** Unsaved with no save link out: kept on Save your passport, since an unsaved passport lives in one browser or phone. */
 export const needsSave = (user: User | undefined | null) => !!user?.is_anonymous && !user.new_email;
 
+/** Where the save link went, while it waits to be opened (an unsaved passport only). */
+export const pendingEmail = (user: User | undefined | null): string | null => (user?.is_anonymous && user.new_email) || null;
+
 // The gate's memory for this run of the app, by passport. Held: Save your passport is open on the
 // Application, so a link sent from it doesn't open the gate before "Open the link we sent" shows.
 // Let in: its Continue was tapped (the link is out, or couldn't be sent on our side, so a mail
@@ -87,6 +90,29 @@ export async function sendSaveLink(userId: string, email: string, username: stri
   );
   if (error) throw error;
   await AsyncStorage.setItem(passwordKey(userId), '1').catch(() => undefined);
+}
+
+/**
+ * Sends the save link again: the same address, with the username still waiting in
+ * `pending_username`. The same call as the first send, so it works the same way (PKCE, the
+ * template); the new link replaces the first one. Supabase allows one send a minute, counted from
+ * `email_change_sent_at` ("Too many tries" before that). False if no link was waiting (it's been opened).
+ */
+export async function resendSaveLink(user: User): Promise<boolean> {
+  const email = pendingEmail(user);
+  if (!email) return false;
+  const { error } = await supabase.auth.updateUser({ email }, { emailRedirectTo: authRedirectUrl() });
+  if (error) throw error;
+  return true;
+}
+
+/** Supabase sends a save link at most once a minute. */
+export const SAVE_LINK_EVERY_MS = 60_000;
+
+/** When another save link can go out: a minute after the last one Supabase sent (0 if none). */
+export function nextSaveLinkAt(user: User | undefined | null): number {
+  const sentAt = user?.is_anonymous ? Date.parse(user.email_change_sent_at ?? '') : NaN;
+  return Number.isFinite(sentAt) ? sentAt + SAVE_LINK_EVERY_MS : 0;
 }
 
 /** Sign in with a texted code: existing accounts only, and an unknown number hears the same "on its way". */

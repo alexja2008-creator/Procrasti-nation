@@ -16,7 +16,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
-import { isUnsaved } from '@/auth/passport';
+import { isUnsaved, pendingEmail } from '@/auth/passport';
 import { personName } from '@/auth/person-name';
 import { signOut } from '@/auth/sign-out';
 import { ChoiceCards, type Choice } from '@/components/application/choice-cards';
@@ -167,7 +167,11 @@ export default function SettingsScreen() {
 
       <SettingsCard label={copy.accountLabel}>
         {unsaved ? (
-          <SettingRow label={passport.saveAction} value={passport.notSaved} onPress={() => setPicking('save')} />
+          <SettingRow
+            label={passport.saveAction}
+            value={pendingEmail(session?.user) ? passport.linkSent : passport.notSaved}
+            onPress={() => setPicking('save')}
+          />
         ) : (
           <>
             <SettingRow label={copy.username} value={username ?? copy.usernameNone} onPress={() => setPicking('username')} />
