@@ -4,7 +4,7 @@ import { requireAuth } from '../../../lib/authMiddleware';
 import { callClaude, AIError, MODELS, PLAN_EFFORT, resolveToday } from '../../../lib/ai';
 import { CLARIFY_SCHEMA, PLAN_SCHEMA, buildClarificationPrompt, buildPlanPrompt } from '../../../lib/prompts/plan';
 import { trialDaysRemaining } from '../../../lib/trial';
-import { FREE_PLANS_PER_WINDOW, planWindow } from '../../../lib/core';
+import { FREE_PLANS_PER_WINDOW, freePlansCountFrom, inBetaPro } from '../../../lib/core';
 import { DAY_MS, logAndCount } from '../../../lib/limits';
 
 export const maxDuration = 60;
@@ -80,21 +80,34 @@ export async function POST(request) {
     if (dailyError) throw dailyError;
     if (builtToday >= PLANS_DAILY_LIMIT) return dailyLimitReached();
 
-    // The free tier's plans (not in trial, not subscribed). An anonymous passport costs nothing to
-    // make, so it never gets the no-card trial: its free plans are all it has until the real trial.
+    // Each plan is logged against its task, and that log is what the caps count. A taskId that isn't
+    // theirs would fail the log's ownership check and go uncounted (a script's way past the daily cap,
+    // the only cap during beta Pro), so a task they don't have plans with no task.
+    let planTaskId = null;
+    if (taskId != null) {
+      const { data: owned, error: taskError } = await userSupabase.from('tasks').select('id').eq('id', taskId).maybeSingle();
+      if (taskError) throw taskError;
+      planTaskId = owned ? owned.id : null;
+    }
+
+    // The free tier's plans (not in trial, not subscribed, not during beta Pro). An anonymous passport
+    // costs nothing to make, so it never gets the no-card trial: its free plans are all it has until
+    // the real trial. Beta Pro (core `inBetaPro`, until 2026-11-15) lifts the monthly limit for
+    // everyone so testers can try everything; the daily cap above still holds.
     const inTrial = !user.is_anonymous && trialDaysRemaining(user) > 0;
-    if (!inTrial) {
+    if (!inTrial && !inBetaPro()) {
       const { data: subscriptionStatus, error: statusError } = await userSupabase.rpc('my_subscription_status');
       if (statusError) console.error('generate-plan: could not read subscription status', statusError.code);
       const isPro = subscriptionStatus === 'active';
 
       if (!isPro) {
-        // Count plans actually built in the current 30.5-day window from the account's creation.
+        // Count plans actually built in the current 30.5-day window from the account's creation,
+        // leaving out any made during beta Pro.
         const { count, error: countError } = await userSupabase
           .from('plan_generations')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
-          .gte('created_at', planWindow(user.created_at).start.toISOString());
+          .gte('created_at', freePlansCountFrom(user.created_at).toISOString());
         if (countError) throw countError;
         if (count >= FREE_PLANS_PER_WINDOW) {
           return NextResponse.json(
@@ -129,10 +142,14 @@ export async function POST(request) {
       messages: [{ role: 'user', content: buildPlanPrompt({ taskContext, deadline, today, procrastinationType }) }],
     });
 
-    // Log the plan for the free allowance (RLS: the user can insert their own rows only).
-    const { error: logError } = await userSupabase
+    // Log the plan for the caps (RLS: the user can insert their own rows only). If its task went
+    // meanwhile (deleted on another device), it's still counted, without the task.
+    let { error: logError } = await userSupabase
       .from('plan_generations')
-      .insert({ user_id: user.id, task_id: taskId ?? null });
+      .insert({ user_id: user.id, task_id: planTaskId });
+    if (logError && planTaskId) {
+      ({ error: logError } = await userSupabase.from('plan_generations').insert({ user_id: user.id, task_id: null }));
+    }
     if (logError) console.error('generate-plan: could not log plan generation', logError.code);
 
     return NextResponse.json({ plan });

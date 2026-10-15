@@ -14,6 +14,7 @@ As of 2026-10-14. Rewrite this file every Monday (replace, don't append); histor
 
 ## Open items for Alex
 
+- [ ] Beta Pro ends at the close of November 15, 2026 (`BETA_PRO_UNTIL` in `packages/core/src/account.ts`): before then, move the date or let the free tier's 2 plans a month return.
 - [ ] Production's Change Email Address template: our subject ("Confirm your email to save your passport") and body from `supabase/v2/email-templates/change-email.html` (it went out as Supabase's default "Confirm Email Change" on 2026-10-14). Then check that an unsaved passport from before 2026-10-15 opens on Save your passport.
 - [ ] Confirm the cutover's step 10 is done: `RESEND_API_KEY` deleted from the site's Vercel env (`docs/runbooks/launch-2026-10.md`, Phase 3). The smoke test passed on 2026-10-14.
 - [ ] Before students get the build: `work.procrastination.app://auth/callback` on production's Supabase redirect list and the Apple provider on production (if not done at cutover), then TestFlight's external group with a public link for the 10 students (the first external build goes through Beta App Review).

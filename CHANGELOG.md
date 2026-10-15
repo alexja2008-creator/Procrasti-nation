@@ -4,6 +4,7 @@ What changed for people using PN, newest first, in their words. One entry per re
 
 ## Unreleased
 
+- During the beta, Plan it has no monthly limit, through November 15 (up to 20 plans a day still applies), and plans made during the beta don't use up the free plans after it.
 - (Repo only) Docs and Claude Code setup reorganized; no change to the app.
 
 ## 2026-10-15: Saving your passport
