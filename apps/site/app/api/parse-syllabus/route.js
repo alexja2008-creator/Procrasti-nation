@@ -6,6 +6,12 @@ import { callClaude, AIError, MODELS, sanitizeForXml, resolveToday } from '../..
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
+// Off until syllabus import comes back to v2 (Alex, 2026-10-15). Nothing in the app calls it, and
+// while on, any session could send files to Claude with no per-person cap. Turning it back on is a
+// checklist in DECISIONS.md ("Lists and features"): a daily cap, its SQL, the privacy policy and an
+// eval come before this is set to true. The code below stays as it was.
+const SYLLABUS_IMPORT_ON = false;
+
 const SYLLABUS_SCHEMA = {
   type: 'object',
   properties: {
@@ -33,6 +39,7 @@ const SYLLABUS_SCHEMA = {
 };
 
 export async function POST(request) {
+  if (!SYLLABUS_IMPORT_ON) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   try {
     const { error: authError } = await requireAuth(request);
     if (authError) {

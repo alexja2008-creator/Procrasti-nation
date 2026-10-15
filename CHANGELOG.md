@@ -4,6 +4,7 @@ What changed for people using PN, newest first, in their words. One entry per re
 
 ## Unreleased
 
+- Save your passport asks for your email first, and the username fills in from it (change it if you like). An email typed into the username box moves to the email box whole.
 - During the beta, Plan it has no monthly limit, through November 15 (up to 20 plans a day still applies), and plans made during the beta don't use up the free plans after it.
 - (Repo only) Docs and Claude Code setup reorganized; no change to the app.
 

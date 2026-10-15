@@ -57,4 +57,4 @@ VAPID_SUBJECT=https://procrasti-nation.work
 - Fonts are self-hosted with `next/font/google` in `app/layout.jsx` (CSS variables `--font-fraunces`, `--font-plex-mono`, `--font-instrument-sans`, `--font-space-grotesk`); never link fonts.googleapis.com or another font CDN (visitors' IP addresses would go to Google: `DECISIONS.md`).
 - Components PascalCase, functions camelCase, `.jsx` for React files.
 - The legal pages are formal, approved by Alex on 2026-10-13, and written from what the code does. `lib/site.js` holds `LEGAL_EFFECTIVE` and `LEGAL_DRAFT`.
-- `parse-syllabus` and `unsubscribe` are kept for features coming back (syllabus import, the Monday email). Every marketing email carries a postal address and a one-click unsubscribe (CAN-SPAM, `DECISIONS.md`).
+- `parse-syllabus` and `unsubscribe` are kept for features coming back (syllabus import, the Monday email). `parse-syllabus` is switched off (404, `SYLLABUS_IMPORT_ON`) until syllabus import returns; turning it back on is a checklist in `DECISIONS.md` (a cap, its SQL, the privacy policy, an eval). Every marketing email carries a postal address and a one-click unsubscribe (CAN-SPAM, `DECISIONS.md`).

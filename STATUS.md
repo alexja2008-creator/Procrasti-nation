@@ -1,6 +1,6 @@
 # Status
 
-As of 2026-10-14. Rewrite this file every Monday (replace, don't append); history lives in git, `CHANGELOG.md` and `docs/archive/`.
+As of 2026-10-15. Rewrite this file every Monday (replace, don't append); history lives in git, `CHANGELOG.md` and `docs/archive/`.
 
 ## Live
 
@@ -15,7 +15,9 @@ As of 2026-10-14. Rewrite this file every Monday (replace, don't append); histor
 ## Open items for Alex
 
 - [ ] Beta Pro ends at the close of November 15, 2026 (`BETA_PRO_UNTIL` in `packages/core/src/account.ts`): before then, move the date or let the free tier's 2 plans a month return.
-- [ ] Production's Change Email Address template: our subject ("Confirm your email to save your passport") and body from `supabase/v2/email-templates/change-email.html` (it went out as Supabase's default "Confirm Email Change" on 2026-10-14). Then check that an unsaved passport from before 2026-10-15 opens on Save your passport.
+- [x] Production's Change Email Address template has our subject and body (Alex, 2026-10-15).
+- [ ] Check that an unsaved passport from before 2026-10-15 opens on Save your passport: the two family testers' passports, the next time they open the app.
+- [ ] A monthly spend limit on the Anthropic workspace (beta Pro lets every passport make up to 20 plans a day).
 - [ ] Confirm the cutover's step 10 is done: `RESEND_API_KEY` deleted from the site's Vercel env (`docs/runbooks/launch-2026-10.md`, Phase 3). The smoke test passed on 2026-10-14.
 - [ ] Before students get the build: `work.procrastination.app://auth/callback` on production's Supabase redirect list and the Apple provider on production (if not done at cutover), then TestFlight's external group with a public link for the 10 students (the first external build goes through Beta App Review).
 - [ ] Payments: App Store Connect's Paid Apps agreement, tax and banking; the Small Business Program (15%); a RevenueCat account.
@@ -28,6 +30,6 @@ As of 2026-10-14. Rewrite this file every Monday (replace, don't append); histor
 1. Payments and the required 7-day trial (`docs/plans/active/conversion.md`, phase 2).
 2. The App Store release after TestFlight.
 3. Measurement before the content push: funnel and retention queries, events for the signed-out Application, web error reporting.
-4. State of the Union (the Monday email), then syllabus import.
+4. State of the Union (the Monday email), then syllabus import (its route is switched off until then; turning it back on is in `DECISIONS.md`).
 
 Known limits and what's out of scope: `DECISIONS.md`.
