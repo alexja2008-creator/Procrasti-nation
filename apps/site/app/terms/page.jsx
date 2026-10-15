@@ -36,12 +36,13 @@ export default function Terms() {
 
       <h2>3. Accounts</h2>
       <p>
-        <strong>3.1 Anonymous Passports.</strong> You may use the Services without registering, in which case we create
-        an anonymous account (referred to in the Services as a “passport”) associated with your device or browser. Until
-        you save your passport by associating it with a username and a sign-in method, it is accessible only from that
-        device or browser. If you sign out of, or clear the storage of, that device or browser before saving your
-        passport, the passport and its Content will become permanently inaccessible, and we will be unable to restore
-        them.
+        <strong>3.1 Anonymous Passports.</strong> You may begin using the Services without registering, in which case we
+        create an anonymous account (referred to in the Services as a “passport”) associated with your device or
+        browser. To continue using the Services after the Citizenship Application, you must provide a username and a
+        sign-in method for your passport (for example, an email address to which we send a confirmation link). Your
+        passport is saved once that sign-in method is confirmed; until then, it is accessible only from that device or
+        browser. If you sign out of, or clear the storage of, that device or browser before your passport is saved, the
+        passport and its Content will become permanently inaccessible, and we will be unable to restore them.
       </p>
       <p>
         <strong>3.2 Saved Accounts.</strong> You agree to provide accurate information when saving your passport, to keep

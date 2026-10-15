@@ -7,6 +7,7 @@ import {
   isDeclared,
   isOldEnough,
   localDateString,
+  nextPage,
   oathTask,
   parseQuickAdd,
   resumePage,
@@ -22,7 +23,7 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TextInput, View, type ScrollView } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
-import { isUnsaved } from '@/auth/passport';
+import { holdForSave, letIn, needsSave } from '@/auth/passport';
 import { personName, saveName } from '@/auth/person-name';
 import { signOut } from '@/auth/sign-out';
 import { DeclarePage, FirstWeekPage, NudgePage } from '@/components/application/after-oath';
@@ -51,7 +52,8 @@ const copy = voice.application;
  * The Citizenship Application: a few questions the first time someone opens the app (or until
  * they skip). Someone new answers signed out (`NewApplicant`); their anonymous passport opens on
  * the way to the Oath, and this screen carries on signed in. Each answer is saved as it's picked,
- * so leaving halfway keeps what's done; finishing (or skipping) opens Today.
+ * so leaving halfway keeps what's done; finishing (or skipping) opens Today. An anonymous passport
+ * saves first: Save your passport has no Later, and the gate brings an unsaved one back to it.
  */
 export default function ApplicationScreen() {
   const { session } = useAuth();
@@ -67,6 +69,8 @@ function Arrival() {
   const t = useTokens();
   const { session } = useAuth();
   const { settings, status, savePreferences, saveSettings } = useUserSettings();
+  // Where to pick up depends on whether the Oath's plan exists, so tasks load first.
+  const { status: tasksStatus } = useTasks();
   const [moved, setMoved] = useState(false);
   const [ageChecked, setAgeChecked] = useState(false);
   const started = useRef(false);
@@ -102,7 +106,7 @@ function Arrival() {
     move();
   }, [status]);
 
-  if (!moved) {
+  if (!moved || tasksStatus === 'loading') {
     return (
       <Screen>
         <View style={arrival.column} accessibilityLiveRegion="polite">
@@ -129,12 +133,18 @@ function Application({ ageCheckedBefore }: { ageCheckedBefore: boolean }) {
   const scroll = useRef<ScrollView>(null);
   // Nobody gets past the age check without passing it, answers from before it existed included.
   const [ageChecked, setAgeChecked] = useState(ageCheckedBefore);
+  // An anonymous passport with no save link out: it saves before Today (Skip skips the questions only).
+  const mustSave = needsSave(session?.user);
   const { turnedTo, go, answer, settled, busy, setBusy, error, setError } = useTurns(
-    resumePage(prefs, !!name.first, ageCheckedBefore),
+    resumePage(prefs, !!name.first, ageCheckedBefore, {
+      unsaved: mustSave,
+      finished: !!settings?.onboardingCompletedAt,
+      planned: tasks.some((t) => !!t.parentId && !t.deletedAt),
+    }),
     scroll,
     copy.saveFailed,
   );
-  const unsaved = isUnsaved(session?.user);
+  const [skippedToSave, setSkippedToSave] = useState(false);
   // The Oath: what they typed, when it's due, and the task once it's made.
   const [oathText, setOathText] = useState('');
   const [oathDue, setOathDue] = useState<OathDue>('week');
@@ -148,8 +158,16 @@ function Application({ ageCheckedBefore }: { ageCheckedBefore: boolean }) {
   const [signing, setSigning] = useState(false);
 
   const index = APPLICATION_PAGES.indexOf(page);
-  const next = () => go(APPLICATION_PAGES[index + 1]);
+  // Finished unsaved (from before the name page or the age check): those, then straight to saving.
+  const finishedUnsaved = !!settings?.onboardingCompletedAt && mustSave;
+  const next = () => go(nextPage(page, finishedUnsaved, ageChecked));
   const back = () => go(APPLICATION_PAGES[index - 1]);
+
+  // While Save your passport is open, the gate holds: a link sent from it shows "Open the link we sent" first.
+  const userId = session?.user.id;
+  useEffect(() => {
+    if (page === 'save' && userId) holdForSave(userId);
+  }, [page, userId]);
 
   const pickHours = (hours: Hours) =>
     answer(() => {
@@ -223,6 +241,13 @@ function Application({ ageCheckedBefore }: { ageCheckedBefore: boolean }) {
     }
   };
 
+  /** Skip: straight to Today, or to Save your passport first for an unsaved one. */
+  const skip = () => {
+    if (!mustSave) return finish(true);
+    setSkippedToSave(true);
+    go('save');
+  };
+
   const citizenNo = settings ? formatCitizenNumber(settings.citizenNumber) : '';
 
   const content = isQuizPage(page) ? (
@@ -242,7 +267,7 @@ function Application({ ageCheckedBefore }: { ageCheckedBefore: boolean }) {
       welcomeFooter={
         <>
           {/* Skip comes once the age check is passed (Back from it to Welcome), so nobody skips past it. */}
-          {ageChecked ? <Button variant="quiet" label={copy.skip} onPress={() => finish(true)} disabled={busy} /> : <View />}
+          {ageChecked ? <Button variant="quiet" label={copy.skip} onPress={skip} disabled={busy} /> : <View />}
           <Button label={copy.begin} onPress={next} disabled={busy} />
         </>
       }
@@ -304,7 +329,12 @@ function Application({ ageCheckedBefore }: { ageCheckedBefore: boolean }) {
     <NudgePage declared={oathStep && isDeclared(oathStep, today) ? oathStep : null} onContinue={() => go('approved')} />
   ) : page === 'save' ? (
     <ApplicationForm page={page} title={copy.saveTitle} lead={copy.saveLead}>
-      <SavePassport onDone={() => finish(false)} onLater={() => finish(false)} />
+      <SavePassport
+        onDone={() => {
+          if (userId) letIn(userId);
+          finish(skippedToSave);
+        }}
+      />
       {error ? (
         <Text variant="meta" color={c.error}>
           {error}
@@ -326,7 +356,7 @@ function Application({ ageCheckedBefore }: { ageCheckedBefore: boolean }) {
         </Text>
       ) : null}
       {/* An anonymous passport is saved next; anyone else is done. */}
-      {unsaved ? (
+      {mustSave ? (
         <Button label={copy.next} onPress={() => go('save')} disabled={busy} />
       ) : (
         <Button label={copy.goToToday} onPress={() => finish(false)} disabled={busy} />

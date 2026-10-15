@@ -12,6 +12,7 @@ import {
   oathTask,
   pageNumber,
   resultAudience,
+  nextPage,
   resumePage,
   territoriesFor,
 } from '../src/onboarding.ts';
@@ -76,6 +77,28 @@ test('coming back picks up at the first page not done', () => {
   const answered = { persona: 'school', hours: 'night', style: 'avoid', nudgeTone: 'roast', heardFrom: 'tiktok' } as const;
   assert.equal(resumePage(answered, false, false), 'name', 'answers from before the name page was added: asked for it first');
   assert.equal(resumePage(answered, true, false), 'birth', 'answers from before the age check was added: nobody goes on without it');
+});
+
+test('a passport that holds the Oath’s plan, or finished unsaved, comes back to saving it', () => {
+  const answered = { persona: 'school', hours: 'night', style: 'avoid', nudgeTone: 'roast', heardFrom: 'tiktok' } as const;
+  assert.equal(resumePage(answered, true, true, { unsaved: true }), 'oath', 'no plan yet: the Oath');
+  assert.equal(resumePage(answered, true, true, { unsaved: true, planned: true }), 'save', 'left on Approved or Save: not the Oath again');
+  assert.equal(resumePage(answered, true, true, { planned: true }), 'approved', 'saved already (Apple, Google): nothing to save');
+  assert.equal(resumePage({}, true, true, { unsaved: true, finished: true }), 'save', 'finished unsaved, questions skipped: only the save is left');
+  assert.equal(resumePage(answered, true, false, { unsaved: true, finished: true }), 'birth', 'still nobody gets past the age check');
+  assert.equal(resumePage({ persona: 'school' }, true, true, { unsaved: true, planned: true }), 'hours', 'unanswered questions come first');
+});
+
+test('the pages turn in order; a passport that finished unsaved goes from its name and age check to saving', () => {
+  assert.equal(nextPage('welcome'), 'name');
+  assert.equal(nextPage('name'), 'birth');
+  assert.equal(nextPage('birth'), 'purpose');
+  assert.equal(nextPage('approved'), 'save');
+  assert.equal(nextPage('save'), 'save', 'the last page stays put');
+  assert.equal(nextPage('name', true, false), 'birth', 'finished before the age check existed: that next');
+  assert.equal(nextPage('name', true, true), 'save', 'finished before the name page existed: then saving');
+  assert.equal(nextPage('birth', true, true), 'save');
+  assert.equal(nextPage('welcome', true, false), 'name');
 });
 
 test('a purpose of visit starts the matching territories', () => {

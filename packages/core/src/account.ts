@@ -138,3 +138,11 @@ export function authErrorKind(error: { code?: unknown; message?: unknown } | nul
   if (/expired|invalid.*(grant|flow|code)|code verifier|otp/i.test(message)) return 'staleLink';
   return 'generic';
 }
+
+/**
+ * Supabase Auth failed on its side (a 5xx, such as its email provider refusing to send), not
+ * because of anything the person typed or did. Saving a passport lets them in anyway.
+ */
+export function isServerFailure(error: { status?: unknown } | null | undefined): boolean {
+  return typeof error?.status === 'number' && error.status >= 500 && error.status < 600;
+}

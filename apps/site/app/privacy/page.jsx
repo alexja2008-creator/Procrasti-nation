@@ -32,11 +32,11 @@ export default function Privacy() {
         like us to use: a first name and, if you choose, a last name. We then create an account for you (referred to in
         the Services as your “passport”) that is identified by a randomly generated identifier. We display your name to
         you within the Services, including on your passport, and we do not display it to other users. You may change it
-        in the Services at any time. If you elect to save your passport, we collect a username
-        and either (a) your email address and, if you choose one, a password, or (b) the email address and name made
-        available to us by Apple or Google, if you sign in with that provider. At your election, Apple may provide a
-        private relay address in place of your email address. Passwords are stored by our database provider in salted
-        and hashed form, and we do not have access to them in readable form.
+        in the Services at any time. To save your passport, which we ask you to do before you continue past the
+        Citizenship Application, we collect a username and either (a) your email address and, if you choose one, a
+        password, or (b) the email address and name made available to us by Apple or Google, if you sign in with that
+        provider. At your election, Apple may provide a private relay address in place of your email address. Passwords are stored by our
+        database provider in salted and hashed form, and we do not have access to them in readable form.
       </p>
       <p>
         <strong>1.2 Content You Provide.</strong> We collect the content you create or submit through the Services

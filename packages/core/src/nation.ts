@@ -760,7 +760,14 @@ export const voice = {
     sendEmailLink: 'Send the link',
     emailSent: (email: string) =>
       `Open the link we sent to ${email} whenever you like, on any device. Your passport saves then, and you’ll choose a password. Keep going meanwhile.`,
-    later: 'Later',
+    /** The link or code couldn't be sent on our side: they carry on, and saving is asked again later. */
+    sendLater: 'We couldn’t send it just now. Carry on, and we’ll ask again later.',
+    /** Their email already has a passport: leaving this unsaved one (it's lost) to sign in to that one. */
+    signInInstead: 'Sign in to that passport instead',
+    signInInsteadBody:
+      'This passport isn’t saved, so signing out loses it, with its tasks, notes and stamps. Then choose “Already a citizen? Sign in”.',
+    signOutToSignIn: 'Sign out of this one',
+    keepThisOne: 'Keep this one',
     savedPhone: (phone: string) => `Saved. Sign in anywhere with a code texted to ${phone}.`,
     /** Until it's saved: a card on Passport and a row in Settings. */
     unsavedTitle: 'Your passport isn’t saved yet',
