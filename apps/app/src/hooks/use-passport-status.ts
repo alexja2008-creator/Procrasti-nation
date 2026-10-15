@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
-import { isUnsaved, owesPasswordFor } from '@/auth/passport';
+import { isUnsaved, owesPasswordFor, pendingEmail } from '@/auth/passport';
 import { supabase } from '@/lib/supabase';
 
 // A link opened elsewhere only shows here once the session is refreshed: at most this often,
@@ -19,8 +19,8 @@ async function refreshIfDue() {
 }
 
 /**
- * Whether their passport still needs saving (anonymous), or a password to finish saving it (the
- * email link was opened, maybe on another device). Checked each time the screen comes into view
+ * Whether their passport still needs saving (anonymous), where its save link went while it waits
+ * to be opened, or a password to finish saving it (the email link was opened, maybe on another device). Checked each time the screen comes into view
  * and when the app comes back to the front (back from their email); an anonymous passport with a
  * save link out refreshes its session then to see if it's been opened. The effects key on what the
  * session says, never the session object: a refresh replaces the object, and keying on it ran the
@@ -57,5 +57,5 @@ export function usePassportStatus() {
     return () => sub.remove();
   }, [waiting]);
 
-  return { unsaved: isUnsaved(user), owesPassword: owes };
+  return { unsaved: isUnsaved(user), pendingEmail: pendingEmail(user), owesPassword: owes };
 }

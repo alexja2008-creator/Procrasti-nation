@@ -758,6 +758,8 @@ export const voice = {
     useEmail: 'Use email and a password instead',
     usePhone: 'Text me a code instead',
     sendEmailLink: 'Send the link',
+    /** Supabase sends one save link a minute: the form's button waits out the rest. */
+    sendIn: (seconds: number) => `Send in ${seconds}s`,
     emailSent: (email: string) =>
       `Open the link we sent to ${email} whenever you like, on any device. Your passport saves then, and you’ll choose a password. Keep going meanwhile.`,
     /** The link or code couldn't be sent on our side: they carry on, and saving is asked again later. */
@@ -769,11 +771,21 @@ export const voice = {
     signOutToSignIn: 'Sign out of this one',
     keepThisOne: 'Keep this one',
     savedPhone: (phone: string) => `Saved. Sign in anywhere with a code texted to ${phone}.`,
-    /** Until it's saved: a card on Passport and a row in Settings. */
+    /** Until it's saved: a card on Today and Passport, and a row in Settings. */
     unsavedTitle: 'Your passport isn’t saved yet',
     unsavedBody: 'Save it to sign in on your laptop, and to keep it if you change phones.',
     saveAction: 'Save your passport',
     notSaved: 'Not saved',
+    /** A save link that's out and not opened yet: the same card and row, until it is. */
+    checkEmailTitle: 'Check your email',
+    checkEmailBody: (email: string) =>
+      `We sent a link to ${email}. Open it to save your passport. Not there? Check your spam folder, or send it again.`,
+    sendAgain: 'Send it again',
+    sentAgain: 'Sent again. Open the newest one; it can take a minute to arrive.',
+    resendFailed: 'We couldn’t send it just now. Try again in a little while.',
+    emailConfirmed: 'Your email is confirmed, and your passport is saved.',
+    differentEmail: 'Use a different email',
+    linkSent: 'Link sent',
     /** Signing out of a passport that isn't saved loses it. */
     signOutUnsavedTitle: 'This passport isn’t saved',
     signOutUnsavedBody: 'Signing out loses it, with its tasks, notes and stamps.',

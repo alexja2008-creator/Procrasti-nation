@@ -25,6 +25,7 @@ import { useCapture } from '@/components/capture';
 import { Icon } from '@/components/icon';
 import { NextStepCard } from '@/components/next-step-card';
 import { NoticeBar } from '@/components/notice-bar';
+import { PassportSaveCard } from '@/components/passport-save-card';
 import { PlanRow } from '@/components/plan-row';
 import { RowMenu } from '@/components/row-menu';
 import { Screen } from '@/components/screen';
@@ -158,6 +159,9 @@ export default function TodayScreen() {
           {error}
         </Text>
       ) : null}
+
+      {/* Until the passport is saved: save it, or check the email its link went to. */}
+      <PassportSaveCard />
 
       {status === 'loading' && tasks.length === 0 ? <ActivityIndicator color={c.primary} style={s.loading} /> : null}
 

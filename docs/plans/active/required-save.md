@@ -40,7 +40,7 @@ This plan makes saving the last step of the Application, with no Later. Sending 
 | `apps/app/src/app/_layout.tsx` | Modify | The gate keeps an unsaved passport with no link sent on the Application (its Save page) even when the Application is done |
 | `apps/app/src/app/welcome.tsx` | Modify | No `onLater`; Skip goes to Save for an unsaved passport; resume after the Oath |
 | `apps/app/src/components/save-passport.tsx` | Modify | `onLater` goes; Sign in instead; let them in when sending fails on our side |
-| `apps/app/src/auth/passport.ts` | Modify | `resendSaveLink` (`auth.resend({ type: 'email_change' })`); `pendingEmail(user)` from `user.new_email` |
+| `apps/app/src/auth/passport.ts` | Modify | `resendSaveLink` (`updateUser({ email })` again, the same call as the first send; see `DECISIONS.md`); `pendingEmail(user)` from `user.new_email`; `nextSaveLinkAt` from `email_change_sent_at` |
 | `apps/app/src/hooks/use-passport-status.ts` | Modify | Exposes the pending email |
 | `apps/app/src/components/passport-save-card.tsx` | Modify | The pending state (address, Send it again, Use a different email); usable on Today |
 | `apps/app/src/app/(tabs)/index.tsx` | Modify | The card on Today while the passport is unsaved or the email is waiting |
@@ -59,7 +59,7 @@ This plan makes saving the last step of the Application, with no Later. Sending 
 **Phase 2: until it's confirmed** (one PR):
 - The Today card, and the same pending state on Passport and in Settings: Send it again, Use a different email, the spam line.
 - **Checked by Claude:** the tests and type check; the card's layout at phone and laptop width, day and night.
-- **Needs Alex, on staging:** Send it again delivers a second email. Use a different email replaces the pending address. Opening the link (on another device too) clears the card and offers Choose a password.
+- **Needs Alex, on staging:** Send it again delivers a second email, and the first email's link then no longer works (the newest one does). The countdown matches across Today, Passport and Settings. Use a different email replaces the pending address. Opening the link (on another device too) clears the card on coming back to the app and offers Choose a password.
 
 **Phase 3: Sign in with Apple to save, on the iPhone** (before App Store review; waits on the Apple provider and key from `STATUS.md`): `linkIdentity` with the ID token on the save page, first in the list on the iPhone.
 
