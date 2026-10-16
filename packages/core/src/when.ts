@@ -11,19 +11,20 @@ export interface ClockTime {
 }
 
 export interface DayChip {
-  id: 'today' | 'tomorrow' | 'weekend' | 'next-week';
+  id: 'today' | 'tomorrow';
   label: string;
   date: LocalDate;
 }
 
+/**
+ * Today and Tomorrow; any other day is picked on the calendar or typed (Alex,
+ * 2026-10-15: "This weekend" and "Next week" made it too easy to start a plan
+ * on a day its later steps came before).
+ */
 export function dayChips(today: LocalDate): DayChip[] {
-  const dow = parseLocalDate(today).getDay(); // 0 = Sunday
   return [
     { id: 'today', label: 'Today', date: today },
     { id: 'tomorrow', label: 'Tomorrow', date: addDays(today, 1) },
-    // On a weekend, "this weekend" is today; otherwise the coming Saturday.
-    { id: 'weekend', label: 'This weekend', date: dow === 0 || dow === 6 ? today : addDays(today, 6 - dow) },
-    { id: 'next-week', label: 'Next week', date: addDays(today, (8 - dow) % 7 || 7) },
   ];
 }
 
@@ -45,6 +46,31 @@ export function timeSlots(fromHour = 6, toHour = 23, stepMinutes = 30): ClockTim
 
 export const sameTime = (a: ClockTime | null, b: ClockTime | null) =>
   !!a && !!b && a.hour === b.hour && a.minute === b.minute;
+
+// ---------------------------------------------------------------------------
+// The web's time picker: an hour, then its quarter (the iPhone has a wheel).
+
+/** A quarter's chip: ":00", ":15". */
+export const quarterLabel = (minute: number) => `:${String(minute).padStart(2, '0')}`;
+
+/** `a` is later in the day than `b`. */
+export const laterThan = (a: ClockTime, b: ClockTime) => a.hour * 60 + a.minute > b.hour * 60 + b.minute;
+
+/** An hour's quarters still open: all four, or those later than `after` (a Declaration's times already gone). */
+export function quartersOf(hour: number, after: ClockTime | null = null): ClockTime[] {
+  return [0, 15, 30, 45].map((minute) => ({ hour, minute })).filter((t) => !after || laterThan(t, after));
+}
+
+/** The hours offered, 6 AM to 11 PM, leaving out any with no quarter still open. */
+export function pickerHours(after: ClockTime | null = null, from = 6, to = 23): number[] {
+  return Array.from({ length: to - from + 1 }, (_, i) => from + i).filter((h) => quartersOf(h, after).length > 0);
+}
+
+/** Picking an hour keeps the minutes when that time is still open, else takes the hour's first open quarter. */
+export function pickHour(hour: number, current: ClockTime | null, after: ClockTime | null = null): ClockTime | null {
+  const open = quartersOf(hour, after);
+  return open.find((t) => current && t.minute === current.minute) ?? open[0] ?? null;
+}
 
 const RRULE_DAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 

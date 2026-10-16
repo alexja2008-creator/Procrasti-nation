@@ -127,26 +127,26 @@ test('every answer option has words, and the ids match the data model', () => {
 test('the Oath: a typed date wins, else due when they picked', () => {
   const now = new Date(2026, 9, 7, 9, 0); // Wednesday
   const today = '2026-10-07';
-  const typed = oathTask(parseQuickAdd('history essay due fri', now), 'week', today);
+  const typed = oathTask(parseQuickAdd('history essay due fri', now), '2026-10-14');
   assert.deepEqual([typed.title, typed.dueOn], ['history essay', '2026-10-09']);
-  const picked = (due: Parameters<typeof oathTask>[1]) => oathTask(parseQuickAdd('Clean my room', now), due, today).dueOn;
-  assert.deepEqual([picked('today'), picked('tomorrow'), picked('week'), picked('none')], ['2026-10-07', '2026-10-08', '2026-10-14', null]);
+  const picked = (dueOn: string | null) => oathTask(parseQuickAdd('Clean my room', now), dueOn).dueOn;
+  assert.deepEqual([picked(today), picked('2026-10-20'), picked(null)], [today, '2026-10-20', null]);
 });
 
 test('the Oath plans one go at a repeat: its words leave the title, and it’s due when they picked', () => {
   const now = new Date(2026, 9, 15, 10, 0); // Thursday
-  const walk = oathTask(parseQuickAdd('walk the dog every M/W/Sat', now), 'tomorrow', '2026-10-15');
+  const walk = oathTask(parseQuickAdd('walk the dog every M/W/Sat', now), '2026-10-16');
   assert.deepEqual(
     [walk.title, walk.rrule, walk.scheduledOn, walk.dueOn, walk.matches],
     ['walk the dog', null, null, '2026-10-16', []],
   );
-  const typed = oathTask(parseQuickAdd('run every day starting tomorrow', now), 'week', '2026-10-15');
+  const typed = oathTask(parseQuickAdd('run every day starting tomorrow', now), '2026-10-22');
   assert.deepEqual([typed.rrule, typed.scheduledOn], [null, '2026-10-16'], 'a typed day stays');
-  for (const due of ['none', 'week'] as const) {
-    const timed = oathTask(parseQuickAdd('walk the dog every day 6pm', now), due, '2026-10-15');
+  for (const due of [null, '2026-10-22']) {
+    const timed = oathTask(parseQuickAdd('walk the dog every day 6pm', now), due);
     assert.deepEqual([timed.rrule, timed.scheduledOn, timed.dueOn, timed.time], [null, '2026-10-15', null, { hour: 18, minute: 0 }], `so does a typed time (${due})`);
   }
-  const once = oathTask(parseQuickAdd('study for exam 6pm', now), 'week', '2026-10-15');
+  const once = oathTask(parseQuickAdd('study for exam 6pm', now), '2026-10-22');
   assert.deepEqual([once.scheduledOn, once.dueOn], ['2026-10-15', null], 'as for a one-off with a time');
 });
 

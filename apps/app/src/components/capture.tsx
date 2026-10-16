@@ -106,7 +106,7 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
   // Typed words win, so the row steps aside when the text names a day, deadline or
   // repeat (a time alone doesn't), or Upcoming's "+" opened the sheet for a day.
   const showDayRow = !day && !(parsed && namesItsDay(parsed));
-  const quickDays = dayChips(today).filter((d) => d.id === 'today' || d.id === 'tomorrow');
+  const quickDays = dayChips(today);
   const otherDay = dueDay && !quickDays.some((d) => d.date === dueDay) ? dueDay : null;
   // A repeat is a habit: no plan for it, here as everywhere else.
   const offerPlan = !parsed?.rrule;
@@ -120,7 +120,6 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
     refocus();
   };
   const toggleCalendar = () => {
-    if (otherDay) return pickDue(null);
     if (calendarOpen) {
       setCalendarOpen(false);
       return refocus();
@@ -261,15 +260,15 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
                     />
                   ))}
                   <DayChip
-                    label={otherDay ? relativeDayLabel(otherDay, today) : voice.capture.pickDate}
-                    accessibilityLabel={otherDay ? voice.capture.due(relativeDayPhrase(otherDay, today)) : voice.capture.pickDate}
+                    label={otherDay ? relativeDayLabel(otherDay, today) : voice.task.pickDate}
+                    accessibilityLabel={otherDay ? voice.capture.due(relativeDayPhrase(otherDay, today)) : voice.task.pickDate}
                     selected={!!otherDay}
                     onPress={toggleCalendar}
                   />
                 </View>
               ) : null}
               {showDayRow && calendarOpen ? (
-                <MonthCalendar selected={dueDay} today={today} onSelect={(d) => pickDue(d)} />
+                <MonthCalendar selected={dueDay} today={today} onSelect={(d) => pickDue(d)} from={today} />
               ) : null}
 
               {/* Big-sounding tasks lead with Plan it; small ones with Add. */}

@@ -2,16 +2,32 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { atLocalTime, clockOf } from '../src/dates.ts';
-import { dayChips, duePatch, monthGrid, repeatChips, repeatPatch, shiftMonth, shiftWeek, timeSlots, weekStrip, whenPatch } from '../src/when.ts';
+import { dayChips, duePatch, monthGrid, pickerHours, pickHour, quarterLabel, quartersOf, repeatChips, repeatPatch, shiftMonth, shiftWeek, timeSlots, weekStrip, whenPatch } from '../src/when.ts';
 
 const chipDates = (today: string) => Object.fromEntries(dayChips(today).map((c) => [c.id, c.date]));
 
-test('day chips: weekend and next week from any weekday', () => {
-  assert.deepEqual(chipDates('2026-10-06'), { today: '2026-10-06', tomorrow: '2026-10-07', weekend: '2026-10-10', 'next-week': '2026-10-12' }, 'Tuesday');
-  assert.equal(chipDates('2026-10-10').weekend, '2026-10-10', 'Saturday: this weekend is today');
-  assert.equal(chipDates('2026-10-11').weekend, '2026-10-11', 'Sunday too');
-  assert.equal(chipDates('2026-10-11')['next-week'], '2026-10-12', 'Sunday: next week starts tomorrow');
-  assert.equal(chipDates('2026-10-12')['next-week'], '2026-10-19', 'Monday: next week is a week away');
+test('day chips are today and tomorrow; other days come from the calendar', () => {
+  assert.deepEqual(chipDates('2026-10-06'), { today: '2026-10-06', tomorrow: '2026-10-07' });
+  assert.deepEqual(chipDates('2026-10-31'), { today: '2026-10-31', tomorrow: '2026-11-01' }, 'across a month');
+  assert.deepEqual(chipDates('2026-12-31'), { today: '2026-12-31', tomorrow: '2027-01-01' }, 'and a year');
+});
+
+test('the time grid: hours 6 AM to 11 PM, then quarters', () => {
+  assert.deepEqual([pickerHours()[0], pickerHours().at(-1), pickerHours().length], [6, 23, 18]);
+  assert.deepEqual(quartersOf(20).map((t) => t.minute), [0, 15, 30, 45]);
+  assert.deepEqual(quartersOf(20).map((t) => quarterLabel(t.minute)), [':00', ':15', ':30', ':45']);
+  const at820 = { hour: 20, minute: 20 };
+  assert.deepEqual(quartersOf(20, at820).map((t) => t.minute), [30, 45], 'only times after 8:20');
+  assert.deepEqual(quartersOf(20, { hour: 20, minute: 30 }).map((t) => t.minute), [45], 'not the minute itself');
+  assert.equal(pickerHours({ hour: 23, minute: 45 }).length, 0, 'nothing left today');
+  assert.equal(pickerHours(at820)[0], 20, 'the hour it is still counts while a quarter is left');
+});
+
+test('picking an hour keeps the minutes when it can', () => {
+  assert.deepEqual(pickHour(19, { hour: 18, minute: 15 }), { hour: 19, minute: 15 });
+  assert.deepEqual(pickHour(19, null), { hour: 19, minute: 0 });
+  assert.deepEqual(pickHour(20, { hour: 21, minute: 15 }, { hour: 20, minute: 20 }), { hour: 20, minute: 30 }, '8:15 is gone, so 8:30');
+  assert.equal(pickHour(20, null, { hour: 20, minute: 50 }), null, 'an hour with nothing left');
 });
 
 test('month grid starts on Monday and pads the edges', () => {

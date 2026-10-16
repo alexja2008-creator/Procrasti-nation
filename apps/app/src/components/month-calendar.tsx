@@ -16,10 +16,12 @@ type Props = {
   onSelect: (day: LocalDate) => void;
   /** How many items fall on each day; drawn as up to three dots. */
   marks?: Record<LocalDate, number>;
+  /** Days before this one can't be picked (a Declaration is for later). */
+  from?: LocalDate;
 };
 
 /** A month at a time, Monday first. Today is ringed; the chosen day is filled. */
-export function MonthCalendar({ selected, today, onSelect, marks }: Props) {
+export function MonthCalendar({ selected, today, onSelect, marks, from }: Props) {
   const s = useStyles(makeStyles);
   const [view, setView] = useState(() => {
     const d = parseLocalDate(selected ?? today);
@@ -40,7 +42,15 @@ export function MonthCalendar({ selected, today, onSelect, marks }: Props) {
         <View key={w} style={s.row}>
           {week.map((day, i) =>
             day ? (
-              <DayCell key={day} day={day} today={today} selected={selected} count={marks?.[day]} onSelect={onSelect} />
+              <DayCell
+                key={day}
+                day={day}
+                today={today}
+                selected={selected}
+                count={marks?.[day]}
+                onSelect={onSelect}
+                disabled={!!from && day < from}
+              />
             ) : (
               <View key={i} style={s.cell} />
             ),
@@ -83,9 +93,16 @@ export function WeekdayRow() {
   );
 }
 
-type DayProps = { day: LocalDate; today: LocalDate; selected: LocalDate | null; count?: number; onSelect: (day: LocalDate) => void };
+type DayProps = {
+  day: LocalDate;
+  today: LocalDate;
+  selected: LocalDate | null;
+  count?: number;
+  onSelect: (day: LocalDate) => void;
+  disabled?: boolean;
+};
 
-export function DayCell({ day, today, selected, count = 0, onSelect }: DayProps) {
+export function DayCell({ day, today, selected, count = 0, onSelect, disabled }: DayProps) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const chosen = day === selected;
@@ -93,14 +110,15 @@ export function DayCell({ day, today, selected, count = 0, onSelect }: DayProps)
   return (
     <Pressable
       onPress={() => onSelect(day)}
+      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={count ? `${longDateLabel(day)}, ${voice.things(count)}` : longDateLabel(day)}
-      accessibilityState={{ selected: chosen }}
+      accessibilityState={{ selected: chosen, disabled: !!disabled }}
       // React Native Web only exposes the picked day through aria-selected.
       aria-selected={chosen}
       style={s.cell}>
       <View style={[s.circle, day === today && s.today, chosen && s.chosen]}>
-        <Text variant="body" color={chosen ? c.onPrimary : day < today ? c.muted : c.ink}>
+        <Text variant="body" color={chosen ? c.onPrimary : day < today || disabled ? c.muted : c.ink} style={disabled && s.gone}>
           {Number(day.slice(8))}
         </Text>
         {dots ? (
@@ -130,5 +148,6 @@ const makeStyles = (t: Tokens) => ({
     marks: { position: 'absolute', bottom: 3, flexDirection: 'row', gap: 2 },
     mark: { width: 4, height: 4, borderRadius: 2, backgroundColor: t.c.primary },
     markChosen: { backgroundColor: t.c.onPrimary },
+    gone: { opacity: 0.45 },
   }),
 });

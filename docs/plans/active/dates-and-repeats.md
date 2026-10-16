@@ -143,6 +143,27 @@ None of this reaches the iPhone until the next TestFlight build (there are no ov
 - `time-picker.tsx` (web grid) and `time-picker.ios.tsx` (wheel) replace both strips.
 - **Checked:** core and app checks. On the web, with a mouse only, then the keyboard only: set 8:15 PM in When, Due, Move to… and the Declaration. A screen reader hears "8:15 PM". On iPhone, in the Simulator: the wheel inside each sheet, and that dragging the wheel doesn't scroll the sheet.
 - **Needs Alex:** the wheel on his iPhone with the next TestFlight build.
+- **Built 2026-10-15 (`feat/day-chips-time-picker`).**
+  - **New components:** `DayPicker` (Today · Tomorrow · Pick a date · No date, the month in place) serves When, Due, Move to…, Pick a day, the Declaration and the Oath. `MonthCalendar` gets `from`, so the Declaration can't pick a day that's gone.
+  - **Web picker:** `time-picker.tsx`, the hour grid. Picking an hour keeps the minutes when that time is still open.
+  - **iPhone picker:** `time-picker.ios.tsx`, `@expo/ui`'s wheel (now a direct dependency, 57.0.25). With no time picked it opens on 6 PM, or the first quarter hour still ahead, and picks it.
+  - **The Oath:** `oathTask` takes the picked date, or null.
+  - **Checked:**
+    - Core tests (149) and `npm run app:check`.
+    - The When sheet in the browser pane: 8:15 PM by mouse, 10:45 PM by keyboard (Enter and Space). Quarter chips are read as "10:45 PM". Pick a date opens the month, and No time folds the grid. Closed without saving, and the task was unchanged.
+    - The Declaration: only hours still ahead today, past days refused in the month (`aria-disabled`), all 18 hours on Saturday. Laptop and phone width. Nothing declared.
+    - No console errors.
+    - The iPhone 18 Pro Simulator (the Oct 12 development build, signed out): the wheel on a temporary screen, since deleted. It renders in Night, opens on 6 PM, and with "after 8:20 PM" opens on 8:30 PM with earlier hours greyed. Dragging the hour reports 7:00 PM and doesn't scroll the page.
+  - **From review:**
+    - Past days can't be picked as a deadline (the Oath and the + sheet).
+    - The + sheet's picked date reopens the month when tapped, as everywhere else.
+    - The Oath's day chips aren't wrapped in a radiogroup (they're buttons, and the month sits inside).
+    - On iPhone, opening Other time on a task with no day picks today at 6 PM, since a time needs a day. It's shown before Done saves it.
+  - **Not checked:**
+    - The wheel inside the real sheets on iPhone (the Simulator build is signed out).
+    - The Oath page (it needs a new passport on staging, which is Alex's to make).
+    - `@expo/ui` 57.0.25's native code: the Simulator ran the new JavaScript on the old build's 57.0.21. Rebuild the development build, or check the next TestFlight build.
+  - **Known, left as is:** chips are 36pt tall, under the 44pt `t.hitTarget` this plan's accessibility line asks for. That's true of every Chip in the app, so it needs its own change.
 
 **Phase 3: The rest of the plan can follow** (issue 1)
 
