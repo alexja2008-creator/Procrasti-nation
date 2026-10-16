@@ -1,23 +1,28 @@
 import {
   actions,
+  dayChips,
   describeRRule,
   formatShortDate,
   formatTime,
+  namesItsDay,
   parseQuickAdd,
   relativeDayLabel,
   relativeDayPhrase,
   suggestsPlan,
   voice,
+  withDue,
   type LocalDate,
   type QuickAddResult,
 } from '@pn/core';
 import { router } from 'expo-router';
 import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
+import { Chip as DayChip } from '@/components/chip';
 import { Icon, type IconName } from '@/components/icon';
+import { MonthCalendar } from '@/components/month-calendar';
 import { NoteCapture } from '@/components/note/note-capture';
 import { Text } from '@/components/text';
 import { useLists } from '@/data/lists-store';
@@ -53,7 +58,12 @@ function chipsFor(p: QuickAddResult, today: string, territory?: string): Chip[] 
   const chips: Chip[] = [];
   if (territory) chips.push({ icon: 'map', label: voice.capture.inTerritory(territory) });
   if (p.rrule) chips.push({ icon: 'repeat', label: describeRRule(p.rrule) });
-  if (p.scheduledOn) chips.push({ icon: 'calendar', label: relativeDayLabel(p.scheduledOn, today) });
+  if (p.scheduledOn) {
+    chips.push({
+      icon: 'calendar',
+      label: p.rrule ? voice.capture.starts(relativeDayPhrase(p.scheduledOn, today)) : relativeDayLabel(p.scheduledOn, today),
+    });
+  }
   if (p.dueOn) chips.push({ icon: 'calendar', label: voice.capture.due(relativeDayLabel(p.dueOn, today)) });
   if (p.time) chips.push({ icon: 'clock', label: formatTime(new Date(2000, 0, 1, p.time.hour, p.time.minute)) });
   if (!p.scheduledOn && !p.dueOn && !territory) chips.push({ icon: 'inbox', label: voice.capture.landsInCustoms, muted: true });
@@ -89,8 +99,36 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
   const [text, setText] = useState('');
   const [parsed, setParsed] = useState<QuickAddResult | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
-  // A repeat is a habit: no plan for it.
+  // The day row: a deadline picked with a tap, for people who don't type one.
+  const [dueDay, setDueDay] = useState<LocalDate | null>(null);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const capture = parsed ? withDue(parsed, dueDay) : null;
+  // Typed words win, so the row steps aside when the text names a day, deadline or
+  // repeat (a time alone doesn't), or Upcoming's "+" opened the sheet for a day.
+  const showDayRow = !day && !(parsed && namesItsDay(parsed));
+  const quickDays = dayChips(today).filter((d) => d.id === 'today' || d.id === 'tomorrow');
+  const otherDay = dueDay && !quickDays.some((d) => d.date === dueDay) ? dueDay : null;
+  // A repeat is a habit: no plan for it, here as everywhere else.
+  const offerPlan = !parsed?.rrule;
   const bigTask = !!parsed && !parsed.rrule && suggestsPlan(parsed.title);
+
+  // Keep typing after a tap; web blurs the input.
+  const refocus = () => setTimeout(() => inputRef.current?.focus(), 0);
+  const pickDue = (d: LocalDate | null) => {
+    setDueDay((prev) => (prev === d ? null : d));
+    setCalendarOpen(false);
+    refocus();
+  };
+  const toggleCalendar = () => {
+    if (otherDay) return pickDue(null);
+    if (calendarOpen) {
+      setCalendarOpen(false);
+      return refocus();
+    }
+    // Room for the month on a phone: the keyboard comes back once a day is picked.
+    if (!wide) Keyboard.dismiss();
+    setCalendarOpen(true);
+  };
 
   const onChange = (value: string) => {
     setText(value);
@@ -100,7 +138,7 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
 
   /** Captures the task, then opens Plan it for it. */
   const planIt = async () => {
-    const p = parsed;
+    const p = capture;
     if (!p) return;
     const saved = await add(p, filedIn(p)?.id);
     if (!saved) return;
@@ -109,12 +147,14 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
   };
 
   const submit = async () => {
-    const p = parsed;
+    const p = capture;
     if (!p) return;
     setText('');
     setParsed(null);
+    setDueDay(null);
+    setCalendarOpen(false);
     // Keep the cursor here for the next capture; web blurs inputs on submit.
-    setTimeout(() => inputRef.current?.focus(), 0);
+    refocus();
     const saved = await add(p, filedIn(p)?.id);
     if (saved) setConfirmation(voice.capture.added(whereItWent(p, today, filedIn(p)?.name)));
   };
@@ -165,6 +205,8 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
                 value={text}
                 onChangeText={onChange}
                 onSubmitEditing={submit}
+                // The keyboard and the month don't both fit on a phone.
+                onFocus={() => setCalendarOpen(false)}
                 submitBehavior="submit"
                 autoFocus
                 placeholder={voice.capture.placeholder}
@@ -175,8 +217,8 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
               />
 
               <View style={s.chips} accessibilityLiveRegion="polite">
-                {parsed
-                  ? chipsFor(parsed, today, filedIn(parsed)?.name).map((chip) => (
+                {capture
+                  ? chipsFor(capture, today, filedIn(capture)?.name).map((chip) => (
                       <View key={chip.label} style={[s.chip, chip.muted && s.chipMuted]}>
                         <Icon name={chip.icon} size={13} color={chip.muted ? c.muted : c.primaryText} strokeWidth={2} />
                         <Text variant="meta" color={chip.muted ? c.muted : c.primaryText}>
@@ -197,21 +239,55 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
                       </View>
                     ) : null}
               </View>
+              {capture?.rrule && !capture.time ? (
+                <Text variant="meta" color={c.muted}>
+                  {voice.capture.nudgeHint(describeRRule(capture.rrule))}
+                </Text>
+              ) : null}
+
+              {showDayRow ? (
+                <View style={s.dayRow}>
+                  {/* Each chip says "Due today" to a screen reader. */}
+                  <Text variant="label" color={c.muted} aria-hidden>
+                    {voice.capture.dueRow.toUpperCase()}
+                  </Text>
+                  {quickDays.map((d) => (
+                    <DayChip
+                      key={d.id}
+                      label={d.label}
+                      accessibilityLabel={voice.capture.due(relativeDayPhrase(d.date, today))}
+                      selected={dueDay === d.date}
+                      onPress={() => pickDue(d.date)}
+                    />
+                  ))}
+                  <DayChip
+                    label={otherDay ? relativeDayLabel(otherDay, today) : voice.capture.pickDate}
+                    accessibilityLabel={otherDay ? voice.capture.due(relativeDayPhrase(otherDay, today)) : voice.capture.pickDate}
+                    selected={!!otherDay}
+                    onPress={toggleCalendar}
+                  />
+                </View>
+              ) : null}
+              {showDayRow && calendarOpen ? (
+                <MonthCalendar selected={dueDay} today={today} onSelect={(d) => pickDue(d)} />
+              ) : null}
 
               {/* Big-sounding tasks lead with Plan it; small ones with Add. */}
               <View style={[s.actions, bigTask && s.actionsReversed]}>
                 <View style={s.action}>
                   <Button label={actions.add} variant={bigTask ? 'secondary' : 'primary'} disabled={!parsed} onPress={submit} />
                 </View>
-                <View style={s.action}>
-                  <Button
-                    label={actions.planIt}
-                    variant={bigTask ? 'primary' : 'secondary'}
-                    icon={<Icon name="shrink" size={16} color={bigTask ? c.onPrimary : c.ink} strokeWidth={2} />}
-                    disabled={!parsed}
-                    onPress={planIt}
-                  />
-                </View>
+                {offerPlan ? (
+                  <View style={s.action}>
+                    <Button
+                      label={actions.planIt}
+                      variant={bigTask ? 'primary' : 'secondary'}
+                      icon={<Icon name="shrink" size={16} color={bigTask ? c.onPrimary : c.ink} strokeWidth={2} />}
+                      disabled={!parsed}
+                      onPress={planIt}
+                    />
+                  </View>
+                ) : null}
               </View>
             </>
           )}
@@ -268,6 +344,7 @@ const makeStyles = (t: Tokens) => ({
       borderColor: t.c.next.border,
     },
     chipMuted: { backgroundColor: t.c.chip, borderColor: t.c.rule },
+    dayRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
     actions: { flexDirection: 'row', gap: 10 },
     actionsReversed: { flexDirection: 'row-reverse' },
     action: { flex: 1 },

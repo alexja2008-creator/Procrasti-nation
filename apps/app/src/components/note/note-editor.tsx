@@ -109,7 +109,8 @@ export function NoteEditor({ rest, onChange, saveNow, noteId, listId, ref }: Pro
   /** A checklist line's task, read like quick add when it has words. Returns its title. */
   const createTask = (taskId: string, text: string, body: string) => {
     const words = text.trim();
-    const parsed = words ? parseQuickAdd(words, new Date(), { lists }) : null;
+    // Only cued repeats ("every mon"): a line has no chips to show a misread.
+    const parsed = words ? parseQuickAdd(words, new Date(), { lists, repeats: 'cued' }) : null;
     const fields = parsed ? { title: parsed.title, ...scheduleOf(parsed), listId: parsed.listId ?? listId } : { title: '', listId };
     addToNote({ id: taskId, noteId, ...fields }, saveNow(body));
     return fields.title;
@@ -125,7 +126,7 @@ export function NoteEditor({ rest, onChange, saveNow, noteId, listId, ref }: Pro
     const words = title.trim();
     if (words === task.title || gone.current.has(task.id)) return;
     if (!task.title && words) {
-      const p = parseQuickAdd(words, new Date(), { lists });
+      const p = parseQuickAdd(words, new Date(), { lists, repeats: 'cued' });
       update(task, { title: p.title, ...scheduleOf(p), ...(p.listId ? { listId: p.listId } : {}) });
     } else {
       update(task, { title: words });
