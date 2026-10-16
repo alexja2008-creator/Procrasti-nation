@@ -129,7 +129,7 @@ No tables, columns or storage keys. All copy in `guide`, in the no-guilt voice: 
 
 ## Risks
 - **The guide drifts from the app** as features change. Mitigation: names come from `names`/`actions`; the test catches guilt words; each feature's plan template gets no new step, but `docs-keeper` already updates copy after shipping, and this plan's Done list names the guide in CHANGELOG so it's findable.
-- **Upcoming's repeat previews** (another session's work) will change how repeats show there. The guide says only "Check off a repeat and it comes back on its next day", and Upcoming "shows the days ahead"; a line about previews goes in when they ship.
+- **Upcoming's repeat previews** (another session's work) changed how repeats show there. They shipped while this PR was open (PR #31), so Repeats gained a line: Upcoming shows each turn in the week ahead, and later ones read "Repeats · opens after Mon" (core's `previewLine`).
 - **Two icons on the eyebrow row** at 320px wide: the date label on Today is short ("FRI · 16 OCT"), and Upcoming's and Territories' eyebrows are one word, so both fit.
 
 ## Done when

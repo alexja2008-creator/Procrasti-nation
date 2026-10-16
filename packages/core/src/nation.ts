@@ -328,6 +328,13 @@ export const voice = {
     nextWeek: 'Next week',
     /** The "+" on a day's heading, read aloud: "Add to Thu 8 Oct". */
     addTo: (day: string) => `Add to ${day}`,
+    /**
+     * A repeat's later turn in the week ahead (Alex, 2026-10-16): its line, and what its repeat
+     * mark says when tapped ("Wednesday's turn opens once Monday's is done"). Never "locked".
+     */
+    previewLine: (before: string) => `Repeats · opens after ${before}`,
+    previewNotice: (turn: string, before: string) => `${turn.charAt(0).toUpperCase()}${turn.slice(1)}’s turn opens once ${before}’s is done.`,
+    previewMark: (title: string, notice: string) => `${title} repeats. ${notice}`,
   },
   territories: {
     eyebrow: 'Territories',
@@ -1000,6 +1007,7 @@ export const guide = {
             { typed: 'Walk the dog every M/W/Sat', means: 'Mondays, Wednesdays and Saturdays' },
           ],
           `Or open the task and choose ${voice.task.repeat}: ${voice.task.pickDays} ticks the exact days, and ${voice.task.never} stops it. Check off a repeat and it comes back on its next day.`,
+          `Upcoming shows each of its turns in the week ahead. The next one is the one to check off; later ones read “${voice.upcoming.previewLine('Mon')}” and open once the turn before is done.`,
         ],
       },
       {

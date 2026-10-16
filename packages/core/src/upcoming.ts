@@ -3,14 +3,20 @@
 // so iOS, web and (later) widgets agree. Calendar events (Phase 5) will join
 // as another entry kind, merged into the same days.
 
-import { addDays, daysBetween, formatShortDate } from './dates.ts';
+import { addDays, atLocalTime, clockOf, daysBetween, formatShortDate, occurrencesBetween, parseLocalDate, relativeDayPhrase } from './dates.ts';
+import { voice } from './nation.ts';
 import { bySortOrder, byTimeOfDay, stepsByParent, timeOnItsDay } from './order.ts';
 import type { ISODateTime, LocalDate, Task } from './types.ts';
+import { pickerWeek } from './when.ts';
 
 export interface UpcomingEntry {
   task: Task;
-  /** A to-do (with a checkbox), or a deadline marker on the day a task is due. */
-  kind: 'task' | 'deadline';
+  /**
+   * A to-do (with a checkbox), a deadline marker on the day a task is due, or
+   * a preview: a repeat's later turn in the week ahead, which opens once the
+   * turn before it is done (Alex, 2026-10-16).
+   */
+  kind: 'task' | 'deadline' | 'preview';
   /** The day it's on. */
   date: LocalDate;
   /** Its time that day: `remindAt` on its scheduled day, `dueAt` on its due day. */
@@ -19,6 +25,8 @@ export interface UpcomingEntry {
   parentTitle?: string;
   stepIndex?: number;
   stepCount?: number;
+  /** A preview's turn before it: the repeat's next day, or today when that turn is on Today. */
+  opensAfter?: LocalDate;
 }
 
 export interface UpcomingDay {
@@ -33,10 +41,11 @@ export interface UpcomingView {
   later: UpcomingEntry[];
 }
 
-/** Days shown even when empty, so there's always a week to add to. */
+/** Days shown even when empty, so there's always a week to add to. A repeat shows each turn in them. */
 const FIXED_DAYS = 7;
 
 // Within a day: timed to-dos by time, then deadline markers, then the rest as arranged.
+// A preview sorts like a to-do.
 const rank = (e: UpcomingEntry) => (e.kind === 'deadline' ? 1 : e.at ? 0 : 2);
 
 function entryOrder(a: UpcomingEntry, b: UpcomingEntry): number {
@@ -54,6 +63,7 @@ export function buildUpcoming(tasks: Task[], today: LocalDate, { weeks = 8 } = {
   const steps = stepsByParent(live);
   // A plan's work happens in its open steps; its own row only marks the deadline.
   const hasOpenSteps = (t: Task) => (steps.get(t.id) ?? []).some((s) => !s.completedAt);
+  const lastFixed = addDays(today, FIXED_DAYS);
 
   const entries: UpcomingEntry[] = [];
   for (const t of live) {
@@ -77,10 +87,20 @@ export function buildUpcoming(tasks: Task[], today: LocalDate, { weeks = 8 } = {
     if (t.dueOn && t.dueOn > today && workedEarlier) {
       entries.push({ task: t, kind: 'deadline', date: t.dueOn, at: t.dueAt });
     }
+
+    // A repeat's later turns in the week ahead, each opening once the one before it is done.
+    // Its next turn is the real row: here when it's after today, on Today otherwise.
+    if (t.rrule && t.scheduledOn && !planned) {
+      const clock = t.remindAt ? clockOf(t.remindAt) : null;
+      let before = t.scheduledOn > today ? t.scheduledOn : today;
+      for (const turn of occurrencesBetween(t.rrule, t.scheduledOn, addDays(before, 1), lastFixed)) {
+        entries.push({ task: t, kind: 'preview', date: turn, at: clock ? atLocalTime(turn, clock.hour, clock.minute) : null, opensAfter: before });
+        before = turn;
+      }
+    }
   }
   entries.sort(entryOrder);
 
-  const lastFixed = addDays(today, FIXED_DAYS);
   const horizon = addDays(today, weeks * 7);
   const days: UpcomingDay[] = [];
   for (let i = 1; i <= FIXED_DAYS; i++) days.push({ date: addDays(today, i), entries: [] });
@@ -95,12 +115,32 @@ export function buildUpcoming(tasks: Task[], today: LocalDate, { weeks = 8 } = {
   return { days, later };
 }
 
+/** A turn's day in a sentence: "today", "tomorrow", or its weekday ("Wednesday"). Previews are all within the week. */
+function turnDay(date: LocalDate, today: LocalDate): string {
+  if (date === today) return 'today';
+  if (date === addDays(today, 1)) return 'tomorrow';
+  return pickerWeek.find((d) => d.day === parseLocalDate(date).getDay())!.long;
+}
+
+/**
+ * A preview's words: its line ("Repeats · opens after Mon") and what its repeat
+ * mark says when tapped ("Wednesday's turn opens once Monday's is done."). Null
+ * for anything that isn't a preview.
+ */
+export function previewWords(entry: UpcomingEntry, today: LocalDate): { line: string; notice: string } | null {
+  if (entry.kind !== 'preview' || !entry.opensAfter) return null;
+  return {
+    line: voice.upcoming.previewLine(relativeDayPhrase(entry.opensAfter, today)),
+    notice: voice.upcoming.previewNotice(turnDay(entry.date, today), turnDay(entry.opensAfter, today)),
+  };
+}
+
 /** "Tomorrow · Wed 7 Oct", or "Thu 8 Oct": a day's heading in Upcoming. */
 export function upcomingDayLabel(date: LocalDate, today: LocalDate): string {
   return date === addDays(today, 1) ? `Tomorrow · ${formatShortDate(date)}` : formatShortDate(date);
 }
 
-/** How many entries fall on each day, Later included: the calendar's dots. */
+/** How many entries fall on each day, Later included (a repeat's previews too): the calendar's dots. */
 export function upcomingCounts(view: UpcomingView): Record<LocalDate, number> {
   const counts: Record<LocalDate, number> = {};
   for (const e of [...view.days.flatMap((d) => d.entries), ...view.later]) counts[e.date] = (counts[e.date] ?? 0) + 1;

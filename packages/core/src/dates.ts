@@ -193,6 +193,19 @@ export function nextOccurrence(rrule: string, anchor: string, after: string): st
   return occurrenceOnOrAfter(rrule, anchor, addDays(after, 1));
 }
 
+/** A repeat's days from `from` through `until`, for the series that starts at `anchor`. Reminders and Upcoming share it. */
+export function occurrencesBetween(rrule: string, anchor: string, from: string, until: string): string[] {
+  const days: string[] = [];
+  let day = occurrenceOnOrAfter(rrule, anchor, from > anchor ? from : anchor);
+  while (day <= until) {
+    days.push(day);
+    const next = nextOccurrence(rrule, anchor, day);
+    if (next <= day) break;
+    day = next;
+  }
+  return days;
+}
+
 /** `relativeDayLabel` for mid-sentence use: "today", "tomorrow", "yesterday", "Fri", "Fri 9 Oct". */
 export function relativeDayPhrase(ymd: string, today: string): string {
   const label = relativeDayLabel(ymd, today);
