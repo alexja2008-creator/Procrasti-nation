@@ -141,7 +141,8 @@ export function relativeDayLabel(ymd: string, today: string): string {
 
 const RRULE_DAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 
-function parseRRule(rrule: string) {
+/** An RRULE's frequency, interval and weekdays (0 = Sunday). */
+export function parseRRule(rrule: string) {
   const parts = Object.fromEntries(
     rrule.replace(/^RRULE:/, '').split(';').map((p) => p.split('=') as [string, string]),
   );

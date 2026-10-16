@@ -8,6 +8,7 @@ import { DeclareSheet } from '@/components/declare/declare-sheet';
 import { Icon, type IconName } from '@/components/icon';
 import { Sheet } from '@/components/sheet';
 import { DateSheet } from '@/components/task/date-sheet';
+import { RenameSheet } from '@/components/task/rename-sheet';
 import { TerritorySheet } from '@/components/territory/territory-sheet';
 import { Text } from '@/components/text';
 import { useLists } from '@/data/lists-store';
@@ -20,8 +21,8 @@ type Props = { task: Task | null; onClose: () => void };
 /**
  * A task's actions, opened by pressing and holding a row (or right-clicking it
  * on web): Start, Declare a start (not repeats), Plan it (top-level tasks without
- * a plan), Move to… (the When sheet) and File in… (a territory; a plan's steps
- * follow their plan).
+ * a plan), Move to… (the When sheet), Rename… and File in… (a territory; a
+ * plan's steps follow their plan).
  */
 export function RowMenu({ task, onClose }: Props) {
   const s = useStyles(makeStyles);
@@ -32,6 +33,7 @@ export function RowMenu({ task, onClose }: Props) {
   const [moving, setMoving] = useState<Task | null>(null);
   const [filing, setFiling] = useState<Task | null>(null);
   const [declaring, setDeclaring] = useState<Task | null>(null);
+  const [renaming, setRenaming] = useState<Task | null>(null);
   const latest = (t: Task) => tasks.find((x) => x.id === t.id) ?? t;
 
   const fileIn = (t: Task, listId: string | null) => {
@@ -76,6 +78,7 @@ export function RowMenu({ task, onClose }: Props) {
           {canDeclare(task) ? item('pencil', voice.declaration.action, setDeclaring) : null}
           {canPlan ? item('shrink', actions.planIt, (t) => router.push({ pathname: '/plan/[id]', params: { id: t.id } })) : null}
           {item('calendar', voice.task.moveTo, setMoving)}
+          {item('rename', voice.task.renameItem, setRenaming)}
           {task.parentId ? null : item('map', voice.task.fileIn, setFiling)}
           <Button variant="quiet" label={voice.cancel} onPress={onClose} />
         </Sheet>
@@ -97,6 +100,9 @@ export function RowMenu({ task, onClose }: Props) {
         />
       ) : null}
       {declaring ? <DeclareSheet task={latest(declaring)} onClose={() => setDeclaring(null)} /> : null}
+      {renaming ? (
+        <RenameSheet title={latest(renaming).title} onRename={(title) => update(latest(renaming), { title })} onClose={() => setRenaming(null)} />
+      ) : null}
       {filing ? (
         <TerritorySheet
           selected={latest(filing).listId}

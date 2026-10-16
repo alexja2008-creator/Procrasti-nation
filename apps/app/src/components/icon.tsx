@@ -78,6 +78,8 @@ const glyphs = {
     </>
   ),
   pencil: <Path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" />,
+  /** Rename: a T beside a text cursor (the pencil is Declare's). Row menu and the task page's title. */
+  rename: <Path d="M4 6h10M9 6v12M18 6v12M16 6h4M16 18h4" />,
   /** ☐: a note's line becomes a checklist line. */
   checkbox: (
     <>

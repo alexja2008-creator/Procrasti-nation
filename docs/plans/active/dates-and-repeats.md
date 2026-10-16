@@ -194,6 +194,31 @@ None of this reaches the iPhone until the next TestFlight build (there are no ov
 - Pick days… in the Repeat sheet (D9), with the one landing rule (D10).
 - **Checked:** core tests for `weeklyDays`, `weeklyRule` and the landing rule (Thursday, task next on Saturday under Mon/Wed/Sat, switched to Tue/Thu/Sun, lands Sunday). In the browser pane: rename from the task page and from the row menu; the new title shows on Today, in the note that holds it as a checklist line, and in Search; switch the days and see the task land on the right day.
 - **Needs Alex:** on iPhone, a renamed task with a reminder rings with the new title.
+- **Built 2026-10-16 (`feat/rename-and-pick-days`).**
+  - **Core:** `weeklyOf`, `weeklyInterval`, `weeklyRule` (named `weeklyDays` in this plan) and `pickerWeek` in `when.ts`. `quick-add-repeat.ts` now writes its rules with `weeklyRule`, so typed and picked days make the same rule.
+  - **Landing rule:** D10 is `daysChangeLanding`, and applies only when an existing repeat's weekdays actually change.
+    - An every-other-week repeat keeps its weeks.
+    - A new repeat still starts on the task's own day, never on a day already gone. So a one-off set for 20 Nov that becomes "every weekday" stays on 20 Nov.
+    - Saving the same rule again writes nothing, so a Saturday skipped by hand stays skipped.
+    - A repeat typed in the When sheet shows where it will land (`landOn`), and Done starts it on the day the sheet shows. Retyping the same repeat, to change its time, keeps its day.
+  - **The task page:** the title is `task/title-field.tsx`. The button beside it uses the rename glyph, not a pencil, since Declare's pencil sits just below. The title is underlined on hover and while it's typed in. That took `task/[id].tsx` from 396 to 383 lines.
+  - **Rename… sheet:** `task/rename-sheet.tsx`. It focuses its field once the web's modal has opened, since React Native Web's Modal takes focus after `autoFocus`.
+  - **Icon:** a new `rename` glyph, since the pencil is Declare's.
+  - **Checked:**
+    - Core tests (163): Thursday, a task next on Saturday under Mon/Wed/Sat switched to Tue/Thu/Sun, lands Sunday; due today or carried over, today counts; every other Tuesday, new or changed (weeks kept); an unchanged rule moves nothing; a new repeat on a later one-off; a carried-over task getting a repeat; monthly keeps its day; "every 2 weeks" keeps its interval and its weeks when a day is picked.
+    - `npm run app:check`.
+    - **In the browser pane, on Alex's staging account:**
+      - The title's button focuses it, with a green underline and no double focus box. Hovering shows a faint underline.
+      - Pick days… shows seven toggles, read as checkboxes in a group labelled "Repeat on", and Save is off with no days. Closed without saving.
+      - I renamed "Stretch" to "Stretch for 10 min" from the row menu (the field opens with the title selected). Today showed it after a reload. I renamed it back with the pencil and confirmed it after a reload.
+    - No server errors.
+    - The `code-reviewer` subagent; its findings are fixed.
+  - **Known, left as is:** on the web, Space doesn't tick a day toggle; Enter does. React Native Web treats Space as a press only for buttons, and checklist rows have the same gap. A shared fix belongs with the parked web screen-reader work.
+  - **Not checked:**
+    - Saving a change of days in the browser: it would move a real repeat's date. The core tests cover where it lands.
+    - The typed-repeat landing (`landOn`) in the browser: no task on staging repeats on chosen days.
+    - The new title in a note and in Search.
+    - The iPhone (next build).
 
 **Phase 5: The planner knows PN reminds people** (issue 3's prompt)
 

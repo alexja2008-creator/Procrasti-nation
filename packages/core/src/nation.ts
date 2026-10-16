@@ -118,7 +118,7 @@ export const voice = {
     web ? 'Right-click or press and hold any task to Start it or Plan it.' : 'Press and hold any task to Start it or Plan it.',
   cancel: 'Cancel',
   /** VoiceOver's name for the row menu action. */
-  rowMenuLabel: 'Start, Plan it or Move to',
+  rowMenuLabel: 'Start, Plan it, Move to or Rename',
   passportStatus: 'Proudly in progress',
   passportLead: 'A little proof of progress.',
   encouragement: 'Starting counts. So does coming back, and asking for help.',
@@ -505,6 +505,13 @@ export const voice = {
     repeats: (rule: string) => `Repeats ${rule.charAt(0).toLowerCase()}${rule.slice(1)}`,
     /** Row menu: reschedule ("When") without opening the task. */
     moveTo: 'Move to…',
+    /** Renaming, made findable (family testing, 2026-10-15): the row menu's item, its sheet, the button by a task's title. */
+    renameItem: 'Rename…',
+    rename: 'Rename',
+    save: 'Save',
+    /** The Repeat sheet's own days: seven toggles, Monday first. */
+    pickDays: 'Pick days…',
+    repeatDays: 'Repeat on',
     /** Row menu: file the task in a territory. */
     fileIn: 'File in…',
     territory: 'Territory',

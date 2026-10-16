@@ -2,6 +2,7 @@ import {
   actions,
   canDeclare,
   clockOf,
+  daysChangeLanding,
   describeRRule,
   duePatch,
   formatTime,
@@ -25,6 +26,7 @@ import { DateSheet } from '@/components/task/date-sheet';
 import { EstimateSheet } from '@/components/task/estimate-sheet';
 import { FieldRow } from '@/components/task/field-row';
 import { RepeatSheet } from '@/components/task/repeat-sheet';
+import { TitleField } from '@/components/task/title-field';
 import { StepsList } from '@/components/task/steps-list';
 import { TerritorySheet } from '@/components/territory/territory-sheet';
 import { Text } from '@/components/text';
@@ -64,7 +66,6 @@ function TaskDetail({ id }: { id: string }) {
   const [titleDraft, setTitleDraft] = useState<string | null>(null);
   const [notesDraft, setNotesDraft] = useState<string | null>(null);
   // Multiline inputs don't grow by themselves on web; size them to their text.
-  const [titleHeight, setTitleHeight] = useState(0);
   const [notesHeight, setNotesHeight] = useState(0);
   const deleted = useRef(false);
 
@@ -162,19 +163,7 @@ function TaskDetail({ id }: { id: string }) {
               <View style={s.unchecked} />
             )}
           </Pressable>
-          <TextInput
-            value={titleDraft ?? task.title}
-            onChangeText={setTitleDraft}
-            onBlur={saveText}
-            onContentSizeChange={(e) => setTitleHeight(e.nativeEvent.contentSize.height)}
-            multiline
-            submitBehavior="blurAndSubmit"
-            returnKeyType="done"
-            placeholder={copy.titlePlaceholder}
-            placeholderTextColor={c.muted}
-            accessibilityLabel={copy.titlePlaceholder}
-            style={[s.t.text.pageTitle, s.title, done && s.titleDone, titleHeight ? { height: titleHeight + 10 } : null]}
-          />
+          <TitleField value={titleDraft ?? task.title} onChange={setTitleDraft} onDone={saveText} done={done} />
         </View>
 
         {!done ? (
@@ -292,9 +281,12 @@ function TaskDetail({ id }: { id: string }) {
           time={task.remindAt ? clockOf(task.remindAt) : null}
           today={today}
           allowRepeat={!task.parentId && !hasSteps}
+          // The same repeat retyped (to change its time) stays on its day; changed days land as in Repeat.
+          landOn={(rrule) => (rrule === task.rrule ? task.scheduledOn : daysChangeLanding(task, rrule, today))}
           onSave={(day, time, rrule) => {
             const when = whenPatch(day, time);
-            update(task, rrule ? { ...when, ...repeatPatch({ ...task, ...when }, rrule, today) } : when);
+            // A typed repeat starts on the day the sheet shows, which already lands changed days like Repeat does.
+            update(task, rrule ? repeatPatch({ ...task, rrule: null, scheduledOn: day, remindAt: when.remindAt ?? null }, rrule, today) : when);
             followSteps(task, day);
             setSheet(null);
           }}
@@ -339,7 +331,8 @@ function TaskDetail({ id }: { id: string }) {
           rrule={task.rrule}
           anchor={task.scheduledOn ?? today}
           onSave={(rrule) => {
-            update(task, repeatPatch(task, rrule, today));
+            // The same rule again changes nothing (a Saturday skipped by hand stays skipped).
+            if (rrule !== task.rrule) update(task, repeatPatch(task, rrule, today));
             setSheet(null);
           }}
           onClose={() => setSheet(null)}
@@ -370,8 +363,6 @@ const makeStyles = (t: Tokens) => ({
       alignItems: 'center',
       justifyContent: 'center',
     },
-    title: { flex: 1, color: t.c.ink, paddingTop: 6, paddingBottom: 4 },
-    titleDone: { color: t.c.muted },
     actions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
     fields: {
       backgroundColor: t.c.card,
