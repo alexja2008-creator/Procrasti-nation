@@ -127,6 +127,8 @@ function AppStack({ signedIn }: { signedIn: boolean }) {
         <Stack.Screen name="note/[id]" options={{ presentation: 'modal' }} />
         {/* On web it draws its own panel over the page at laptop width (a full page on phones). */}
         <Stack.Screen name="search" options={{ presentation: Platform.OS === 'web' ? 'transparentModal' : 'modal' }} />
+        {/* How to use ProcrastiNation: the same, a panel at laptop width on web. */}
+        <Stack.Screen name="guide" options={{ presentation: Platform.OS === 'web' ? 'transparentModal' : 'modal' }} />
         {/* Full screen, no swipe-to-dismiss: leaving goes through the close button, which ends the session. */}
         <Stack.Screen name="start/[id]" options={{ presentation: 'fullScreenModal', gestureEnabled: false }} />
       </Stack.Protected>

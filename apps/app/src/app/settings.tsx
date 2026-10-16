@@ -1,6 +1,7 @@
 import {
   defaultStartMinutes,
   formatPhone,
+  guide,
   hoursChange,
   nudgeTones,
   voice,
@@ -22,6 +23,7 @@ import { signOut } from '@/auth/sign-out';
 import { ChoiceCards, type Choice } from '@/components/application/choice-cards';
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
+import { openGuide } from '@/components/header-buttons';
 import { Icon } from '@/components/icon';
 import { RemindersCard } from '@/components/reminders-card';
 import { SavePassport } from '@/components/save-passport';
@@ -137,6 +139,10 @@ export default function SettingsScreen() {
           {error}
         </Text>
       ) : null}
+
+      <SettingsCard label={guide.settingsLabel}>
+        <SettingRow label={guide.open} value="" onPress={openGuide} last />
+      </SettingsCard>
 
       <SettingsCard label={copy.applicationLabel}>
         <SettingRow label={copy.name} value={name.full ?? copy.notSet} onPress={() => setPicking('name')} />

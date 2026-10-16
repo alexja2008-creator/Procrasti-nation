@@ -10,6 +10,7 @@ As of 2026-10-16. Rewrite this file every Monday (replace, don't append); histor
   - Moving a plan's step later asks to move the rest, and a plan starts on its task's When day (PR #27).
   - A task can be renamed from its page or a row's menu, and Repeat → Pick days… sets a repeat's days (PR #28).
   - The planner's "no alarms" rule failed its eval and is parked. The eval check stays (PR #25).
+  - How to use ProcrastiNation: a short guide behind a "?" beside the magnifier and in Settings → Help, saying PN's own words (Customs, Territories, plans, Declarations…) in everyday ones, after a family tester found them confusing (`docs/plans/shipped/how-to-use.md`).
 - **iPhone:** TestFlight builds 1–4 ran on staging and were checked on Alex's iPhone (reminders, password reset, Declarations stamp, theme). The production build is on TestFlight too (2026-10-14, checked on Alex's iPhone). Required saving and the dates-and-repeats fixes reach the iPhone with the next build, before the students get it.
 - **Beta:** 10 students lined up; TestFlight's external group for them isn't set up yet (`docs/runbooks/launch-2026-10.md`, The iPhone track). The feedback form is ready (kept privately; see `docs/external.md`), sent after about a week. Go/no-go gate: at least 4 of 10 started something they'd avoided, and NPS of 30 or more.
 
@@ -26,6 +27,7 @@ As of 2026-10-16. Rewrite this file every Monday (replace, don't append); histor
   - the + sheet's month with the keyboard up
   - the rename button and Pick days…
   - a renamed task's reminder ringing with its new title
+  - the How to use guide from the "?" (a modal: Close and swipe down)
   - that `@expo/ui` 57.0.25 runs; the Simulator only ran it on the older build's 57.0.21 (`docs/plans/shipped/dates-and-repeats.md`, Phase 2)
 - [ ] On staging, the dates-and-repeats checks that make real data (`docs/plans/shipped/dates-and-repeats.md`, phases 2 and 3):
   - the Oath page on a new passport (nothing pre-selected, Pick a date)

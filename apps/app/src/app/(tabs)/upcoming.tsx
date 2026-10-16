@@ -15,12 +15,12 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'reac
 
 import { Button } from '@/components/button';
 import { useCapture } from '@/components/capture';
+import { HeaderButtons } from '@/components/header-buttons';
 import { Icon } from '@/components/icon';
 import { MonthCalendar } from '@/components/month-calendar';
 import { NoticeBar } from '@/components/notice-bar';
 import { RowMenu } from '@/components/row-menu';
 import { Screen } from '@/components/screen';
-import { SearchButton } from '@/components/search-button';
 import { Text } from '@/components/text';
 import { DaySection } from '@/components/upcoming/day-section';
 import { WeekStrip } from '@/components/upcoming/week-strip';
@@ -89,7 +89,7 @@ export default function UpcomingScreen() {
           <Text variant="label" color={c.muted}>
             {copy.eyebrow.toUpperCase()}
           </Text>
-          <SearchButton />
+          <HeaderButtons />
         </View>
         <Text variant="pageTitle" accessibilityRole="header">
           {copy.title}

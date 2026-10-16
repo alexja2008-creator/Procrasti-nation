@@ -125,6 +125,13 @@ const glyphs = {
       <Circle cx={9} cy={16} r={2} />
     </>
   ),
+  /** How to use ProcrastiNation: a circled question mark. */
+  help: (
+    <>
+      <Circle cx={12} cy={12} r={9} />
+      <Path d="M9.6 9.5a2.5 2.5 0 0 1 4.9.7c0 1.7-2.5 2.1-2.5 3.8M12 17.2h.01" />
+    </>
+  ),
 } satisfies Record<string, ReactNode>;
 
 export type IconName = keyof typeof glyphs;
