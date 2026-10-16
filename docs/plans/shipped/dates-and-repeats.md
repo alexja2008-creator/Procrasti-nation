@@ -248,6 +248,7 @@ None of this reaches the iPhone until the next TestFlight build (there are no ov
       - Steps that mention a calendar went from 6 (in 2 plans) to 13 (in 8), so "an appointment in their calendar is fine" may be steering plans toward the calendar.
   - **Spent:** the two approved runs (about $2).
   - **Check gaps found in review** (none change these numbers): Siri, "have your phone remind you", turning on another app's notifications, "a reminder set", a curly apostrophe in "phone’s Reminders", "to do app" with a space, habit apps and Google Keep aren't caught. Negations ("no need for an alarm") would be. Worth tightening before the next run.
+  - **How often real plans do this:** `supabase/v2/planner-reminders.sql` (read-only, production) counts it with the eval's pattern. On the saved eval plans it flags the same 4 of 32 as the eval's own check.
   - **Needs Alex, before any more runs:**
     - Try again or drop it. A second candidate could say not to use the calendar to remind them of steps or a habit (appointments only), and "plan only the next time, in 2–4 steps; ProcrastiNation repeats it on its days". Running it twice, against one more baseline run, would show whether the drop is noise: about $3.
     - Dropping it: phase 1 already holds back Plan it for repeats in the + sheet, which closes the testers' case. Habits typed without a cadence ("Start going to the gym regularly") and one-offs ("set a reminder to check your inbox") still get the advice.

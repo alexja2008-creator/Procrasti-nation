@@ -716,6 +716,49 @@ for (const baseline of baselines) {
       });
     });
 
+    // planner-reminders.sql (read-only, run on production by Alex): counts the steps it
+    // should, from the eval's real hits, and leaves calendars, other people and PN alone.
+    await t.test('the planner-reminders query counts alarm and other-app steps, and nothing else', async () => {
+      // In a read-only transaction, so a future edit that writes fails here.
+      const count = async () => {
+        await db.exec('BEGIN READ ONLY');
+        try {
+          return (await one(db, sql('planner-reminders.sql'))).planner_reminder_advice;
+        } finally {
+          await db.exec('ROLLBACK');
+        }
+      };
+      const before = await count();
+      const plan = async (title) => (await one(db, `INSERT INTO tasks (user_id, title) VALUES ($1, $2) RETURNING id`, [U4, title])).id;
+      const step = (parent, title, notes) =>
+        db.query(`INSERT INTO tasks (user_id, parent_id, title, notes, source) VALUES ($1, $2, $3, $4, 'ai')`, [U4, parent, title, notes]);
+      const walk = await plan('Walk the dog');
+      await step(walk, 'Set an alarm on your phone', 'A repeating alarm for Mon, Wed and Sat.');
+      await step(walk, 'Walk to the corner', 'Just there and back.');
+      const email = await plan('Email the professor');
+      await step(email, 'Send the email', 'Then set a quick reminder to check for a reply.');
+      await step(email, 'List the readings', 'Put them in Todoist.');
+      const dentist = await plan('Book the dentist');
+      await step(dentist, 'Call the office', 'Add the appointment to your calendar.');
+      await step(dentist, 'Check your calendar', 'ProcrastiNation will remind you at the time you set. Send Sam a reminder too.');
+      await step(dentist, "Use your phone's Reminders", 'Only as a test of the last kind.');
+      await db.query(`INSERT INTO tasks (user_id, parent_id, title) VALUES ($1, $2, 'set an alarm for 7')`, [U4, dentist]); // typed, not AI
+      const quiz = await plan('Study for the quiz');
+      await step(quiz, 'Pick a time', 'ProcrastiNation will set a reminder for you.'); // PN's own: not counted
+      await step(quiz, 'Open the notes', 'ProcrastiNation reminds you at 6. Then set a follow-up reminder.'); // the next sentence counts
+      await step(quiz, 'Set an alarm for 6', null); // no notes
+      await step(quiz, 'Use Todoist', 'Also set an alarm. Or Apple Reminders.'); // first flagged sentence decides: other app
+      await db.query(`INSERT INTO tasks (user_id, parent_id, title, source, created_at) VALUES ($1, $2, 'Set an alarm', 'ai', '2026-01-01')`, [U4, quiz]); // before since
+
+      const after = await count();
+      const kinds = (k) => (after.by_kind[k] ?? 0) - (before.by_kind[k] ?? 0);
+      assert.equal(after.plans - before.plans, 4);
+      assert.equal(after.steps - before.steps, 11, 'only the AI steps since `since`');
+      assert.equal(after.plans_with_this_advice - before.plans_with_this_advice, 4);
+      assert.equal(after.steps_with_this_advice - before.steps_with_this_advice, 7, 'not the calendar, PN or Sam');
+      assert.deepEqual([kinds('alarm'), kinds('set a reminder'), kinds('other app'), kinds('reminders app')], [2, 2, 2, 1]);
+    });
+
     // Last: it deletes every account the tests above rely on.
     await t.test('the fresh start deletes every account and restarts citizen numbers', async () => {
       assert.ok((await one(db, `SELECT count(*)::int AS n FROM auth.users`)).n > 0, 'there are accounts to delete');

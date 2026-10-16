@@ -11,6 +11,8 @@ Moves the shared Supabase database to the ProcrastiNation 2.0 data model without
 
 Run them in the Supabase SQL Editor, in order.
 
+**Read-only production queries** (SELECT only, counts only, run in the production SQL Editor whenever useful): `prod-stats.sql`, the shape of v1's data (Staging, step 4); and `planner-reminders.sql`, how often Plan it's steps send people to an alarm, the phone's Reminders or another to-do app, with the plan-quality eval's pattern. Run it after the beta's first week, before deciding on the parked planner rule (`docs/plans/shipped/dates-and-repeats.md`, Phase 5). `npm test` checks it.
+
 **Cutover order (done; kept for the record):** `01_schema.sql` must be on production before the v2 site deploys, because v2's `/api/generate-plan` counts the free allowance in `plan_generations`. Then `04_fresh_start.sql` (v1 has one real user, Alex, so nothing is migrated: everyone starts over through the Citizenship Application).
 
 ## Test locally
