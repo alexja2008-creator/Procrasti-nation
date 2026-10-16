@@ -117,6 +117,25 @@ None of this reaches the iPhone until the next TestFlight build (there are no ov
 - **Capture sheet:** the day row (decision 3), the "Starts Sat" chip (D6), the nudge hint (D14), and Plan it held back when `parsed.rrule` is set.
 - **Checked:** `npm run core:test` with every example in this plan and about 40 fresh titles that must stay titles. `npm run app:check`. In the browser pane at phone and laptop width, day and night: type each example and watch the chips; add with Enter and nothing picked; pick Tomorrow; pick a date.
 - **Needs Alex:** nothing beyond the PR review.
+- **Built 2026-10-15 (`feat/capture-repeats-dates`).**
+  - **Grammar as built** (`quick-add-repeat.ts`, split out of `quick-add.ts`):
+    - Letter codes count only after every/each, never after "on", and only one per day between separators ("M/W/F", "T/Th") or as a known run ("MWF", "TTh", "MTWTF"). A lone T is Tuesday only beside Thursday. So "Work on MWF schedule", "Check every sum" and "Answer every T/F question" stay titles.
+    - "SAT" in capitals never counts, even after "each" ("Review each SAT section"). "MON/WED/FRI" in capitals does.
+    - Days after "due", "due on", "by", "before", "until", "between" or "from" aren't repeats. A list turned down as a whole isn't read again from its middle, so "Reading due Mon, Wed and Fri" and "this fri, sat and sun" stay one-offs.
+    - "every/each week on <days>" and "every 2 weeks on <days>" are understood.
+    - A list of days starts on its first matching day, interval included ("every other tue"). A repeat without days keeps its own rhythm ("every 2 weeks").
+  - **Found in review and changed:**
+    - A note's checklist line only repeats with every/each or "daily" (`repeats: 'cued'`), because nothing on the line shows a misread before it's saved ("Sat and Sun brunch").
+    - In the + sheet, a time typed alone ("dentist 3pm") doesn't hide the day row; it goes with the picked deadline.
+    - The month closes when the input is focused, so the keyboard and the calendar never stack on a phone.
+  - **The Oath (D5):** a repeat's words leave the title, and the task becomes a one-off. It's due when they picked, unless they typed a day or a time, which stays.
+  - **Checked:**
+    - Core tests (147 cases), including every example here, the review's misreads, and 48 fresh titles.
+    - `npm run site:test` (the server compiles core too).
+    - `npm run app:check`.
+    - The + sheet in the browser pane, at laptop and phone width, Night and Day: the repeat chips, "Starts Sat", the nudge hint, no Plan it for repeats, Tomorrow and Pick a date, a typed day winning, focus coming back after a tap, and the screen-reader labels ("Due tomorrow").
+    - Nothing was saved to staging.
+  - **Not checked:** Add with a picked day writing `due_on`. The store's `add` is unchanged and `withDue` is tested. The iPhone comes with the next build.
 
 **Phase 2: Day chips and the time picker** (issue 5, and issue 1's chips)
 

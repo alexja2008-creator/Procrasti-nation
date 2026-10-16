@@ -158,12 +158,22 @@ export type OathDue = 'today' | 'tomorrow' | 'week' | 'none';
 
 /**
  * The Oath's task: what they typed, read like quick add (a date in the text,
- * "essay due fri", wins), else due when they picked.
+ * "essay due fri", wins), else due when they picked. The Oath always makes a
+ * plan and a repeat can't hold one, so a repeat's words leave the title and the
+ * task is a one-off ("walk the dog every M/W/Sat" plans one walk). A typed day or
+ * time keeps that first go's day, as it would for a one-off.
  */
 export function oathTask(parsed: QuickAddResult, due: OathDue, today: LocalDate): QuickAddResult {
-  if (parsed.scheduledOn || parsed.dueOn) return parsed;
-  const dueOn = { today, tomorrow: addDays(today, 1), week: addDays(today, 7), none: null }[due];
-  return { ...parsed, dueOn };
+  const once = parsed.rrule
+    ? {
+        ...parsed,
+        rrule: null,
+        scheduledOn: parsed.time || parsed.matches.some((m) => m.kind === 'date') ? parsed.scheduledOn : null,
+        matches: parsed.matches.filter((m) => m.kind !== 'repeat'),
+      }
+    : parsed;
+  if (once.scheduledOn || once.dueOn) return once;
+  return { ...once, dueOn: { today, tomorrow: addDays(today, 1), week: addDays(today, 7), none: null }[due] };
 }
 
 /** The morning list's time for their hours (it stays off until they turn it on). */

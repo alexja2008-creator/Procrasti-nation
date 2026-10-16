@@ -4,8 +4,11 @@
 // short day names like "sat" only count with a cue ("on sat", "next sat") or
 // at the very end, and bare numbers are never times. "#chem" files the task in
 // a territory whose name matches; an unknown #word stays in the title.
+// Repeats ("every M/W/Sat", "gym tue/thu") are read in quick-add-repeat.ts and
+// start on their first matching day.
 
 import { addDays, atLocalTime, localDateString, occurrenceOnOrAfter, parseLocalDate } from './dates.ts';
+import { blank, DAY_INDEX, PART_OF_DAY, take, takeRepeat, type Found } from './quick-add-repeat.ts';
 import { matchTerritory } from './territories.ts';
 import type { List, LocalDate } from './types.ts';
 
@@ -27,34 +30,18 @@ export interface QuickAddResult {
   matches: { kind: QuickAddMatchKind; text: string }[];
 }
 
-const DAY_INDEX: Record<string, number> = {
-  sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
-  sun: 0, mon: 1, tue: 2, tues: 2, wed: 3, weds: 3, thu: 4, thur: 4, thurs: 4, fri: 5, sat: 6,
-};
-const RRULE_DAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 const MONTH_INDEX: Record<string, number> = {
   jan: 0, january: 0, feb: 1, february: 1, mar: 2, march: 2, apr: 3, april: 3, may: 4,
   jun: 5, june: 5, jul: 6, july: 6, aug: 7, august: 7, sep: 8, sept: 8, september: 8,
   oct: 9, october: 9, nov: 10, november: 10, dec: 11, december: 11,
 };
 const NUMBER_WORDS: Record<string, number> = { a: 1, an: 1, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7 };
-const PART_OF_DAY: Record<string, number> = { morning: 9, afternoon: 15, evening: 19, night: 20, tonight: 20 };
 
 const FULL_DAY = '(sunday|monday|tuesday|wednesday|thursday|friday|saturday)';
 const SHORT_DAY = '(sun|mon|tues?|weds?|thu(?:rs?)?|fri|sat)';
 const ANY_DAY = `(${FULL_DAY.slice(1, -1)}|${SHORT_DAY.slice(1, -1)})`;
 const MONTH = `(${Object.keys(MONTH_INDEX).sort((a, b) => b.length - a.length).join('|')})`;
 const ORD = '(?:st|nd|rd|th)?';
-
-type Found = { start: number; end: number; groups: string[] };
-
-/** Finds `pattern` in the working text, blanks it out (keeping offsets), and returns it. */
-function take(work: { text: string }, pattern: RegExp): Found | null {
-  const m = pattern.exec(work.text);
-  if (!m) return null;
-  work.text = work.text.slice(0, m.index) + ' '.repeat(m[0].length) + work.text.slice(m.index + m[0].length);
-  return { start: m.index, end: m.index + m[0].length, groups: m.slice(1) };
-}
 
 const nextWeekday = (today: string, day: number) => {
   const dow = parseLocalDate(today).getDay();
@@ -156,53 +143,7 @@ function takeTime(work: { text: string }): (Found & { hour: number; minute: numb
   return null;
 }
 
-function takeRepeat(work: { text: string }): (Found & { rrule: string; partHour?: number }) | null {
-  let f = take(work, /\bevery\s+other\s+(day|week|month|year)\b/i);
-  if (f) return { ...f, rrule: `FREQ=${freqOf(f.groups[0])};INTERVAL=2` };
-
-  f = take(work, /\bevery\s+(\d{1,2})\s+(days|weeks|months|years)\b/i);
-  if (f) {
-    const n = Number(f.groups[0]);
-    return { ...f, rrule: n > 1 ? `FREQ=${freqOf(f.groups[1])};INTERVAL=${n}` : `FREQ=${freqOf(f.groups[1])}` };
-  }
-
-  const days = `${ANY_DAY}s?(?:\\s*(?:,|and|&|\\/)\\s*${ANY_DAY}s?)*`;
-  f = take(work, new RegExp(`\\bevery\\s+(${days})\\b`, 'i'));
-  if (f) {
-    const picked = [...new Set(
-      f.groups[0].toLowerCase().split(/\s*(?:,|and|&|\/)\s*/).map((d) => DAY_INDEX[d.replace(/s$/, '')] ?? DAY_INDEX[d]),
-    )].filter((d) => d !== undefined).sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7));
-    return { ...f, rrule: `FREQ=WEEKLY;BYDAY=${picked.map((d) => RRULE_DAYS[d]).join(',')}` };
-  }
-
-  f = take(work, /\bevery\s+(day|weekday|weekend|week|month|year|morning|afternoon|evening|night)\b/i);
-  if (f) {
-    const unit = f.groups[0].toLowerCase();
-    if (unit === 'weekday') return { ...f, rrule: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR' };
-    if (unit === 'weekend') return { ...f, rrule: 'FREQ=WEEKLY;BYDAY=SA,SU' };
-    if (unit in PART_OF_DAY) return { ...f, rrule: 'FREQ=DAILY', partHour: PART_OF_DAY[unit] };
-    return { ...f, rrule: `FREQ=${freqOf(unit)}` };
-  }
-
-  // "daily"/"weekly"/… only as the last word, so "weekly report" stays a title.
-  f = take(work, /\b(daily|weekly|monthly|yearly)\s*$/i);
-  if (f) return { ...f, rrule: `FREQ=${freqOf(f.groups[0])}` };
-  return null;
-}
-
-function freqOf(unit: string): string {
-  const u = unit.toLowerCase();
-  if (u.startsWith('day') || u === 'daily') return 'DAILY';
-  if (u.startsWith('week')) return 'WEEKLY';
-  if (u.startsWith('month')) return 'MONTHLY';
-  return 'YEARLY';
-}
-
 type TagTarget = Pick<List, 'id' | 'name' | 'sortOrder'>;
-
-/** Blanks out `[start, end)` of the working text, keeping offsets. */
-const blank = (text: string, start: number, end: number, fill = ' ') =>
-  text.slice(0, start) + fill.repeat(end - start) + text.slice(end);
 
 /**
  * Parses quick-add text. `now` is the device's current local time.
@@ -211,11 +152,18 @@ const blank = (text: string, start: number, end: number, fill = ' ') =>
  * `day`: the day quick add was opened for (Upcoming's "+"), used when the
  * text names no date of its own; a typed date or deadline wins.
  * `lists`: the person's territories, so "#chem" can file the task.
+ * `repeats: 'cued'`: only repeats said with every/each or "daily" (a note's
+ * checklist line, where nothing shows a misread before it's saved).
  */
 export function parseQuickAdd(
   input: string,
   now: Date = new Date(),
-  { scheduleOnly = false, day, lists = [] }: { scheduleOnly?: boolean; day?: LocalDate; lists?: TagTarget[] } = {},
+  {
+    scheduleOnly = false,
+    day,
+    lists = [],
+    repeats = 'all',
+  }: { scheduleOnly?: boolean; day?: LocalDate; lists?: TagTarget[]; repeats?: 'all' | 'cued' } = {},
 ): QuickAddResult {
   const today = localDateString(now);
   const work = { text: input };
@@ -239,7 +187,7 @@ export function parseQuickAdd(
     }
   }
 
-  const repeat = takeRepeat(work);
+  const repeat = takeRepeat(work, { cuedOnly: repeats === 'cued' });
   if (repeat) spans.push({ kind: 'repeat', start: repeat.start, end: repeat.end });
 
   const due = takeDate(work, today, 'by|due(?:\\s+on)?|due\\s+by');
@@ -274,10 +222,13 @@ export function parseQuickAdd(
   let scheduledOn: string | null = date?.date ?? preset;
   const rrule = repeat?.rrule ?? null;
   if (rrule) {
+    // A list of days starts on its first matching day: "every other tue" typed on
+    // a Thursday starts next Tuesday, and every second week counts from there.
+    const first = rrule.includes('BYDAY=') ? rrule.replace(/;INTERVAL=\d+/, '') : rrule;
     const anchor = scheduledOn ?? today;
-    scheduledOn = occurrenceOnOrAfter(rrule, anchor, anchor);
+    scheduledOn = occurrenceOnOrAfter(first, anchor, anchor);
     // A daily 6pm reminder added at 8pm starts tomorrow.
-    if (!date && !preset && scheduledOn === today && passed) scheduledOn = occurrenceOnOrAfter(rrule, anchor, addDays(today, 1));
+    if (!date && !preset && scheduledOn === today && passed) scheduledOn = occurrenceOnOrAfter(first, anchor, addDays(today, 1));
   } else if (!scheduledOn && clock && !due) {
     scheduledOn = passed ? addDays(today, 1) : today;
   }
@@ -307,6 +258,18 @@ export function scheduleOf(p: QuickAddResult): { scheduledOn: LocalDate | null; 
     dueAt: time && !scheduledOn && dueOn ? atLocalTime(dueOn, time.hour, time.minute) : null,
     rrule: p.rrule,
   };
+}
+
+/** The text names its own day, deadline or repeat (a time alone doesn't count). */
+export const namesItsDay = (p: QuickAddResult) => p.matches.some((m) => m.kind === 'date' || m.kind === 'due' || m.kind === 'repeat');
+
+/**
+ * The capture sheet's day row: due on `dueOn`, unless the text names its own
+ * day, deadline or repeat (typed words win). A time typed alone goes with the
+ * deadline, as "due tomorrow 3pm" would. Null leaves the parse as it is.
+ */
+export function withDue(p: QuickAddResult, dueOn: LocalDate | null): QuickAddResult {
+  return !dueOn || namesItsDay(p) ? p : { ...p, scheduledOn: null, dueOn };
 }
 
 /** "fri 6pm", "every weekday 7am", "oct 20": a schedule on its own, in quick add's grammar. */

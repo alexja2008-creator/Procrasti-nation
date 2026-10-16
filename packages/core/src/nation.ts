@@ -184,6 +184,13 @@ export const voice = {
     placeholder: 'Walk Biscuit every day 6pm',
     landsInCustoms: 'Lands in Customs',
     due: (day: string) => `Due ${day}`,
+    /** The day row under the input: Due · Today · Tomorrow · Pick a date (Alex, 2026-10-15). */
+    dueRow: 'Due',
+    pickDate: 'Pick a date',
+    /** A repeat's first day: "Starts Sat". */
+    starts: (day: string) => `Starts ${day}`,
+    /** A repeat with no time can't ring yet. `repeat` is "Every week on Mon, Wed, Sat". */
+    nudgeHint: (repeat: string) => `Add a time, like 6pm, for a nudge ${repeat.charAt(0).toLowerCase()}${repeat.slice(1)}.`,
     added: (where: string) => `Added ${where}.`,
     whereToday: 'to Today',
     whereCustoms: 'to Customs',

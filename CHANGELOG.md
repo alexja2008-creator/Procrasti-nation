@@ -4,6 +4,9 @@ What changed for people using PN, newest first, in their words. One entry per re
 
 ## Unreleased
 
+- Adding a task has Due · Today · Tomorrow · Pick a date under the box, so you can give it a deadline without typing one. Enter still adds it straight away.
+- Repeats understand the way people say them: "walk the dog on Mondays, Wednesdays and Saturdays", "every M/W/Sat", "gym tue/thu", "take vitamins daily 8am". The task starts on the first of those days, and the sheet says so ("Starts Sat").
+- A repeat without a time says that adding one ("6pm") gets you a nudge each time. Plan it isn't offered for repeats when you add them (as everywhere else), since a plan is for a one-off.
 - Save your passport asks for your email first, and the username fills in from it (change it if you like). An email typed into the username box moves to the email box whole.
 - During the beta, Plan it has no monthly limit, through November 15 (up to 20 plans a day still applies), and plans made during the beta don't use up the free plans after it.
 - (Repo only) Docs and Claude Code setup reorganized; no change to the app.
