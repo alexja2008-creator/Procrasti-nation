@@ -2,7 +2,7 @@
 // grid, and the task patches they produce. Pure, so iOS, web and (later)
 // Upcoming agree. Weeks start on Monday.
 
-import { addDays, atLocalTime, clockOf, describeRRule, occurrenceOnOrAfter, parseLocalDate } from './dates.ts';
+import { addDays, atLocalTime, clockOf, describeRRule, occurrenceOnOrAfter, parseLocalDate, parseRRule } from './dates.ts';
 import type { LocalDate, Task } from './types.ts';
 
 export interface ClockTime {
@@ -74,6 +74,29 @@ export function pickHour(hour: number, current: ClockTime | null, after: ClockTi
 
 const RRULE_DAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 
+/** A weekly repeat's days (0 = Sunday) and interval; null for any other repeat. */
+export function weeklyOf(rrule: string | null): { days: number[]; interval: number } | null {
+  if (!rrule) return null;
+  const { freq, interval, byDay } = parseRRule(rrule);
+  return freq === 'WEEKLY' && byDay?.length ? { days: byDay, interval } : null;
+}
+
+/** Any weekly repeat's interval, with or without days ("every 2 weeks" is 2); null for any other repeat. */
+export function weeklyInterval(rrule: string | null): number | null {
+  if (!rrule) return null;
+  const { freq, interval } = parseRRule(rrule);
+  return freq === 'WEEKLY' ? interval : null;
+}
+
+/**
+ * A weekly repeat on these days, Monday first, so the same days always make the
+ * same rule (Mon–Fri is Every weekday), keeping an interval ("every 2 weeks").
+ */
+export function weeklyRule(days: number[], interval = 1): string {
+  const byDay = [...new Set(days)].sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7)).map((d) => RRULE_DAYS[d]);
+  return `FREQ=WEEKLY${interval > 1 ? `;INTERVAL=${interval}` : ''};BYDAY=${byDay.join(',')}`;
+}
+
 /** Common repeats; "weekly" follows the task's day. */
 export function repeatChips(anchor: LocalDate): { id: string; label: string; rrule: string }[] {
   const weekly = `FREQ=WEEKLY;BYDAY=${RRULE_DAYS[parseLocalDate(anchor).getDay()]}`;
@@ -96,6 +119,9 @@ const MONTH_NAMES = [
 export const monthLabel = (year: number, month: number) => `${MONTH_NAMES[month]} ${year}`;
 
 const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/** The week for picking a repeat's days, Monday first (0 = Sunday). */
+export const pickerWeek = [1, 2, 3, 4, 5, 6, 0].map((day) => ({ day, short: WEEKDAY_NAMES[day].slice(0, 3), long: WEEKDAY_NAMES[day] }));
 
 /** "Tuesday 6 October", for screen readers. */
 export function longDateLabel(ymd: LocalDate): string {
@@ -148,15 +174,42 @@ export function duePatch(day: LocalDate | null, time: ClockTime | null): Partial
   return { dueOn: day, dueAt: day && time ? atLocalTime(day, time.hour, time.minute) : null };
 }
 
+// A list of days starts on its first matching day: every second week counts from there.
+const firstDayRule = (rrule: string) => (rrule.includes('BYDAY=') ? rrule.replace(/;INTERVAL=\d+/, '') : rrule);
+const sameDays = (a: number[], b: number[]) => a.length === b.length && a.every((d) => b.includes(d));
+
 /**
- * Setting a repeat moves the task to the series' first day on or after its
- * current one (or today), keeping its time; e.g. "every weekday" on a
- * Saturday task moves it to Monday.
+ * Where changing a repeat's weekdays lands (Alex's plan, D10): the first new
+ * day from today, or from tomorrow if the task already sat after today (today's
+ * turn is done). An every-other-week repeat keeps its weeks. Null when it isn't
+ * a change of weekdays.
+ */
+export function daysChangeLanding(task: Schedule, rrule: string, today: LocalDate): LocalDate | null {
+  // "Every 2 weeks" with no days of its own falls on the task's weekday.
+  const plain = weeklyInterval(task.rrule);
+  const was = weeklyOf(task.rrule) ?? (plain && task.scheduledOn ? { days: [parseLocalDate(task.scheduledOn).getDay()], interval: plain } : null);
+  const now = weeklyOf(rrule);
+  if (!was || !now || sameDays(was.days, now.days)) return null;
+  const from = task.scheduledOn && task.scheduledOn > today ? addDays(today, 1) : today;
+  if (now.interval > 1 && now.interval === was.interval && task.scheduledOn) {
+    // The task's day is in an "on" week: step back by whole intervals to count from there.
+    let anchor = task.scheduledOn;
+    while (anchor > from) anchor = addDays(anchor, -7 * now.interval);
+    return occurrenceOnOrAfter(rrule, anchor, from);
+  }
+  return occurrenceOnOrAfter(firstDayRule(rrule), from, from);
+}
+
+/**
+ * Setting a repeat moves the task to the series' first day, keeping its time.
+ * A change of weekdays lands by `daysChangeLanding`. Anything else starts on or
+ * after the task's own day, or today if that's gone: "every weekday" on a
+ * Saturday task moves it to Monday, "every month" on the 17th stays there.
  */
 export function repeatPatch(task: Schedule, rrule: string | null, today: LocalDate): Partial<Schedule> {
   if (!rrule) return { rrule: null };
-  const from = task.scheduledOn ?? today;
-  const first = occurrenceOnOrAfter(rrule, from, from);
+  const from = task.scheduledOn && task.scheduledOn > today ? task.scheduledOn : today;
+  const first = daysChangeLanding(task, rrule, today) ?? occurrenceOnOrAfter(firstDayRule(rrule), from, from);
   const time = task.remindAt ? clockOf(task.remindAt) : null;
   return { rrule, ...whenPatch(first, time) };
 }

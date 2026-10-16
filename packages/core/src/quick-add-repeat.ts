@@ -4,12 +4,13 @@
 // of quick add: test/quick-add.test.ts lists titles that must stay titles.
 // Also the text helpers quick-add.ts shares with it.
 
+import { weeklyRule } from './when.ts';
+
 export const DAY_INDEX: Record<string, number> = {
   sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6,
   sun: 0, mon: 1, tue: 2, tues: 2, wed: 3, weds: 3, thu: 4, thur: 4, thurs: 4, fri: 5, sat: 6,
 };
 export const PART_OF_DAY: Record<string, number> = { morning: 9, afternoon: 15, evening: 19, night: 20, tonight: 20 };
-const RRULE_DAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 
 export type Found = { start: number; end: number; groups: string[] };
 
@@ -87,13 +88,6 @@ function readDays(text: string, from: number, codes: boolean): DayList | null {
   return list.days.length ? list : null;
 }
 
-/** RRULE days, Monday first, so the same days always make the same rule. */
-const weeklyOn = (days: number[], interval = 1) =>
-  `FREQ=WEEKLY${interval > 1 ? `;INTERVAL=${interval}` : ''};BYDAY=${[...days]
-    .sort((a, b) => ((a + 6) % 7) - ((b + 6) % 7))
-    .map((d) => RRULE_DAYS[d])
-    .join(',')}`;
-
 /**
  * Finds a cue (a global pattern) followed by a list of days that `accept`s,
  * blanks both out and returns the rule. `after` and `before` are the text around them.
@@ -116,7 +110,7 @@ function takeDays(
       skipTo = list.end;
       continue;
     }
-    const rrule = weeklyOn(list.days, interval(m));
+    const rrule = weeklyRule(list.days, interval(m));
     work.text = blank(work.text, start, list.end);
     return { start, end: list.end, groups: [], rrule };
   }
