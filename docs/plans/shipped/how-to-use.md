@@ -139,4 +139,4 @@ No tables, columns or storage keys. All copy in `guide`, in the no-guilt voice: 
 - [x] The "?" is announced as "How to use ProcrastiNation" and its box is at least 44 × 44.
 - [x] The code-reviewer subagent has run and its findings are handled.
 - [x] CHANGELOG, `docs/architecture.md` and STATUS are updated; this plan moves to `docs/plans/shipped/`.
-- [ ] A PR is open with CI running.
+- [x] A PR is open with CI running (PR #32).
