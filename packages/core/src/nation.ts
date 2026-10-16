@@ -186,7 +186,6 @@ export const voice = {
     due: (day: string) => `Due ${day}`,
     /** The day row under the input: Due · Today · Tomorrow · Pick a date (Alex, 2026-10-15). */
     dueRow: 'Due',
-    pickDate: 'Pick a date',
     /** A repeat's first day: "Starts Sat". */
     starts: (day: string) => `Starts ${day}`,
     /** A repeat with no time can't ring yet. `repeat` is "Every week on Mon, Wed, Sat". */
@@ -478,6 +477,10 @@ export const voice = {
     notes: 'Notes',
     notesPlaceholder: 'Add notes',
     noDate: 'No date',
+    /** The day chips everywhere, the + sheet too: Today · Tomorrow · Pick a date (Alex, 2026-10-15). */
+    pickDate: 'Pick a date',
+    /** The Pick a date chip once a day is picked, for screen readers: "Pick a date: Thursday 22 October". */
+    pickedDate: (day: string) => `Pick a date: ${day}`,
     time: 'Time',
     noTime: 'No time',
     otherTime: 'Other time',
@@ -715,13 +718,8 @@ export const voice = {
     oathLead: 'Everyone has one. Name it, and we’ll make it smaller together.',
     oathPlaceholder: 'Write my history essay',
     oathHint: 'A date in it counts too: “history essay due fri”.',
+    /** Today · Tomorrow · Pick a date · No date, nothing picked (Alex, 2026-10-15). */
     dueLabel: 'When is it due?',
-    dues: [
-      { id: 'today', label: 'Today' },
-      { id: 'tomorrow', label: 'Tomorrow' },
-      { id: 'week', label: 'In a week' },
-      { id: 'none', label: 'No date' },
-    ],
     notNow: 'Not now',
     /** Back from Plan it without a plan. */
     oathAgain: 'No plan yet. Try Plan it again, or come back to it from Today.',

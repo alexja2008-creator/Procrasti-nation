@@ -4,7 +4,7 @@
 // Today's shape, the nudge tone), and Settings can change any of them later.
 
 import { nextOpenStep } from './agenda.ts';
-import { addDays, daysBetween } from './dates.ts';
+import { daysBetween } from './dates.ts';
 import { voice } from './nation.ts';
 import type { QuickAddResult } from './quick-add.ts';
 import { morningListOf } from './reminders.ts';
@@ -154,8 +154,6 @@ export function territoriesFor(persona: Persona): Pick<List, 'name' | 'kind' | '
   return picks.map((s) => ({ name: s.name, kind: s.kind, ink: s.ink }));
 }
 
-export type OathDue = 'today' | 'tomorrow' | 'week' | 'none';
-
 /**
  * The Oath's task: what they typed, read like quick add (a date in the text,
  * "essay due fri", wins), else due when they picked. The Oath always makes a
@@ -163,7 +161,7 @@ export type OathDue = 'today' | 'tomorrow' | 'week' | 'none';
  * task is a one-off ("walk the dog every M/W/Sat" plans one walk). A typed day or
  * time keeps that first go's day, as it would for a one-off.
  */
-export function oathTask(parsed: QuickAddResult, due: OathDue, today: LocalDate): QuickAddResult {
+export function oathTask(parsed: QuickAddResult, dueOn: LocalDate | null): QuickAddResult {
   const once = parsed.rrule
     ? {
         ...parsed,
@@ -172,8 +170,7 @@ export function oathTask(parsed: QuickAddResult, due: OathDue, today: LocalDate)
         matches: parsed.matches.filter((m) => m.kind !== 'repeat'),
       }
     : parsed;
-  if (once.scheduledOn || once.dueOn) return once;
-  return { ...once, dueOn: { today, tomorrow: addDays(today, 1), week: addDays(today, 7), none: null }[due] };
+  return once.scheduledOn || once.dueOn ? once : { ...once, dueOn };
 }
 
 /** The morning list's time for their hours (it stays off until they turn it on). */

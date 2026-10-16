@@ -1,24 +1,23 @@
 import {
-  dayChips,
   describeRRule,
   formatTime,
   formatTimeShort,
   parseWhen,
   sameTime,
   timeChips,
-  timeSlots,
   voice,
   type ClockTime,
   type LocalDate,
 } from '@pn/core';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
-import { MonthCalendar } from '@/components/month-calendar';
+import { DayPicker } from '@/components/day-picker';
 import { Sheet } from '@/components/sheet';
 import { Text } from '@/components/text';
+import { TimePicker } from '@/components/time-picker';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.task;
@@ -36,7 +35,7 @@ type Props = {
   onClose: () => void;
 };
 
-/** Pick a day (one-tap chips or the calendar) and, optionally, a time. */
+/** Pick a day (Today, Tomorrow, or the calendar) and, optionally, a time. */
 export function DateSheet({ title, day: initialDay, time: initialTime, today, allowRepeat, onSave, onClose }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
@@ -61,6 +60,7 @@ export function DateSheet({ title, day: initialDay, time: initialTime, today, al
   const pickTime = (t: ClockTime | null) => {
     setTime(t);
     if (t && !day) setDay(today);
+    else if (!t) setOtherTime(false);
   };
 
   return (
@@ -91,14 +91,7 @@ export function DateSheet({ title, day: initialDay, time: initialTime, today, al
           {copy.repeats(describeRRule(rrule))}
         </Text>
       ) : null}
-      <View style={s.chips}>
-        {dayChips(today).map((chip) => (
-          <Chip key={chip.id} label={chip.label} selected={day === chip.date} onPress={() => setDay(chip.date)} />
-        ))}
-        <Chip label={copy.noDate} selected={!day} onPress={() => setDay(null)} />
-      </View>
-
-      <MonthCalendar selected={day} today={today} onSelect={setDay} />
+      <DayPicker day={day} today={today} onChange={setDay} allowNone />
 
       <Text variant="label" color={c.muted} style={s.section}>
         {copy.time.toUpperCase()}
@@ -115,13 +108,7 @@ export function DateSheet({ title, day: initialDay, time: initialTime, today, al
         <Chip label={copy.noTime} selected={!time} onPress={() => pickTime(null)} />
         <Chip label={custom && time ? clockLabel(time) : copy.otherTime} selected={!!custom} onPress={() => setOtherTime((v) => !v)} />
       </View>
-      {otherTime ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.slots}>
-          {timeSlots().map((slot) => (
-            <Chip key={clockLabel(slot)} label={clockLabel(slot)} selected={sameTime(time, slot)} onPress={() => pickTime(slot)} />
-          ))}
-        </ScrollView>
-      ) : null}
+      {otherTime ? <TimePicker time={time} onChange={pickTime} /> : null}
     </Sheet>
   );
 }
@@ -141,7 +128,6 @@ const makeStyles = (t: Tokens) => ({
       backgroundColor: t.c.field.bg,
     },
     section: { marginTop: 8 },
-    slots: { gap: 8, paddingBottom: 8 },
     footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
     done: { flex: 1 },
   }),

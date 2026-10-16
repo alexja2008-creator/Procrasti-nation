@@ -1,6 +1,5 @@
 import {
   clockOf,
-  dayChips,
   declarePatch,
   declaredWhen,
   formatCitizenNumber,
@@ -10,7 +9,6 @@ import {
   sameTime,
   startSoon,
   timeChips,
-  timeSlots,
   undoPatch,
   voice,
   type ClockTime,
@@ -18,13 +16,15 @@ import {
   type Task,
 } from '@pn/core';
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
 import { personName } from '@/auth/person-name';
 import { Chip } from '@/components/chip';
+import { DayPicker } from '@/components/day-picker';
 import { isSigned, NO_SIGNATURE, type Signature } from '@/components/declare/signature-pad';
 import { Text } from '@/components/text';
+import { TimePicker } from '@/components/time-picker';
 import { awardFirstDeclaration } from '@/data/stamps';
 import { useTasks } from '@/data/tasks-store';
 import { useUserSettings } from '@/data/user-settings';
@@ -32,8 +32,6 @@ import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.declaration;
 const clockLabel = (t: ClockTime) => formatTime(new Date(2000, 0, 1, t.hour, t.minute));
-// A start time to the quarter hour.
-const SLOTS = timeSlots(6, 23, 15);
 
 /**
  * A Declaration being made for `task`: the day, the start time and the signature, and `declare()`,
@@ -77,7 +75,7 @@ export function useDeclaration(task: Task) {
 
 export type Declaration = ReturnType<typeof useDeclaration>;
 
-/** The day and start-time chips: only times still ahead, "In 15 min" on its day, Other time by the quarter hour. */
+/** The day and start-time chips: only times still ahead, "In 15 min" on its day, and Other time (the hour grid, or the iPhone's wheel). */
 export function DeclarationChoices({ d }: { d: Declaration }) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
@@ -85,7 +83,8 @@ export function DeclarationChoices({ d }: { d: Declaration }) {
   const { opened, today, day, setDay, time, setTime } = d;
   const ahead = (on: LocalDate, t: ClockTime) => isAhead(on, t, opened);
   const soon = startSoon(opened);
-  const days = dayChips(today).filter((chip, i, all) => all.findIndex((x) => x.date === chip.date) === i);
+  // Times before the moment it opened are gone today; any time counts on a later day.
+  const after = day === today ? { hour: opened.getHours(), minute: opened.getMinutes() } : null;
   const isSoon = !!time && day === soon.day && sameTime(time, soon.time);
   const custom = !!time && !isSoon && !timeChips.some((t) => sameTime(t.time, time));
 
@@ -103,11 +102,7 @@ export function DeclarationChoices({ d }: { d: Declaration }) {
       <Text variant="label" color={c.muted} style={s.section}>
         {copy.day.toUpperCase()}
       </Text>
-      <View style={s.chips}>
-        {days.map((chip) => (
-          <Chip key={chip.id} label={chip.label} selected={day === chip.date} onPress={() => pickDay(chip.date)} />
-        ))}
-      </View>
+      <DayPicker day={day} today={today} onChange={(on) => on && pickDay(on)} from={today} />
 
       <Text variant="label" color={c.muted} style={s.section}>
         {copy.time.toUpperCase()}
@@ -135,13 +130,7 @@ export function DeclarationChoices({ d }: { d: Declaration }) {
           ))}
         <Chip label={custom && time ? clockLabel(time) : copy.otherTime} selected={custom} onPress={() => setOtherTime((v) => !v)} />
       </View>
-      {otherTime ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.slots}>
-          {SLOTS.filter((slot) => ahead(day, slot)).map((slot) => (
-            <Chip key={clockLabel(slot)} label={clockLabel(slot)} selected={sameTime(time, slot)} onPress={() => setTime(slot)} />
-          ))}
-        </ScrollView>
-      ) : null}
+      {otherTime ? <TimePicker time={time} onChange={setTime} after={after} /> : null}
     </View>
   );
 }
@@ -151,6 +140,5 @@ const makeStyles = (t: Tokens) => ({
   ...StyleSheet.create({
     section: { marginTop: 10 },
     chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingVertical: 6 },
-    slots: { gap: 8, paddingBottom: 6 },
   }),
 });

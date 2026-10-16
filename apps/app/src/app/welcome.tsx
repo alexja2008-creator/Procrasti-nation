@@ -15,7 +15,6 @@ import {
   voice,
   type Hours,
   type LocalDate,
-  type OathDue,
   type Preferences,
 } from '@pn/core';
 import { router } from 'expo-router';
@@ -32,7 +31,7 @@ import { NewApplicant } from '@/components/application/new-applicant';
 import { isQuizPage, QuizPages } from '@/components/application/quiz-pages';
 import { useTurns } from '@/components/application/use-turns';
 import { Button } from '@/components/button';
-import { Chip } from '@/components/chip';
+import { DayPicker } from '@/components/day-picker';
 import { LandingStamp } from '@/components/landing-stamp';
 import { SavePassport } from '@/components/save-passport';
 import { Screen } from '@/components/screen';
@@ -145,9 +144,9 @@ function Application({ ageCheckedBefore }: { ageCheckedBefore: boolean }) {
     copy.saveFailed,
   );
   const [skippedToSave, setSkippedToSave] = useState(false);
-  // The Oath: what they typed, when it's due, and the task once it's made.
+  // The Oath: what they typed, when it's due (nothing picked at first; Alex, 2026-10-15), and the task once it's made.
   const [oathText, setOathText] = useState('');
-  const [oathDue, setOathDue] = useState<OathDue>('week');
+  const [oathDue, setOathDue] = useState<LocalDate | null | undefined>(undefined);
   const [oathId, setOathId] = useState<string | null>(null);
   const oath = oathId ? tasks.find((t) => t.id === oathId) : undefined;
   const planned = !!oathId && tasks.some((t) => t.parentId === oathId && !t.deletedAt);
@@ -210,7 +209,7 @@ function Application({ ageCheckedBefore }: { ageCheckedBefore: boolean }) {
       if (!text) return;
       setBusy(true);
       setError(null);
-      const saved = await addTask(oathTask(parseQuickAdd(text, new Date(), { lists }), oathDue, today));
+      const saved = await addTask(oathTask(parseQuickAdd(text, new Date(), { lists }), oathDue ?? null));
       setBusy(false);
       if (!saved) {
         setError(copy.saveFailed);
@@ -313,11 +312,7 @@ function Application({ ageCheckedBefore }: { ageCheckedBefore: boolean }) {
           <Text variant="label" color={c.muted} style={s.dueLabel}>
             {copy.dueLabel.toUpperCase()}
           </Text>
-          <View style={s.dues} accessibilityRole="radiogroup" accessibilityLabel={copy.dueLabel}>
-            {copy.dues.map((d) => (
-              <Chip key={d.id} label={d.label} selected={oathDue === d.id} onPress={() => setOathDue(d.id)} />
-            ))}
-          </View>
+          <DayPicker day={oathDue} today={today} onChange={setOathDue} allowNone from={today} />
         </>
       )}
     </ApplicationForm>
@@ -393,7 +388,6 @@ const makeStyles = (t: Tokens) => ({
       fontSize: 17,
     },
     dueLabel: { marginTop: 4 },
-    dues: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
     approved: { gap: 14, width: '100%', maxWidth: 480, alignSelf: 'center', paddingTop: 12 },
     stamp: { alignSelf: 'center', marginBottom: 8 },
     centered: { textAlign: 'center' },

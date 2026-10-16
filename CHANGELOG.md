@@ -4,6 +4,8 @@ What changed for people using PN, newest first, in their words. One entry per re
 
 ## Unreleased
 
+- Picking a day is Today, Tomorrow or Pick a date (a calendar) everywhere, the Declaration included. "This weekend" and "Next week" are gone, and the Application's "When is it due?" no longer starts on "In a week".
+- Other time is easy to pick on a laptop: tap an hour, then :00, :15, :30 or :45, with no sideways scrolling. On iPhone it's iOS's own time wheel.
 - Adding a task has Due · Today · Tomorrow · Pick a date under the box, so you can give it a deadline without typing one. Enter still adds it straight away.
 - Repeats understand the way people say them: "walk the dog on Mondays, Wednesdays and Saturdays", "every M/W/Sat", "gym tue/thu", "take vitamins daily 8am". The task starts on the first of those days, and the sheet says so ("Starts Sat").
 - A repeat without a time says that adding one ("6pm") gets you a nudge each time. Plan it isn't offered for repeats when you add them (as everywhere else), since a plan is for a one-off.
