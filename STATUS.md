@@ -32,7 +32,7 @@ As of 2026-10-16. Rewrite this file every Monday (replace, don't append); histor
   - Plan it on a task with a later When day (the steps start that day)
   - signing a later Declaration on a plan's step (the notice asks to move the rest)
 - [ ] On production, a query for repeating tasks that already have plan steps. Each shows "Mark plan done" on every later turn; nothing new can make one. The plan's "Found in passing" has the details.
-- [ ] The planner's "no alarms" rule is parked. Try a second wording, about $3 to run it twice against a baseline, or leave it; the plan's Phase 5 has the options.
+- [ ] The planner's "no alarms" rule is parked. After the beta's first week, run `supabase/v2/planner-reminders.sql` in the production SQL Editor (read-only; set `since` to the beta's start) to see how often real plans suggest alarms or other apps. Then try a second wording (about $3 to run it twice against a baseline) or leave it; the plan's Phase 5 has the options.
 - [ ] Check that an unsaved passport from before 2026-10-15 opens on Save your passport: the two family testers' passports, the next time they open the app.
 - [ ] A monthly spend limit on the Anthropic workspace (beta Pro lets every passport make up to 20 plans a day).
 - [ ] Confirm the cutover's step 10 is done: `RESEND_API_KEY` deleted from the site's Vercel env (`docs/runbooks/launch-2026-10.md`, Phase 3). The smoke test passed on 2026-10-14.
