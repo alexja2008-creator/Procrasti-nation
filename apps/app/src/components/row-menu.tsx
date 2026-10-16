@@ -12,6 +12,7 @@ import { TerritorySheet } from '@/components/territory/territory-sheet';
 import { Text } from '@/components/text';
 import { useLists } from '@/data/lists-store';
 import { useTasks } from '@/data/tasks-store';
+import { useFollowSteps } from '@/hooks/use-follow-steps';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 type Props = { task: Task | null; onClose: () => void };
@@ -26,6 +27,7 @@ export function RowMenu({ task, onClose }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const { tasks, today, update, notify } = useTasks();
+  const followSteps = useFollowSteps();
   const { lists } = useLists();
   const [moving, setMoving] = useState<Task | null>(null);
   const [filing, setFiling] = useState<Task | null>(null);
@@ -86,7 +88,9 @@ export function RowMenu({ task, onClose }: Props) {
           today={today}
           onSave={(day, time) => {
             // Save onto the latest copy, in case it changed while the sheet was open.
-            update(latest(moving), whenPatch(day, time));
+            const before = latest(moving);
+            update(before, whenPatch(day, time));
+            followSteps(before, day);
             setMoving(null);
           }}
           onClose={() => setMoving(null)}

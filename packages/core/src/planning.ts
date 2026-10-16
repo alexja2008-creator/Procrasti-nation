@@ -1,7 +1,9 @@
 // Helpers around the AI Adherence Planner ("Plan it").
 
-import { addDays, daysBetween } from './dates.ts';
-import type { LocalDate } from './types.ts';
+import { addDays, clockOf, daysBetween } from './dates.ts';
+import { isDeclared } from './declarations.ts';
+import type { LocalDate, Task } from './types.ts';
+import { whenPatch, type Schedule } from './when.ts';
 
 /**
  * Estimate text → minutes: "15 min", "1.5 hours", "1h 30m", "20". Ranges like
@@ -26,6 +28,82 @@ export function fallbackStepDates(count: number, today: LocalDate, dueOn: LocalD
     if (span === null) return addDays(today, i);
     return addDays(today, count > 1 ? Math.round((i * span) / (count - 1)) : 0);
   });
+}
+
+/** Days in plan order: none before `floor`, none before the one ahead of it. */
+function inOrder(days: LocalDate[], floor: LocalDate): LocalDate[] {
+  let last = floor;
+  return days.map((d) => (last = d > last ? d : last));
+}
+
+/**
+ * Days that follow an anchor moved from `from` to `to`, in plan order: each
+ * keeps its distance after it, and none lands before it or before the day
+ * ahead of it (a plan already out of order comes back into order). The
+ * deadline never moves on its own: if the shift would pass `dueOn`, they spread
+ * out after the new day up to it, none earlier than it already was (they're
+ * being pushed later) and none past it; if the new day is the deadline they
+ * share it, and if it's already past, they go one a day after it.
+ */
+export function followDays(days: LocalDate[], from: LocalDate, to: LocalDate, dueOn: LocalDate | null): LocalDate[] {
+  const shifted = inOrder(
+    days.map((d) => addDays(d, daysBetween(from, to))),
+    to,
+  );
+  if (!dueOn || shifted.every((d) => d <= dueOn)) return shifted;
+  if (to > dueOn) return days.map((_, i) => addDays(to, i + 1));
+  const span = daysBetween(to, dueOn);
+  const spread = days.map((d, i) => {
+    const even = span === 0 ? dueOn : addDays(to, Math.max(1, Math.round(((i + 1) * span) / days.length)));
+    const was = d > dueOn ? dueOn : d;
+    return was > even ? was : even;
+  });
+  return inOrder(spread, to);
+}
+
+/**
+ * A plan's step moved to a later day: the open, dated steps after it (in plan
+ * order), as patches that move them with it, each keeping its time. Asked for
+ * each time, never automatic (Alex, 2026-10-15). A step with its own signed
+ * Declaration stays put, and moving a step earlier, or giving it its first day,
+ * moves nothing.
+ */
+export function followPatches(
+  steps: Task[],
+  before: Task,
+  to: LocalDate,
+  dueOn: LocalDate | null,
+  today: LocalDate,
+): { task: Task; patch: Partial<Schedule> }[] {
+  const from = before.scheduledOn;
+  if (!before.parentId || !from || to <= from) return [];
+  const later = steps
+    .filter(
+      (s) =>
+        s.parentId === before.parentId &&
+        s.id !== before.id &&
+        s.sortOrder > before.sortOrder &&
+        !s.completedAt &&
+        !s.deletedAt &&
+        !!s.scheduledOn &&
+        !isDeclared(s, today),
+    )
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const days = followDays(
+    later.map((s) => s.scheduledOn!),
+    from,
+    to,
+    dueOn,
+  );
+  return later
+    .map((task, i) => ({ task, patch: whenPatch(days[i], task.remindAt ? clockOf(task.remindAt) : null) }))
+    .filter(({ task, patch }) => patch.scheduledOn !== task.scheduledOn);
+}
+
+/** Plan it's step days, starting on the task's When day when that's later than the first step's (D4). */
+export function startPlanOn(days: LocalDate[], start: LocalDate | null, dueOn: LocalDate | null): LocalDate[] {
+  if (!start || !days.length || start <= days[0]) return days;
+  return [start, ...followDays(days.slice(1), days[0], start, dueOn)];
 }
 
 /** v2's procrastination styles → the planner prompt's style keys (lib/prompts/plan.js). */

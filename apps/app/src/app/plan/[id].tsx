@@ -1,4 +1,4 @@
-import { actions, localDateString, planWindow, relativeDayLabel, voice, type LocalDate, type Task } from '@pn/core';
+import { actions, localDateString, planWindow, relativeDayLabel, startPlanOn, voice, type LocalDate, type Task } from '@pn/core';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -33,7 +33,9 @@ const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
 async function buildPlan(task: Task, today: LocalDate, options: Parameters<typeof generatePlan>[2]) {
   const plan = await generatePlan(task, today, options);
-  const dates = await resolveStepDates(plan, today, task.dueOn ?? plan.resolvedDueDate);
+  const dueOn = task.dueOn ?? plan.resolvedDueDate;
+  // The planner dates steps from today; a task set for a later day starts there instead (no prompt change).
+  const dates = startPlanOn(await resolveStepDates(plan, today, dueOn), task.scheduledOn, dueOn);
   return { plan, dates };
 }
 
