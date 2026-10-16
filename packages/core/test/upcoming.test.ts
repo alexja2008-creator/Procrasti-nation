@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import type { Task } from '../src/types.ts';
-import { buildUpcoming, upcomingCounts, upcomingDayLabel, upcomingSectionFor, type UpcomingEntry } from '../src/upcoming.ts';
+import { buildUpcoming, previewWords, upcomingCounts, upcomingDayLabel, upcomingSectionFor, type UpcomingEntry } from '../src/upcoming.ts';
 
 const TODAY = '2026-10-06'; // a Tuesday
 const at = (day: number, hour: number, month = 10) => new Date(2026, month - 1, day, hour, 0).toISOString();
@@ -17,7 +17,9 @@ function task(id: string, fields: Partial<Task> = {}): Task {
 }
 
 const done = { status: 'completed' as const, completedAt: at(5, 9) };
-const ids = (entries: UpcomingEntry[]) => entries.map((e) => (e.kind === 'deadline' ? `due:${e.task.id}` : e.task.id));
+// A deadline marker is `due:id`, a repeat's preview `~id`.
+const ids = (entries: UpcomingEntry[]) =>
+  entries.map((e) => (e.kind === 'deadline' ? `due:${e.task.id}` : e.kind === 'preview' ? `~${e.task.id}` : e.task.id));
 const day = (view: ReturnType<typeof buildUpcoming>, date: string) => view.days.find((d) => d.date === date);
 
 test('range: seven days always, then only busy days up to 8 weeks, then Later', () => {
@@ -62,16 +64,75 @@ test('nothing from today or earlier; finished and deleted items hidden', () => {
   assert.deepEqual(view.later, []);
 });
 
-test('repeating tasks appear once, on their next date', () => {
+test('a repeat shows each turn in the week ahead: the next one real, the later ones previews', () => {
+  // Tuesday 6 Oct; the fixed days run Wed 7 to Tue 13.
   const view = buildUpcoming(
     [
       task('walk', { scheduledOn: '2026-10-07', rrule: 'FREQ=DAILY', remindAt: at(7, 18) }),
-      task('stretch', { scheduledOn: TODAY, rrule: 'FREQ=DAILY' }),
+      task('stretch', { scheduledOn: TODAY, rrule: 'FREQ=DAILY' }), // today's turn is on Today
+      task('bio', { scheduledOn: '2026-10-07', rrule: 'FREQ=WEEKLY;BYDAY=MO,WE' }), // bio lab, Mon and Wed
+      task('biweekly', { scheduledOn: '2026-10-08', rrule: 'FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,TH' }),
+      task('missed', { scheduledOn: '2026-10-05', rrule: 'FREQ=WEEKLY;BYDAY=MO,TH' }), // Monday's turn carried over to Today
+      task('far', { scheduledOn: '2026-10-20', rrule: 'FREQ=WEEKLY;BYDAY=TU' }),
+      task('finished', { scheduledOn: '2026-10-07', rrule: 'FREQ=DAILY', ...done }),
     ],
     TODAY,
   );
-  assert.deepEqual(view.days.flatMap((d) => ids(d.entries)), ['walk'], 'not expanded into every day; today’s is on Today');
-  assert.equal(day(view, '2026-10-07')?.entries[0].at, at(7, 18));
+  const on = (date: string) => ids(day(view, date)?.entries ?? []).sort();
+  assert.deepEqual(on('2026-10-07'), ['bio', 'walk', '~stretch'].sort());
+  assert.deepEqual(on('2026-10-08'), ['biweekly', '~missed', '~stretch', '~walk'].sort());
+  assert.deepEqual(on('2026-10-12'), ['~bio', '~missed', '~stretch', '~walk'].sort(), 'Monday: bio lab’s second turn');
+  assert.deepEqual(on('2026-10-13'), ['~stretch', '~walk'].sort(), 'every other week: not its off week');
+  assert.ok(!view.days.some((d) => d.date > '2026-10-13' && d.entries.some((e) => e.kind === 'preview')), 'previews only in the 7 days');
+  assert.deepEqual(ids(view.days.find((d) => d.date === '2026-10-20')!.entries), ['far'], 'beyond them, once');
+
+  const previews = (id: string) => view.days.flatMap((d) => d.entries).filter((e) => e.kind === 'preview' && e.task.id === id);
+  assert.deepEqual(previews('walk').map((e) => e.opensAfter), ['2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11', '2026-10-12']);
+  assert.ok(previews('walk').every((e) => e.at === at(Number(e.date.slice(8)), 18)), 'each turn keeps its 6 PM');
+  assert.equal(previews('stretch')[0].opensAfter, TODAY, 'opens after today’s turn');
+  assert.deepEqual([previews('missed')[0].date, previews('missed')[0].opensAfter], ['2026-10-08', TODAY], 'a missed turn shows once, on Today');
+  assert.equal(previews('bio')[0].opensAfter, '2026-10-07');
+  assert.equal(upcomingCounts(view)['2026-10-12'], 4, 'the dots count previews');
+});
+
+test('a preview says when it opens', () => {
+  const view = buildUpcoming(
+    [task('bio', { scheduledOn: '2026-10-12', rrule: 'FREQ=WEEKLY;BYDAY=MO,TU' }), task('stretch', { scheduledOn: TODAY, rrule: 'FREQ=DAILY' })],
+    TODAY,
+  );
+  const preview = (id: string, date: string) => view.days.find((d) => d.date === date)!.entries.find((e) => e.task.id === id)!;
+  assert.deepEqual(previewWords(preview('bio', '2026-10-13'), TODAY), {
+    line: 'Repeats · opens after Mon',
+    notice: 'Tuesday’s turn opens once Monday’s is done.',
+  });
+  assert.deepEqual(previewWords(preview('stretch', '2026-10-07'), TODAY), {
+    line: 'Repeats · opens after today',
+    notice: 'Tomorrow’s turn opens once today’s is done.',
+  });
+  assert.equal(previewWords(preview('bio', '2026-10-12'), TODAY), null, 'the real row isn’t a preview');
+});
+
+test('a preview keeps its time across the end of daylight saving', () => {
+  const before = process.env.TZ;
+  process.env.TZ = 'America/New_York';
+  try {
+    // Thursday 29 October; clocks go back on Sunday 1 November.
+    const today = '2026-10-29';
+    const view = buildUpcoming([task('walk', { scheduledOn: '2026-10-30', rrule: 'FREQ=DAILY', remindAt: new Date(2026, 9, 30, 18, 0).toISOString() })], today);
+    const monday = view.days.find((d) => d.date === '2026-11-02')!.entries[0];
+    assert.equal(monday.kind, 'preview');
+    assert.deepEqual([new Date(monday.at!).getHours(), new Date(monday.at!).getMinutes()], [18, 0]);
+  } finally {
+    if (before === undefined) delete process.env.TZ;
+    else process.env.TZ = before;
+  }
+});
+
+test('a repeat’s turn moved by hand moves its previews’ “opens after”', () => {
+  // Bio lab (Mon/Wed) moved from Wed 7 to Thu 8 with Move to….
+  const view = buildUpcoming([task('bio', { scheduledOn: '2026-10-08', rrule: 'FREQ=WEEKLY;BYDAY=MO,WE' })], TODAY);
+  const entries = view.days.flatMap((d) => d.entries);
+  assert.deepEqual(entries.map((e) => [e.kind, e.date, e.opensAfter ?? null]), [['task', '2026-10-08', null], ['preview', '2026-10-12', '2026-10-08']]);
 });
 
 test('deadlines: a due-only task is a to-do on its due day; work done elsewhere gets a marker', () => {

@@ -1,6 +1,6 @@
 import { actions, describeRRule, voice } from '@pn/core';
 import * as Haptics from 'expo-haptics';
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/icon';
@@ -22,6 +22,12 @@ export interface TaskRowItem {
   /** A Declaration still to come: a small violet seal under its time. */
   declared?: boolean;
   done?: boolean;
+  /**
+   * A repeat's later turn in Upcoming (Alex, 2026-10-16): a repeat mark instead of a checkbox,
+   * which swaps the row's line for `notice` for a few seconds when tapped; no menu, no Plan it;
+   * a tap on the row opens the task.
+   */
+  preview?: { notice: string };
 }
 
 type Props = {
@@ -37,17 +43,30 @@ type Props = {
   detail?: ReactNode;
 };
 
+/** How long a preview's line shows its notice after the mark is tapped. */
+const EXPLAIN_MS = 4000;
+
 export function TaskRow({ item, last, onToggle, onPlan, onMenu, onOpen, detail }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const done = !!item.done;
+  const preview = item.preview;
+  // The notice shows in the row's own line, so nothing above it moves under the finger
+  // (a second tap on a shifted list could land on the real turn's checkbox).
+  const [explaining, setExplaining] = useState(false);
+  useEffect(() => {
+    if (!explaining) return;
+    const id = setTimeout(() => setExplaining(false), EXPLAIN_MS);
+    return () => clearTimeout(id);
+  }, [explaining]);
 
   const toggle = () => {
     if (!done && Platform.OS !== 'web') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onToggle(item.id);
   };
 
-  const menu = onMenu && !done ? () => onMenu(item.id) : undefined;
+  // A preview has no menu: Move to… on Wednesday would move Monday's turn.
+  const menu = onMenu && !done && !preview ? () => onMenu(item.id) : undefined;
   const holdForMenu = () => {
     if (Platform.OS !== 'web') Haptics.selectionAsync();
     menu?.();
@@ -59,28 +78,39 @@ export function TaskRow({ item, last, onToggle, onPlan, onMenu, onOpen, detail }
       : {};
 
   return (
-    <View style={[s.row, item.suggestPlan && s.rowTop, !last && s.rule]}>
-      <Pressable
-        onPress={toggle}
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked: done }}
-        // React Native Web only exposes done through aria-checked.
-        aria-checked={done}
-        accessibilityLabel={`${done ? 'Mark not done' : 'Complete'}: ${item.title}`}
-        style={s.check}>
-        {done ? (
-          <View style={s.checked}>
-            <Icon name="check" size={13} color={c.onPrimary} strokeWidth={3} />
-          </View>
-        ) : (
-          <View style={s.unchecked} />
-        )}
-      </Pressable>
+    <View style={[s.row, item.suggestPlan && !preview && s.rowTop, !last && s.rule]}>
+      {preview ? (
+        <Pressable
+          onPress={() => setExplaining(true)}
+          accessibilityRole="button"
+          accessibilityLabel={voice.upcoming.previewMark(item.title, preview.notice)}
+          style={({ pressed }) => [s.check, pressed && s.pressed]}>
+          <Icon name="repeat" size={16} color={c.muted} strokeWidth={2} />
+        </Pressable>
+      ) : (
+        <Pressable
+          onPress={toggle}
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: done }}
+          // React Native Web only exposes done through aria-checked.
+          aria-checked={done}
+          accessibilityLabel={`${done ? 'Mark not done' : 'Complete'}: ${item.title}`}
+          style={s.check}>
+          {done ? (
+            <View style={s.checked}>
+              <Icon name="check" size={13} color={c.onPrimary} strokeWidth={3} />
+            </View>
+          ) : (
+            <View style={s.unchecked} />
+          )}
+        </Pressable>
+      )}
 
       <View style={[s.main, item.suggestPlan && s.mainTop]}>
         <Pressable
           onPress={onOpen ? () => onOpen(item.id) : undefined}
-          onLongPress={menu ? holdForMenu : undefined}
+          // A preview's hold does nothing (without a handler, letting go would open the task).
+          onLongPress={menu ? holdForMenu : preview ? () => undefined : undefined}
           delayLongPress={350}
           disabled={!menu && !onOpen}
           accessibilityRole={onOpen ? 'button' : undefined}
@@ -88,11 +118,15 @@ export function TaskRow({ item, last, onToggle, onPlan, onMenu, onOpen, detail }
           onAccessibilityAction={(e) => e.nativeEvent.actionName === 'menu' && menu?.()}
           style={s.text}
           {...rightClick}>
-          <Text variant="item" color={done ? c.muted : c.ink} style={done && s.struck}>
+          <Text variant="item" color={done ? c.muted : preview ? c.inkSoft : c.ink} style={done && s.struck}>
             {item.title}
           </Text>
           {/* Ternaries, not &&: an empty string outside <Text> crashes on native. */}
-          {item.meta ? (
+          {preview && explaining ? (
+            <Text variant="meta" color={c.primaryText} accessibilityLiveRegion="polite">
+              {preview.notice}
+            </Text>
+          ) : item.meta ? (
             <Text variant="meta" color={c.muted}>
               {item.meta}
             </Text>
@@ -107,7 +141,7 @@ export function TaskRow({ item, last, onToggle, onPlan, onMenu, onOpen, detail }
             </View>
           ) : null}
         </Pressable>
-        {item.suggestPlan && !done && (
+        {item.suggestPlan && !done && !preview && (
           <Pressable
             onPress={() => onPlan?.(item.id)}
             accessibilityRole="button"

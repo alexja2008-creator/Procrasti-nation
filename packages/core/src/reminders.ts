@@ -10,7 +10,7 @@
 
 import { buildToday, groupAgenda } from './agenda.ts';
 import { briefingOf } from './briefing.ts';
-import { addDays, atLocalTime, clockOf, describeRRule, formatTime, localDateString, logicalDateString, nextOccurrence, occurrenceOnOrAfter } from './dates.ts';
+import { addDays, atLocalTime, clockOf, describeRRule, formatTime, localDateString, logicalDateString, occurrencesBetween } from './dates.ts';
 import { linesFor, voice, type NudgeTone } from './nation.ts';
 import { stepsByParent } from './order.ts';
 import { effectiveListId } from './territories.ts';
@@ -66,15 +66,7 @@ const open = (t: Task) => !t.deletedAt && !t.completedAt;
 /** The days a timed task rings on within the window: its day, or each time a repeat comes round. */
 function ringDays(t: Task & { scheduledOn: LocalDate }, from: LocalDate, until: LocalDate): LocalDate[] {
   if (!t.rrule) return t.scheduledOn <= until ? [t.scheduledOn] : [];
-  const days: LocalDate[] = [];
-  let day = occurrenceOnOrAfter(t.rrule, t.scheduledOn, from > t.scheduledOn ? from : t.scheduledOn);
-  while (day <= until) {
-    days.push(day);
-    const next = nextOccurrence(t.rrule, t.scheduledOn, day);
-    if (next <= day) break;
-    day = next;
-  }
-  return days;
+  return occurrencesBetween(t.rrule, t.scheduledOn, from, until);
 }
 
 /** Everything that should ring in the next two weeks, soonest first, up to `limit`. */

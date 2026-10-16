@@ -4,6 +4,7 @@ What changed for people using PN, newest first, in their words. One entry per re
 
 ## Unreleased
 
+- Upcoming shows every turn of a repeat in the week ahead: "bio lab every Mon and Wed" now shows Wednesday too. The next turn is checkable as before; the later ones are marked "Repeats · opens after Mon", and tapping their repeat mark says, right there, when they open.
 - Rename a task from its page (tap the button beside the title) or with Rename… in a row's menu.
 - Repeat → Pick days… lets you choose the days (Mon, Wed and Sat, say) and change them later. The task moves to the first of the new days.
 - Move a plan's step to a later day and PN asks "Move the rest of the plan too?". Move them keeps the steps after it in order, never past the deadline, with Undo.
