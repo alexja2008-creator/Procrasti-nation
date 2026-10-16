@@ -97,6 +97,19 @@ function minutes(estimate) {
   return matched ? Math.round(total) : null;
 }
 
+// ProcrastiNation reminds people itself, so no step sends them to an alarm, the phone's Reminders,
+// or another reminder or to-do app (decision 6 in the dates-and-repeats plan). Putting an
+// appointment in the calendar is fine, and so is "check your calendar" or a reminder sent to other
+// people. A sentence that names ProcrastiNation is about its own reminders, so it doesn't count.
+const OTHER_REMINDER = /\b(?:alarms?|(?:set|add|create|schedule|put)(?: up)?(?: yourself)? (?:a |an )?(?:[\w-]+ ){0,2}reminders?|reminders? apps?|(?:phone'?s|apple|google) reminders|(?:to|in) (?:your )?reminders|to-?do (?:list )?apps?|todoist|ticktick|any\.do|google tasks|microsoft to do)\b/i;
+
+function otherReminders(steps) {
+  return steps.flatMap((s) => `${s.title}. ${s.description}`
+    .split(/(?<=[.!?])\s+/)
+    .filter((sentence) => OTHER_REMINDER.test(sentence) && !sentence.includes('ProcrastiNation'))
+    .map((sentence) => `#${s.id}: ${sentence}`));
+}
+
 function checks(c, plan) {
   const steps = plan.steps || [];
   const stepMinutes = steps.map((s) => minutes(s.estimatedTime));
@@ -106,6 +119,7 @@ function checks(c, plan) {
     maxStepMinutes: Math.max(...stepMinutes.filter((m) => m != null)),
     dueDateCorrect: c.expectedDue.includes(plan.resolvedDueDate ?? null),
     resolvedDueDate: plan.resolvedDueDate ?? null,
+    otherReminders: otherReminders(steps),
   };
 }
 
@@ -178,6 +192,7 @@ const summary = {
   errors: results.length - ok.length,
   passRate: `${passes.length}/${ok.length}`,
   dueDateAccuracy: `${ok.filter((r) => r.checks.dueDateCorrect).length}/${ok.length}`,
+  noOtherReminders: `${ok.filter((r) => !r.checks.otherReminders.length).length}/${ok.length}`,
   medianFirstStepMin: median(ok.map((r) => r.checks.firstStepMinutes).filter((m) => m != null)),
   avgSteps: avg(ok.map((r) => r.checks.stepCount)),
   latencyP50s: latencies[Math.floor(latencies.length / 2)] / 1000,
@@ -191,6 +206,8 @@ fs.writeFileSync(path.join(here, 'results', `${label}.json`), JSON.stringify({ s
 console.table(summary);
 const misses = ok.filter((r) => !r.checks.dueDateCorrect);
 if (misses.length) console.log('Due-date misses:', misses.map((r) => `${r.id}→${r.checks.resolvedDueDate}`).join(', '));
+const reminders = ok.filter((r) => r.checks.otherReminders.length);
+if (reminders.length) console.log('Alarm or other-app steps:\n' + reminders.map((r) => r.checks.otherReminders.map((s) => `  ${r.id} ${s}`).join('\n')).join('\n'));
 const fails = ok.filter((r) => !passes.includes(r));
 if (fails.length) console.log('Rubric fails:\n' + fails.map((r) => `  ${r.id} (overall ${r.grade.overall}): ${r.grade.notes}`).join('\n'));
 const errs = results.filter((r) => r.error || r.grade?.error);
