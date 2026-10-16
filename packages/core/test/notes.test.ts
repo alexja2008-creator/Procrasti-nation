@@ -2,14 +2,12 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import {
-  buildNotes,
   byRecency,
   checklistIds,
   checklistToken,
   checklistToLine,
   insertChecklistLine,
   joinTitle,
-  lineAt,
   lineToChecklist,
   noteHasContent,
   parseNoteBody,
@@ -19,24 +17,9 @@ import {
   withinPages,
   type NoteBlock,
 } from '../src/notes.ts';
-import type { Note, Task } from '../src/types.ts';
 
 const A = '00000000-0000-4000-8000-00000000000a';
 const B = '00000000-0000-4000-8000-00000000000b';
-const C = '00000000-0000-4000-8000-00000000000c';
-
-function task(id: string, fields: Partial<Task> = {}): Task {
-  return {
-    id, userId: 'u1', listId: null, parentId: null, noteId: 'n1', title: id, notes: null, status: 'in_progress',
-    dueOn: null, dueAt: null, remindAt: null, rrule: null, estimateMinutes: null, scheduledOn: null,
-    sortOrder: 0, source: 'self', externalId: null, completedAt: null,
-    createdAt: '2026-10-01T09:00:00Z', updatedAt: '2026-10-01T09:00:00Z', deletedAt: null, ...fields,
-  };
-}
-
-function note(id: string, body: string, fields: Partial<Note> = {}): Note {
-  return { id, userId: 'u1', listId: null, taskId: null, body, createdAt: '2026-10-01T09:00:00Z', updatedAt: '2026-10-01T09:00:00Z', deletedAt: null, ...fields };
-}
 
 const body = ['Lecture 7', 'Mitochondria make ATP.', checklistToken(A), checklistToken(B), '', 'Office hours Wed'].join('\n');
 
@@ -65,32 +48,6 @@ test('turning a line into a checklist line and back', () => {
   assert.deepEqual(removeChecklistLine(blocks, 1), [{ kind: 'text', text: 'Packing\nHat' }]);
   assert.deepEqual(insertChecklistLine(blocks, 1, B).map((b) => (b.kind === 'task' ? b.taskId : b.text)), ['Packing', A, B, 'Hat']);
   assert.deepEqual(checklistToLine(start, 0, 'x'), start, 'only checklist lines go back to text');
-});
-
-test('the cursor’s line', () => {
-  assert.equal(lineAt('one\ntwo\nthree', 0), 0);
-  assert.equal(lineAt('one\ntwo\nthree', 4), 1);
-  assert.equal(lineAt('one\ntwo\nthree', 13), 2);
-  assert.equal(lineAt('', 0), 0);
-});
-
-test('notes list newest first, titled by their first line, with checklist progress', () => {
-  const tasks = [task(A, { title: 'Read ch 5', completedAt: '2026-10-02T09:00:00Z' }), task(B, { title: 'Lab report' }), task(C, { deletedAt: '2026-10-02T09:00:00Z' })];
-  const notes = [
-    note('old', 'Groceries\nMilk', { updatedAt: '2026-10-01T10:00:00Z', listId: 'home' }),
-    note('lecture', `${body}\n${checklistToken(C)}`, { updatedAt: '2026-10-03T10:00:00Z', listId: 'chem' }),
-    note('list', [checklistToken(B), 'after'].join('\n'), { updatedAt: '2026-10-02T10:00:00Z' }),
-    note('gone', 'Deleted', { deletedAt: '2026-10-02T10:00:00Z' }),
-  ];
-  const all = buildNotes(notes, tasks);
-  assert.deepEqual(all.map((s) => [s.note.id, s.title, s.preview]), [
-    ['lecture', 'Lecture 7', 'Mitochondria make ATP.'],
-    ['list', 'Lab report', 'after'],
-    ['old', 'Groceries', 'Milk'],
-  ]);
-  assert.deepEqual(all[0].progress, { done: 1, total: 2 }, 'a deleted task’s line doesn’t count');
-  assert.deepEqual(buildNotes(notes, tasks, 'chem').map((s) => s.note.id), ['lecture']);
-  assert.deepEqual(buildNotes(notes, tasks, null).map((s) => s.note.id), ['list']);
 });
 
 test('a note has content once it has words or a checklist line', () => {

@@ -1,6 +1,7 @@
-// Runs the v2 migration scripts against real Postgres (PGlite, in-process):
-// schema twice, backfill twice, RLS and ownership checks as a signed-in user,
-// schools/teacher visibility, then rollback and re-apply.
+// Runs the v2 schema against real Postgres (PGlite, in-process): applied twice,
+// then RLS and ownership checks as a signed-in user, the server-only tables,
+// search and account deletion. The one-off scripts (02_backfill, 04_fresh_start,
+// 99_rollback) and the read-only production queries aren't tested here.
 //
 // Baselines: the committed stand-in (test/v1-schema.sql) always, plus the real
 // production structure when supabase/v2/.local/prod-schema.sql exists
@@ -77,12 +78,11 @@ const U4 = '00000000-0000-0000-0000-000000000004';
 const TASK_A = '0000000a-0000-0000-0000-000000000000';
 const TASK_B = '0000000b-0000-0000-0000-000000000000';
 const TASK_C = '0000000c-0000-0000-0000-000000000000';
-const TASK_D = '0000000d-0000-0000-0000-000000000000';
 const TASK_E = '0000000e-0000-0000-0000-000000000000'; // assignment task (schools)
 const OTHERS_NOTE = '000000f0-0000-0000-0000-000000000000'; // U2's note
 
-// Shapes seen in production (prod-stats.sql, 2026-10-03): steps carry
-// completedAt, some have no `completed` flag, estimates include "N-N min".
+// v1-shaped rows, as production's tasks still hold them (the v1 columns stay
+// until a clean-up migration). Shapes from prod-stats.sql, 2026-10-03.
 const STEPS_A = [
   { id: 1, title: 'Open the doc', description: 'Name it WWI paper', estimatedTime: '5 min', when: 'today', completed: true, completedAt: '2026-09-29T14:05:00.000Z' },
   { id: 2, title: 'Outline', estimatedTime: '1.5 hours', when: 'tomorrow', completed: false },
@@ -115,10 +115,6 @@ async function seed(db) {
   await db.query(
     `INSERT INTO tasks (id, user_id, title, status, steps, completed_at) VALUES ($1, $2, 'Done thing', 'completed', $3, '2026-09-28T12:00:00Z')`,
     [TASK_C, U2, JSON.stringify(STEPS_C)],
-  );
-  await db.query(
-    `INSERT INTO tasks (id, user_id, title, steps) VALUES ($1, $2, 'Odd steps', $3)`,
-    [TASK_D, U2, JSON.stringify([{ id: 'x', title: 'Only real step', estimatedTime: '20' }, 'not an object'])],
   );
 
   if (await hasSchools(db)) {
@@ -157,19 +153,12 @@ async function as(db, userId, fn, role = 'authenticated') {
   }
 }
 
-const tasksColumns = async (db) =>
-  (await rows(db, `SELECT column_name FROM information_schema.columns WHERE table_name = 'tasks' ORDER BY ordinal_position`))
-    .map((c) => c.column_name);
-
 for (const baseline of baselines) {
   test(`v2 migration on ${baseline.name}`, async (t) => {
     const db = new PGlite();
     await baseline.load(db);
     await seed(db);
     const schools = await hasSchools(db);
-    const v1Columns = await tasksColumns(db);
-    const v1Tasks = schools ? 5 : 4;
-    const v1Steps = schools ? 8 : 7; // A: 4, C: 2, D: 1 object (+1 assignment step)
 
     await t.test("profiles: Stripe fields are the server's; API callers read only the public profile", async () => {
       await applyProdFixes(db); // a second run changes nothing
@@ -247,74 +236,12 @@ for (const baseline of baselines) {
       assert.deepEqual(numbers.map((r) => [r.user_id, Number(r.citizen_number)]), [[U1, 1], [U2, 2], [U3, 3]]);
     });
 
-    await t.test('backfill converts v1 steps into child rows', async () => {
-      const result = (await db.exec(sql('02_backfill.sql'))).at(-1).rows[0];
-      assert.deepEqual(result, { tasks_converted: v1Tasks, steps_created: v1Steps });
-
-      const children = await rows(
-        db,
-        `SELECT title, notes, status, completed_at IS NOT NULL AS done, estimate_minutes, scheduled_on::text,
-                legacy_step_index, source, user_id
-           FROM tasks WHERE parent_id = $1 ORDER BY sort_order`,
-        [TASK_A],
-      );
-      assert.deepEqual(children, [
-        { title: 'Open the doc', notes: 'Name it WWI paper', status: 'completed', done: true, estimate_minutes: 5, scheduled_on: '2026-09-30', legacy_step_index: 1, source: 'ai', user_id: U1 },
-        { title: 'Outline', notes: null, status: 'in_progress', done: false, estimate_minutes: 90, scheduled_on: null, legacy_step_index: 2, source: 'ai', user_id: U1 },
-        { title: 'Step 3', notes: null, status: 'in_progress', done: false, estimate_minutes: 90, scheduled_on: null, legacy_step_index: 3, source: 'ai', user_id: U1 },
-        { title: 'Find sources', notes: null, status: 'completed', done: true, estimate_minutes: 15, scheduled_on: null, legacy_step_index: 4, source: 'ai', user_id: U1 },
-      ]);
-
-      const doneAt = await rows(
-        db,
-        `SELECT legacy_step_index AS i, completed_at FROM tasks WHERE parent_id = $1 AND completed_at IS NOT NULL ORDER BY 1`,
-        [TASK_A],
-      );
-      assert.deepEqual(
-        doneAt.map((r) => [r.i, r.completed_at.toISOString()]),
-        [[1, '2026-09-29T14:05:00.000Z'], [4, '2026-09-30T09:00:00.000Z']],
-        "steps keep v1's own completedAt",
-      );
-
-      const c = await rows(db, `SELECT status, completed_at FROM tasks WHERE parent_id = $1 ORDER BY sort_order`, [TASK_C]);
-      assert.deepEqual(
-        c.map((r) => [r.status, r.completed_at.toISOString()]),
-        [['completed', '2026-09-28T12:00:00.000Z'], ['completed', '2026-09-28T12:00:00.000Z']],
-        "a completed task's steps count as done even without a completed flag",
-      );
-
-      const a = await one(db, `SELECT due_on::text, rrule, source, steps FROM tasks WHERE id = $1`, [TASK_A]);
-      assert.equal(a.due_on, '2026-10-02');
-      assert.equal(a.rrule, 'FREQ=WEEKLY');
-      assert.equal(a.source, 'self', "a parent keeps its own source; only steps are 'ai'");
-      assert.deepEqual(a.steps, STEPS_A, 'v1 steps JSONB is untouched');
-
-      const b = await one(db, `SELECT source, due_on, rrule FROM tasks WHERE id = $1`, [TASK_B]);
-      assert.deepEqual(b, { source: 'self', due_on: null, rrule: null });
-
-      const d = await rows(db, `SELECT title, estimate_minutes FROM tasks WHERE parent_id = $1`, [TASK_D]);
-      assert.deepEqual(d, [{ title: 'Only real step', estimate_minutes: 20 }], 'non-object steps are skipped');
-    });
-
-    await t.test('backfill is idempotent', async () => {
-      const again = await one(db, `SELECT * FROM v2_backfill_tasks()`);
-      assert.deepEqual(again, { tasks_converted: 0, steps_created: 0 });
-    });
-
-    await t.test('assignment tasks keep their source and stay visible to the teacher', { skip: !schools }, async () => {
-      const e = await one(db, `SELECT source FROM tasks WHERE id = $1`, [TASK_E]);
-      assert.equal(e.source, 'assignment');
-      await as(db, U3, async () => {
-        const seen = await rows(db, `SELECT id FROM tasks WHERE id = $1`, [TASK_E]);
-        assert.equal(seen.length, 1, 'the teacher policy still matches after the migration');
-      });
-    });
-
     await t.test('RLS and ownership checks hold for a signed-in user', async () => {
       await db.query(`INSERT INTO notes (id, user_id, body) VALUES ($1, $2, 'Theirs')`, [OTHERS_NOTE, U2]);
+      await db.query(`INSERT INTO tasks (user_id, parent_id, title, source) VALUES ($1, $2, 'Outline', 'ai'), ($1, $2, 'Find sources', 'ai')`, [U1, TASK_A]);
       await as(db, U1, async () => {
         const visible = await rows(db, `SELECT user_id FROM tasks`);
-        assert.equal(visible.length, 6); // A, B and A's four steps
+        assert.equal(visible.length, 4); // A, B and A's two steps
         assert.ok(visible.every((r) => r.user_id === U1));
 
         await assert.rejects(
@@ -470,26 +397,6 @@ for (const baseline of baselines) {
       });
     });
 
-    await t.test('a Declaration always has a time; clearing the time takes the Declaration with it', async () => {
-      await as(db, U1, async () => {
-        await db.query(
-          `UPDATE tasks SET scheduled_on = '2026-10-12', remind_at = '2026-10-12T20:00:00Z', declared_at = now() WHERE id = $1`,
-          [TASK_A],
-        );
-        await assert.rejects(
-          db.query(`UPDATE tasks SET remind_at = NULL WHERE id = $1`, [TASK_A]),
-          /tasks_declared_has_time/,
-          'a Declaration without its time is refused',
-        );
-        await db.query(`UPDATE tasks SET remind_at = NULL, declared_at = NULL WHERE id = $1`, [TASK_A]);
-        await assert.rejects(
-          db.query(`UPDATE tasks SET declared_at = now() WHERE id = $1`, [TASK_A]),
-          /tasks_declared_has_time/,
-          'nothing to declare without a time',
-        );
-      });
-    });
-
     await t.test('web push: a browser belongs to one account; the send log and snoozes are server only', async () => {
       const endpoint = 'https://fcm.googleapis.com/fcm/send/browser-1';
       const owners = async () =>
@@ -620,7 +527,7 @@ for (const baseline of baselines) {
           });
         }
       } finally {
-        // Leave the fixtures as the rollback test expects them.
+        // Leave the fixtures as they were for the checks after this one.
         await db.query(`DELETE FROM notes WHERE body LIKE '%Krebs%' OR body IN ('Bring goggles to lab', 'Lab notes of theirs')`);
         await db.query(`DELETE FROM tasks WHERE parent_id = $1`, [plan]);
         await db.query(
@@ -671,41 +578,7 @@ for (const baseline of baselines) {
       assert.deepEqual(await count('IS DISTINCT FROM $1'), others, "everyone else's rows are untouched");
     });
 
-    await t.test('rollback restores v1 exactly and can be re-applied', async () => {
-      await db.exec(sql('99_rollback.sql'));
-
-      assert.deepEqual(await tasksColumns(db), v1Columns, 'same columns, same order (source is kept)');
-      const remaining = await rows(db, `SELECT title, source FROM tasks ORDER BY title`);
-      const expected = [
-        ...(schools ? [{ title: 'Assigned essay', source: 'assignment' }] : []),
-        { title: 'Done thing', source: 'self' },
-        { title: 'History paper', source: 'self' },
-        { title: 'No steps', source: 'self' },
-        { title: 'Odd steps', source: 'self' },
-        { title: 'Read ch. 4', source: 'self' }, // v2-only source mapped back
-        { title: 'Sunscreen', source: 'self' }, // a checklist task stays a task
-      ];
-      assert.deepEqual(remaining, expected);
-      assert.deepEqual((await one(db, `SELECT steps FROM tasks WHERE id = $1`, [TASK_A])).steps, STEPS_A);
-      await assert.rejects(
-        db.query(`INSERT INTO tasks (user_id, title, source) VALUES ($1, 'x', 'ai')`, [U1]),
-        /tasks_source_check/,
-        'the v1 source values are enforced again',
-      );
-      const leftovers = await rows(
-        db,
-        `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'
-           AND table_name IN ('lists', 'notes', 'note_counts', 'stamps', 'start_sessions', 'push_tokens', 'push_sends', 'push_snoozes',
-                              'user_settings', 'plan_generations', 'ai_requests')`,
-      );
-      assert.deepEqual(leftovers, []);
-
-      await applyV2(db);
-      const result = (await db.exec(sql('02_backfill.sql'))).at(-1).rows[0];
-      assert.deepEqual(result, { tasks_converted: v1Tasks + 2, steps_created: v1Steps });
-    });
-
-    await t.test('the v2 migration and its rollback keep the profiles lock', async () => {
+    await t.test('the v2 migration keeps the profiles lock', async () => {
       await as(db, U1, async () => {
         await assert.rejects(
           db.query(`UPDATE profiles SET stripe_customer_id = 'cus_bo' WHERE user_id = $1`, [U1]),
@@ -714,67 +587,6 @@ for (const baseline of baselines) {
         await assert.rejects(db.query(`SELECT stripe_subscription_status FROM profiles`), /permission denied/);
         assert.equal((await one(db, `SELECT my_subscription_status() AS s`)).s, 'active');
       });
-    });
-
-    // planner-reminders.sql (read-only, run on production by Alex): counts the steps it
-    // should, from the eval's real hits, and leaves calendars, other people and PN alone.
-    await t.test('the planner-reminders query counts alarm and other-app steps, and nothing else', async () => {
-      // In a read-only transaction, so a future edit that writes fails here.
-      const count = async () => {
-        await db.exec('BEGIN READ ONLY');
-        try {
-          return (await one(db, sql('planner-reminders.sql'))).planner_reminder_advice;
-        } finally {
-          await db.exec('ROLLBACK');
-        }
-      };
-      const before = await count();
-      const plan = async (title) => (await one(db, `INSERT INTO tasks (user_id, title) VALUES ($1, $2) RETURNING id`, [U4, title])).id;
-      const step = (parent, title, notes) =>
-        db.query(`INSERT INTO tasks (user_id, parent_id, title, notes, source) VALUES ($1, $2, $3, $4, 'ai')`, [U4, parent, title, notes]);
-      const walk = await plan('Walk the dog');
-      await step(walk, 'Set an alarm on your phone', 'A repeating alarm for Mon, Wed and Sat.');
-      await step(walk, 'Walk to the corner', 'Just there and back.');
-      const email = await plan('Email the professor');
-      await step(email, 'Send the email', 'Then set a quick reminder to check for a reply.');
-      await step(email, 'List the readings', 'Put them in Todoist.');
-      const dentist = await plan('Book the dentist');
-      await step(dentist, 'Call the office', 'Add the appointment to your calendar.');
-      await step(dentist, 'Check your calendar', 'ProcrastiNation will remind you at the time you set. Send Sam a reminder too.');
-      await step(dentist, "Use your phone's Reminders", 'Only as a test of the last kind.');
-      await db.query(`INSERT INTO tasks (user_id, parent_id, title) VALUES ($1, $2, 'set an alarm for 7')`, [U4, dentist]); // typed, not AI
-      const quiz = await plan('Study for the quiz');
-      await step(quiz, 'Pick a time', 'ProcrastiNation will set a reminder for you.'); // PN's own: not counted
-      await step(quiz, 'Open the notes', 'ProcrastiNation reminds you at 6. Then set a follow-up reminder.'); // the next sentence counts
-      await step(quiz, 'Set an alarm for 6', null); // no notes
-      await step(quiz, 'Use Todoist', 'Also set an alarm. Or Apple Reminders.'); // first flagged sentence decides: other app
-      await db.query(`INSERT INTO tasks (user_id, parent_id, title, source, created_at) VALUES ($1, $2, 'Set an alarm', 'ai', '2026-01-01')`, [U4, quiz]); // before since
-
-      const after = await count();
-      const kinds = (k) => (after.by_kind[k] ?? 0) - (before.by_kind[k] ?? 0);
-      assert.equal(after.plans - before.plans, 4);
-      assert.equal(after.steps - before.steps, 11, 'only the AI steps since `since`');
-      assert.equal(after.plans_with_this_advice - before.plans_with_this_advice, 4);
-      assert.equal(after.steps_with_this_advice - before.steps_with_this_advice, 7, 'not the calendar, PN or Sam');
-      assert.deepEqual([kinds('alarm'), kinds('set a reminder'), kinds('other app'), kinds('reminders app')], [2, 2, 2, 1]);
-    });
-
-    // Last: it deletes every account the tests above rely on.
-    await t.test('the fresh start deletes every account and restarts citizen numbers', async () => {
-      assert.ok((await one(db, `SELECT count(*)::int AS n FROM auth.users`)).n > 0, 'there are accounts to delete');
-      if (schools) assert.ok((await one(db, `SELECT count(*)::int AS n FROM assignments`)).n > 0, 'including a schools assignment');
-
-      const result = (await db.exec(sql('04_fresh_start.sql'))).at(-1).rows[0];
-      assert.deepEqual(result, { accounts_left: 0 });
-      for (const table of ['tasks', 'profiles', 'user_settings', 'lists', 'notes', 'stamps', 'start_sessions', 'push_tokens']) {
-        assert.equal((await one(db, `SELECT count(*)::int AS n FROM ${table}`)).n, 0, `${table} is empty`);
-      }
-
-      await db.exec(sql('04_fresh_start.sql')); // again, with nothing to delete
-      const U10 = '00000000-0000-0000-0000-000000000010';
-      await db.query(`INSERT INTO auth.users (id, email) VALUES ($1, 'first@x.test')`, [U10]);
-      await db.query(`INSERT INTO user_settings (user_id) VALUES ($1)`, [U10]);
-      assert.equal(Number((await one(db, `SELECT citizen_number FROM user_settings WHERE user_id = $1`, [U10])).citizen_number), 1);
     });
 
     await db.close();

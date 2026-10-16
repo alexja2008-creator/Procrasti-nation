@@ -2,66 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { voice } from '../src/nation.ts';
-import {
-  APPLICATION_PAGES,
-  firstStepOf,
-  firstWeekOf,
-  helpCardsFor,
-  hoursChange,
-  morningTimeFor,
-  oathTask,
-  pageNumber,
-  resultAudience,
-  nextPage,
-  resumePage,
-  territoriesFor,
-} from '../src/onboarding.ts';
+import { hoursChange, nextPage, oathTask, resumePage } from '../src/onboarding.ts';
 import { parseQuickAdd } from '../src/quick-add.ts';
-
-test('the questions are numbered through the Oath; the rest are not', () => {
-  assert.deepEqual(
-    APPLICATION_PAGES.map((p) => pageNumber(p)?.n ?? null),
-    [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, null, null, null, null, null],
-  );
-  assert.deepEqual(APPLICATION_PAGES.slice(0, 4), ['welcome', 'name', 'birth', 'purpose'], 'their name comes first, right after Welcome, then the age check');
-  assert.ok(APPLICATION_PAGES.indexOf('birth') < APPLICATION_PAGES.indexOf('heardFrom'), 'the age check comes before the passport opens');
-  assert.equal(pageNumber('name')?.n, 1);
-  assert.equal(pageNumber('oath')?.of, 11);
-});
-
-test('how PN helps: what answers their reason comes first', () => {
-  assert.equal(helpCardsFor('overwhelmed')[0], 'planIt');
-  assert.equal(helpCardsFor('avoid')[0], 'startMode');
-  assert.equal(helpCardsFor('perfectionist')[0], 'roughFirst');
-  assert.equal(helpCardsFor('bored')[0], 'stamps');
-  assert.equal(helpCardsFor(undefined).length, 3);
-  assert.equal(resultAudience('school'), 'students');
-  assert.equal(resultAudience('both'), 'students');
-  assert.equal(resultAudience('work'), 'adults');
-  assert.equal(resultAudience('life'), 'adults');
-});
-
-test("your first week: the Oath's steps on their days, today through six days on", () => {
-  const step = (id: string, scheduledOn: string | null, sortOrder: number, extra: object = {}) =>
-    ({ id, parentId: 'oath', scheduledOn, sortOrder, deletedAt: null, ...extra }) as never;
-  const tasks = [
-    step('b', '2026-10-08', 2),
-    step('a', '2026-10-07', 1),
-    step('c', '2026-10-08', 3),
-    step('late', '2026-10-14', 4),
-    step('undated', null, 5),
-    step('gone', '2026-10-09', 6, { deletedAt: '2026-10-07T00:00:00Z' }),
-    { id: 'other', parentId: 'elsewhere', scheduledOn: '2026-10-07', sortOrder: 0, deletedAt: null } as never,
-  ];
-  const week = firstWeekOf(tasks, 'oath', '2026-10-07');
-  assert.deepEqual(
-    week.map((d) => [d.day, d.steps.map((t: { id: string }) => t.id)]),
-    [
-      ['2026-10-07', ['a']],
-      ['2026-10-08', ['b', 'c']],
-    ],
-  );
-});
 
 test('coming back picks up at the first page not done', () => {
   assert.equal(resumePage({}, false, false), 'welcome');
@@ -99,21 +41,6 @@ test('the pages turn in order; a passport that finished unsaved goes from its na
   assert.equal(nextPage('name', true, true), 'save', 'finished before the name page existed: then saving');
   assert.equal(nextPage('birth', true, true), 'save');
   assert.equal(nextPage('welcome', true, false), 'name');
-});
-
-test('a purpose of visit starts the matching territories', () => {
-  const names = (p: Parameters<typeof territoriesFor>[0]) => territoriesFor(p).map((t) => `${t.name}/${t.kind}/${t.ink}`);
-  assert.deepEqual(names('school'), ['School/school/violet']);
-  assert.deepEqual(names('work'), ['Work/work/terracotta']);
-  assert.deepEqual(names('both'), ['School/school/violet', 'Work/work/terracotta']);
-  assert.deepEqual(names('life'), ['Home/home/forest']);
-});
-
-test('hours set the morning list time; every answer ends the day at midnight', () => {
-  assert.deepEqual(['early', 'day', 'night'].map((h) => hoursChange(h as 'early', {}).dayRolloverHour), [0, 0, 0]);
-  assert.deepEqual(morningTimeFor('early'), { hour: 7, minute: 0 });
-  assert.deepEqual(morningTimeFor('day'), { hour: 8, minute: 0 });
-  assert.deepEqual(morningTimeFor('night'), { hour: 10, minute: 0 });
 });
 
 test('every answer option has words, and the ids match the data model', () => {
@@ -158,19 +85,4 @@ test('changing hours moves the morning list only while it is off', () => {
   const on = { reminders: { morningList: { on: true, hour: 6, minute: 30 } } };
   assert.deepEqual(hoursChange('early', on).preferences.reminders?.morningList, { on: true, hour: 6, minute: 30 });
   assert.equal(hoursChange('early', on).dayRolloverHour, 0);
-});
-
-test('the first Declaration is for the plan’s first open step', () => {
-  const base = { userId: 'u', listId: null, noteId: null, notes: null, status: 'in_progress' as const, dueOn: null, dueAt: null,
-    remindAt: null, declaredAt: null, rrule: null, estimateMinutes: null, scheduledOn: '2026-10-12', source: 'ai' as const,
-    externalId: null, completedAt: null, createdAt: '2026-10-12T00:00:00Z', updatedAt: '2026-10-12T00:00:00Z', deletedAt: null };
-  const tasks = [
-    { ...base, id: 'oath', parentId: null, title: 'Study for chem midterm', sortOrder: 0, source: 'self' as const },
-    { ...base, id: 's2', parentId: 'oath', title: 'Make flashcards', sortOrder: 2 },
-    { ...base, id: 's1', parentId: 'oath', title: 'List the chapters', sortOrder: 1, completedAt: '2026-10-12T15:00:00Z', status: 'completed' as const },
-    { ...base, id: 's0', parentId: 'oath', title: 'Gone', sortOrder: 0, deletedAt: '2026-10-12T15:00:00Z' },
-    { ...base, id: 's3', parentId: 'oath', title: 'Practice test', sortOrder: 3 },
-  ];
-  assert.equal(firstStepOf(tasks, 'oath')?.id, 's2', 'finished and deleted steps are passed over');
-  assert.equal(firstStepOf(tasks, 'nothing'), null);
 });

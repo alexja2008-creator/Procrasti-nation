@@ -11,7 +11,7 @@ You review database work for ProcrastiNation v2 on Supabase (Postgres with RLS).
 - A foreign key between two user-owned tables without an ownership trigger: a plain FK accepts another user's id.
 - Private data on `profiles` (publicly readable); a new `profiles` column exposed to the API without a deliberate grant.
 - A counter table people could reset (`ai_requests` and `plan_generations` are insert-and-read only), or a limit counted before it's logged.
-- A migration that isn't additive and idempotent (`IF NOT EXISTS`, `CREATE OR REPLACE`), or one without a matching change to `v2/99_rollback.sql` and a test in `v2/test/`.
+- A migration that isn't additive and idempotent (`IF NOT EXISTS`, `CREATE OR REPLACE`), or one without a matching change to `v2/99_rollback.sql`. A migration that touches RLS, ownership triggers, deletion or limits also needs a test in `v2/test/` (`DECISIONS.md`, "Tests are kept for six reasons only").
 - A query that can return more than 1,000 rows without `fetchAllPages` in the app.
 - A hard delete where the app expects a soft delete (`deleted_at`): sync and Undo need tombstones.
 

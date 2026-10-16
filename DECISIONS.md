@@ -31,7 +31,7 @@ More detail: `CLAUDE.md` and each folder's own `CLAUDE.md` (rules and patterns),
 **Who it's for**
 - Students first, as individuals. Adults come later.
 - The goal is to replace Apple Notes and Reminders on a student's phone, with the AI planner as the reason to switch.
-- **A fresh start at cutover (2026-10-12).** v1 has one real user (Alex), so nothing is migrated: `supabase/v2/04_fresh_start.sql` deletes every account, Alex's included, and citizen numbers start again at 000001, so everyone meets v2 through the Citizenship Application. `02_backfill.sql` stays in the repo, tested, unused.
+- **A fresh start at cutover (2026-10-12).** v1 has one real user (Alex), so nothing is migrated: `supabase/v2/04_fresh_start.sql` deletes every account, Alex's included, and citizen numbers start again at 000001, so everyone meets v2 through the Citizenship Application. `02_backfill.sql` stays in the repo, unused, and untested since 2026-10-16.
 - **Not a school or LMS product.** The schools tables (`organizations`, `classes`, `assignments` and so on) and the policy that lets teachers read students' assignment tasks are leftovers from an abandoned idea. They're still in production and are left alone on purpose: don't propose features or clean-up for them. Dropping them would be its own decision. A security hole in them still counts, since they're live.
 
 **Platforms**
@@ -128,6 +128,7 @@ More detail: `CLAUDE.md` and each folder's own `CLAUDE.md` (rules and patterns),
 
 **How changes ship**
 - **CI isn't a required check on `main`** (Alex, 2026-10-14). Every pull request still runs `.github/workflows/ci.yml` (core, db and site tests, the app's type check and lint) and nothing red gets merged; GitHub's branch settings just don't enforce it.
+- **Tests are kept for six reasons only** (Alex, 2026-10-16, after core's tests grew from 15 to 166 in two weeks). A test is required when breaking what it checks would quietly: (1) let someone see or change another person's data, or forge a server-only field or signed token; (2) lose or rewrite data (a save, an undo, a bulk move, the export, account deletion, paging); (3) break the age check, required saving, plan limits or beta Pro; (4) ring a reminder at the wrong time, twice, not at all, or with Done; or (5) break a written rule that points at a test (`DESIGN.md`). Kept as a nice to have, (6): what every person sees most (Today, the + sheet, the lock screen's words, the Plan it pill, Start Mode's clock, the Application and saving the passport, Upcoming), with a new test of that kind only after the bug has reached a real person. Copy, labels, layout and ordering get no tests otherwise. The audit: `docs/plans/shipped/test-audit.md`.
 
 ---
 

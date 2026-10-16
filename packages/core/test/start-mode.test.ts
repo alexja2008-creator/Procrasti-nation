@@ -1,26 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { formatStampDate } from '../src/dates.ts';
-import {
-  defaultStartMinutes,
-  elapsedMs,
-  formatClock,
-  leftOutcome,
-  pauseClock,
-  resumeClock,
-  startClock,
-} from '../src/start-mode.ts';
-
-test('the default timer follows what stops you, unless you chose one', () => {
-  assert.equal(defaultStartMinutes(undefined), 5);
-  assert.equal(defaultStartMinutes({}), 5);
-  assert.equal(defaultStartMinutes({ style: 'avoid' }), 5);
-  assert.equal(defaultStartMinutes({ style: 'overwhelmed' }), 2);
-  assert.equal(defaultStartMinutes({ style: 'perfectionist' }), 10);
-  assert.equal(defaultStartMinutes({ style: 'bored' }), 25);
-  assert.equal(defaultStartMinutes({ style: 'bored', startMinutes: 5 }), 5);
-});
+import { elapsedMs, formatClock, pauseClock, resumeClock, startClock } from '../src/start-mode.ts';
 
 test('the clock is wall time minus pauses', () => {
   let clock = startClock(1_000);
@@ -40,13 +21,4 @@ test('clock labels', () => {
   assert.equal(formatClock(299_001, 'up'), '5:00', 'a countdown shows 5:00 until a full second has passed');
   assert.equal(formatClock(299_999), '4:59');
   assert.equal(formatClock(3_723_000), '1:02:03');
-});
-
-test('leaving early is "stopped"; leaving after the timer is "kept going"', () => {
-  assert.equal(leftOutcome(4 * 60_000, 5), 'stopped');
-  assert.equal(leftOutcome(5 * 60_000, 5), 'kept-going');
-});
-
-test('stamp dates read like a passport', () => {
-  assert.equal(formatStampDate(new Date(2026, 8, 4, 23, 30)), '04 SEP · 2026');
 });

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { buildExport, exportFileName, noteAsText, type ExportInput } from '../src/export.ts';
+import { buildExport, type ExportInput } from '../src/export.ts';
 
 const task = (id: string, extra: object = {}) =>
   ({
@@ -28,15 +28,6 @@ const task = (id: string, extra: object = {}) =>
     deletedAt: null,
     ...extra,
   }) as never;
-
-test("a note's checklist lines read as text, ticked or not", () => {
-  const tasks = new Map([
-    ['00000000-0000-4000-8000-00000000000a', { title: 'Read chapter 5', completedAt: '2026-10-02T00:00:00Z' }],
-    ['00000000-0000-4000-8000-00000000000b', { title: 'Lab report', completedAt: null }],
-  ]);
-  const body = 'Chem\nBefore Friday:\n[[task:00000000-0000-4000-8000-00000000000a]]\n[[task:00000000-0000-4000-8000-00000000000b]]\n[[task:00000000-0000-4000-8000-0000000000ff]]\nThat’s it';
-  assert.equal(noteAsText(body, tasks), 'Chem\nBefore Friday:\n[x] Read chapter 5\n[ ] Lab report\n[ ] (removed)\nThat’s it');
-});
 
 test('the export: everything kept, nothing deleted, answers in plain words', () => {
   const input: ExportInput = {
@@ -84,8 +75,4 @@ test('the export: everything kept, nothing deleted, answers in plain words', () 
   assert.equal(out.startModeSessions[0].outcome, 'done');
   assert.equal(out.aiPlans.length, 1);
   assert.doesNotThrow(() => JSON.parse(JSON.stringify(out)));
-});
-
-test('the file is named for the day', () => {
-  assert.equal(exportFileName('2026-10-07'), 'procrastination-2026-10-07.json');
 });
