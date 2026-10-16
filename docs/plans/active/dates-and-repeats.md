@@ -171,6 +171,22 @@ None of this reaches the iPhone until the next TestFlight build (there are no ov
 - Plan it starts from the When day (D4).
 - **Checked:** core tests (shift, squeeze before the due date, already past the due date, a signed Declaration staying put). In the browser pane: plan a task, move step 1 from today to Monday, see the notice, tap **Move them**, and check that every later step comes after Monday and on or before the due date; then Undo.
 - **Needs Alex:** nothing beyond the PR review. Making a real plan on staging uses the API, so it's Alex's check, as for earlier plan work.
+- **Built 2026-10-16 (`feat/plan-steps-follow`).**
+  - **Core:** `followDays`, `followPatches` and `startPlanOn` in `planning.ts`.
+  - **The ask:** the store's `offer` (a notice with one action). `useFollowSteps` asks after When on the task page, Move to… in the row menu, and a Declaration. After a Declaration, the notice says "Declared: …" and asks, without the Declaration's Undo (beside a question, Undo reads as "no").
+  - **From review:**
+    - None of the following steps lands before the moved step, or before the step ahead of it. A plan already out of order, like the family tester's, comes back into order.
+    - Squeezing before the deadline never pulls a step earlier than it was.
+    - A daylight-saving test.
+  - **The Application:** the nudge page after the first Declaration shows the notice bar, so the ask isn't lost there (that's where a family tester moved step 1).
+  - **D4:** `buildPlan` in `plan/[id].tsx` starts the steps on the task's When day.
+  - **Checked:**
+    - Core tests (157): the family tester's case, a plan already out of order, the squeeze (never earlier), the deadline itself and past it, earlier moves, first days, done, undated and declared steps, times kept, and `startPlanOn`.
+    - `npm run app:check`.
+    - The `code-reviewer` subagent; its findings are fixed.
+    - In the browser pane, on Alex's staging account, the chem midterm plan (15 steps on and around Sun 11 Oct, deadline passed): moving step 1 to Monday asked "Move the rest of the plan too?". Moving it to Tuesday and pressing Move them said "Moved 14 steps." with Undo. Undo, then moving step 1 back to Sun 11 Oct (no ask, since it's earlier), left steps 1, 2 and 15 on their original days after a reload.
+    - No console errors.
+  - **Not checked:** the ask after a Declaration (it would sign a Declaration on staging), Plan it from a later When day (it makes a real plan), and the iPhone (next build).
 
 **Phase 4: Rename and pick days** (issue 6)
 

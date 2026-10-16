@@ -31,6 +31,7 @@ import { Text } from '@/components/text';
 import type { TaskPatch } from '@/data/tasks';
 import { useLists } from '@/data/lists-store';
 import { useTasks } from '@/data/tasks-store';
+import { useFollowSteps } from '@/hooks/use-follow-steps';
 import { useShortcuts } from '@/hooks/use-shortcuts';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
@@ -50,6 +51,7 @@ function TaskDetail({ id }: { id: string }) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const { tasks, status, today, toggle, update, remove, addStep } = useTasks();
+  const followSteps = useFollowSteps();
   const { lists } = useLists();
   const task = tasks.find((t) => t.id === id && !t.deletedAt);
   const step = task ? stepContext(tasks, task) : null;
@@ -293,6 +295,7 @@ function TaskDetail({ id }: { id: string }) {
           onSave={(day, time, rrule) => {
             const when = whenPatch(day, time);
             update(task, rrule ? { ...when, ...repeatPatch({ ...task, ...when }, rrule, today) } : when);
+            followSteps(task, day);
             setSheet(null);
           }}
           onClose={() => setSheet(null)}

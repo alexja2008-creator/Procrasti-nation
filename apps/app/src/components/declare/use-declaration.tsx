@@ -28,6 +28,7 @@ import { TimePicker } from '@/components/time-picker';
 import { awardFirstDeclaration } from '@/data/stamps';
 import { useTasks } from '@/data/tasks-store';
 import { useUserSettings } from '@/data/user-settings';
+import { useFollowSteps } from '@/hooks/use-follow-steps';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.declaration;
@@ -40,6 +41,7 @@ const clockLabel = (t: ClockTime) => formatTime(new Date(2000, 0, 1, t.hour, t.m
  */
 export function useDeclaration(task: Task) {
   const { tasks, update, notify } = useTasks();
+  const followSteps = useFollowSteps();
   const { session } = useAuth();
   const { settings } = useUserSettings();
   // The moment it opened: times before it are gone (a Declaration is for later). Its days are the
@@ -64,7 +66,9 @@ export function useDeclaration(task: Task) {
     const latest = tasks.find((x) => x.id === task.id) ?? task;
     const patch = declarePatch(day, time, new Date());
     update(latest, patch);
-    notify(copy.declared(latest.title, declaredWhen(day, time, today)), () => update({ ...latest, ...patch }, undoPatch(latest, patch)));
+    const declared = copy.declared(latest.title, declaredWhen(day, time, today));
+    // A step signed for a later day asks whether the rest of its plan should follow, in the same notice.
+    if (!followSteps(latest, day, declared)) notify(declared, () => update({ ...latest, ...patch }, undoPatch(latest, patch)));
     // "Declaration signed" for the first one ever (later ones are turned away); Undo doesn't take it back.
     if (session) awardFirstDeclaration(session.user.id).catch(() => undefined);
     return true;

@@ -16,6 +16,7 @@ import { ApplicationForm } from '@/components/application/application-form';
 import { Button } from '@/components/button';
 import { SignaturePad } from '@/components/declare/signature-pad';
 import { DeclarationChoices, useDeclaration } from '@/components/declare/use-declaration';
+import { NoticeBar } from '@/components/notice-bar';
 import { Text } from '@/components/text';
 import { useTasks } from '@/data/tasks-store';
 import { useUserSettings } from '@/data/user-settings';
@@ -154,6 +155,8 @@ export function NudgePage({ declared, onContinue }: { declared?: Task | null; on
           {blocked ? <Button label={copy.next} onPress={onContinue} /> : <Button label={copy.nudgeYes} onPress={yes} disabled={busy} />}
         </>
       }>
+      {/* Their Declaration's notice: Undo, or "Move the rest of the plan too?" when they signed a later day. */}
+      <NoticeBar />
       <Text variant="lead" color={c.inkSoft}>
         {declared?.scheduledOn && declared.remindAt
           ? copy.nudgeBodyDeclared(

@@ -490,6 +490,10 @@ export const voice = {
     nextMonth: 'Next month',
     deleted: (title: string) => `Deleted “${title}”.`,
     undo: 'Undo',
+    /** A plan's step moved to a later day: asked each time, never automatic (Alex, 2026-10-15). */
+    followAsk: 'Move the rest of the plan too?',
+    followMove: 'Move them',
+    followed: (n: number) => (n === 1 ? 'Moved 1 step.' : `Moved ${n} steps.`),
     notFound: 'That task isn’t here anymore.',
     steps: 'Steps',
     stepsDone: (done: number, total: number) => `${done} of ${total} done`,

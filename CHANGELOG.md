@@ -4,6 +4,8 @@ What changed for people using PN, newest first, in their words. One entry per re
 
 ## Unreleased
 
+- Move a plan's step to a later day and PN asks "Move the rest of the plan too?". Move them keeps the steps after it in order, never past the deadline, with Undo.
+- A task set for a later day gets its plan starting on that day, not today.
 - Picking a day is Today, Tomorrow or Pick a date (a calendar) everywhere, the Declaration included. "This weekend" and "Next week" are gone, and the Application's "When is it due?" no longer starts on "In a week".
 - Other time is easy to pick on a laptop: tap an hour, then :00, :15, :30 or :45, with no sideways scrolling. On iPhone it's iOS's own time wheel.
 - Adding a task has Due · Today · Tomorrow · Pick a date under the box, so you can give it a deadline without typing one. Enter still adds it straight away.

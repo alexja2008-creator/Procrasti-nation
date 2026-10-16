@@ -41,6 +41,8 @@ type Store = {
   merge: (saved: Task[]) => void;
   /** Shows a short-lived note (e.g. after leaving Start Mode), with Undo when given one. */
   notify: (message: string, undo?: () => void) => void;
+  /** A short-lived note that offers one action ("Move them"). */
+  offer: (message: string, action: { label: string; run: () => void }) => void;
   clearNotice: () => void;
   /** Edits a task; applies now, rolls back if the save fails. */
   update: (task: Task, patch: TaskPatch) => void;
@@ -328,6 +330,9 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
         : undefined,
     });
 
+  const offer: Store['offer'] = (text, action) =>
+    setNotice({ text, action: { label: action.label, run: () => (setNotice(null), action.run()) } });
+
   const setListOf = (ids: Set<string>, listId: string | null) =>
     setTasks((prev) => prev.map((t) => (ids.has(t.id) ? { ...t, listId } : t)));
 
@@ -370,7 +375,7 @@ export function TasksProvider({ userId, children }: { userId: string; children: 
   };
 
   return (
-    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, addStep, toggle, merge, notify, clearNotice: () => setNotice(null), update, remove, unfile, refile, addToNote, setDeletedMany, fileNote, loadNoteLines, include }}>
+    <Ctx.Provider value={{ tasks, status, today, rolloverHour, error, notice, refresh, add, addStep, toggle, merge, notify, offer, clearNotice: () => setNotice(null), update, remove, unfile, refile, addToNote, setDeletedMany, fileNote, loadNoteLines, include }}>
       {children}
     </Ctx.Provider>
   );
