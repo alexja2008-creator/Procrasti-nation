@@ -3,6 +3,7 @@ import {
   formatTime,
   isDeclared,
   offersPlan,
+  previewWords,
   relativeDayPhrase,
   voice,
   type LocalDate,
@@ -20,7 +21,8 @@ const copy = voice.upcoming;
 /** `withDate`: rows in Later say which day they're on. `places` names territories and notes by id. */
 function rowFor(entry: UpcomingEntry, today: LocalDate, planned: Set<string>, places: Map<string, string>, withDate: boolean): TaskRowItem {
   const t = entry.task;
-  const meta: string[] = [];
+  const preview = previewWords(entry, today);
+  const meta: string[] = preview ? [preview.line] : [];
   if (entry.parentTitle) meta.push(`${entry.parentTitle} · step ${entry.stepIndex} of ${entry.stepCount}`);
   else {
     // A checklist line names its note; anything else its territory.
@@ -40,8 +42,9 @@ function rowFor(entry: UpcomingEntry, today: LocalDate, planned: Set<string>, pl
     rrule: t.rrule ?? undefined,
     minutes: t.estimateMinutes ?? undefined,
     time: entry.at ? formatTime(new Date(entry.at)) : undefined,
-    suggestPlan: offersPlan(t, planned.has(t.id)),
-    declared: isDeclared(t, today),
+    suggestPlan: !preview && offersPlan(t, planned.has(t.id)),
+    declared: !preview && isDeclared(t, today),
+    preview: preview ? { notice: preview.notice } : undefined,
   };
 }
 

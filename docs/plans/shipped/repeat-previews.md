@@ -1,6 +1,6 @@
 # Plan: A repeat's turns in Upcoming's week ahead
 
-**Status: approved 2026-10-16.** Alex answered the open questions and approved the plan as written, defaults D1–D6 included. Built on `feat/repeat-previews`.
+**Status: shipped with `feat/repeat-previews`'s PR (2026-10-16).** Alex answered the open questions and approved the plan as written, defaults D1–D6 included. It's one phase, so the plan moves to `shipped/` in the same PR.
 
 ## Overview
 
@@ -24,7 +24,7 @@ Nothing about how repeats are stored changes.
 3. **How a preview explains itself:**
    - **A repeat mark** sits where the checkbox would be.
    - **The row's line** reads "Repeats · opens after Mon".
-   - **Tapping the mark** shows a notice: "Wednesday's turn opens once Monday's is done."
+   - **Tapping the mark** shows a notice: "Wednesday's turn opens once Monday's is done." As built, the notice replaces the row's own line for a few seconds and screen readers announce it, so nothing above the row moves under the finger.
    - There's no card to dismiss.
 4. **A preview has no row menu.** Press-and-hold (right-click on the web) does nothing on it. Tapping it opens the repeat's task page, where Repeat, Rename and the rest act on the whole series. Otherwise Move to… on Wednesday would quietly move Monday's turn.
 5. **The week strip's and the calendar's dots count previews,** within the 7 days, so the dots match the list.
@@ -79,6 +79,24 @@ One PR: core and app together. It's small, and neither half is useful alone.
     - Phone and laptop width, Night and Day.
   - The `code-reviewer` subagent.
 - **Needs Alex:** the iPhone look with the next TestFlight build.
+- **Built 2026-10-16 (`feat/repeat-previews`).**
+  - **Core:** `occurrencesBetween` in `dates.ts`, which `ringDays` in `reminders.ts` now uses. `buildUpcoming` adds `preview` entries with `opensAfter`, and `previewWords` gives their line and notice.
+  - **App:** `TaskRow` takes `preview`.
+    - Its mark swaps the row's line for the notice for 4 seconds, announced to screen readers.
+    - The mark is labelled with the task ("Walk Biscuit repeats. …").
+    - Holding a preview does nothing.
+  - **Changed in review:** the notice first appeared in Upcoming's notice bar, at the top of the list. That pushed the rows down under the finger, so a second tap could land on the real turn's checkbox.
+  - **Checked:**
+    - Core tests (166): bio lab, daily habits due tomorrow and today, a turn carried over, every other week, 7 days and no more, finished repeats, 6 PM kept (across the end of daylight saving too), the dots, the words, and a turn moved by hand. The reminder tests are unchanged and still pass.
+    - The `code-reviewer` subagent; its findings are fixed.
+    - `npm run app:check`.
+    - In the browser pane, on Alex's staging account (read-only):
+      - "Walk Biscuit" and "Stretch" (daily) show a preview on each of the 7 days, "opens after today", then "after tomorrow", and so on, with Walk Biscuit at 6:00 PM. The dots count them up to 7 days out.
+      - Right-click opens no menu, and a tap opens the task page.
+      - The mark's notice, shown in the row's own line, was rechecked after the review's fix.
+      - Laptop and phone width.
+    - No server errors.
+  - **Not checked:** Day theme by eye (the colors are tokens; the preview title uses `inkSoft`), and the iPhone (next build).
 
 ## Data and copy
 

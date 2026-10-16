@@ -18,6 +18,15 @@
         "export PATH=\"$HOME/.nvm/versions/node/$(ls ~/.nvm/versions/node | tail -1)/bin:$PATH\" && cd apps/site && npm run dev"
       ],
       "port": 3000
+    },
+    {
+      "name": "app-web-guide",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "export PATH=\"$HOME/.nvm/versions/node/$(ls ~/.nvm/versions/node | tail -1)/bin:$PATH\" && cd /Users/alexanderson/PNDEV/Procrasti-nation/.claude/worktrees/how-to-use/apps/app && npx expo start --port 8082 < /dev/null"
+      ],
+      "port": 8082
     }
   ]
 }
