@@ -1,6 +1,9 @@
 # Plan: Dates, repeats and editing (family testing, 2026-10-15)
 
-**Status: approved 2026-10-15.** Alex answered decisions 1–8 and approved the plan as written, defaults D1–D14 included. Phase 1 started on `feat/capture-repeats-dates`.
+**Status: shipped 2026-10-16.** Alex answered decisions 1–8 on 2026-10-15 and approved the plan as written, defaults D1–D14 included.
+- **On the web:** phases 1–4 are live (PRs #24, #26, #27, #28; each phase's Built note says what was checked).
+- **On the iPhone:** they arrive with the next TestFlight build, which hasn't been checked.
+- **Phase 5:** its prompt rule failed the plan-quality eval, so the planner's prompt is unchanged. PR #25 keeps the new eval cases and the alarm/other-app check, and Alex chose to merge them without a rerun (2026-10-16). The rule is parked; the Phase 5 section says what a second try would change.
 
 ## Overview
 
