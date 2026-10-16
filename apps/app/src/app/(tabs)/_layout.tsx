@@ -3,8 +3,8 @@ import { TabList, Tabs, TabSlot, TabTrigger } from 'expo-router/ui';
 import { StyleSheet } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
+import { openSearch } from '@/components/header-buttons';
 import { CaptureButton, NavBar, NavItem } from '@/components/nav-bar';
-import { openSearch } from '@/components/search-button';
 import { useIsWide } from '@/hooks/use-is-wide';
 import { useShortcuts } from '@/hooks/use-shortcuts';
 

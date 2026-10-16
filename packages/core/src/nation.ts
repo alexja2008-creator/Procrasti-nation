@@ -906,6 +906,150 @@ export const voice = {
 } as const;
 
 // ---------------------------------------------------------------------------
+// How to use ProcrastiNation: the "?" beside search, and Settings → Help
+// (docs/plans/shipped/how-to-use.md). Family testers found the nation's own
+// words confusing, so this says them in everyday ones. Only what works today:
+// a feature gets its line when it ships. Phrases follow the landing page's.
+
+/** Something to type and what it does: "Essay due fri" → "Due Friday". */
+export type GuideExample = { typed: string; means: string };
+/** A paragraph, or a list of examples to type. */
+export type GuideBlock = string | readonly GuideExample[];
+export type GuideSection = { title: string; blocks: readonly GuideBlock[] };
+/** Where the guide is read: the web says right-click and keyboard shortcuts; a Mac writes ⌘. */
+export type GuideFor = { web: boolean; mac: boolean };
+
+export const guide = {
+  /** The "?" button's label, the Settings row and the page's title. */
+  open: 'How to use ProcrastiNation',
+  eyebrow: 'How to use',
+  title: 'How to use ProcrastiNation',
+  lead: 'ProcrastiNation breaks big things into steps small enough to begin, then nudges you when it’s time. No guilt, no lectures. Just the next small step.',
+  close: 'Close',
+  /** The Settings card holding the guide's row. */
+  settingsLabel: 'Help',
+  wordsLabel: 'Our words, in plain words',
+  words: [
+    { term: names.customs, meaning: 'Your inbox. Anything you capture with no day and no territory waits here until you give it a day or file it.' },
+    { term: names.territories, meaning: 'Your areas, like a class, a job or home. Each keeps its own tasks and notes.' },
+    { term: 'Task', meaning: 'One thing to do. It can have a day, a time, a due date and a repeat.' },
+    { term: 'Plan', meaning: `A task that ${actions.planIt} has broken into steps. The steps live under their task, and Today shows the plan as one row.` },
+    { term: 'Step', meaning: 'One piece of a plan. The first takes a few minutes; the rest, about one sitting each.' },
+    { term: 'Note', meaning: voice.notes.lead },
+    { term: actions.planIt, meaning: 'The AI button. It turns a big task into a plan.' },
+    { term: 'Start Mode', meaning: 'One step and a short timer. Starting is the win.' },
+    { term: names.declaration, meaning: 'A start time you pick and sign. A reminder rings then.' },
+    { term: names.morningBriefing, meaning: 'A minute to sort whatever carried over from before today.' },
+    { term: names.passport, meaning: 'Your page: your stamps, your rank and the Declarations you kept. Settings open from it too.' },
+    { term: names.stamps, meaning: 'Ink stamps for starting. Proof, on the days it doesn’t feel like it, that you’re moving.' },
+  ],
+  sections: ({ web, mac }: GuideFor): GuideSection[] => {
+    const hold = web ? 'Right-click or press and hold' : 'Press and hold';
+    return [
+      {
+        title: 'Capture anything',
+        blocks: [
+          `${web ? 'Click + or Capture' : 'Tap +'} and type it the way you’d say it. Days, times and repeats are read from the words:`,
+          [
+            { typed: 'Essay due fri', means: 'Due Friday' },
+            { typed: 'Dentist tomorrow 3pm', means: 'Tomorrow, with a nudge at 3 PM' },
+            { typed: 'Gym every mon and wed 6pm', means: 'Every Monday and Wednesday at 6 PM' },
+            { typed: 'Lab report #chem', means: 'Filed in your Chem territory' },
+          ],
+          `No day in the words? Pick ${voice.briefing.today}, Tomorrow or a date beside ${voice.capture.dueRow}, or just ${actions.add} it: it waits in ${names.customs}. Switch to ${voice.capture.note} at the top for anything longer.`,
+        ],
+      },
+      {
+        title: 'Today and Upcoming',
+        blocks: [
+          `Today is what’s on for today, with your next small step at the top, ready to ${actions.start}. Anything still open from before today rolls forward kindly to today.`,
+          'Upcoming shows the days ahead, with a calendar to jump to any day.',
+        ],
+      },
+      {
+        title: actions.planIt,
+        blocks: [
+          `${actions.planIt} sits beside ${actions.add} when you capture, beside ${actions.start} on a task’s page, and in a task’s menu, and it shows on rows that sound bigger than one sitting. It asks a question or two, then breaks the task into steps, the first just a few minutes long, spread out up to its due date.`,
+          `Change, add or reorder any step, or ${voice.plan.replan}. Move a step to a later day and you’ll be asked whether the rest of the plan should move too. Repeating tasks don’t get plans.`,
+        ],
+      },
+      {
+        title: `Start Mode and “${voice.start.stuck}”`,
+        blocks: [
+          `${actions.start} opens Start Mode: one step and a short timer. Stop when it ends, or keep going. Every start counts, finished or not.`,
+          `Stuck? Choose ${voice.start.stuck}, pick what’s in the way, and you’ll get a two-minute way in. Or take a breather first. Settings → Start Mode sets how long the timer runs.`,
+        ],
+      },
+      {
+        title: 'Declarations',
+        blocks: [
+          `Open a task and choose ${voice.declaration.short}, or ${hold.toLowerCase()} it and choose ${voice.declaration.action}. Pick a day and a time, then sign.`,
+          `${voice.declaration.why} Starting on time is a ${names.declaration} kept, recorded in your ${names.passport}.`,
+        ],
+      },
+      {
+        title: 'Times and reminders',
+        blocks: [
+          'Give a task a time and it rings then. The first time, you’ll be asked whether you want a nudge.',
+          web
+            ? `In a browser, reminders ring while the browser is open, with ${actions.startFive} and ${voice.reminders.snooze}. The iPhone app rings too.`
+            : `Press and hold a reminder for ${actions.startFive}, ${voice.reminders.snooze} and ${actions.done}.`,
+          `Settings has the reminders switch and your nudge tone: ${nudgeTones.diplomat.name}, ${nudgeTones.drill.name} or ${nudgeTones.roast.name}.`,
+        ],
+      },
+      {
+        title: 'Repeats',
+        blocks: [
+          'Type it:',
+          [
+            { typed: 'Stretch every day 7am', means: 'Every day at 7 AM' },
+            { typed: 'Read every weekday', means: 'Monday to Friday' },
+            { typed: 'Walk the dog every M/W/Sat', means: 'Mondays, Wednesdays and Saturdays' },
+          ],
+          `Or open the task and choose ${voice.task.repeat}: ${voice.task.pickDays} ticks the exact days, and ${voice.task.never} stops it. Check off a repeat and it comes back on its next day.`,
+          `Upcoming shows each of its turns in the week ahead. The next one is the one to check off; later ones read “${voice.upcoming.previewLine('Mon')}” and open once the turn before is done.`,
+        ],
+      },
+      {
+        title: 'Changing a task',
+        blocks: [
+          `Open a task to change ${voice.task.when}, ${voice.task.due}, ${voice.task.repeat}, its territory, its estimate or its notes. To rename it, use the button beside its title, or just type over the title.`,
+          `${hold} any task for ${actions.start}, ${voice.declaration.action}, ${actions.planIt}, ${voice.task.moveTo}, ${voice.task.renameItem} and ${voice.task.fileIn}, without opening it.`,
+        ],
+      },
+      {
+        title: 'Notes',
+        blocks: [
+          `Switch ${voice.capture.eyebrow} to ${voice.capture.note}, or open ${voice.notes.title} in ${names.territories}. A note’s first line is its title.`,
+          web ? voice.notes.checklistHintWeb(mac ? '⌘⇧L' : 'Ctrl+Shift+L') : voice.notes.checklistHint,
+          'Each checklist line is a real task: write a day on it, like “bring goggles fri”, and it shows up that day. Ticking it in the note or on your day ticks both.',
+        ],
+      },
+      {
+        title: `The ${names.morningBriefing}`,
+        blocks: [
+          `When something from before today is still open, a card on Today offers to sort it: ${voice.briefing.today}, ${voice.briefing.pickDay}, or ${voice.briefing.letGo}, which takes the date off and never deletes anything.`,
+          'With ten or more, it suggests three for today and lets the rest wait.',
+        ],
+      },
+      {
+        title: `Your ${names.passport}`,
+        blocks: [
+          `Stamps land for your approved application, your first Declaration and your first start, and everything you finish in Start Mode (${voice.start.done}) adds to your count. Your rank grows with starts, not finishes, and the Declarations you kept are listed there too.`,
+          'Settings opens from the top of your Passport: your name, nudge tone, Start Mode’s timer, when your day ends, Night or Day, and your account.',
+        ],
+      },
+      {
+        title: 'Search',
+        blocks: [
+          `The magnifier finds any task or note, finished ones too. Add #name to look in one territory.${web ? ` On a computer, ${mac ? '⌘K' : 'Ctrl+K'} or / opens it from anywhere.` : ''}`,
+        ],
+      },
+    ];
+  },
+} as const;
+
+// ---------------------------------------------------------------------------
 // The nudge tone (asked in the Citizenship Application): the few lines that
 // nudge. Diplomat is the everyday voice; Drill Sergeant is firm; Roast jokes
 // about the task or the situation, never the person (shame feeds

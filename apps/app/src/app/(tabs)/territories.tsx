@@ -6,12 +6,12 @@ import { GestureDetector } from 'react-native-gesture-handler';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
+import { HeaderButtons } from '@/components/header-buttons';
 import { Icon } from '@/components/icon';
 import { NotesCard } from '@/components/note/notes-card';
 import { NotesView } from '@/components/note/notes-view';
 import { NoticeBar } from '@/components/notice-bar';
 import { Screen } from '@/components/screen';
-import { SearchButton } from '@/components/search-button';
 import { Text } from '@/components/text';
 import { CustomsCard } from '@/components/territory/customs-card';
 import { TerritoryCard } from '@/components/territory/territory-card';
@@ -52,7 +52,7 @@ export default function TerritoriesScreen() {
           <Text variant="label" color={c.muted}>
             {copy.eyebrow.toUpperCase()}
           </Text>
-          <SearchButton />
+          <HeaderButtons />
         </View>
         <Text variant="pageTitle" accessibilityRole="header">
           {copy.title}

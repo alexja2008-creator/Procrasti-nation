@@ -14,7 +14,7 @@ export function SettingRow({ label, value, onPress, last }: Props) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${label}: ${value}`}
+      accessibilityLabel={value ? `${label}: ${value}` : label}
       style={({ pressed }) => [s.row, !last && s.rule, pressed && s.pressed]}>
       <Text variant="item" style={s.label}>
         {label}
