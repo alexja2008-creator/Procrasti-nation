@@ -227,6 +227,28 @@ None of this reaches the iPhone until the next TestFlight build (there are no ov
 - **Eval runs:** first the current prompt on the bigger case set, as the new baseline. Then the candidate with D12's rule. The candidate passes if it has zero alarm or other-app hits and is no worse than the baseline on passing cases, overall score, first-step score and due dates. The grader's rubric doesn't change, so results stay comparable.
 - **Needs Alex:** about $2 for the two runs, already agreed (decision 5).
 - **If the candidate fails:** phases 1–4 still ship, and the prompt stays as it is.
+- **Run 2026-10-15 (`feat/plan-no-alarms`): the candidate failed the gate, so the prompt is unchanged.**
+  - **Built:** the two cases (walk-dog: whenever, avoider; vitamins: whenever, no type), the `noOtherReminders` check (its pattern and what it allows are in `evals/plan-quality/README.md`), and the candidate kept as `evals/plan-quality/prompt-v4.js` so it can be run again.
+  - **Results** (sonnet-medium, 32 cases; the README has the full rows):
+
+    | | Pass | Overall | First step | Timing | Due dates | No alarm / other app |
+    |---|---|---|---|---|---|---|
+    | v3, production (baseline) | 31/32 | 3.97 | 4.25 | 3.44 | 32/32 | 28/32 |
+    | v4, v3 + D12's rule and decision 6's calendar clause | 27/32 | 3.88 | 4.22 | 3.34 | 32/32 | 32/32 |
+
+  - **What the numbers say:**
+    - The rule worked on its own target: zero hits, where v3 had a repeating phone alarm for walk-dog, a daily alarm for vitamins, and "set a reminder" for gym and dentist.
+    - It lost on passes, overall and first step, so it fails as agreed. The four new fails (orgo-midterm, surprise-party, stats-r-hw, walk-dog) all scored 2 on timing, and only walk-dog is about reminders. v3 alone went from 27/30 to 29/30 on the same 30 cases between two runs, so one run each can't separate the rule's effect from noise.
+    - Three weaknesses in the wording itself:
+      - Walk-dog's alarms turned into a repeating Mon/Wed/Sat calendar event, which decision 6 allows but which does the alarm's job.
+      - It still planned three walks, not the first one.
+      - Steps that mention a calendar went from 6 (in 2 plans) to 13 (in 8), so "an appointment in their calendar is fine" may be steering plans toward the calendar.
+  - **Spent:** the two approved runs (about $2).
+  - **Check gaps found in review** (none change these numbers): Siri, "have your phone remind you", turning on another app's notifications, "a reminder set", a curly apostrophe in "phone’s Reminders", "to do app" with a space, habit apps and Google Keep aren't caught. Negations ("no need for an alarm") would be. Worth tightening before the next run.
+  - **Needs Alex, before any more runs:**
+    - Try again or drop it. A second candidate could say not to use the calendar to remind them of steps or a habit (appointments only), and "plan only the next time, in 2–4 steps; ProcrastiNation repeats it on its days". Running it twice, against one more baseline run, would show whether the drop is noise: about $3.
+    - Dropping it: phase 1 already holds back Plan it for repeats in the + sheet, which closes the testers' case. Habits typed without a cadence ("Start going to the gym regularly") and one-offs ("set a reminder to check your inbox") still get the advice.
+    - Whether a repeating calendar event for a habit counts as "another reminder app" under decision 6.
 
 ## Data and copy
 
