@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { clockOf } from '../src/dates.ts';
-import { parseQuickAdd, parseWhen, scheduleOf, withDue } from '../src/quick-add.ts';
+import { parseQuickAdd, scheduleOf, withDue } from '../src/quick-add.ts';
 
 // Saturday 3 October 2026, 10:00 local time.
 const SAT_10AM = new Date(2026, 9, 3, 10, 0);
@@ -10,34 +10,8 @@ const MON_10AM = new Date(2026, 9, 5, 10, 0);
 
 const parse = (text: string, now = SAT_10AM) => parseQuickAdd(text, now);
 
-test('repeats with a time', () => {
-  assert.deepEqual(parse('Walk Biscuit every day 6pm'), {
-    title: 'Walk Biscuit',
-    scheduledOn: '2026-10-03',
-    dueOn: null,
-    time: { hour: 18, minute: 0 },
-    rrule: 'FREQ=DAILY',
-    listId: null,
-    matches: [{ kind: 'repeat', text: 'every day' }, { kind: 'time', text: '6pm' }],
-  });
-});
-
 test('a daily time that already passed starts tomorrow', () => {
   assert.equal(parse('Walk Biscuit every day 6pm', new Date(2026, 9, 3, 20, 0)).scheduledOn, '2026-10-04');
-});
-
-test('repeat variants', () => {
-  assert.deepEqual(
-    [parse('Gym every mon and wed'), parse('Stand-up every weekday 9am'), parse('Water plants every other week'), parse('Take vitamins daily')]
-      .map((r) => [r.title, r.rrule, r.scheduledOn]),
-    [
-      ['Gym', 'FREQ=WEEKLY;BYDAY=MO,WE', '2026-10-05'],
-      ['Stand-up', 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', '2026-10-05'],
-      ['Water plants', 'FREQ=WEEKLY;INTERVAL=2', '2026-10-03'],
-      ['Take vitamins', 'FREQ=DAILY', '2026-10-03'],
-    ],
-  );
-  assert.deepEqual(parse('Journal every evening').time, { hour: 19, minute: 0 });
 });
 
 // Thursday 15 October 2026, 10:00: the day family testers typed these.
@@ -76,26 +50,6 @@ test('one day stays a one-off, unless it is a plural with a time', () => {
   const gym = parse('gym tuesdays 6pm', THU_10AM);
   assert.deepEqual([gym.title, gym.rrule, gym.scheduledOn, gym.time], ['gym', 'FREQ=WEEKLY;BYDAY=TU', '2026-10-20', { hour: 18, minute: 0 }]);
   assert.equal(parse('gym tuesdays', THU_10AM).rrule, null, 'a plural alone could be a title ("Tuesdays with Morrie")');
-});
-
-test('"every other" and "every 2 weeks on" days start on the first matching day', () => {
-  const payroll = parse('payroll every other friday', THU_10AM);
-  assert.deepEqual([payroll.title, payroll.rrule, payroll.scheduledOn], ['payroll', 'FREQ=WEEKLY;INTERVAL=2;BYDAY=FR', '2026-10-16']);
-  const plants = parse('water plants every 2 weeks on tue and thu', THU_10AM);
-  assert.deepEqual([plants.title, plants.rrule, plants.scheduledOn], ['water plants', 'FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,TH', '2026-10-15']);
-});
-
-test('a repeat with no days keeps its own rhythm from today', () => {
-  const eightPm = new Date(2026, 9, 15, 20, 0);
-  assert.equal(parse('team sync every 2 weeks 6pm', eightPm).scheduledOn, '2026-10-29', '6pm has passed, so the next one, two weeks on');
-  assert.equal(parse('gym every 3 days 6pm', eightPm).scheduledOn, '2026-10-18');
-});
-
-test('"daily" before a time is a repeat at that time', () => {
-  for (const text of ['take vitamins daily 8am', 'take vitamins daily at 8']) {
-    const r = parse(text, THU_10AM);
-    assert.deepEqual([r.title, r.rrule, r.scheduledOn, r.time], ['take vitamins', 'FREQ=DAILY', '2026-10-16', { hour: 8, minute: 0 }], text);
-  }
 });
 
 test('lists of days that are not repeats', () => {
@@ -229,57 +183,6 @@ test('titles with day names and every/each are left alone', () => {
     const r = parse(text, THU_10AM);
     assert.deepEqual([r.title, r.scheduledOn, r.dueOn, r.time, r.rrule, r.matches], [text, null, null, null, null, []], text);
   }
-});
-
-test('nothing left for a title keeps the text as the title', () => {
-  assert.deepEqual(parse('tomorrow 6pm'), { title: 'tomorrow 6pm', scheduledOn: null, dueOn: null, time: null, rrule: null, listId: null, matches: [] });
-});
-
-test('parseWhen understands a schedule on its own', () => {
-  const now = new Date(2026, 9, 6, 9, 0); // Tue 6 Oct, 9am
-  const when = (s: string) => {
-    const p = parseWhen(s, now);
-    return [p.scheduledOn, p.dueOn, p.time && `${p.time.hour}:${p.time.minute}`, p.rrule];
-  };
-  assert.deepEqual(when('fri 6pm'), ['2026-10-09', null, '18:0', null]);
-  assert.deepEqual(when('tomorrow evening'), ['2026-10-07', null, '19:0', null]);
-  assert.deepEqual(when('every weekday 7am'), ['2026-10-07', null, '7:0', 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR'], '7am has passed today');
-  assert.deepEqual(when('oct 20'), ['2026-10-20', null, null, null]);
-  assert.deepEqual(when('sat'), ['2026-10-10', null, null, null]);
-  assert.deepEqual(when('gibberish'), [null, null, null, null]);
-});
-
-test('a preset day (Upcoming’s “+”) fills in when the text names no date', () => {
-  const onThu = (text: string) => parseQuickAdd(text, SAT_10AM, { day: '2026-10-08' });
-  assert.deepEqual([onThu('Buy stamps').title, onThu('Buy stamps').scheduledOn], ['Buy stamps', '2026-10-08']);
-  assert.deepEqual([onThu('call mom 5pm').scheduledOn, onThu('call mom 5pm').time], ['2026-10-08', { hour: 17, minute: 0 }], 'a time alone lands on that day');
-  assert.equal(onThu('call mom 9am').scheduledOn, '2026-10-08', 'even when that time has passed today');
-  assert.deepEqual([onThu('Gym every mon').scheduledOn, onThu('Gym every mon').rrule], ['2026-10-12', 'FREQ=WEEKLY;BYDAY=MO'], 'a repeat starts from that day');
-  assert.equal(onThu('Walk every day').scheduledOn, '2026-10-08');
-  assert.equal(onThu('dentist tomorrow').scheduledOn, '2026-10-04', 'a typed date wins');
-  assert.deepEqual([onThu('essay due fri').scheduledOn, onThu('essay due fri').dueOn], [null, '2026-10-09'], 'so does a typed deadline');
-  assert.equal(onThu('tomorrow').scheduledOn, '2026-10-08', 'all-schedule text is the title, on that day');
-});
-
-test('#tags file into a territory; unknown ones stay in the title, untouched by the date rules', () => {
-  const lists = [
-    { id: 'chem', name: 'Chem 201', sortOrder: 1 },
-    { id: 'home', name: 'Home', sortOrder: 2 },
-    { id: 'fridays', name: 'Friday club', sortOrder: 3 },
-  ];
-  const tagged = (text: string) => parseQuickAdd(text, SAT_10AM, { lists });
-  const lab = tagged('Write lab report fri #chem');
-  assert.deepEqual([lab.title, lab.listId, lab.scheduledOn], ['Write lab report', 'chem', '2026-10-09']);
-  assert.deepEqual(lab.matches.map((m) => [m.kind, m.text]), [['date', 'fri'], ['territory', '#chem']]);
-  assert.deepEqual([tagged('#home water plants').title, tagged('#home water plants').listId], ['water plants', 'home']);
-  assert.deepEqual([tagged('Sell #textbooks tomorrow').title, tagged('Sell #textbooks tomorrow').listId], ['Sell #textbooks', null]);
-  assert.deepEqual([tagged('Plan party #sat').title, tagged('Plan party #sat').scheduledOn], ['Plan party #sat', null], 'an unknown #sat is not a date');
-  assert.equal(tagged('Lab #chem #home').listId, 'chem', 'the first territory wins');
-  assert.equal(tagged('Lab #chem #home').title, 'Lab #home');
-  assert.equal(tagged('Practice #fri').listId, 'fridays', 'a territory beats the date rules');
-  assert.equal(tagged('Email#chem').listId, null, 'a tag starts a word');
-  assert.equal(parseQuickAdd('Lab #chem', SAT_10AM).listId, null, 'no territories given: nothing to match');
-  assert.equal(parseQuickAdd('Lab #chem', SAT_10AM).title, 'Lab #chem');
 });
 
 test('the capture sheet’s day row makes it due that day, unless the text names its own', () => {

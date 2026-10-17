@@ -15,15 +15,6 @@ test('errands never get "Plan it", whatever they mention', () => {
   assert.deepEqual(offered, []);
 });
 
-test('the way a title is typed doesn’t change the answer', () => {
-  for (const title of ['  STUDY FOR ORGO MIDTERM ', 'Need to finish the essay!', 'Don’t forget to start my lit review', 'Chem: study for unit 3 test', 'Bio 101: final project', 'Study for exam at 2:00', 'Writing my thesis']) {
-    assert.equal(suggestsPlan(title), true, title);
-  }
-  for (const title of ['email dr. ruiz re: the quiz', 'Remember to turn in the essay', 'Essay: email TA about the deadline', '', '   ']) {
-    assert.equal(suggestsPlan(title), false, title);
-  }
-});
-
 test('a row offers "Plan it" only on a big task of their own with no plan yet', () => {
   const task: Pick<Task, 'title' | 'parentId' | 'noteId' | 'source' | 'status' | 'rrule' | 'estimateMinutes'> = {
     title: 'Study for chem midterm', parentId: null, noteId: null, source: 'self', status: 'in_progress', rrule: null, estimateMinutes: null,

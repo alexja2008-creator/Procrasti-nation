@@ -2,47 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { atLocalTime, clockOf } from '../src/dates.ts';
-import { dayChips, duePatch, monthGrid, pickerHours, pickerWeek, pickHour, quarterLabel, quartersOf, repeatChips, repeatPatch, daysChangeLanding, weeklyInterval, weeklyOf, weeklyRule, shiftMonth, shiftWeek, timeSlots, weekStrip, whenPatch } from '../src/when.ts';
-
-const chipDates = (today: string) => Object.fromEntries(dayChips(today).map((c) => [c.id, c.date]));
-
-test('day chips are today and tomorrow; other days come from the calendar', () => {
-  assert.deepEqual(chipDates('2026-10-06'), { today: '2026-10-06', tomorrow: '2026-10-07' });
-  assert.deepEqual(chipDates('2026-10-31'), { today: '2026-10-31', tomorrow: '2026-11-01' }, 'across a month');
-  assert.deepEqual(chipDates('2026-12-31'), { today: '2026-12-31', tomorrow: '2027-01-01' }, 'and a year');
-});
-
-test('the time grid: hours 6 AM to 11 PM, then quarters', () => {
-  assert.deepEqual([pickerHours()[0], pickerHours().at(-1), pickerHours().length], [6, 23, 18]);
-  assert.deepEqual(quartersOf(20).map((t) => t.minute), [0, 15, 30, 45]);
-  assert.deepEqual(quartersOf(20).map((t) => quarterLabel(t.minute)), [':00', ':15', ':30', ':45']);
-  const at820 = { hour: 20, minute: 20 };
-  assert.deepEqual(quartersOf(20, at820).map((t) => t.minute), [30, 45], 'only times after 8:20');
-  assert.deepEqual(quartersOf(20, { hour: 20, minute: 30 }).map((t) => t.minute), [45], 'not the minute itself');
-  assert.equal(pickerHours({ hour: 23, minute: 45 }).length, 0, 'nothing left today');
-  assert.equal(pickerHours(at820)[0], 20, 'the hour it is still counts while a quarter is left');
-});
-
-test('picking an hour keeps the minutes when it can', () => {
-  assert.deepEqual(pickHour(19, { hour: 18, minute: 15 }), { hour: 19, minute: 15 });
-  assert.deepEqual(pickHour(19, null), { hour: 19, minute: 0 });
-  assert.deepEqual(pickHour(20, { hour: 21, minute: 15 }, { hour: 20, minute: 20 }), { hour: 20, minute: 30 }, '8:15 is gone, so 8:30');
-  assert.equal(pickHour(20, null, { hour: 20, minute: 50 }), null, 'an hour with nothing left');
-});
-
-test('month grid starts on Monday and pads the edges', () => {
-  const october = monthGrid(2026, 9); // 1 Oct 2026 is a Thursday
-  assert.deepEqual(october[0], [null, null, null, '2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04']);
-  assert.deepEqual(october.at(-1), ['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', null]);
-  assert.equal(monthGrid(2027, 1).flat().filter(Boolean).length, 28, 'February 2027');
-  assert.deepEqual(shiftMonth(2026, 11, 1), { year: 2027, month: 0 });
-  assert.deepEqual(shiftMonth(2026, 0, -1), { year: 2025, month: 11 });
-});
-
-test('time slots run every half hour', () => {
-  const slots = timeSlots();
-  assert.deepEqual([slots[0], slots[1], slots.at(-1)], [{ hour: 6, minute: 0 }, { hour: 6, minute: 30 }, { hour: 23, minute: 30 }]);
-});
+import { duePatch, pickerWeek, repeatChips, repeatPatch, daysChangeLanding, weeklyInterval, weeklyOf, weeklyRule, whenPatch } from '../src/when.ts';
 
 test('when and due patches', () => {
   assert.deepEqual(whenPatch(null, null), { scheduledOn: null, remindAt: null, rrule: null, declaredAt: null }, 'no day: no repeat either');
@@ -88,23 +48,6 @@ test('saving a repeat that hasn’t changed moves nothing', () => {
   assert.equal(daysChangeLanding(otherTue, otherTue.rrule, '2026-10-19'), null);
 });
 
-test('changing an every-other-week repeat’s days keeps its weeks', () => {
-  const otherTue = { scheduledOn: '2026-10-27', remindAt: null, dueOn: null, dueAt: null, rrule: 'FREQ=WEEKLY;INTERVAL=2;BYDAY=TU' };
-  // Monday 19 October: the week of the 19th is an off week, the 26th an on week.
-  assert.equal(repeatPatch(otherTue, 'FREQ=WEEKLY;INTERVAL=2;BYDAY=TU,TH', '2026-10-19').scheduledOn, '2026-10-27');
-  assert.equal(repeatPatch(otherTue, 'FREQ=WEEKLY;INTERVAL=2;BYDAY=MO', '2026-10-19').scheduledOn, '2026-10-26');
-});
-
-test('picking a day for “every 2 weeks” keeps its weeks', () => {
-  const plain = { scheduledOn: '2026-10-30', remindAt: null, dueOn: null, dueAt: null, rrule: 'FREQ=WEEKLY;INTERVAL=2' };
-  assert.equal(repeatPatch(plain, 'FREQ=WEEKLY;INTERVAL=2;BYDAY=TH', '2026-10-19').scheduledOn, '2026-10-29', 'Thursday of the week it was due, not the week after');
-});
-
-test('a new every-other-week repeat starts on its first matching day', () => {
-  const undated = { scheduledOn: null, remindAt: null, dueOn: null, dueAt: null, rrule: null };
-  assert.equal(repeatPatch(undated, 'FREQ=WEEKLY;INTERVAL=2;BYDAY=TU', '2026-10-15').scheduledOn, '2026-10-20', 'this Tuesday, not the one after');
-});
-
 test('changing a repeat’s days lands on the first new day from today', () => {
   const thu = '2026-10-15';
   const mws = 'FREQ=WEEKLY;BYDAY=MO,WE,SA';
@@ -119,14 +62,4 @@ test('changing a repeat’s days lands on the first new day from today', () => {
   assert.equal(repeatPatch(oneOff, 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', thu).scheduledOn, '2026-11-20', 'a new repeat starts on the task’s own day');
   assert.equal(repeatPatch(nextSat, 'FREQ=MONTHLY', thu).scheduledOn, '2026-10-17', 'a monthly repeat keeps its day');
   assert.equal(repeatPatch({ ...oneOff, scheduledOn: '2026-10-07' }, 'FREQ=WEEKLY;BYDAY=TU', thu).scheduledOn, '2026-10-20', 'carried over: from today, not a past Tuesday');
-});
-
-test('week strip: Monday first, containing the day', () => {
-  const week = ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10', '2026-10-11'];
-  assert.deepEqual(weekStrip('2026-10-07'), week, 'Wednesday');
-  assert.deepEqual(weekStrip('2026-10-05'), week, 'Monday');
-  assert.deepEqual(weekStrip('2026-10-11'), week, 'Sunday belongs to the week before');
-  assert.deepEqual(weekStrip('2026-12-30').at(-1), '2027-01-03', 'across the new year');
-  assert.equal(shiftWeek('2026-10-07', 1), '2026-10-14');
-  assert.equal(shiftWeek('2026-10-07', -2), '2026-09-23');
 });

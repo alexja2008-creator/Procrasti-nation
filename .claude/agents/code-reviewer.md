@@ -30,7 +30,7 @@ You review changes to ProcrastiNation v2: an Expo app (`apps/app`, TypeScript), 
 - Missing loading or error states on a fetch; an `await` without error handling in a store.
 - `DESIGN.md` and `packages/core/src/tokens.ts` changed separately.
 - A file over about 400 lines that could be split.
-- New behavior in `packages/core` without a test.
+- New behavior in `packages/core` (or SQL in `supabase/v2`) without a test, but only for the six reasons in `DECISIONS.md` ("Tests are kept for six reasons only"): privacy or security, data loss, the age check or access limits, reminders, a written rule, or a bug on the most-seen screens that already reached someone. Don't ask for tests of copy, labels, layout or ordering otherwise.
 
 ## Note
 Magic numbers without a named constant, dead code, `console.log` in app code.

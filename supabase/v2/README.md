@@ -5,19 +5,19 @@ Moves the shared Supabase database to the ProcrastiNation 2.0 data model without
 | File | What it does | When to run |
 |---|---|---|
 | `01_schema.sql` | Adds `user_settings`, `lists`, `notes`, `stamps`, `start_sessions`, `push_tokens`, `plan_generations`, `ai_requests` and the v2 columns on `tasks`. **Additive only**: v1 ignores all of it. Idempotent. | Staging now; production any time before cutover |
-| `02_backfill.sql` | Turns each v1 task's `steps` JSONB into child rows and fills `due_on`/`rrule`/`source`. Idempotent; never modifies v1 columns. | **Not run** (Alex, 2026-10-12: a fresh start instead; kept and tested in case that changes) |
+| `02_backfill.sql` | Turns each v1 task's `steps` JSONB into child rows and fills `due_on`/`rrule`/`source`. Idempotent; never modifies v1 columns. | **Not run** (Alex, 2026-10-12: a fresh start instead; kept in case that changes, untested since 2026-10-16) |
 | `04_fresh_start.sql` | Deletes every account (each table follows its owner) and restarts citizen numbers at 000001. Stops and deletes nothing if any row of anyone's would be left. **Permanent.** | **Ran on production at the cutover. Never run it again:** it deletes every real account |
 | `99_rollback.sql` | Removes everything above and restores the v1 schema exactly. Loses v2-only data (subtasks, lists, notes, stamps, settings). | If cutover has to be undone |
 
 Run them in the Supabase SQL Editor, in order.
 
-**Read-only production queries** (SELECT only, counts only, run in the production SQL Editor whenever useful): `prod-stats.sql`, the shape of v1's data (Staging, step 4); and `planner-reminders.sql`, how often Plan it's steps send people to an alarm, the phone's Reminders or another to-do app, with the plan-quality eval's pattern. Run it after the beta's first week, before deciding on the parked planner rule (`docs/plans/shipped/dates-and-repeats.md`, Phase 5). `npm test` checks it.
+**Read-only production queries** (SELECT only, counts only, run in the production SQL Editor whenever useful): `prod-stats.sql`, the shape of v1's data (Staging, step 4); and `planner-reminders.sql`, how often Plan it's steps send people to an alarm, the phone's Reminders or another to-do app, with the plan-quality eval's pattern. Run it after the beta's first week, before deciding on the parked planner rule (`docs/plans/shipped/dates-and-repeats.md`, Phase 5).
 
 **Cutover order (done; kept for the record):** `01_schema.sql` must be on production before the v2 site deploys, because v2's `/api/generate-plan` counts the free allowance in `plan_generations`. Then `04_fresh_start.sql` (v1 has one real user, Alex, so nothing is migrated: everyone starts over through the Citizenship Application).
 
 ## Test locally
 
-Runs all three scripts against real Postgres (PGlite, in-process) on a stand-in of the v1 schema (`test/v1-schema.sql`), including RLS checks as a signed-in user. Each baseline first gets Supabase's default grants and the fixes run on production since the dump (`PROD_FIXES` in the test: `../migrations/profiles_billing_*.sql`, which make the Stripe columns on `profiles` server-only and hide everything but the public profile from the API); the tests check those hold before and after the v2 scripts:
+Runs `01_schema.sql` against real Postgres (PGlite, in-process) on a stand-in of the v1 schema (`test/v1-schema.sql`), including RLS checks as a signed-in user. Each baseline first gets Supabase's default grants and the fixes run on production since the dump (`PROD_FIXES` in the test: `../migrations/profiles_billing_*.sql`, which make the Stripe columns on `profiles` server-only and hide everything but the public profile from the API); the tests check those hold before and after the v2 schema. Since 2026-10-16 the one-off scripts (`02_backfill.sql`, `04_fresh_start.sql`, `99_rollback.sql`) and the read-only queries aren't tested (`DECISIONS.md`, "Tests are kept for six reasons only"):
 
 ```bash
 npm install && npm test
@@ -30,7 +30,7 @@ Staging project: `mbuakrohovzjegonrplp`. It gets production's **structure only**
 1. `brew install libpq` (gives `pg_dump`/`psql`).
 2. `scripts/dump-prod-schema.sh`: reads production's public-schema DDL into `.local/prod-schema.sql` (gitignored). Read-only; asks for the connection string at a hidden prompt.
 3. `scripts/save-staging-url.sh`: stores the staging connection string in `.env.staging` (gitignored) so the schema and migrations can be applied there.
-4. Run `prod-stats.sql` in the **production** SQL Editor (SELECT only; counts and anonymized patterns, no personal data). Its numbers predict what `02_backfill.sql` will do on real data and flag shapes the tests don't cover yet.
+4. Run `prod-stats.sql` in the **production** SQL Editor (SELECT only; counts and anonymized patterns, no personal data). Its numbers predict what `02_backfill.sql` will do on real data.
 5. Apply `.local/prod-schema.sql` to staging, then `01_schema.sql`; seed test users and v1-shaped tasks; run `02_backfill.sql`; check; run `99_rollback.sql`; re-apply.
 
 **Staging status (2026-10-03):** production's structure (14 tables, 42 policies, 2 triggers, 7 functions; counts verified against the dump) plus `01_schema.sql` are applied. `02_backfill.sql` and `99_rollback.sql` were rehearsed on production-shaped rows inside a transaction that was rolled back, so staging holds no data. The anon API sees the new tables, and RLS blocks signed-out reads and writes.
