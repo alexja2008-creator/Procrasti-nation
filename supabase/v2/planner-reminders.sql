@@ -16,8 +16,7 @@
 -- - A step someone renamed or edited still counts as the planner's words.
 -- - Deleted accounts' steps are gone with them.
 --
--- Set `since` to the day the beta started. Edit it in the SQL Editor; don't
--- commit a date in the future (npm run db:test runs this file with today's rows).
+-- Set `since` to the day the beta started. Edit it in the SQL Editor.
 
 WITH params AS (
   SELECT DATE '2026-10-14' AS since
