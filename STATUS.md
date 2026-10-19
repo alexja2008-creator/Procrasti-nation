@@ -1,6 +1,6 @@
 # Status
 
-As of 2026-10-16. Rewrite this file every Monday (replace, don't append); history lives in git, `CHANGELOG.md` and `docs/archive/`.
+As of 2026-10-19. Rewrite this file every Monday (replace, don't append); history lives in git, `CHANGELOG.md` and `docs/archive/`.
 
 ## Live
 
@@ -11,18 +11,18 @@ As of 2026-10-16. Rewrite this file every Monday (replace, don't append); histor
   - A task can be renamed from its page or a row's menu, and Repeat → Pick days… sets a repeat's days (PR #28).
   - The planner's "no alarms" rule failed its eval and is parked. The eval check stays (PR #25).
   - How to use ProcrastiNation: a short guide behind a "?" beside the magnifier and in Settings → Help, saying PN's own words (Customs, Territories, plans, Declarations…) in everyday ones, after a family tester found them confusing (PR #32, `docs/plans/shipped/how-to-use.md`).
-- **iPhone:** TestFlight builds 1–4 ran on staging and were checked on Alex's iPhone (reminders, password reset, Declarations stamp, theme). The production build is on TestFlight too (2026-10-14, checked on Alex's iPhone). Required saving and the dates-and-repeats fixes reach the iPhone with the next build, before the students get it.
-- **Beta:** 10 students lined up; TestFlight's external group for them isn't set up yet (`docs/runbooks/launch-2026-10.md`, The iPhone track). The feedback form is ready (kept privately; see `docs/external.md`), sent after about a week. Go/no-go gate: at least 4 of 10 started something they'd avoided, and NPS of 30 or more.
+- **iPhone:** TestFlight builds 1–4 ran on staging and were checked on Alex's iPhone (reminders, password reset, Declarations stamp, theme). The production build is on TestFlight too (2026-10-14, checked on Alex's iPhone). Production build 8 (EAS, 2026-10-16, from PR #32's merge) has required saving, the dates-and-repeats fixes, Upcoming's repeat turns (PR #31) and the How to use guide.
+- **Beta:** 10 students lined up. TestFlight's external group has a public link (Claude found its join page live on 2026-10-19), and a student poster carries it as a QR code. The feedback form is ready, sent after about a week. The form, the poster and the business plan (its section 10, Launch checklist, holds the business and marketing to-dos) are kept privately (`docs/external.md`). Go/no-go gate: at least 4 of 10 started something they'd avoided, and NPS of 30 or more.
 
 ## This week
 
-- Restructure (`chore/restructure-for-launch`): docs moved into `docs/`, short CLAUDE.md files, v2 subagents, CI, hooks. The repo moved out of iCloud to `~/PNDEV/Procrasti-nation` (the iCloud copy is in the Trash; Claude Code's memory came across). Merged branches deleted; unmerged ones kept as `archive/*` tags.
+- The business plan and beta form brought up to date, with a launch checklist for the business and marketing to-dos (kept privately, `docs/external.md`). `supabase/v2/heard-from.sql` counts the Application's "Where did you hear about us?" answers for the funnel model.
 
 ## Open items for Alex
 
 - [ ] Beta Pro ends at the close of November 15, 2026 (`BETA_PRO_UNTIL` in `packages/core/src/account.ts`): before then, move the date or let the free tier's 2 plans a month return.
 - [x] Production's Change Email Address template has our subject and body (Alex, 2026-10-15).
-- [ ] On the next TestFlight build, check what only the iPhone shows:
+- [ ] On build 8 (TestFlight), check what only the iPhone shows:
   - the time wheel inside When, Due and a Declaration
   - the + sheet's month with the keyboard up
   - the rename button and Pick days…
@@ -38,7 +38,7 @@ As of 2026-10-16. Rewrite this file every Monday (replace, don't append); histor
 - [ ] Check that an unsaved passport from before 2026-10-15 opens on Save your passport: the two family testers' passports, the next time they open the app.
 - [ ] A monthly spend limit on the Anthropic workspace (beta Pro lets every passport make up to 20 plans a day).
 - [ ] Confirm the cutover's step 10 is done: `RESEND_API_KEY` deleted from the site's Vercel env (`docs/runbooks/launch-2026-10.md`, Phase 3). The smoke test passed on 2026-10-14.
-- [ ] Before students get the build: `work.procrastination.app://auth/callback` on production's Supabase redirect list and the Apple provider on production (if not done at cutover), then TestFlight's external group with a public link for the 10 students (the first external build goes through Beta App Review).
+- [ ] Before students get the build: `work.procrastination.app://auth/callback` on production's Supabase redirect list and the Apple provider on production (if not done at cutover), then confirm build 8 is in TestFlight's external group, past Beta App Review (the group and its public link exist).
 - [ ] Payments: App Store Connect's Paid Apps agreement, tax and banking; the Small Business Program (15%); a RevenueCat account.
 - [ ] Before App Store review: a Sign in with Apple key, so deleting a passport can revoke the Apple token.
 - [ ] Before charging anyone: Vercel Pro (Hobby is non-commercial).
