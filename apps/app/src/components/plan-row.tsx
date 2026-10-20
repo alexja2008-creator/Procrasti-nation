@@ -21,7 +21,7 @@ type Props = {
   onFinish: (id: string) => void;
   onMenu?: (id: string) => void;
   onOpen?: (id: string) => void;
-  /** Its steps, shown when expanded (rows Today draws, with their checkboxes). */
+  /** Its steps, shown when expanded (rows Today draws, with their checkboxes; finished ones struck through). */
   children: ReactNode;
   last?: boolean;
 };
@@ -35,6 +35,8 @@ export function PlanRow({ group, item, expanded, onExpand, onFinish, onMenu, onO
   const { c } = s.t;
   const { plan, done, total, readyToFinish, finished } = group;
   const open = !finished && !readyToFinish;
+  // The toggle counts what's left for today; finished steps show under it too, struck through.
+  const forToday = group.steps.filter((e) => !e.done).length;
 
   const menu = onMenu && !finished ? () => onMenu(plan.id) : undefined;
   const holdForMenu = () => {
@@ -95,7 +97,7 @@ export function PlanRow({ group, item, expanded, onExpand, onFinish, onMenu, onO
               accessibilityState={{ expanded }}
               style={({ pressed }) => [s.toggle, pressed && s.pressed]}>
               <Text variant="button" color={c.primaryText}>
-                {expanded ? copy.hideSteps : copy.showSteps(group.steps.length)}
+                {expanded ? copy.hideSteps : copy.showSteps(forToday)}
               </Text>
               <View style={expanded && s.chevronOpen}>
                 <Icon name="chevronRight" size={14} color={c.primaryText} strokeWidth={2} />

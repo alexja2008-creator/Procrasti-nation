@@ -1,7 +1,7 @@
 import { actions, localDateString, planWindow, relativeDayLabel, startPlanOn, voice, type LocalDate, type Task } from '@pn/core';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useEffectEvent, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { useEffect, useEffectEvent, useRef, useState, type Ref } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
 import { Button } from '@/components/button';
@@ -11,10 +11,14 @@ import { Text } from '@/components/text';
 import { clarifyingQuestions, generatePlan, resolveStepDates, savePlan, type Plan } from '@/data/plans';
 import { useTasks } from '@/data/tasks-store';
 import { useUserSettings } from '@/data/user-settings';
+import { useAutoHeight } from '@/hooks/use-auto-height';
 import { ApiError } from '@/lib/api';
+import { oneRowOnWeb, submitOnReturnWeb } from '@/lib/web-styles';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 const copy = voice.plan;
+/** An answer box's border; web sizes the box to its text, which leaves the border out. */
+const answerBorder = 1;
 
 type Phase =
   | { kind: 'reading' }
@@ -63,6 +67,7 @@ export default function PlanScreen() {
   const [phase, setPhase] = useState<Phase>({ kind: isReplan ? 'building' : 'reading' });
   const [questions, setQuestions] = useState<string[]>([]);
   const [answers, setAnswers] = useState<string[]>([]);
+  const answerInputs = useRef<(TextInput | null)[]>([]);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   // Plans cost money: run once per attempt even if React runs the effect twice.
@@ -177,13 +182,15 @@ export default function PlanScreen() {
                 {questions.map((q, i) => (
                   <View key={q} style={s.question}>
                     <Text variant="item">{q}</Text>
-                    <TextInput
+                    <AnswerField
+                      ref={(input) => {
+                        answerInputs.current[i] = input;
+                      }}
                       value={answers[i]}
                       onChangeText={(v) => setAnswers((prev) => prev.map((a, j) => (j === i ? v : a)))}
-                      placeholder={copy.answerPlaceholder}
-                      placeholderTextColor={c.muted}
+                      last={i === questions.length - 1}
+                      onSubmitEditing={() => answerInputs.current[i + 1]?.focus()}
                       accessibilityLabel={q}
-                      style={s.input}
                     />
                   </View>
                 ))}
@@ -283,6 +290,34 @@ export default function PlanScreen() {
   );
 }
 
+/**
+ * An answer to one of Plan it's questions: wraps and grows with what's typed
+ * (the page scrolls). Return moves on to the next question rather than adding a
+ * line; on the last one it puts the keyboard away.
+ */
+function AnswerField({ value, last, ...props }: TextInputProps & { value: string; last: boolean; ref: Ref<TextInput> }) {
+  const s = useStyles(makeStyles);
+  const grow = useAutoHeight(value, 0, answerBorder * 2);
+  return (
+    <TextInput
+      value={value}
+      onContentSizeChange={grow.onContentSizeChange}
+      onChange={grow.onChange}
+      onLayout={grow.onLayout}
+      multiline
+      scrollEnabled={false}
+      {...oneRowOnWeb}
+      submitBehavior={last ? 'blurAndSubmit' : 'submit'}
+      {...submitOnReturnWeb}
+      returnKeyType={last ? 'done' : 'next'}
+      placeholder={copy.answerPlaceholder}
+      placeholderTextColor={s.t.c.muted}
+      style={[s.input, grow.style]}
+      {...props}
+    />
+  );
+}
+
 const makeStyles = (t: Tokens) => ({
   t,
   ...StyleSheet.create({
@@ -295,13 +330,16 @@ const makeStyles = (t: Tokens) => ({
     input: {
       minHeight: 48,
       paddingHorizontal: 14,
-      borderWidth: 1,
+      paddingVertical: 12,
+      textAlignVertical: 'top',
+      borderWidth: answerBorder,
       borderColor: t.c.field.border,
       borderRadius: t.radii.lg,
       backgroundColor: t.c.field.bg,
       color: t.c.ink,
       fontFamily: t.fonts.body,
       fontSize: 16,
+      lineHeight: 22,
     },
     preview: { gap: 12 },
     summary: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
