@@ -11,6 +11,7 @@ import { addDays, atLocalTime, localDateString, occurrenceOnOrAfter, parseLocalD
 import { blank, DAY_INDEX, PART_OF_DAY, take, takeRepeat, type Found } from './quick-add-repeat.ts';
 import { matchTerritory } from './territories.ts';
 import type { List, LocalDate } from './types.ts';
+import { fillStart } from './when.ts';
 
 export type QuickAddMatchKind = 'date' | 'time' | 'repeat' | 'due' | 'territory';
 
@@ -21,8 +22,10 @@ export interface QuickAddResult {
   scheduledOn: LocalDate | null;
   /** Deadline from "by fri" / "due oct 12". */
   dueOn: LocalDate | null;
-  /** Time of day; applies to `scheduledOn`, or to `dueOn` when there's no schedule. */
+  /** Time of day; applies to `scheduledOn`, or to `dueOn` when there's no schedule or `dueTime` says so. */
   time: { hour: number; minute: number } | null;
+  /** The time belongs to the deadline even with a start day ("due fri 5pm" with a start filled in). */
+  dueTime?: boolean;
   rrule: string | null;
   /** The territory a #tag named, when `lists` were given. */
   listId: string | null;
@@ -200,9 +203,12 @@ export function parseQuickAdd(
   if (time) spans.push({ kind: 'time', start: time.start, end: time.end });
 
   let partHour = date?.partHour ?? due?.partHour ?? repeat?.partHour;
+  // "this evening" names today, deadline or not.
+  let thisPart = false;
   if (!time && partHour === undefined) {
     const f = take(work, /\bthis\s+(morning|afternoon|evening)\b/i);
     if (f) {
+      thisPart = true;
       partHour = PART_OF_DAY[f.groups[0].toLowerCase()];
       spans.push({ kind: 'date', start: f.start, end: f.end });
     }
@@ -229,7 +235,7 @@ export function parseQuickAdd(
     scheduledOn = occurrenceOnOrAfter(first, anchor, anchor);
     // A daily 6pm reminder added at 8pm starts tomorrow.
     if (!date && !preset && scheduledOn === today && passed) scheduledOn = occurrenceOnOrAfter(first, anchor, addDays(today, 1));
-  } else if (!scheduledOn && clock && !due) {
+  } else if (!scheduledOn && clock && (!due || thisPart)) {
     scheduledOn = passed ? addDays(today, 1) : today;
   }
 
@@ -251,25 +257,49 @@ export function parseQuickAdd(
  */
 export function scheduleOf(p: QuickAddResult): { scheduledOn: LocalDate | null; dueOn: LocalDate | null; remindAt: string | null; dueAt: string | null; rrule: string | null } {
   const { time, scheduledOn, dueOn } = p;
+  const onDue = !!dueOn && (p.dueTime ?? !scheduledOn);
   return {
     scheduledOn,
     dueOn,
-    remindAt: time && scheduledOn ? atLocalTime(scheduledOn, time.hour, time.minute) : null,
-    dueAt: time && !scheduledOn && dueOn ? atLocalTime(dueOn, time.hour, time.minute) : null,
+    remindAt: time && scheduledOn && !onDue ? atLocalTime(scheduledOn, time.hour, time.minute) : null,
+    dueAt: time && dueOn && onDue ? atLocalTime(dueOn, time.hour, time.minute) : null,
     rrule: p.rrule,
   };
 }
 
-/** The text names its own day, deadline or repeat (a time alone doesn't count). */
-export const namesItsDay = (p: QuickAddResult) => p.matches.some((m) => m.kind === 'date' || m.kind === 'due' || m.kind === 'repeat');
+/** The text names its own start day or repeat ("fri", "every mon"; a time alone doesn't count). */
+export const namesItsStart = (p: QuickAddResult) => p.matches.some((m) => m.kind === 'date' || m.kind === 'repeat');
+
+/** The text names its own deadline ("due fri", "by fri"). */
+export const namesItsDue = (p: QuickAddResult) => p.matches.some((m) => m.kind === 'due');
+
+/** What the + sheet's rows picked. `start` is a day, null for Later, or undefined when nothing is picked. */
+export interface DayPicks {
+  start?: LocalDate | null;
+  due?: LocalDate | null;
+}
 
 /**
- * The capture sheet's day row: due on `dueOn`, unless the text names its own
- * day, deadline or repeat (typed words win). A time typed alone goes with the
- * deadline, as "due tomorrow 3pm" would. Null leaves the parse as it is.
+ * The + sheet's Start and Due rows (Alex, 2026-10-20: the day you'll start leads,
+ * the deadline is optional). Typed words win: a typed day or repeat keeps its
+ * start, a typed deadline its due, and a repeat takes no picked deadline. A deadline with
+ * no start gets one filled in (`fillStart`) unless Later was picked, and
+ * `startFilled` says so, so Plan it can let the plan date its own steps. A time
+ * said with the deadline ("due fri 5pm"), or typed alone with no start picked,
+ * goes with the deadline ("dentist 3pm" due Sun is due Sun at 3).
  */
-export function withDue(p: QuickAddResult, dueOn: LocalDate | null): QuickAddResult {
-  return !dueOn || namesItsDay(p) ? p : { ...p, scheduledOn: null, dueOn };
+export function withPicks(p: QuickAddResult, picks: DayPicks, today: LocalDate): QuickAddResult & { startFilled: boolean } {
+  const typedStart = namesItsStart(p);
+  const typedDue = namesItsDue(p);
+  const dueOn = typedDue ? p.dueOn : p.rrule ? null : (picks.due ?? null);
+  const dueTime = !!p.time && !!dueOn && !typedStart && (typedDue || picks.start == null);
+
+  let start = typedStart ? p.scheduledOn : picks.start !== undefined ? picks.start : dueTime ? null : p.scheduledOn;
+  const startFilled = !start && picks.start !== null && !!dueOn;
+  if (startFilled) start = fillStart(dueOn!, today, p.title);
+  // A time with no day to go on (Later, no deadline) is dropped, so the chips show what's saved.
+  const time = start || dueOn ? p.time : null;
+  return { ...p, scheduledOn: start ?? null, dueOn, time, dueTime, startFilled };
 }
 
 /** "fri 6pm", "every weekday 7am", "oct 20": a schedule on its own, in quick add's grammar. */

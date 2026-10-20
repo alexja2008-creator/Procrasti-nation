@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { clockOf } from '../src/dates.ts';
-import { parseQuickAdd, scheduleOf, withDue } from '../src/quick-add.ts';
+import { clockOf, logicalDateString } from '../src/dates.ts';
+import { parseQuickAdd, scheduleOf, withPicks } from '../src/quick-add.ts';
+import { fillStart } from '../src/when.ts';
 
 // Saturday 3 October 2026, 10:00 local time.
 const SAT_10AM = new Date(2026, 9, 3, 10, 0);
@@ -185,20 +186,58 @@ test('titles with day names and every/each are left alone', () => {
   }
 });
 
-test('the capture sheet’s day row makes it due that day, unless the text names its own', () => {
-  const stamps = withDue(parse('Buy stamps'), '2026-10-04');
-  assert.deepEqual([stamps.title, stamps.dueOn, stamps.scheduledOn], ['Buy stamps', '2026-10-04', null]);
-  assert.equal(withDue(parse('Buy stamps'), null).dueOn, null);
-  assert.equal(withDue(parse('Essay due fri'), '2026-10-04').dueOn, '2026-10-09', 'a typed deadline wins');
-  assert.deepEqual([withDue(parse('Dentist tomorrow'), '2026-10-10').scheduledOn, withDue(parse('Dentist tomorrow'), '2026-10-10').dueOn], ['2026-10-04', null], 'so does a typed day');
-  assert.equal(withDue(parse('Gym every mon'), '2026-10-04').dueOn, null, 'a repeat has no deadline');
-  const dentist = withDue(parse('Dentist 3pm'), '2026-10-04');
-  assert.deepEqual(
-    [dentist.scheduledOn, dentist.dueOn, dentist.time],
-    [null, '2026-10-04', { hour: 15, minute: 0 }],
-    'a time alone goes with the picked deadline, as "due sun 3pm" would',
-  );
-  assert.deepEqual(clockOf(scheduleOf(dentist).dueAt!), { hour: 15, minute: 0 });
+test('the capture sheet’s rows: a picked start or deadline, unless the text names its own', () => {
+  const sat = '2026-10-03';
+  const pick = (text: string, picks: Parameters<typeof withPicks>[1]) => withPicks(parse(text), picks, sat);
+  assert.deepEqual([pick('Buy stamps', { start: '2026-10-05' }).scheduledOn, pick('Buy stamps', {}).scheduledOn], ['2026-10-05', null]);
+  assert.equal(pick('Buy stamps', { start: null }).scheduledOn, null, 'Later');
+  assert.equal(pick('Dentist tomorrow', { start: '2026-10-10' }).scheduledOn, '2026-10-04', 'a typed day wins');
+  assert.equal(pick('Essay due fri', { due: '2026-10-05' }).dueOn, '2026-10-09', 'so does a typed deadline');
+  assert.equal(pick('Gym every mon', { due: '2026-10-04' }).dueOn, null, 'a repeat has no deadline');
+  // Start Mon, due Fri: both kept.
+  const both = pick('Lab report', { start: '2026-10-05', due: '2026-10-09' });
+  assert.deepEqual([both.scheduledOn, both.dueOn, both.startFilled], ['2026-10-05', '2026-10-09', false]);
+});
+
+test('a deadline with no start gets one filled in, unless Later was picked', () => {
+  const sat = '2026-10-03';
+  const pick = (text: string, picks: Parameters<typeof withPicks>[1]) => withPicks(parse(text), picks, sat);
+  const reading = pick('Read chapter 4 due fri', {});
+  assert.deepEqual([reading.scheduledOn, reading.dueOn, reading.startFilled], ['2026-10-08', '2026-10-09', true], 'the day before');
+  assert.equal(pick('Essay due fri', {}).scheduledOn, sat, 'big work starts today');
+  assert.equal(pick('Buy stamps', { due: '2026-10-04' }).scheduledOn, sat, 'due tomorrow starts today');
+  const later = pick('Read chapter 4 due fri', { start: null });
+  assert.deepEqual([later.scheduledOn, later.startFilled], [null, false]);
+});
+
+test('a time goes with the deadline it was said with, or with the picked start', () => {
+  const sat = '2026-10-03';
+  const dentist = withPicks(parse('Dentist 3pm'), { due: '2026-10-05' }, sat);
+  assert.deepEqual([dentist.scheduledOn, dentist.dueOn], ['2026-10-04', '2026-10-05'], 'alone, it goes with the picked deadline');
+  assert.deepEqual([scheduleOf(dentist).remindAt, clockOf(scheduleOf(dentist).dueAt!)], [null, { hour: 15, minute: 0 }]);
+  const started = scheduleOf(withPicks(parse('Dentist 3pm'), { start: '2026-10-05', due: '2026-10-09' }, sat));
+  assert.deepEqual([started.dueAt, clockOf(started.remindAt!)], [null, { hour: 15, minute: 0 }]);
+  const essay = scheduleOf(withPicks(parse('Essay due fri 5pm'), { start: '2026-10-05' }, sat));
+  assert.deepEqual([essay.scheduledOn, essay.remindAt, clockOf(essay.dueAt!)], ['2026-10-05', null, { hour: 17, minute: 0 }]);
+  const nowhere = withPicks(parse('Dentist 3pm'), { start: null }, sat);
+  assert.deepEqual([scheduleOf(nowhere).remindAt, nowhere.time], [null, null], 'Later with no deadline has no day for a time');
+});
+
+test('"this evening" with a deadline starts today, and rings tonight', () => {
+  const tonight = withPicks(parse('Read ch 4 this evening due fri'), {}, '2026-10-03');
+  assert.deepEqual([tonight.scheduledOn, tonight.dueOn, tonight.startFilled], ['2026-10-03', '2026-10-09', false]);
+  const fields = scheduleOf(tonight);
+  assert.deepEqual([clockOf(fields.remindAt!), fields.dueAt], [{ hour: 19, minute: 0 }, null]);
+  assert.equal(withPicks(parse('Essay every mon due fri'), {}, '2026-10-03').dueOn, '2026-10-09', 'a typed deadline on a repeat stays');
+});
+
+test('the filled-in start follows the person’s day, around midnight and daylight saving', () => {
+  // 1:30 AM Friday with the day ending at 3 AM is still Thursday: due Friday starts today.
+  const thu = logicalDateString(new Date(2026, 9, 9, 1, 30), 3);
+  assert.equal(fillStart('2026-10-09', thu, 'Read chapter 4'), '2026-10-08');
+  assert.equal(fillStart('2026-10-09', '2026-10-09', 'Read chapter 4'), '2026-10-09', 'never before today');
+  // Due Monday 2 November: the day before is Sunday, when the clocks go back.
+  assert.equal(fillStart('2026-11-02', '2026-10-28', 'Read chapter 4'), '2026-11-01');
 });
 
 test('a parse’s schedule as task fields: the time goes with the scheduled day, else the deadline', () => {

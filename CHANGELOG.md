@@ -4,6 +4,7 @@ What changed for people using PN, newest first, in their words. One entry per re
 
 ## Unreleased
 
+- "When" is now **Start**: the day you'll start something. Adding a task asks for it with Today, Tomorrow, Pick a date or Later (or just press Enter, as before), and a due date is optional, behind Add a due date. Give something a due date and PN picks a start day before it, the day before or today for something big, which you can change before adding.
 - Start Mode's timer follows a step's estimate: a 30-minute step counts down from 30:00, and a plan's first step stays a few minutes long. A task on its own still gets the length set in Settings → Start Mode, and a later step with no estimate gets 25 minutes.
 - Plan it's questions: the answer boxes wrap and grow to show everything you type, and the page scrolls down to Build my plan. Return moves to the next question, and on the last one it puts the keyboard away. On a laptop, Shift+Return starts a new line.
 - Show steps on Today keeps a plan's finished steps in the list, struck through, with when you did them, so you can see where you left off. Its count is what's left for today.

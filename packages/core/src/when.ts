@@ -3,6 +3,7 @@
 // Upcoming agree. Weeks start on Monday.
 
 import { addDays, atLocalTime, clockOf, describeRRule, occurrenceOnOrAfter, parseLocalDate, parseRRule } from './dates.ts';
+import { suggestsPlan } from './plan-offer.ts';
 import type { LocalDate, Task } from './types.ts';
 
 export interface ClockTime {
@@ -155,9 +156,20 @@ export function monthGrid(year: number, month: number): (LocalDate | null)[][] {
   return Array.from({ length: cells.length / 7 }, (_, w) => cells.slice(w * 7, w * 7 + 7));
 }
 
+/**
+ * The start day PN fills in for a deadline, since a deadline never sits without
+ * one (Alex, 2026-10-20): the day before it's due; today when it's due today or
+ * tomorrow, or when the task sounds big enough for a plan (big work goes better
+ * started early). Never before today.
+ */
+export function fillStart(dueOn: LocalDate, today: LocalDate, title: string): LocalDate {
+  const dayBefore = addDays(dueOn, -1);
+  return dayBefore <= today || suggestsPlan(title) ? today : dayBefore;
+}
+
 // ---------------------------------------------------------------------------
-// Patches. "When" is the day you'll do it (scheduledOn, with its time in
-// remindAt); "Due" is the deadline (dueOn, with dueAt when it has a time).
+// Patches. Start (once "When") is the day you'll start it (scheduledOn, with its
+// time in remindAt); "Due" is the deadline (dueOn, with dueAt when it has a time).
 
 export type Schedule = Pick<Task, 'scheduledOn' | 'remindAt' | 'dueOn' | 'dueAt' | 'rrule' | 'declaredAt'>;
 

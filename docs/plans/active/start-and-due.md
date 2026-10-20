@@ -83,6 +83,28 @@ Three pull requests, one after another: phases 1 and 2 share `quick-add.ts` and 
   - Anything added on Alex's staging account is deleted afterwards.
   - The `code-reviewer` subagent.
 - **Needs Alex:** the iPhone look with the next TestFlight build.
+- **Built 2026-10-20 (`claude/when-dates-rethink-5d5bcc`).**
+  - **Core:** `fillStart` in `when.ts`; `withPicks` (with `namesItsStart`, `namesItsDue` and `DayPicks`) replaces `withDue` in `quick-add.ts`. A parse can say its time belongs to the deadline (`dueTime`), so "essay due fri 5pm" with a start filled in is still due at 5.
+  - **Changed from the plan:** the + sheet's line also shows when the filled-in start is today ("Today, so there's time before it's due."), so a picked Today never looks like a mistake. The task page's notice says the same.
+  - **Checked:**
+    - Core tests (93): picks, typed words winning, the filled-in start (the day before, big work, due tomorrow, Later), where a time goes, and the filled-in start at 1:30 AM with the day ending at 3 AM and across the November clock change.
+    - `npm run app:check`.
+    - In the browser pane, on Alex's staging account:
+      - "Read ch 4 due fri" picked Thu with "The day before it's due."; "Essay due fri" picked Today with its line and led with Plan it.
+      - "Buy stamps" with Later showed Lands in Customs; Add a due date, Due Tomorrow, then unpicking Later filled in Today.
+      - Added it: Today said "Added to Today." Its page read Start Today, Due Tomorrow. Start → Later, then Due → Fri 23 Oct said "Start Thu, the day before it's due." with Undo, and Undo left Start Later and Due Fri. The task was then deleted.
+      - Upcoming's "+" on Thu 22 Oct, at phone width: the Start row opened on Thu, and "Lab report due fri" kept Thu with Due Fri.
+      - No console errors.
+  - **From review (the `code-reviewer` subagent), fixed:**
+    - "Read ch 4 this evening due fri" starts this evening (it had filled in Thursday with a 7 PM reminder). Tested.
+    - Plan it from the + sheet keeps a filled-in start on the task, so leaving Plan it doesn't leave a deadline with no start; the plan page gets `fromToday=1` and dates the steps from today.
+    - A repeat's Start sheet and Move to… keep saying No date, not Later, since clearing a repeat's start ends the repeat.
+    - The task page doesn't fill in a start for a note's checklist line, for a due day already gone, or when only the due's time changes.
+    - A typed deadline on a typed repeat ("Essay every mon due fri") is kept, as before.
+    - The day row is its own file, `components/capture-day-row.tsx`; Add a due date puts the cursor back; Upcoming's day chip goes when Later is picked.
+  - **Rechecked:** core tests (94), `npm run app:check`, and the + sheet from Upcoming's "+" in the browser pane.
+  - **Not checked:** Plan it from the + sheet (it makes a real plan), Move to…'s sheet title by eye, Day theme by eye (the rows use existing tokens), and the iPhone (next build). How tall the + sheet gets on a small iPhone with the keyboard up and the Due row open is for the TestFlight check.
+  - **Found in passing:** quick add reads "today" from the clock, not the person's day, so with a day ending after midnight, "this evening" typed at 1 AM lands on the clock's day ("Tomorrow" on Today's terms). Older than this change.
 
 **Phase 2: Monthly repeats in core and quick add** (decision 4, D9–D12)
 
@@ -113,7 +135,7 @@ Three pull requests, one after another: phases 1 and 2 share `quick-add.ts` and 
 
 **Copy** in `nation.ts`, no guilt:
 - **Start**, **Later**, **Add a due date**.
-- The filled-in line: "The day before it's due." (and none for today).
+- The filled-in line: "The day before it's due.", or "Today, so there's time before it's due."
 - The notice: "Start Thu, the day before it's due." with Undo.
 - **Every month…** and its choices: "On the 20th", "On the third Tuesday", "On the last Tuesday", "On the 1st", "On the last day".
 - The guide: "Give it a Start day (the day you’ll start it), or Later. A due date is optional; with one, PN fills in a Start day before it."
