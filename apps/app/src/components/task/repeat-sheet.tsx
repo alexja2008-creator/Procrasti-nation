@@ -41,10 +41,7 @@ type Props = {
 export function RepeatSheet({ rrule, anchor, onSave, onClose }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
-  const options = [
-    { id: 'never', label: voice.task.never, rrule: null as string | null },
-    ...repeatChips(anchor).filter((o) => o.id !== 'monthly'),
-  ];
+  const options = [{ id: 'never', label: voice.task.never, rrule: null as string | null }, ...repeatChips(anchor)];
   // The monthly repeat this is (an old plain "every month" reads as its current day), always among
   // the choices ("On the 31st" while it sits on the 30th), ticked, so tapping it changes nothing.
   const monthly = monthlyOf(rrule, anchor);

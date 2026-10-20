@@ -22,7 +22,7 @@ test('a repeat moves the task to its first day in the series, keeping the time',
   const unscheduled = { ...saturday6pm, scheduledOn: null, remindAt: null };
   assert.equal(repeatPatch(unscheduled, 'FREQ=DAILY', '2026-10-06').scheduledOn, '2026-10-06', 'starts today');
   assert.deepEqual(repeatPatch(saturday6pm, null, '2026-10-06'), { rrule: null });
-  assert.deepEqual(repeatChips('2026-10-06').map((c) => c.label), ['Every day', 'Every weekday', 'Every week on Tue', 'Every month on the 6th']);
+  assert.deepEqual(repeatChips('2026-10-06').map((c) => c.label), ['Every day', 'Every weekday', 'Every week on Tue']);
 });
 
 test('picking a weekly repeat’s days', () => {
@@ -46,6 +46,23 @@ test('saving a repeat that hasn’t changed moves nothing', () => {
   const otherTue = { ...skipped, scheduledOn: '2026-10-27', rrule: 'FREQ=WEEKLY;INTERVAL=2;BYDAY=TU' };
   assert.equal(repeatPatch(otherTue, otherTue.rrule, '2026-10-19').scheduledOn, '2026-10-27', 'every other Tuesday stays on its week');
   assert.equal(daysChangeLanding(otherTue, otherTue.rrule, '2026-10-19'), null);
+  // An old plain "every month" given its own day writes the day in and stays, even carried over.
+  const rent = { ...skipped, scheduledOn: '2026-10-15', rrule: 'FREQ=MONTHLY' };
+  assert.deepEqual(repeatPatch(rent, 'FREQ=MONTHLY;BYMONTHDAY=15', '2026-10-20'), { rrule: 'FREQ=MONTHLY;BYMONTHDAY=15' });
+  const cactus = { ...skipped, scheduledOn: '2026-10-15', rrule: 'FREQ=MONTHLY;INTERVAL=2' };
+  assert.deepEqual(repeatPatch(cactus, 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=15', '2026-10-20'), { rrule: 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=15' });
+});
+
+test('an every-other-month repeat keeps its months when its day changes', () => {
+  const base = { remindAt: null, dueOn: null, dueAt: null, declaredAt: null, rrule: 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=15' };
+  // Turns in Oct, Dec, Feb: from 15 December, the 1st is 1 February and the last day 31 December.
+  const dec = { ...base, scheduledOn: '2026-12-15' };
+  assert.equal(repeatPatch(dec, 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=1', '2026-10-20').scheduledOn, '2027-02-01');
+  assert.equal(repeatPatch(dec, 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=-1', '2026-10-20').scheduledOn, '2026-12-31');
+  // Carried over from 15 October: the 1st is 1 December, the third Thursday 17 December.
+  const oct = { ...base, scheduledOn: '2026-10-15' };
+  assert.equal(repeatPatch(oct, 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=1', '2026-10-20').scheduledOn, '2026-12-01');
+  assert.equal(repeatPatch(oct, 'FREQ=MONTHLY;INTERVAL=2;BYDAY=3TH', '2026-10-20').scheduledOn, '2026-12-17');
 });
 
 test('changing a repeat’s days lands on the first new day from today', () => {

@@ -19,7 +19,7 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
 - Alex's feedback on Plan it: the answers to its questions wrap and the boxes grow to fit, the page scrolls to the buttons, and Return moves to the next question (PR #36).
 - Alex's feedback on Today: Show steps keeps a plan's finished steps, struck through, with when each was done, and counts what's left for today (PR #35).
 - Start Mode's timer runs for a step's estimate, from Alex's feedback (2026-10-20, `docs/plans/shipped/step-timers.md`, PR #37).
-- The dates rethink, from Alex's feedback (2026-10-20, `docs/plans/active/start-and-due.md`): "When" is now Start and leads, Due is optional, the + sheet asks Start · Today · Tomorrow · Pick a date · Later, and a due date fills in a start day (PR #38). Next: monthly repeats (the 1st, the last day, the third Tuesday) in quick add, then in the Repeat sheet.
+- The dates rethink, from Alex's feedback (2026-10-20, `docs/plans/shipped/start-and-due.md`): "When" is now Start and leads, Due is optional, the + sheet asks Start · Today · Tomorrow · Pick a date · Later, and a due date fills in a start day (PR #38). Monthly repeats understand the 1st, the last day and the third Tuesday, typed or from Repeat → Every month…, and the 31st no longer slides to the 28th (PR #39 and the plan's last PR). A repeat moved off its days rings on the day it shows.
 - The business plan and beta form brought up to date, with a launch checklist for the business and marketing to-dos (kept privately, `docs/external.md`). `supabase/v2/heard-from.sql` counts the Application's "Where did you hear about us?" answers for the funnel model.
 
 ## Open items for Alex
@@ -35,6 +35,7 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
   - the How to use guide from the "?" (a modal: Close and swipe down)
   - that `@expo/ui` 57.0.25 runs; the Simulator only ran it on the older build's 57.0.21 (`docs/plans/shipped/dates-and-repeats.md`, Phase 2)
 - [ ] On the next iPhone build (or the Simulator), Plan it's answer boxes (PR #36, checked on the web only): Return moves down through the questions and Done on the last one closes the keyboard, a box below the keyboard scrolls into view when it's focused, and a box keeps growing with the keyboard up.
+- [ ] On the next TestFlight build, the dates rethink on iPhone (`docs/plans/shipped/start-and-due.md`): the + sheet's Start row with Later and Add a due date (how tall it gets on a small iPhone with the keyboard up and the Due row open), the Due notice's Undo on a task's page, and Repeat → Every month….
 - [ ] On staging, the dates-and-repeats checks that make real data (`docs/plans/shipped/dates-and-repeats.md`, phases 2 and 3):
   - the Oath page on a new passport (nothing pre-selected, Pick a date)
   - Plan it on a task with a later When day (the steps start that day)

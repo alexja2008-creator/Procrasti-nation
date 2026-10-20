@@ -4,6 +4,7 @@ What changed for people using PN, newest first, in their words. One entry per re
 
 ## Unreleased
 
+- Repeat → Every month… offers what fits the task's day: on the 20th, on the third Tuesday, on the 1st or on the last day.
 - Monthly repeats understand the day you mean: "pay rent every 1st", "on the first of every month", "every 1st and 15th", "last day of every month", "book club every last friday", "every 3rd tue". A repeat on the 31st now rings on the last day of shorter months and comes back to the 31st, instead of sliding to the 28th for good. "Due the 28th" works for one-offs too.
 - A repeat moved to a day that isn't one of its days now rings on that day.
 - "When" is now **Start**: the day you'll start something. Adding a task asks for it with Today, Tomorrow, Pick a date or Later (or just press Enter, as before), and a due date is optional, behind Add a due date. Give something a due date and PN picks a start day before it, the day before or today for something big, which you can change before adding.
