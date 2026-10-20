@@ -19,6 +19,7 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
 - Alex's feedback on Plan it: the answers to its questions wrap and the boxes grow to fit, the page scrolls to the buttons, and Return moves to the next question (PR #36).
 - Alex's feedback on Today: Show steps keeps a plan's finished steps, struck through, with when each was done, and counts what's left for today (PR #35).
 - Start Mode's timer runs for a step's estimate, from Alex's feedback (2026-10-20, `docs/plans/shipped/step-timers.md`, PR #37).
+- The dates rethink, from Alex's feedback (2026-10-20, `docs/plans/active/start-and-due.md`): "When" is now Start and leads, Due is optional, the + sheet asks Start · Today · Tomorrow · Pick a date · Later, and a due date fills in a start day (PR #38). Next: monthly repeats (the 1st, the last day, the third Tuesday) in quick add, then in the Repeat sheet.
 - The business plan and beta form brought up to date, with a launch checklist for the business and marketing to-dos (kept privately, `docs/external.md`). `supabase/v2/heard-from.sql` counts the Application's "Where did you hear about us?" answers for the funnel model.
 
 ## Open items for Alex

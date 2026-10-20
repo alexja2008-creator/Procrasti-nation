@@ -12,6 +12,8 @@ type Props = {
   onChange: (day: LocalDate | null) => void;
   /** Offer "No date", which clears the day. */
   allowNone?: boolean;
+  /** What "No date" says: Later for a start day. */
+  noneLabel?: string;
   /** Days before this one can't be picked (a Declaration is for later). */
   from?: LocalDate;
 };
@@ -21,7 +23,7 @@ type Props = {
  * 2026-10-15). Pick a date opens the month in place; once a day is picked
  * there, its chip shows it ("Thu 22 Oct"), and tapping it opens the month again.
  */
-export function DayPicker({ day, today, onChange, allowNone, from }: Props) {
+export function DayPicker({ day, today, onChange, allowNone, noneLabel = voice.task.noDate, from }: Props) {
   const chips = dayChips(today);
   const other = day && !chips.some((c) => c.date === day) ? day : null;
   const [open, setOpen] = useState(false);
@@ -43,7 +45,7 @@ export function DayPicker({ day, today, onChange, allowNone, from }: Props) {
           selected={!!other}
           onPress={() => setOpen((v) => !v)}
         />
-        {allowNone ? <Chip label={voice.task.noDate} selected={day === null} onPress={() => pick(null)} /> : null}
+        {allowNone ? <Chip label={noneLabel} selected={day === null} onPress={() => pick(null)} /> : null}
       </View>
       {open ? <MonthCalendar selected={day ?? null} today={today} onSelect={pick} from={from} /> : null}
     </View>

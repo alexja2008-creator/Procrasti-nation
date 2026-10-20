@@ -21,7 +21,7 @@ type Props = { task: Task | null; onClose: () => void };
 /**
  * A task's actions, opened by pressing and holding a row (or right-clicking it
  * on web): Start, Declare a start (not repeats), Plan it (top-level tasks without
- * a plan), Move to… (the When sheet), Rename… and File in… (a territory; a
+ * a plan), Move to… (the Start sheet), Rename… and File in… (a territory; a
  * plan's steps follow their plan).
  */
 export function RowMenu({ task, onClose }: Props) {
@@ -85,7 +85,8 @@ export function RowMenu({ task, onClose }: Props) {
       ) : null}
       {moving ? (
         <DateSheet
-          title={voice.task.when}
+          title={voice.task.start}
+          noneLabel={moving.rrule ? undefined : voice.task.later}
           day={moving.scheduledOn}
           time={moving.remindAt ? clockOf(moving.remindAt) : null}
           today={today}

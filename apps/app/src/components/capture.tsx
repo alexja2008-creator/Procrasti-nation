@@ -1,16 +1,16 @@
 import {
   actions,
-  dayChips,
   describeRRule,
   formatShortDate,
   formatTime,
-  namesItsDay,
+  namesItsDue,
+  namesItsStart,
   parseQuickAdd,
   relativeDayLabel,
   relativeDayPhrase,
   suggestsPlan,
   voice,
-  withDue,
+  withPicks,
   type LocalDate,
   type QuickAddResult,
 } from '@pn/core';
@@ -20,7 +20,7 @@ import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet,
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
-import { Chip as DayChip } from '@/components/chip';
+import { DayRow } from '@/components/capture-day-row';
 import { Icon, type IconName } from '@/components/icon';
 import { MonthCalendar } from '@/components/month-calendar';
 import { NoteCapture } from '@/components/note/note-capture';
@@ -31,7 +31,8 @@ import { useIsWide } from '@/hooks/use-is-wide';
 import { useStyles, type Tokens } from '@/theme/tokens';
 
 /**
- * `day`: capture into that day unless the text names its own date (Upcoming's "+").
+ * `day`: capture into that day unless the text names its own date (Upcoming's "+"):
+ * the Start row opens with it picked.
  * `listId`: file captures in that territory (a territory's "+").
  */
 type CaptureOptions = { day?: LocalDate; listId?: string };
@@ -87,46 +88,55 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
   const territory = listId ? lists.find((l) => l.id === listId) : undefined;
   // Where a capture is filed: a typed #tag, else the territory the sheet was opened for.
   const filedIn = (p: QuickAddResult) => (p.listId ? lists.find((l) => l.id === p.listId) : territory);
-  // What the sheet was opened for, shown before anything is typed.
-  const preset: Chip | null = day
-    ? { icon: 'calendar', label: voice.capture.whereDay(formatShortDate(day)) }
-    : territory
-      ? { icon: 'map', label: voice.capture.inTerritory(territory.name) }
-      : null;
-
   const inputRef = useRef<TextInput>(null);
   const [mode, setMode] = useState<'task' | 'note'>('task');
   const [text, setText] = useState('');
   const [parsed, setParsed] = useState<QuickAddResult | null>(null);
   const [confirmation, setConfirmation] = useState<string | null>(null);
-  // The day row: a deadline picked with a tap, for people who don't type one.
-  const [dueDay, setDueDay] = useState<LocalDate | null>(null);
-  const [calendarOpen, setCalendarOpen] = useState(false);
-  const capture = parsed ? withDue(parsed, dueDay) : null;
-  // Typed words win, so the row steps aside when the text names a day, deadline or
-  // repeat (a time alone doesn't), or Upcoming's "+" opened the sheet for a day.
-  const showDayRow = !day && !(parsed && namesItsDay(parsed));
-  const quickDays = dayChips(today);
-  const otherDay = dueDay && !quickDays.some((d) => d.date === dueDay) ? dueDay : null;
+  // The rows under the input (Alex, 2026-10-20): the day you'll start it (null is
+  // Later, undefined nothing picked yet), and a deadline behind Add a due date.
+  const [startPick, setStartPick] = useState<LocalDate | null | undefined>(day);
+  const [duePick, setDuePick] = useState<LocalDate | null>(null);
+  const [dueOpen, setDueOpen] = useState(false);
+  const [calendar, setCalendar] = useState<'start' | 'due' | null>(null);
+  // What the sheet was opened for, shown before anything is typed (the day only while it's still picked).
+  const preset: Chip | null = day && startPick === day
+    ? { icon: 'calendar', label: voice.capture.whereDay(formatShortDate(day)) }
+    : territory
+      ? { icon: 'map', label: voice.capture.inTerritory(territory.name) }
+      : null;
+  const capture = parsed ? withPicks(parsed, { start: startPick, due: duePick }, today) : null;
+  // Typed words win: a typed day or repeat hides the Start row, a typed deadline the
+  // Due row, and a repeat has no deadline (a time alone hides nothing).
+  const showStart = !(parsed && namesItsStart(parsed));
+  const showDue = !parsed?.rrule && !(parsed && namesItsDue(parsed));
+  // What the Start row shows picked: what will be saved, a filled-in start included.
+  const startDay = capture ? capture.scheduledOn : (startPick ?? null);
   // A repeat is a habit: no plan for it, here as everywhere else.
   const offerPlan = !parsed?.rrule;
   const bigTask = !!parsed && !parsed.rrule && suggestsPlan(parsed.title);
 
   // Keep typing after a tap; web blurs the input.
   const refocus = () => setTimeout(() => inputRef.current?.focus(), 0);
-  const pickDue = (d: LocalDate | null) => {
-    setDueDay((prev) => (prev === d ? null : d));
-    setCalendarOpen(false);
+  // Tapping the picked day again unpicks it (a filled-in start counts as not picked).
+  const pickStart = (d: LocalDate | null) => {
+    setStartPick((prev) => (prev === d ? undefined : d));
+    setCalendar(null);
     refocus();
   };
-  const toggleCalendar = () => {
-    if (calendarOpen) {
-      setCalendarOpen(false);
+  const pickDue = (d: LocalDate) => {
+    setDuePick((prev) => (prev === d ? null : d));
+    setCalendar(null);
+    refocus();
+  };
+  const toggleCalendar = (row: 'start' | 'due') => {
+    if (calendar === row) {
+      setCalendar(null);
       return refocus();
     }
     // Room for the month on a phone: the keyboard comes back once a day is picked.
     if (!wide) Keyboard.dismiss();
-    setCalendarOpen(true);
+    setCalendar(row);
   };
 
   const onChange = (value: string) => {
@@ -142,7 +152,9 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
     const saved = await add(p, filedIn(p)?.id);
     if (!saved) return;
     onClose();
-    router.push({ pathname: '/plan/[id]', params: { id: saved.id } });
+    // The task keeps a start PN filled in (in case Plan it is left), but the plan dates
+    // its steps from today; a start someone picked still starts the plan that day.
+    router.push({ pathname: '/plan/[id]', params: { id: saved.id, ...(p.startFilled ? { fromToday: '1' } : {}) } });
   };
 
   const submit = async () => {
@@ -150,8 +162,10 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
     if (!p) return;
     setText('');
     setParsed(null);
-    setDueDay(null);
-    setCalendarOpen(false);
+    setStartPick(day);
+    setDuePick(null);
+    setDueOpen(false);
+    setCalendar(null);
     // Keep the cursor here for the next capture; web blurs inputs on submit.
     refocus();
     const saved = await add(p, filedIn(p)?.id);
@@ -205,7 +219,7 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
                 onChangeText={onChange}
                 onSubmitEditing={submit}
                 // The keyboard and the month don't both fit on a phone.
-                onFocus={() => setCalendarOpen(false)}
+                onFocus={() => setCalendar(null)}
                 submitBehavior="submit"
                 autoFocus
                 placeholder={voice.capture.placeholder}
@@ -244,31 +258,51 @@ function CaptureSheet({ day, listId, onClose }: { day?: LocalDate; listId?: stri
                 </Text>
               ) : null}
 
-              {showDayRow ? (
-                <View style={s.dayRow}>
-                  {/* Each chip says "Due today" to a screen reader. */}
-                  <Text variant="label" color={c.muted} aria-hidden>
-                    {voice.capture.dueRow.toUpperCase()}
-                  </Text>
-                  {quickDays.map((d) => (
-                    <DayChip
-                      key={d.id}
-                      label={d.label}
-                      accessibilityLabel={voice.capture.due(relativeDayPhrase(d.date, today))}
-                      selected={dueDay === d.date}
-                      onPress={() => pickDue(d.date)}
-                    />
-                  ))}
-                  <DayChip
-                    label={otherDay ? relativeDayLabel(otherDay, today) : voice.task.pickDate}
-                    accessibilityLabel={otherDay ? voice.capture.due(relativeDayPhrase(otherDay, today)) : voice.task.pickDate}
-                    selected={!!otherDay}
-                    onPress={toggleCalendar}
-                  />
-                </View>
+              {showStart ? (
+                <DayRow
+                  label={voice.capture.startRow}
+                  day={startDay}
+                  today={today}
+                  spoken={voice.capture.start}
+                  onPick={pickStart}
+                  onCalendar={() => toggleCalendar('start')}
+                  later={{ selected: startPick === null, onPress: () => pickStart(null) }}
+                />
               ) : null}
-              {showDayRow && calendarOpen ? (
-                <MonthCalendar selected={dueDay} today={today} onSelect={(d) => pickDue(d)} from={today} />
+              {showStart && calendar === 'start' ? (
+                <MonthCalendar selected={startDay} today={today} onSelect={pickStart} from={today} />
+              ) : null}
+              {showStart && capture?.startFilled && capture.scheduledOn ? (
+                <Text variant="meta" color={c.muted}>
+                  {voice.capture.startFilled(capture.scheduledOn !== today)}
+                </Text>
+              ) : null}
+
+              {showDue && (dueOpen || duePick) ? (
+                <DayRow
+                  label={voice.capture.dueRow}
+                  day={duePick}
+                  today={today}
+                  spoken={voice.capture.due}
+                  onPick={pickDue}
+                  onCalendar={() => toggleCalendar('due')}
+                />
+              ) : showDue ? (
+                <Pressable
+                  onPress={() => {
+                    setDueOpen(true);
+                    refocus();
+                  }}
+                  accessibilityRole="button"
+                  hitSlop={8}
+                  style={({ pressed }) => [s.addDue, pressed && s.pressed]}>
+                  <Text variant="meta" color={c.primaryText}>
+                    {voice.capture.addDue}
+                  </Text>
+                </Pressable>
+              ) : null}
+              {showDue && calendar === 'due' ? (
+                <MonthCalendar selected={duePick} today={today} onSelect={pickDue} from={today} />
               ) : null}
 
               {/* Big-sounding tasks lead with Plan it; small ones with Add. */}
@@ -343,7 +377,8 @@ const makeStyles = (t: Tokens) => ({
       borderColor: t.c.next.border,
     },
     chipMuted: { backgroundColor: t.c.chip, borderColor: t.c.rule },
-    dayRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 },
+    addDue: { alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' },
+    pressed: { opacity: 0.7 },
     actions: { flexDirection: 'row', gap: 10 },
     actionsReversed: { flexDirection: 'row-reverse' },
     action: { flex: 1 },

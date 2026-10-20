@@ -35,11 +35,12 @@ const failure = (e: unknown, freeAgain: string) =>
 
 const close = () => (router.canGoBack() ? router.back() : router.replace('/'));
 
-async function buildPlan(task: Task, today: LocalDate, options: Parameters<typeof generatePlan>[2]) {
+/** `fromToday`: the task's start was filled in by the + sheet, not picked, so the steps start today. */
+async function buildPlan(task: Task, today: LocalDate, options: Parameters<typeof generatePlan>[2], fromToday = false) {
   const plan = await generatePlan(task, today, options);
   const dueOn = task.dueOn ?? plan.resolvedDueDate;
   // The planner dates steps from today; a task set for a later day starts there instead (no prompt change).
-  const dates = startPlanOn(await resolveStepDates(plan, today, dueOn), task.scheduledOn, dueOn);
+  const dates = startPlanOn(await resolveStepDates(plan, today, dueOn), fromToday ? null : task.scheduledOn, dueOn);
   return { plan, dates };
 }
 
@@ -48,8 +49,10 @@ export default function PlanScreen() {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   // `replan=1`: a fresh plan for what's left, keeping the steps already finished. `oath=1`: the
-  // Citizenship Application's Oath, whose wait is the application being processed.
-  const { id, replan, oath } = useLocalSearchParams<{ id: string; replan?: string; oath?: string }>();
+  // Citizenship Application's Oath, whose wait is the application being processed. `fromToday=1`:
+  // the + sheet filled in the task's start, so the steps start today.
+  const { id, replan, oath, fromToday: fromTodayParam } = useLocalSearchParams<{ id: string; replan?: string; oath?: string; fromToday?: string }>();
+  const fromToday = fromTodayParam === '1';
   const { tasks, today, status, merge } = useTasks();
   const { session } = useAuth();
   const freeAgain = session ? relativeDayLabel(localDateString(planWindow(session.user.created_at).end), today) : '';
@@ -75,7 +78,7 @@ export default function PlanScreen() {
 
   const start = useEffectEvent((t: Task) => {
     if (isReplan) {
-      buildPlan(t, today, replanOptions).then(
+      buildPlan(t, today, replanOptions, fromToday).then(
         (built) => setPhase({ kind: 'preview', ...built }),
         (e) => setPhase({ kind: 'failed', ...failure(e, freeAgain) }),
       );
@@ -90,7 +93,7 @@ export default function PlanScreen() {
           return;
         }
         setPhase({ kind: 'building' });
-        setPhase({ kind: 'preview', ...(await buildPlan(t, today, { style })) });
+        setPhase({ kind: 'preview', ...(await buildPlan(t, today, { style }, fromToday)) });
       })
       .catch((e) => setPhase({ kind: 'failed', ...failure(e, freeAgain) }));
   });
@@ -106,7 +109,7 @@ export default function PlanScreen() {
     setPhase({ kind: 'building' });
     try {
       const options = isReplan ? replanOptions : withAnswers ? { questions, answers, style } : { style };
-      setPhase({ kind: 'preview', ...(await buildPlan(task, today, options)) });
+      setPhase({ kind: 'preview', ...(await buildPlan(task, today, options, fromToday)) });
     } catch (e) {
       setPhase({ kind: 'failed', ...failure(e, freeAgain) });
     }

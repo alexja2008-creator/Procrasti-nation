@@ -206,8 +206,17 @@ export const voice = {
     placeholder: 'Walk Biscuit every day 6pm',
     landsInCustoms: 'Lands in Customs',
     due: (day: string) => `Due ${day}`,
-    /** The day row under the input: Due · Today · Tomorrow · Pick a date (Alex, 2026-10-15). */
+    /**
+     * The rows under the input (Alex, 2026-10-20): Start · Today · Tomorrow · Pick a date ·
+     * Later, the day you'll start it; then Add a due date, which opens Due · Today · Tomorrow ·
+     * Pick a date.
+     */
+    startRow: 'Start',
+    start: (day: string) => `Start ${day}`,
     dueRow: 'Due',
+    addDue: 'Add a due date',
+    /** Under the Start row when PN filled in the start day for a deadline. */
+    startFilled: (dayBefore: boolean) => (dayBefore ? 'The day before it’s due.' : 'Today, so there’s time before it’s due.'),
     /** A repeat's first day: "Starts Sat". */
     starts: (day: string) => `Starts ${day}`,
     /** A repeat with no time can't ring yet. `repeat` is "Every week on Mon, Wed, Sat". */
@@ -504,10 +513,16 @@ export const voice = {
     partOf: (title: string) => `Part of ${title}`,
     markDone: (title: string) => `Mark done: ${title}`,
     markNotDone: (title: string) => `Mark not done: ${title}`,
-    when: 'When',
+    /** The day you'll start it (Alex, 2026-10-20: "When" became Start; Do and Due look and sound alike). */
+    start: 'Start',
     due: 'Due',
     repeat: 'Repeat',
     none: 'None',
+    /** No start day yet: the + sheet's and the Start sheet's chip, and an empty Start. */
+    later: 'Later',
+    /** A due date set on a task with no start day fills one in (`fillStart`), said with Undo. */
+    startFilled: (day: string, dayBefore: boolean) =>
+      dayBefore ? `Start ${day}, the day before it’s due.` : `Start ${day}, so there’s time before it’s due.`,
     never: 'Never',
     notes: 'Notes',
     notesPlaceholder: 'Add notes',
@@ -538,7 +553,7 @@ export const voice = {
     reorder: (title: string) => `Reorder: ${title}`,
     typeIt: 'Or type it: “fri 6pm”, “every weekday 7am”',
     repeats: (rule: string) => `Repeats ${rule.charAt(0).toLowerCase()}${rule.slice(1)}`,
-    /** Row menu: reschedule ("When") without opening the task. */
+    /** Row menu: reschedule (the start day) without opening the task. */
     moveTo: 'Move to…',
     /** Renaming, made findable (family testing, 2026-10-15): the row menu's item, its sheet, the button by a task's title. */
     renameItem: 'Rename…',
@@ -960,7 +975,7 @@ export const guide = {
   words: [
     { term: names.customs, meaning: 'Your inbox. Anything you capture with no day and no territory waits here until you give it a day or file it.' },
     { term: names.territories, meaning: 'Your areas, like a class, a job or home. Each keeps its own tasks and notes.' },
-    { term: 'Task', meaning: 'One thing to do. It can have a day, a time, a due date and a repeat.' },
+    { term: 'Task', meaning: 'One thing to do. It can have a start day (the day you’ll start it), a time, a due date and a repeat.' },
     { term: 'Plan', meaning: `A task that ${actions.planIt} has broken into steps. The steps live under their task, and Today shows the plan as one row.` },
     { term: 'Step', meaning: 'One piece of a plan. The first takes a few minutes; the rest, about one sitting each.' },
     { term: 'Note', meaning: voice.notes.lead },
@@ -984,7 +999,7 @@ export const guide = {
             { typed: 'Gym every mon and wed 6pm', means: 'Every Monday and Wednesday at 6 PM' },
             { typed: 'Lab report #chem', means: 'Filed in your Chem territory' },
           ],
-          `No day in the words? Pick ${voice.briefing.today}, Tomorrow or a date beside ${voice.capture.dueRow}, or just ${actions.add} it: it waits in ${names.customs}. Switch to ${voice.capture.note} at the top for anything longer.`,
+          `No day in the words? Beside ${voice.capture.startRow}, pick the day you’ll start it: ${voice.briefing.today}, Tomorrow or a date. Or pick ${voice.task.later}, or just ${actions.add} it: it waits in ${names.customs}. A due date is optional (${voice.capture.addDue}). With one, PN picks a start day before it, which you can change. Switch to ${voice.capture.note} at the top for anything longer.`,
         ],
       },
       {
@@ -1041,7 +1056,7 @@ export const guide = {
       {
         title: 'Changing a task',
         blocks: [
-          `Open a task to change ${voice.task.when}, ${voice.task.due}, ${voice.task.repeat}, its territory, its estimate or its notes. To rename it, use the button beside its title, or just type over the title.`,
+          `Open a task to change ${voice.task.start}, ${voice.task.due}, ${voice.task.repeat}, its territory, its estimate or its notes. To rename it, use the button beside its title, or just type over the title.`,
           `${hold} any task for ${actions.start}, ${voice.declaration.action}, ${actions.planIt}, ${voice.task.moveTo}, ${voice.task.renameItem} and ${voice.task.fileIn}, without opening it.`,
         ],
       },

@@ -5,11 +5,14 @@ import {
   daysChangeLanding,
   describeRRule,
   duePatch,
+  fillStart,
   formatTime,
   isDeclared,
   relativeDayLabel,
+  relativeDayPhrase,
   repeatPatch,
   stepContext,
+  undoPatch,
   voice,
   whenPatch,
 } from '@pn/core';
@@ -52,7 +55,7 @@ type SheetKind = 'when' | 'due' | 'repeat' | 'estimate' | 'territory' | 'declare
 function TaskDetail({ id }: { id: string }) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
-  const { tasks, status, today, toggle, update, remove, addStep } = useTasks();
+  const { tasks, status, today, toggle, update, remove, addStep, notify } = useTasks();
   const followSteps = useFollowSteps();
   const { lists } = useLists();
   const task = tasks.find((t) => t.id === id && !t.deletedAt);
@@ -194,13 +197,13 @@ function TaskDetail({ id }: { id: string }) {
 
         <View style={s.fields}>
           <FieldRow
-            label={copy.when}
+            label={copy.start}
             value={
               task.scheduledOn
                 ? relativeDayLabel(task.scheduledOn, today) +
                   clock(task.remindAt) +
                   (isDeclared(task, today) ? ` · ${voice.declaration.mark}` : '')
-                : copy.none
+                : copy.later
             }
             onPress={() => setSheet('when')}
           />
@@ -276,7 +279,9 @@ function TaskDetail({ id }: { id: string }) {
 
       {sheet === 'when' ? (
         <DateSheet
-          title={copy.when}
+          title={copy.start}
+          // Clearing a repeat's start ends the repeat: it keeps saying No date, never Later.
+          noneLabel={task.rrule ? undefined : copy.later}
           day={task.scheduledOn}
           time={task.remindAt ? clockOf(task.remindAt) : null}
           today={today}
@@ -300,7 +305,18 @@ function TaskDetail({ id }: { id: string }) {
           time={task.dueAt ? clockOf(task.dueAt) : null}
           today={today}
           onSave={(day, time) => {
-            update(task, duePatch(day, time));
+            // A deadline never sits without a start day (Alex, 2026-10-20): a one-off with none
+            // gets one filled in when its due day is set or changed (not a checklist line, not a day
+            // already gone), said with an Undo that takes back only the start.
+            const fills = !!day && day !== task.dueOn && day >= today && !task.scheduledOn && !task.parentId && !task.noteId && !hasSteps && !task.rrule;
+            const start = fills ? fillStart(day, today, task.title) : null;
+            const startPatch = start ? whenPatch(start, null) : {};
+            update(task, { ...duePatch(day, time), ...startPatch });
+            if (start) {
+              notify(copy.startFilled(relativeDayPhrase(start, today), start !== today), () =>
+                update({ ...task, ...duePatch(day, time), ...startPatch }, undoPatch(task, startPatch)),
+              );
+            }
             setSheet(null);
           }}
           onClose={() => setSheet(null)}

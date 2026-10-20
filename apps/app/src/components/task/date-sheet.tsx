@@ -28,17 +28,19 @@ type Props = {
   day: LocalDate | null;
   time: ClockTime | null;
   today: LocalDate;
-  /** "every weekday 7am" may be typed (the When field). */
+  /** "every weekday 7am" may be typed (the Start field). */
   allowRepeat?: boolean;
   /** Where a typed repeat lands when it changes the task's weekdays (`daysChangeLanding`), so the day shown is the day saved. */
   landOn?: (rrule: string) => LocalDate | null;
+  /** What clearing the day is called: Later for a start day, No date for a deadline. */
+  noneLabel?: string;
   /** Null day clears the field; `rrule` is set only when a repeat was typed. */
   onSave: (day: LocalDate | null, time: ClockTime | null, rrule?: string) => void;
   onClose: () => void;
 };
 
 /** Pick a day (Today, Tomorrow, or the calendar) and, optionally, a time. */
-export function DateSheet({ title, day: initialDay, time: initialTime, today, allowRepeat, landOn, onSave, onClose }: Props) {
+export function DateSheet({ title, day: initialDay, time: initialTime, today, allowRepeat, landOn, noneLabel, onSave, onClose }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const [day, setDay] = useState(initialDay);
@@ -94,7 +96,7 @@ export function DateSheet({ title, day: initialDay, time: initialTime, today, al
           {copy.repeats(describeRRule(rrule))}
         </Text>
       ) : null}
-      <DayPicker day={day} today={today} onChange={setDay} allowNone />
+      <DayPicker day={day} today={today} onChange={setDay} allowNone noneLabel={noneLabel} />
 
       <Text variant="label" color={c.muted} style={s.section}>
         {copy.time.toUpperCase()}
