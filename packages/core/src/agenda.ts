@@ -137,7 +137,10 @@ export function planToFinish(tasks: Task[], step: Pick<Task, 'id' | 'parentId'>)
 
 export interface PlanGroup {
   plan: Task;
-  /** The plan's steps on Today, in step order (every open one when the plan itself is due). */
+  /**
+   * The plan's steps on Today (every open one when the plan itself is due), plus every finished
+   * one from any day, struck through for context. In step order.
+   */
   steps: AgendaEntry[];
   /** Its live steps: finished (on any day), and all of them. */
   done: number;
@@ -156,9 +159,14 @@ const isOpenItem = (item: TodayItem) => (item.kind === 'task' ? !item.entry.done
  * Today's agenda with each plan as one item, its steps behind it (Alex, 2026-10-14: two plans
  * of seven steps read "Fourteen things today"). The next small step joins its plan's group; a
  * plan that is itself Up next stays in that card. `openCount` is what's left to do today, a
- * plan counting once, the Up next card included.
+ * plan counting once, the Up next card included. `keep`: steps un-checked under their plan this
+ * visit, still listed though open on a later day, so a row never vanishes under the finger.
  */
-export function groupAgenda(view: TodayView, tasks: Task[]): { items: TodayItem[]; openCount: number } {
+export function groupAgenda(
+  view: TodayView,
+  tasks: Task[],
+  keep: ReadonlySet<string> = new Set(),
+): { items: TodayItem[]; openCount: number } {
   const live = tasks.filter((t) => !t.deletedAt);
   const byId = new Map(live.map((t) => [t.id, t]));
   const childrenOf = stepsByParent(live);
@@ -196,11 +204,11 @@ export function groupAgenda(view: TodayView, tasks: Task[]): { items: TodayItem[
       stepIndex: steps.indexOf(t) + 1,
       stepCount: steps.length,
     });
-    // The plan itself is due: every open step, whatever its day.
-    if (planDue.has(group.plan.id)) {
-      const listed = new Set(group.steps.map((e) => e.task.id));
-      group.steps.push(...steps.filter((t) => !t.completedAt && !listed.has(t.id)).map(step));
-    }
+    // Every finished step, whatever its day, so the person sees what's done and which came last
+    // (Alex, 2026-10-20). The plan itself is due: every open step too, whatever its day.
+    const listed = new Set(group.steps.map((e) => e.task.id));
+    const due = planDue.has(group.plan.id);
+    group.steps.push(...steps.filter((t) => !listed.has(t.id) && (t.completedAt || due || keep.has(t.id))).map(step));
     group.steps.sort((a, b) => (a.stepIndex ?? 0) - (b.stepIndex ?? 0));
   }
 
