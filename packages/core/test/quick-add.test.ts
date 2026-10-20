@@ -186,6 +186,77 @@ test('titles with day names and every/each are left alone', () => {
   }
 });
 
+test('monthly repeats as people say them, starting on their first day (Alex’s plan, 2026-10-20)', () => {
+  const cases: [string, string, string, string][] = [
+    ['pay rent every month on the 1st', 'pay rent', 'FREQ=MONTHLY;BYMONTHDAY=1', '2026-11-01'],
+    ['pay rent on the 1st of every month', 'pay rent', 'FREQ=MONTHLY;BYMONTHDAY=1', '2026-11-01'],
+    ['pay rent every 1st', 'pay rent', 'FREQ=MONTHLY;BYMONTHDAY=1', '2026-11-01'],
+    ['pay rent the 1st of each month', 'pay rent', 'FREQ=MONTHLY;BYMONTHDAY=1', '2026-11-01'],
+    ['review budget monthly on the 15th', 'review budget', 'FREQ=MONTHLY;BYMONTHDAY=15', '2026-10-15'],
+    ['paycheck every 1st and 15th', 'paycheck', 'FREQ=MONTHLY;BYMONTHDAY=1,15', '2026-10-15'],
+    ['submit timesheet last day of every month', 'submit timesheet', 'FREQ=MONTHLY;BYMONTHDAY=-1', '2026-10-31'],
+    ['submit timesheet every month on the last day', 'submit timesheet', 'FREQ=MONTHLY;BYMONTHDAY=-1', '2026-10-31'],
+    ['submit timesheet every last day of the month', 'submit timesheet', 'FREQ=MONTHLY;BYMONTHDAY=-1', '2026-10-31'],
+    ['every last friday book club', 'book club', 'FREQ=MONTHLY;BYDAY=-1FR', '2026-10-30'],
+    ['club meeting every 3rd tue', 'club meeting', 'FREQ=MONTHLY;BYDAY=3TU', '2026-10-20'],
+    ['staff meeting the first monday of every month', 'staff meeting', 'FREQ=MONTHLY;BYDAY=1MO', '2026-11-02'],
+    ['water the cactus every other month on the 15th', 'water the cactus', 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=15', '2026-10-15'],
+    ['rent monthly', 'rent', 'FREQ=MONTHLY;BYMONTHDAY=15', '2026-10-15'],
+  ];
+  for (const [text, title, rrule, start] of cases) {
+    const r = parse(text, THU_10AM);
+    assert.deepEqual([r.title, r.rrule, r.scheduledOn], [title, rrule, start], text);
+  }
+  const rent = parse('pay rent every 1st 9am', THU_10AM);
+  assert.deepEqual([rent.rrule, rent.time], ['FREQ=MONTHLY;BYMONTHDAY=1', { hour: 9, minute: 0 }]);
+  assert.equal(parseQuickAdd('pay rent every 1st', THU_10AM, { repeats: 'cued' }).rrule, 'FREQ=MONTHLY;BYMONTHDAY=1', 'a checklist line too');
+});
+
+test('a day of the month after on, due or by is the next one', () => {
+  assert.deepEqual([parse('lab report due the 28th', THU_10AM).title, parse('lab report due the 28th', THU_10AM).dueOn], ['lab report', '2026-10-28']);
+  assert.equal(parse('dentist on the 28th at 3pm', THU_10AM).scheduledOn, '2026-10-28');
+  assert.equal(parse('call the bank on the 3rd', THU_10AM).scheduledOn, '2026-11-03', 'gone this month: next month');
+  assert.equal(parse('party on the 31st', new Date(2026, 10, 2, 10, 0)).scheduledOn, '2026-12-31', 'November has no 31st');
+  assert.equal(parse('essay due on the 28th of October', THU_10AM).dueOn, '2026-10-28');
+});
+
+test('ordinals and "last" that aren’t schedules stay titles', () => {
+  for (const text of [
+    'Read the 3rd chapter',
+    'Finish the 2nd draft',
+    'Meet on the 3rd floor',
+    'Win on the 1st try',
+    'Review every 1st draft',
+    'Check every 2nd answer',
+    'Each 2nd grader needs a form',
+    'Every 3rd period quiz',
+    'Grade every 4th problem',
+    'Enjoy every last day of summer',
+    'Every last minute counts',
+    'Essay on the 1st amendment',
+    'Study the 2nd law of thermodynamics',
+    'Watch the 3rd episode',
+    'Pack for the last day of camp',
+    'Last day of school party',
+    'Every last one of them',
+    'Every 1st-gen student form',
+    'Turn in the 2nd essay',
+    'Plan each 4th grade lesson',
+    'Monthly report draft',
+    'Monthly budget review notes',
+    'Print the 1st and 2nd pages',
+    'Every second counts',
+    'Read every last page',
+    'Sit on the 2nd row',
+    'Every first time is hard',
+    'The 3rd wheel',
+    'Chapter 1st half summary',
+  ]) {
+    const r = parse(text, THU_10AM);
+    assert.deepEqual([r.title, r.scheduledOn, r.dueOn, r.rrule], [text, null, null, null], text);
+  }
+});
+
 test('the capture sheet’s rows: a picked start or deadline, unless the text names its own', () => {
   const sat = '2026-10-03';
   const pick = (text: string, picks: Parameters<typeof withPicks>[1]) => withPicks(parse(text), picks, sat);

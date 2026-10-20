@@ -22,7 +22,7 @@ test('a repeat moves the task to its first day in the series, keeping the time',
   const unscheduled = { ...saturday6pm, scheduledOn: null, remindAt: null };
   assert.equal(repeatPatch(unscheduled, 'FREQ=DAILY', '2026-10-06').scheduledOn, '2026-10-06', 'starts today');
   assert.deepEqual(repeatPatch(saturday6pm, null, '2026-10-06'), { rrule: null });
-  assert.deepEqual(repeatChips('2026-10-06').map((c) => c.label), ['Every day', 'Every weekday', 'Every week on Tue', 'Every month']);
+  assert.deepEqual(repeatChips('2026-10-06').map((c) => c.label), ['Every day', 'Every weekday', 'Every week on Tue', 'Every month on the 6th']);
 });
 
 test('picking a weekly repeat’s days', () => {
@@ -60,6 +60,10 @@ test('changing a repeat’s days lands on the first new day from today', () => {
   assert.equal(repeatPatch(nextSat, 'FREQ=WEEKLY;INTERVAL=2;BYDAY=TU', thu).scheduledOn, '2026-10-20', 'every other Tuesday starts this Tuesday');
   const oneOff = { ...nextSat, scheduledOn: '2026-11-20', rrule: null };
   assert.equal(repeatPatch(oneOff, 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR', thu).scheduledOn, '2026-11-20', 'a new repeat starts on the task’s own day');
-  assert.equal(repeatPatch(nextSat, 'FREQ=MONTHLY', thu).scheduledOn, '2026-10-17', 'a monthly repeat keeps its day');
+  assert.deepEqual(
+    [repeatPatch(nextSat, 'FREQ=MONTHLY', thu).scheduledOn, repeatPatch(nextSat, 'FREQ=MONTHLY', thu).rrule],
+    ['2026-10-17', 'FREQ=MONTHLY;BYMONTHDAY=17'],
+    'a monthly repeat keeps its day, written into the rule',
+  );
   assert.equal(repeatPatch({ ...oneOff, scheduledOn: '2026-10-07' }, 'FREQ=WEEKLY;BYDAY=TU', thu).scheduledOn, '2026-10-20', 'carried over: from today, not a past Tuesday');
 });

@@ -117,6 +117,75 @@ function takeDays(
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Monthly repeats (Alex's plan, 2026-10-20): "every 1st", "every month on the
+// 15th", "on the 1st of every month", "last day of every month", "every last
+// friday", "every 3rd tue". Each needs a cue (every, each, monthly, "of every
+// month"), and a bare day of the month needs something after it that can't be a
+// noun, so "Review every 1st draft" and "Each 2nd grader" stay titles. The
+// word "second" isn't read: "every second Monday" can mean every other one.
+
+const ORDINAL_DAY = String.raw`(?:[12]\d|3[01]|0?[1-9])(?:st|nd|rd|th)`;
+const MONTH_DAYS = String.raw`${ORDINAL_DAY}(?:\s*(?:,\s*(?:and\s+)?|\s+and\s+|&\s*)${ORDINAL_DAY})*`;
+const NTH = String.raw`(?:first|third|fourth|last|1st|2nd|3rd|4th)`;
+const WEEKDAY = String.raw`(?:sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tues?|weds?|thu(?:rs?)?|fri|sat)s?`;
+// The nth weekday first, so "3rd tue" isn't read as the 3rd.
+const WHICH = String.raw`(?:${NTH}\s+${WEEKDAY}|last\s+day|${MONTH_DAYS})`;
+// After a bare day of the month: the end, punctuation, a time, a part of the day or a hidden #word.
+const DAY_ENDS = String.raw`(?=\s*$|\s*[,.;:!?)]|\s*\u0000|${TIME_AHEAD}|\s+(?:morning|afternoon|evening|night)\b)`;
+const NTH_NUMBER: Record<string, number> = { first: 1, '1st': 1, '2nd': 2, third: 3, '3rd': 3, fourth: 4, '4th': 4, last: -1 };
+const RRULE_DAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+
+/** "1st and 15th" → BYMONTHDAY=1,15; "last day" → BYMONTHDAY=-1; "3rd tue" → BYDAY=3TU. */
+function monthlyPart(which: string): string | null {
+  const w = which.toLowerCase().replace(/\s+/g, ' ');
+  if (w === 'last day') return 'BYMONTHDAY=-1';
+  const nth = new RegExp(`^(${NTH}) (${WEEKDAY})$`).exec(w);
+  if (nth) return `BYDAY=${NTH_NUMBER[nth[1]]}${RRULE_DAYS[DAY_INDEX[nth[2].replace(/s$/, '')]]}`;
+  const days = [...new Set([...w.matchAll(/(\d{1,2})(?:st|nd|rd|th)/g)].map((m) => Number(m[1])))].filter((d) => d >= 1 && d <= 31);
+  return days.length ? `BYMONTHDAY=${days.sort((a, b) => a - b).join(',')}` : null;
+}
+
+const isNamedDay = (which: string) => new RegExp(`^${NTH}\\s+${WEEKDAY}$`, 'i').test(which.trim());
+
+function takeMonthly(work: { text: string }): (Found & { rrule: string }) | null {
+  const attempts: [RegExp, (m: RegExpExecArray) => { which: string; interval: number } | null][] = [
+    // "every month on the 15th", "every other month on the 1st", "monthly on the last day"
+    [
+      new RegExp(String.raw`\b(?:(?:every|each)\s+(?:(other|\d{1,2})\s+)?months?|monthly)\s+on\s+(?:the\s+)?(${WHICH})(?=\s|$|[,.;:!?)\u0000])`, 'gi'),
+      (m) => ({ which: m[2], interval: !m[1] ? 1 : m[1].toLowerCase() === 'other' ? 2 : Math.max(1, Number(m[1])) }),
+    ],
+    // "on the 1st of every month", "the last friday of each month", "last day of every month"
+    [
+      new RegExp(String.raw`\b(?:on\s+)?(?:the\s+)?(${WHICH})\s+of\s+(?:every|each)\s+(other\s+)?month\b`, 'gi'),
+      (m) => ({ which: m[1], interval: m[2] ? 2 : 1 }),
+    ],
+    // "every last friday", "every 3rd tue", "every 1st", "every 1st and 15th", "every last day (of the month)"
+    [
+      new RegExp(String.raw`\b(?:every|each)\s+(?:the\s+)?(${WHICH})(\s+of\s+(?:the|every|each)\s+month\b)?`, 'gi'),
+      (m) => {
+        const named = isNamedDay(m[1]);
+        // A day of the month needs a clear end ("every 1st draft" stays a title); "of the month" is one.
+        if (!named && !m[2] && !new RegExp(`^${DAY_ENDS}`, 'i').test(m.input.slice((m.index ?? 0) + m[0].length))) return null;
+        if (named && !new RegExp(`^(?:\\s|$|[,.;:!?)\\u0000])`).test(m.input.slice((m.index ?? 0) + m[0].length))) return null;
+        return { which: m[1], interval: 1 };
+      },
+    ],
+  ];
+  for (const [pattern, read] of attempts) {
+    for (const m of work.text.matchAll(pattern)) {
+      const found = read(m as RegExpExecArray);
+      const part = found && monthlyPart(found.which);
+      if (!found || !part) continue;
+      const start = m.index ?? 0;
+      const end = start + m[0].length;
+      work.text = blank(work.text, start, end);
+      return { start, end, groups: [], rrule: `FREQ=MONTHLY${found.interval > 1 ? `;INTERVAL=${found.interval}` : ''};${part}` };
+    }
+  }
+  return null;
+}
+
 /** One letter code alone ("every m") is too thin to read as a day. */
 const enough = (l: DayList) => !(l.codesOnly && l.days.length === 1);
 
@@ -129,6 +198,10 @@ const notDeadline = (before: string) => !/\b(?:due:?|by|before|until|till|betwee
  * show a misread, so "Sat and Sun brunch" stays a title there).
  */
 export function takeRepeat(work: { text: string }, { cuedOnly = false } = {}): (Found & { rrule: string; partHour?: number }) | null {
+  // Monthly days first: "every other month on the 1st" isn't "every other month".
+  const monthly = takeMonthly(work);
+  if (monthly) return monthly;
+
   // "every 2 weeks on tue and thu", "every other week on mon", "each week on Mondays"
   let d = takeDays(work, /\b(?:every|each)\s+(?:(other|\d{1,2})\s+)?weeks?\s+on\s+/gi, true, enough, (m) =>
     !m[1] ? 1 : m[1].toLowerCase() === 'other' ? 2 : Math.max(1, Number(m[1])),
