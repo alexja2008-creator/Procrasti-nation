@@ -4,6 +4,7 @@ What changed for people using PN, newest first, in their words. One entry per re
 
 ## Unreleased
 
+- Show steps on Today keeps a plan's finished steps in the list, struck through, with when you did them, so you can see where you left off. Its count is what's left for today.
 - New here? The ? beside the magnifier on Today, Upcoming and Territories (or Settings → Help) opens How to use ProcrastiNation: what Customs, Territories, plans, steps, notes, Declarations, Start Mode, the Morning Briefing and stamps mean, and how to capture, plan, start and repeat things.
 - Upcoming shows every turn of a repeat in the week ahead: "bio lab every Mon and Wed" now shows Wednesday too. The next turn is checkable as before; the later ones are marked "Repeats · opens after Mon", and tapping their repeat mark says, right there, when they open.
 - Rename a task from its page (tap the button beside the title) or with Rename… in a row's menu.
