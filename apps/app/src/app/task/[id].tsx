@@ -11,6 +11,7 @@ import {
   relativeDayLabel,
   relativeDayPhrase,
   repeatPatch,
+  sameRepeat,
   stepContext,
   undoPatch,
   voice,
@@ -287,9 +288,11 @@ function TaskDetail({ id }: { id: string }) {
           today={today}
           allowRepeat={!task.parentId && !hasSteps}
           // The same repeat retyped (to change its time) stays on its day; changed days land as in Repeat.
-          landOn={(rrule) => (rrule === task.rrule ? task.scheduledOn : daysChangeLanding(task, rrule, today))}
-          onSave={(day, time, rrule) => {
+          landOn={(rrule) => (sameRepeat(rrule, task.rrule) ? task.scheduledOn : daysChangeLanding(task, rrule, today))}
+          onSave={(day, time, typed) => {
             const when = whenPatch(day, time);
+            // "every month" retyped keeps the repeat's own day (BYMONTHDAY), not today's.
+            const rrule = typed && sameRepeat(typed, task.rrule) ? task.rrule! : typed;
             // A typed repeat starts on the day the sheet shows, which already lands changed days like Repeat does.
             update(task, rrule ? repeatPatch({ ...task, rrule: null, scheduledOn: day, remindAt: when.remindAt ?? null }, rrule, today) : when);
             followSteps(task, day);

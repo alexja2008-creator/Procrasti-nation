@@ -15,8 +15,9 @@ export interface CheckOff {
 
 /**
  * Checking off an open task on `today` (the person's day, rollover included).
- * A repeat skips any occurrences it missed, like Reminders does. (Anchoring on
- * the current date can drift a monthly-on-the-31st series; fine for now.)
+ * A repeat skips any occurrences it missed, like Reminders does. A monthly
+ * repeat keeps its day in the rule (BYMONTHDAY), so the 31st never slides; an
+ * old rule without one ("FREQ=MONTHLY") counts from its current day, as before.
  */
 export function checkOff(task: Pick<Task, 'rrule' | 'scheduledOn' | 'remindAt'>, today: LocalDate, now: Date = new Date()): CheckOff {
   if (!task.rrule) return { patch: { status: 'completed', completedAt: now.toISOString() }, movedTo: null };

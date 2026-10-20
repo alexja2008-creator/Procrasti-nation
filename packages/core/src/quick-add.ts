@@ -7,7 +7,7 @@
 // Repeats ("every M/W/Sat", "gym tue/thu") are read in quick-add-repeat.ts and
 // start on their first matching day.
 
-import { addDays, atLocalTime, localDateString, occurrenceOnOrAfter, parseLocalDate } from './dates.ts';
+import { addDays, atLocalTime, localDateString, occurrenceOnOrAfter, parseLocalDate, pinMonthDay } from './dates.ts';
 import { blank, DAY_INDEX, PART_OF_DAY, take, takeRepeat, type Found } from './quick-add-repeat.ts';
 import { matchTerritory } from './territories.ts';
 import type { List, LocalDate } from './types.ts';
@@ -70,6 +70,27 @@ function futureDate(today: string, month: number, day: number): string | null {
   return null;
 }
 
+/**
+ * The next date on this day of the month, from today: "the 28th" on the 20th is
+ * this month's, on the 30th next month's. A month without the day is skipped
+ * ("the 31st" in November is 31 December).
+ */
+function nextMonthDay(today: string, day: number): string | null {
+  const t = parseLocalDate(today);
+  for (let k = 0; k <= 12; k++) {
+    const d = new Date(t.getFullYear(), t.getMonth() + k, day);
+    if (d.getDate() !== day) continue;
+    const ymd = localDateString(d);
+    if (ymd >= today) return ymd;
+  }
+  return null;
+}
+
+// After a one-off "on the 28th": the end, punctuation, a time, a part of the day, a hidden #word or a
+// small linking word, but not another ordinal, so "Meet on the 3rd floor", "Win on the 1st try" and
+// "Notes on the 2nd and 3rd chapters" stay titles (Alex's plan, D12).
+const DAY_OF_MONTH_ENDS = String.raw`(?!\s*(?:,\s*(?:and\s+)?|and\s+|&\s*)\d{1,2}(?:st|nd|rd|th))(?=\s*$|\s*[,.;:!?)]|\s*\u0000|\s+\d|\s+(?:at|for|in|with|before|after|by|due|and|morning|afternoon|evening|night|noon)\b)`;
+
 /** Date expressions, optionally after `prefix`. Returns the first match (by pattern priority). */
 function takeDate(work: { text: string }, today: string, prefix: string): (Found & { date: string; partHour?: number }) | null {
   const p = prefix ? `(?:${prefix})\\s+` : '(?:on\\s+)?';
@@ -91,8 +112,13 @@ function takeDate(work: { text: string }, today: string, prefix: string): (Found
       (g: string[]) => nextWeekday(today, DAY_INDEX[g[0].toLowerCase()]),
     ] as [RegExp, (g: string[]) => string | null]]),
     [new RegExp(`\\b${p}${MONTH}\\.?\\s+(\\d{1,2})${ORD}\\b`, 'i'), (g) => futureDate(today, MONTH_INDEX[g[0].toLowerCase()], Number(g[1]))],
-    [new RegExp(`\\b${p}(\\d{1,2})${ORD}\\s+(?:of\\s+)?${MONTH}\\b`, 'i'), (g) => futureDate(today, MONTH_INDEX[g[1].toLowerCase()], Number(g[0]))],
+    [new RegExp(`\\b${p}(?:the\\s+)?(\\d{1,2})${ORD}\\s+(?:of\\s+)?${MONTH}\\b`, 'i'), (g) => futureDate(today, MONTH_INDEX[g[1].toLowerCase()], Number(g[0]))],
     [new RegExp(`\\b${p}(\\d{1,2})\\/(\\d{1,2})\\b`, 'i'), (g) => futureDate(today, Number(g[0]) - 1, Number(g[1]))],
+    // "on the 28th", "due the 28th": a day of the month needs its cue (D12).
+    [new RegExp(`\\b${prefix ? `(?:${prefix})\\s+` : 'on\\s+'}the\\s+(\\d{1,2})(?:st|nd|rd|th)\\b${DAY_OF_MONTH_ENDS}`, 'i'), (g) => {
+      const day = Number(g[0]);
+      return day >= 1 && day <= 31 ? nextMonthDay(today, day) : null;
+    }],
   ];
 
   for (const [pattern, resolve] of attempts) {
@@ -226,15 +252,19 @@ export function parseQuickAdd(
 
   const preset = !date && !due && day ? day : null;
   let scheduledOn: string | null = date?.date ?? preset;
-  const rrule = repeat?.rrule ?? null;
+  let rrule = repeat?.rrule ?? null;
   if (rrule) {
-    // A list of days starts on its first matching day: "every other tue" typed on
-    // a Thursday starts next Tuesday, and every second week counts from there.
-    const first = rrule.includes('BYDAY=') ? rrule.replace(/;INTERVAL=\d+/, '') : rrule;
+    // A list of days, or a day of the month, starts on its first matching day: "every other tue"
+    // typed on a Thursday starts next Tuesday, and every second week counts from there.
+    const firstOf = (rule: string) => (/BY(?:MONTH)?DAY=/.test(rule) ? rule.replace(/;INTERVAL=\d+/, '') : rule);
     const anchor = scheduledOn ?? today;
-    scheduledOn = occurrenceOnOrAfter(first, anchor, anchor);
+    scheduledOn = occurrenceOnOrAfter(firstOf(rrule), anchor, anchor);
+    // "every month" keeps the day it was said on (the 31st stays the 31st, even if its first turn is
+    // next month's last day). Not in the Start sheet, where retyping it keeps the task's own day (`sameRepeat`).
+    const pinned = pinMonthDay(rrule, scheduledOn);
     // A daily 6pm reminder added at 8pm starts tomorrow.
-    if (!date && !preset && scheduledOn === today && passed) scheduledOn = occurrenceOnOrAfter(first, anchor, addDays(today, 1));
+    if (!date && !preset && scheduledOn === today && passed) scheduledOn = occurrenceOnOrAfter(firstOf(pinned), anchor, addDays(today, 1));
+    if (!scheduleOnly) rrule = pinned;
   } else if (!scheduledOn && clock && (!due || thisPart)) {
     scheduledOn = passed ? addDays(today, 1) : today;
   }

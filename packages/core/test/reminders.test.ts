@@ -253,6 +253,41 @@ test("due in the person's own timezone, across the end of daylight saving", () =
   });
 });
 
+test('a monthly repeat rings on its day each month, at its time after the clocks change', () => {
+  inZone('America/New_York', () => {
+    const due = (t: Task, since: string, now: string) => remindersDue([t], new Date(since), new Date(now)).map((r) => new Date(r.at).toISOString());
+    // Rent on the 1st at 9:00 AM. Sunday 1 November is the day the clocks go back: 9:00 is 14:00 UTC.
+    const rent = task('rent', { scheduledOn: '2026-11-01', remindAt: new Date(2026, 10, 1, 9, 0).toISOString(), rrule: 'FREQ=MONTHLY;BYMONTHDAY=1' });
+    assert.deepEqual(due(rent, '2026-11-01T13:55:00Z', '2026-11-01T14:00:00Z'), ['2026-11-01T14:00:00.000Z']);
+    const december = checkOff(rent, '2026-11-01', new Date('2026-11-01T15:00:00Z'));
+    assert.deepEqual([december.movedTo, december.patch.remindAt], ['2026-12-01', '2026-12-01T14:00:00.000Z']);
+
+    // The 31st at 5:00 PM rings on 30 November, then on the 31st again: checking off never slides it.
+    let report = task('report', { scheduledOn: '2026-10-31', remindAt: new Date(2026, 9, 31, 17, 0).toISOString(), rrule: 'FREQ=MONTHLY;BYMONTHDAY=31' });
+    const days: string[] = [];
+    for (const today of ['2026-10-31', '2026-11-30', '2026-12-31', '2027-01-31', '2027-02-28']) {
+      const moved = checkOff(report, today, new Date());
+      days.push(moved.movedTo!);
+      report = { ...report, ...moved.patch };
+    }
+    assert.deepEqual(days, ['2026-11-30', '2026-12-31', '2027-01-31', '2027-02-28', '2027-03-31']);
+    assert.equal(new Date(report.remindAt!).getHours(), 17);
+    assert.deepEqual(due(report, '2027-03-31T20:55:00Z', '2027-03-31T21:00:00Z'), ['2027-03-31T21:00:00.000Z'], '5:00 PM EDT');
+  });
+});
+
+test('a repeat’s turn moved off its days rings on the day it shows, then the series carries on', () => {
+  // Rent on the 20th at 9 AM, moved to Thursday the 8th: it rings on the 8th, then on 20 October.
+  const rent = task('rent', { scheduledOn: '2026-10-08', remindAt: at(8, 9), rrule: 'FREQ=MONTHLY;BYMONTHDAY=20' });
+  assert.deepEqual(planReminders([rent], NOW).map((r) => r.day), ['2026-10-08', '2026-10-20']);
+  // A Tuesday repeat moved to Thursday rings Thursday, then Tuesdays.
+  const gym = task('gym', { scheduledOn: '2026-10-08', remindAt: at(8, 7), rrule: 'FREQ=WEEKLY;BYDAY=TU' });
+  assert.deepEqual(planReminders([gym], NOW).map((r) => r.day), ['2026-10-08', '2026-10-13', '2026-10-20']);
+  // A missed turn (moved to a day already gone) doesn't ring late.
+  const missed = task('missed', { scheduledOn: '2026-10-05', remindAt: at(5, 7), rrule: 'FREQ=WEEKLY;BYDAY=TU' });
+  assert.deepEqual(planReminders([missed], NOW).map((r) => r.day), ['2026-10-13', '2026-10-20'], 'today’s 7 AM is gone too');
+});
+
 test('the morning list speaks in their nudge tone', () => {
   const early = new Date(2026, 9, 6, 6, 0);
   const tasks = [

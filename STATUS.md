@@ -57,7 +57,7 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
 3. Measurement before the content push: funnel and retention queries, events for the signed-out Application, web error reporting.
 4. State of the Union (the Monday email), then syllabus import (its route is switched off until then; turning it back on is in `DECISIONS.md`).
 5. Small follow-ups from family testing, listed in `docs/plans/shipped/dates-and-repeats.md` (Risks, "Found in passing", and the phases' "Known" notes):
-   - Move to… on a repeating task can pick a day that isn't one of its days.
+   - Move to… on a repeating task can pick a day that isn't one of its days (it now rings there; whether Move to… should snap to one of its days is still open).
    - Older quick-add misreads ("Monday meeting notes").
    - Space doesn't tick a toggle on the web.
    - Chips are shorter than the 44pt tap target.

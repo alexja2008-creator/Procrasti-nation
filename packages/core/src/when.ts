@@ -2,7 +2,7 @@
 // grid, and the task patches they produce. Pure, so iOS, web and (later)
 // Upcoming agree. Weeks start on Monday.
 
-import { addDays, atLocalTime, clockOf, describeRRule, occurrenceOnOrAfter, parseLocalDate, parseRRule } from './dates.ts';
+import { addDays, atLocalTime, clockOf, describeRRule, occurrenceOnOrAfter, parseLocalDate, parseRRule, pinMonthDay } from './dates.ts';
 import { suggestsPlan } from './plan-offer.ts';
 import type { LocalDate, Task } from './types.ts';
 
@@ -98,14 +98,14 @@ export function weeklyRule(days: number[], interval = 1): string {
   return `FREQ=WEEKLY${interval > 1 ? `;INTERVAL=${interval}` : ''};BYDAY=${byDay.join(',')}`;
 }
 
-/** Common repeats; "weekly" follows the task's day. */
+/** Common repeats; "weekly" and "monthly" follow the task's day ("Every month on the 20th"). */
 export function repeatChips(anchor: LocalDate): { id: string; label: string; rrule: string }[] {
   const weekly = `FREQ=WEEKLY;BYDAY=${RRULE_DAYS[parseLocalDate(anchor).getDay()]}`;
   return [
     { id: 'daily', rrule: 'FREQ=DAILY' },
     { id: 'weekdays', rrule: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR' },
     { id: 'weekly', rrule: weekly },
-    { id: 'monthly', rrule: 'FREQ=MONTHLY' },
+    { id: 'monthly', rrule: pinMonthDay('FREQ=MONTHLY', anchor) },
   ].map((c) => ({ ...c, label: describeRRule(c.rrule) }));
 }
 
@@ -186,8 +186,8 @@ export function duePatch(day: LocalDate | null, time: ClockTime | null): Partial
   return { dueOn: day, dueAt: day && time ? atLocalTime(day, time.hour, time.minute) : null };
 }
 
-// A list of days starts on its first matching day: every second week counts from there.
-const firstDayRule = (rrule: string) => (rrule.includes('BYDAY=') ? rrule.replace(/;INTERVAL=\d+/, '') : rrule);
+// A list of days, or a day of the month, starts on its first matching day: every second week or month counts from there.
+const firstDayRule = (rrule: string) => (/BY(?:MONTH)?DAY=/.test(rrule) ? rrule.replace(/;INTERVAL=\d+/, '') : rrule);
 const sameDays = (a: number[], b: number[]) => a.length === b.length && a.every((d) => b.includes(d));
 
 /**
@@ -213,6 +213,19 @@ export function daysChangeLanding(task: Schedule, rrule: string, today: LocalDat
 }
 
 /**
+ * A repeat typed in the Start sheet that is the task's own: the same rule, or
+ * "every month" for a monthly repeat whose day is already written in, so
+ * retyping it to change its time keeps its day.
+ */
+export function sameRepeat(typed: string, current: string | null): boolean {
+  if (!current) return false;
+  if (typed === current) return true;
+  const a = parseRRule(typed);
+  const b = parseRRule(current);
+  return a.freq === 'MONTHLY' && b.freq === 'MONTHLY' && !a.monthDays && !a.nth && a.interval === b.interval;
+}
+
+/**
  * Setting a repeat moves the task to the series' first day, keeping its time.
  * A change of weekdays lands by `daysChangeLanding`. Anything else starts on or
  * after the task's own day, or today if that's gone: "every weekday" on a
@@ -223,5 +236,6 @@ export function repeatPatch(task: Schedule, rrule: string | null, today: LocalDa
   const from = task.scheduledOn && task.scheduledOn > today ? task.scheduledOn : today;
   const first = daysChangeLanding(task, rrule, today) ?? occurrenceOnOrAfter(firstDayRule(rrule), from, from);
   const time = task.remindAt ? clockOf(task.remindAt) : null;
-  return { rrule, ...whenPatch(first, time) };
+  // A plain monthly repeat keeps the day it starts on, so it never slides from the 31st.
+  return { rrule: pinMonthDay(rrule, first), ...whenPatch(first, time) };
 }
