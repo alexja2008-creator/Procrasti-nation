@@ -2,7 +2,7 @@
 // grid, and the task patches they produce. Pure, so iOS, web and (later)
 // Upcoming agree. Weeks start on Monday.
 
-import { addDays, atLocalTime, clockOf, describeRRule, occurrenceOnOrAfter, parseLocalDate, parseRRule, pinMonthDay } from './dates.ts';
+import { addDays, atLocalTime, clockOf, describeRRule, monthlyWhich, occurrenceOnOrAfter, parseLocalDate, parseRRule, pinMonthDay } from './dates.ts';
 import { suggestsPlan } from './plan-offer.ts';
 import type { LocalDate, Task } from './types.ts';
 
@@ -107,6 +107,44 @@ export function repeatChips(anchor: LocalDate): { id: string; label: string; rru
     { id: 'weekly', rrule: weekly },
     { id: 'monthly', rrule: pinMonthDay('FREQ=MONTHLY', anchor) },
   ].map((c) => ({ ...c, label: describeRRule(c.rrule) }));
+}
+
+/**
+ * The Repeat sheet's Every month… choices, worked out from the task's day (Alex's
+ * plan, D8): on its day of the month, on its weekday's place in the month (the
+ * third Tuesday; the last Tuesday too when it's in the month's last week), on the
+ * 1st and on the last day, with no two the same. The 31st is the last day (a day
+ * past a month's end lands there), and "the fifth Tuesday" isn't offered.
+ * `interval` keeps an every-other-month repeat's months.
+ */
+export function monthlyChoices(anchor: LocalDate, interval = 1): { id: string; label: string; rrule: string }[] {
+  const d = parseLocalDate(anchor);
+  const day = d.getDate();
+  const weekday = RRULE_DAYS[d.getDay()];
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  const nth = Math.ceil(day / 7);
+  const parts = [
+    day < 31 ? `BYMONTHDAY=${day}` : null,
+    nth <= 4 ? `BYDAY=${nth}${weekday}` : null,
+    day > lastDay - 7 ? `BYDAY=-1${weekday}` : null,
+    'BYMONTHDAY=1',
+    'BYMONTHDAY=-1',
+  ];
+  const rules = [...new Set(parts.filter((p): p is string => !!p))].map(
+    (part) => `FREQ=MONTHLY${interval > 1 ? `;INTERVAL=${interval}` : ''};${part}`,
+  );
+  return rules.map((rrule) => ({ id: rrule, rrule, label: monthlyChoiceLabel(rrule) }));
+}
+
+/** "On the 20th", "On the third Tuesday", "On the last day". */
+export function monthlyChoiceLabel(rrule: string): string {
+  const which = monthlyWhich(rrule);
+  return which ? `On ${which}` : describeRRule(rrule);
+}
+
+/** The monthly repeat a rule is, with an old plain "every month" read as its current day (`pinMonthDay`); null for any other repeat. */
+export function monthlyOf(rrule: string | null, anchor: LocalDate): string | null {
+  return rrule && parseRRule(rrule).freq === 'MONTHLY' ? pinMonthDay(rrule, anchor) : null;
 }
 
 // ---------------------------------------------------------------------------
