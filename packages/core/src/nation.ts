@@ -264,6 +264,9 @@ export const voice = {
     action: 'Declare a start',
     /** The task page's button, beside Start. */
     short: 'Declare',
+    /** In a row's stamp slot until it has one (Alex, 2026-10-20). */
+    invite: 'Declare a start time?',
+    inviteLabel: (title: string) => `Declare a start time for “${title}”`,
     statement: (title: string, when: string) => `I’ll start “${title}” ${when}.`,
     /** Before a time is picked. */
     statementOpen: (title: string) => `I’ll start “${title}” at…`,
@@ -1028,7 +1031,7 @@ export const guide = {
       {
         title: 'Declarations',
         blocks: [
-          `Open a task and choose ${voice.declaration.short}, or ${hold.toLowerCase()} it and choose ${voice.declaration.action}. Pick a day and a time, then sign.`,
+          `On Today, choose “${voice.declaration.invite}” beside a task. Or open a task and choose ${voice.declaration.short}, or ${hold.toLowerCase()} it and choose ${voice.declaration.action}. Pick a day and a time, then sign.`,
           `${voice.declaration.why} Starting on time is a ${names.declaration} kept, recorded in your ${names.passport}.`,
         ],
       },

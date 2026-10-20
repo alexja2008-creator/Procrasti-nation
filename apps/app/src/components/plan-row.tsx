@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { DeclareInvite } from '@/components/declare/declare-invite';
 import { Icon } from '@/components/icon';
 import type { TaskRowItem } from '@/components/task-row';
 import { Text } from '@/components/text';
@@ -19,6 +20,8 @@ type Props = {
   onExpand: (id: string) => void;
   /** Every step done: mark the plan itself done (it asks, never on its own). */
   onFinish: (id: string) => void;
+  /** Opens the Declare sheet for the plan, from its "Declare a start time?". */
+  onDeclare?: (id: string) => void;
   onMenu?: (id: string) => void;
   onOpen?: (id: string) => void;
   /** Its steps, shown when expanded (rows Today draws, with their checkboxes; finished ones struck through). */
@@ -30,11 +33,13 @@ type Props = {
  * A plan on Today: one row however many steps it has (Alex, 2026-10-14), progress where a task's
  * checkbox would be, so a tap never finishes seven steps at once. Its steps open under it.
  */
-export function PlanRow({ group, item, expanded, onExpand, onFinish, onMenu, onOpen, children, last }: Props) {
+export function PlanRow({ group, item, expanded, onExpand, onFinish, onDeclare, onMenu, onOpen, children, last }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const { plan, done, total, readyToFinish, finished } = group;
   const open = !finished && !readyToFinish;
+  // Not once every step is done: Mark plan done is the ask then.
+  const invite = onDeclare && item.offerDeclare && open && !item.declared;
   // The toggle counts what's left for today; finished steps show under it too, struck through.
   const forToday = group.steps.filter((e) => !e.done).length;
 
@@ -112,17 +117,21 @@ export function PlanRow({ group, item, expanded, onExpand, onFinish, onMenu, onO
               {voice.stamped.toUpperCase()}
             </Text>
           </View>
-        ) : item.time ? (
-          <View style={s.side}>
-            <Text variant="label" color={c.muted} style={s.time}>
-              {item.time}
-            </Text>
+        ) : item.time || invite ? (
+          <View style={[s.side, invite && !item.time && s.sideInvite]}>
+            {item.time ? (
+              <Text variant="label" color={c.muted} style={s.time}>
+                {item.time}
+              </Text>
+            ) : null}
             {item.declared ? (
               <View style={s.declared}>
                 <Text variant="labelSmall" color={c.stamp.violet} style={s.stampedText}>
                   {voice.declaration.mark.toUpperCase()}
                 </Text>
               </View>
+            ) : invite ? (
+              <DeclareInvite title={item.title} onPress={() => onDeclare?.(plan.id)} />
             ) : null}
           </View>
         ) : null}
@@ -168,6 +177,8 @@ const makeStyles = (t: Tokens) => ({
     ask: { gap: 8, paddingVertical: 6, alignItems: 'flex-start' },
     steps: { marginLeft: t.hitTarget / 2, paddingLeft: 6, borderLeftWidth: 1, borderLeftColor: t.c.rule, marginBottom: 6 },
     side: { alignItems: 'flex-end', gap: 3, paddingTop: 11 },
+    // The invite's own tap target is 44 tall: centred on the title's line, like the checkbox beside it.
+    sideInvite: { paddingTop: 0 },
     time: { letterSpacing: 0 },
     stamped: {
       marginTop: 11,
