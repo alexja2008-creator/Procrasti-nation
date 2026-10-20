@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { elapsedMs, formatClock, pauseClock, resumeClock, startClock } from '../src/start-mode.ts';
+import { elapsedMs, formatClock, MAX_TIMER_MINUTES, pauseClock, resumeClock, startClock, startMinutesFor } from '../src/start-mode.ts';
 
 test('the clock is wall time minus pauses', () => {
   let clock = startClock(1_000);
@@ -21,4 +21,11 @@ test('clock labels', () => {
   assert.equal(formatClock(299_001, 'up'), '5:00', 'a countdown shows 5:00 until a full second has passed');
   assert.equal(formatClock(299_999), '4:59');
   assert.equal(formatClock(3_723_000), '1:02:03');
+});
+
+test('a step’s timer never outgrows what a Start session row can save', () => {
+  // start_sessions.planned_minutes takes 1–180; a longer one is a Start that silently never saves.
+  assert.equal(MAX_TIMER_MINUTES, 180);
+  assert.equal(startMinutesFor({ estimateMinutes: 240 }, { index: 2 }, null), 180);
+  assert.equal(startMinutesFor({ estimateMinutes: 45 }, { index: 2 }, null), 45);
 });
