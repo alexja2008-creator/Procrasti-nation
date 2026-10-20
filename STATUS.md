@@ -17,14 +17,15 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
 ## This week
 
 - Alex's feedback on Plan it: the answers to its questions wrap and the boxes grow to fit, the page scrolls to the buttons, and Return moves to the next question (PR #36).
-- Alex's feedback on Today: Show steps keeps a plan's finished steps, struck through, with when each was done, and counts what's left for today (PR #35).
+- Alex's feedback on Today: Show steps keeps a plan's finished steps, struck through, with when each was done, and counts what's left for today (PR #35). Checked on the iOS Simulator too (2026-10-20).
 - Start Mode's timer runs for a step's estimate, from Alex's feedback (2026-10-20, `docs/plans/shipped/step-timers.md`, PR #37).
 - The dates rethink, from Alex's feedback (2026-10-20, `docs/plans/active/start-and-due.md`): "When" is now Start and leads, Due is optional, the + sheet asks Start · Today · Tomorrow · Pick a date · Later, and a due date fills in a start day (PR #38). Next: monthly repeats (the 1st, the last day, the third Tuesday) in quick add, then in the Repeat sheet.
 - The business plan and beta form brought up to date, with a launch checklist for the business and marketing to-dos (kept privately, `docs/external.md`). `supabase/v2/heard-from.sql` counts the Application's "Where did you hear about us?" answers for the funnel model.
 
 ## Open items for Alex
 
-- [ ] Start Mode on a plan (web, then the next TestFlight build): step 2 counts down from its estimate, and an hour-long step's clock ("1:00:00") fits inside the ring. The web check was skipped before merging (2026-10-20), so this is its first look.
+- [x] Start Mode on a plan, checked on the web and the iOS Simulator (Claude, 2026-10-20): a first step counts down from its estimate (3:00), later steps too (60 and 90 min), and a 90-minute step's "1:29:59" fits inside the ring with "An hour and a half." under it.
+- [ ] On the next TestFlight build (build 8 predates PR #37), Start Mode on a plan on a real iPhone, including a later step with no estimate (it should get 25 minutes; no step in Alex's staging plans lacks an estimate, so this hasn't been seen anywhere).
 - [ ] Beta Pro ends at the close of November 15, 2026 (`BETA_PRO_UNTIL` in `packages/core/src/account.ts`): before then, move the date or let the free tier's 2 plans a month return.
 - [x] Production's Change Email Address template has our subject and body (Alex, 2026-10-15).
 - [ ] On build 8 (TestFlight), check what only the iPhone shows:
@@ -34,7 +35,7 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
   - a renamed task's reminder ringing with its new title
   - the How to use guide from the "?" (a modal: Close and swipe down)
   - that `@expo/ui` 57.0.25 runs; the Simulator only ran it on the older build's 57.0.21 (`docs/plans/shipped/dates-and-repeats.md`, Phase 2)
-- [ ] On the next iPhone build (or the Simulator), Plan it's answer boxes (PR #36, checked on the web only): Return moves down through the questions and Done on the last one closes the keyboard, a box below the keyboard scrolls into view when it's focused, and a box keeps growing with the keyboard up.
+- [x] Plan it's answer boxes on the iOS Simulator (PR #36; Claude, 2026-10-20): Return moves down through the questions and Done on the last one closes the keyboard, a box below the keyboard scrolls into view when it's focused, and a box keeps growing with the keyboard up.
 - [ ] On staging, the dates-and-repeats checks that make real data (`docs/plans/shipped/dates-and-repeats.md`, phases 2 and 3):
   - the Oath page on a new passport (nothing pre-selected, Pick a date)
   - Plan it on a task with a later When day (the steps start that day)
@@ -62,5 +63,6 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
    - Space doesn't tick a toggle on the web.
    - Chips are shorter than the 44pt tap target.
    - A rename that fails to save keeps showing the typed text on the task page.
+6. A polish from the Simulator check (2026-10-20): on iPhone, Plan it's focused answer box stops with its bottom edge just under the keyboard (the line being typed stays visible; PR #36).
 
 Known limits and what's out of scope: `DECISIONS.md`.

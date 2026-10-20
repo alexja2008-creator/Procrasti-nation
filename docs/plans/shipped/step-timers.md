@@ -53,6 +53,7 @@ One phase.
 - **Checked:** `npm run core:test`, `npm run app:check`; on the web (`npm run app:web`), a plan whose steps count down from their estimates, by Start on the plan and by "Start the next step" after Done; a reload mid-step keeps its length; "I'm stuck" still gives two minutes. Phone and laptop width, Night.
 - **Needs Alex:** nothing more.
 - **Built 2026-10-20:** `npm run core:test` (89 tests, the new cap included) and `npm run app:check` pass, and the `code-reviewer` ran. Its findings (the 3-hour cap, the clock's size at an hour or more, spelled lengths) are fixed. Each tone's lines were printed for 1 minute to 2½ hours, and the clock's width was measured in the browser: "1:00:00" is 208px at 58px against 192px inside the ring, and 157–164px at 44px. **Not checked:** Start Mode itself on the web or iPhone. That needed a staging sign-in in the browser pane, and Alex chose to skip the web check, so it's an open item in `STATUS.md`. The iPhone gets it with the next TestFlight build.
+- **Checked 2026-10-20 (Claude, after the merge):** on the web and the iOS Simulator (Expo Go, Alex's staging account), a first step counts down from its estimate (3:00), later steps too (60 and 90 minutes), and a 90-minute step's "1:29:59" fits inside the ring. Still open in `STATUS.md`: a real iPhone (the next TestFlight build) and a later step with no estimate (25 minutes), which no plan on that account has.
 
 ## Data and copy
 
@@ -65,7 +66,7 @@ No tables or columns change: `start_sessions.planned_minutes` already records ea
 
 ## Done when
 
-- [ ] A plan's steps start at their estimates, the first included (web).
+- [x] A plan's steps start at their estimates, the first included (web).
 - [ ] A first step with no estimate and a plain task keep the start timer; a later step with no estimate gets 25 minutes; a reminder's Start 5 min and "I'm stuck" keep their lengths.
 - [ ] The long-timer words read as approved in each tone.
 - [ ] `npm run core:test` and `npm run app:check` pass; `code-reviewer` run before the commit.
