@@ -31,6 +31,7 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
   - a renamed task's reminder ringing with its new title
   - the How to use guide from the "?" (a modal: Close and swipe down)
   - that `@expo/ui` 57.0.25 runs; the Simulator only ran it on the older build's 57.0.21 (`docs/plans/shipped/dates-and-repeats.md`, Phase 2)
+- [ ] On the next iPhone build (or the Simulator), Plan it's answer boxes (PR #36, checked on the web only): Return moves down through the questions and Done on the last one closes the keyboard, a box below the keyboard scrolls into view when it's focused, and a box keeps growing with the keyboard up.
 - [ ] On staging, the dates-and-repeats checks that make real data (`docs/plans/shipped/dates-and-repeats.md`, phases 2 and 3):
   - the Oath page on a new passport (nothing pre-selected, Pick a date)
   - Plan it on a task with a later When day (the steps start that day)
