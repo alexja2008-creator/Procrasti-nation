@@ -2,7 +2,7 @@
 
 What changed for people using PN, newest first, in their words. One entry per release (a web deploy or a TestFlight build). It feeds TestFlight's "What to Test" notes and release posts. Git has the technical detail.
 
-## Unreleased
+## 2026-10-20: The wider beta (TestFlight build 11)
 
 - Tasks and plans on Today without a Declaration ask "Declare a start time?", at the right of their row or in the Up next card. Tap it to pick when you'll start and sign it, with no press and hold first.
 - Repeat → Every month… offers what fits the task's day: on the 20th, on the third Tuesday, on the 1st or on the last day.
