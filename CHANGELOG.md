@@ -5,6 +5,8 @@ What changed for people using PN, newest first, in their words. One entry per re
 ## Unreleased
 
 - Start Mode's timer follows a step's estimate: a 30-minute step counts down from 30:00, and a plan's first step stays a few minutes long. A task on its own still gets the length set in Settings → Start Mode, and a later step with no estimate gets 25 minutes.
+- Plan it's questions: the answer boxes wrap and grow to show everything you type, and the page scrolls down to Build my plan. Return moves to the next question, and on the last one it puts the keyboard away. On a laptop, Shift+Return starts a new line.
+- Show steps on Today keeps a plan's finished steps in the list, struck through, with when you did them, so you can see where you left off. Its count is what's left for today.
 - New here? The ? beside the magnifier on Today, Upcoming and Territories (or Settings → Help) opens How to use ProcrastiNation: what Customs, Territories, plans, steps, notes, Declarations, Start Mode, the Morning Briefing and stamps mean, and how to capture, plan, start and repeat things.
 - Upcoming shows every turn of a repeat in the week ahead: "bio lab every Mon and Wed" now shows Wednesday too. The next turn is checkable as before; the later ones are marked "Repeats · opens after Mon", and tapping their repeat mark says, right there, when they open.
 - Rename a task from its page (tap the button beside the title) or with Rename… in a row's menu.

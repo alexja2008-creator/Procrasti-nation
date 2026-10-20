@@ -230,8 +230,11 @@ export const voice = {
     /** A plan on Today: its steps behind a toggle, progress where a checkbox would be (Alex, 2026-10-14). */
     stepsProgress: (done: number, total: number) => `${done} of ${total} steps`,
     stepsProgressSpoken: (done: number, total: number) => `${done} of ${total} steps done`,
-    showSteps: (n: number) => (n === 1 ? 'Show step' : `Show steps (${n})`),
+    /** Counts the open steps it shows; the finished ones show too, struck through (Alex, 2026-10-20). */
+    showSteps: (open: number) => (open === 0 ? 'Show steps' : `Show steps (${open} for today)`),
     hideSteps: 'Hide steps',
+    /** A step finished on an earlier day: "done yesterday", "done Sat 17 Oct". Today's show the time. */
+    doneOn: (day: string) => `done ${day}`,
     allStepsDone: (total: number) => (total === 1 ? 'Its step is done. Mark the plan done?' : `All ${total} steps done. Mark the plan done?`),
     markPlanDone: 'Mark plan done',
     emptyHint: 'Capture anything: “Walk Biscuit every day 6pm”, “Essay due fri”, or just “Buy stamps”.',
