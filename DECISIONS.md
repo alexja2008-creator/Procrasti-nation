@@ -190,6 +190,8 @@ Each of these looks redundant, over-built or odd, and each exists because the si
 - **`useShortcuts` listens in the capture phase** (`apps/app/src/hooks/use-shortcuts.web.ts`), because React Native Web's text fields stop key presses from bubbling.
 - **Nothing relies on `onBlur` to save.** Screens use `keyboardShouldPersistTaps="handled"`, so tapping a button with the keyboard up doesn't blur the field.
 - **The small casts in `apps/app/src/lib/web-styles.ts`** (`oneRowOnWeb`, `noFocusRing`, `switchThumbOnWeb`) fix web-only quirks that React Native's types don't describe.
+- **`submitOnReturnWeb` next to `submitBehavior`** (Plan it's answer boxes): React Native Web reads the deprecated `blurOnSubmit`, not `submitBehavior`, so without it Return adds a new line on the web instead of moving to the next question.
+- **`useAutoHeight`'s `onChange` and `onLayout` beside `onContentSizeChange`** (`apps/app/src/hooks/use-auto-height.ts`): React Native Web only reports a size when the textarea's scroll size changes, so a box that shrank on delete stayed one row tall, and a resized window never measured again. They measure the textarea itself.
 - **`aria-checked` / `aria-selected` next to `accessibilityState`,** because React Native Web ignores `accessibilityState`.
 - **The signed name's size is worked out from its length on web** (`webNameSize` in `signature-pad.tsx`): `adjustsFontSizeToFit` is native only, so without it a long name is cut off with an ellipsis. The iPhone still shrinks it to fit itself.
 
