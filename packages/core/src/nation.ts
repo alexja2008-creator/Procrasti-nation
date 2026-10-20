@@ -559,6 +559,8 @@ export const voice = {
     renameItem: 'Rename…',
     rename: 'Rename',
     save: 'Save',
+    /** The Repeat sheet's monthly choices, worked out from the task's day ("On the 20th", "On the third Tuesday"). */
+    everyMonth: 'Every month…',
     /** The Repeat sheet's own days: seven toggles, Monday first. */
     pickDays: 'Pick days…',
     repeatDays: 'Repeat on',

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { atLocalTime, clockOf } from '../src/dates.ts';
-import { duePatch, pickerWeek, repeatChips, repeatPatch, daysChangeLanding, sameRepeat, weeklyInterval, weeklyOf, weeklyRule, whenPatch } from '../src/when.ts';
+import { duePatch, monthlyChoices, monthlyOf, pickerWeek, repeatChips, repeatPatch, daysChangeLanding, sameRepeat, weeklyInterval, weeklyOf, weeklyRule, whenPatch } from '../src/when.ts';
 
 test('when and due patches', () => {
   assert.deepEqual(whenPatch(null, null), { scheduledOn: null, remindAt: null, rrule: null, declaredAt: null }, 'no day: no repeat either');
@@ -22,7 +22,7 @@ test('a repeat moves the task to its first day in the series, keeping the time',
   const unscheduled = { ...saturday6pm, scheduledOn: null, remindAt: null };
   assert.equal(repeatPatch(unscheduled, 'FREQ=DAILY', '2026-10-06').scheduledOn, '2026-10-06', 'starts today');
   assert.deepEqual(repeatPatch(saturday6pm, null, '2026-10-06'), { rrule: null });
-  assert.deepEqual(repeatChips('2026-10-06').map((c) => c.label), ['Every day', 'Every weekday', 'Every week on Tue', 'Every month on the 6th']);
+  assert.deepEqual(repeatChips('2026-10-06').map((c) => c.label), ['Every day', 'Every weekday', 'Every week on Tue']);
 });
 
 test('picking a weekly repeat’s days', () => {
@@ -46,6 +46,23 @@ test('saving a repeat that hasn’t changed moves nothing', () => {
   const otherTue = { ...skipped, scheduledOn: '2026-10-27', rrule: 'FREQ=WEEKLY;INTERVAL=2;BYDAY=TU' };
   assert.equal(repeatPatch(otherTue, otherTue.rrule, '2026-10-19').scheduledOn, '2026-10-27', 'every other Tuesday stays on its week');
   assert.equal(daysChangeLanding(otherTue, otherTue.rrule, '2026-10-19'), null);
+  // An old plain "every month" given its own day writes the day in and stays, even carried over.
+  const rent = { ...skipped, scheduledOn: '2026-10-15', rrule: 'FREQ=MONTHLY' };
+  assert.deepEqual(repeatPatch(rent, 'FREQ=MONTHLY;BYMONTHDAY=15', '2026-10-20'), { rrule: 'FREQ=MONTHLY;BYMONTHDAY=15' });
+  const cactus = { ...skipped, scheduledOn: '2026-10-15', rrule: 'FREQ=MONTHLY;INTERVAL=2' };
+  assert.deepEqual(repeatPatch(cactus, 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=15', '2026-10-20'), { rrule: 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=15' });
+});
+
+test('an every-other-month repeat keeps its months when its day changes', () => {
+  const base = { remindAt: null, dueOn: null, dueAt: null, declaredAt: null, rrule: 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=15' };
+  // Turns in Oct, Dec, Feb: from 15 December, the 1st is 1 February and the last day 31 December.
+  const dec = { ...base, scheduledOn: '2026-12-15' };
+  assert.equal(repeatPatch(dec, 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=1', '2026-10-20').scheduledOn, '2027-02-01');
+  assert.equal(repeatPatch(dec, 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=-1', '2026-10-20').scheduledOn, '2026-12-31');
+  // Carried over from 15 October: the 1st is 1 December, the third Thursday 17 December.
+  const oct = { ...base, scheduledOn: '2026-10-15' };
+  assert.equal(repeatPatch(oct, 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=1', '2026-10-20').scheduledOn, '2026-12-01');
+  assert.equal(repeatPatch(oct, 'FREQ=MONTHLY;INTERVAL=2;BYDAY=3TH', '2026-10-20').scheduledOn, '2026-12-17');
 });
 
 test('changing a repeat’s days lands on the first new day from today', () => {
@@ -74,4 +91,21 @@ test('"every month" retyped in the Start sheet is the same monthly repeat, so it
   assert.equal(sameRepeat('FREQ=MONTHLY', 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=1'), false, 'a different interval is a change');
   assert.equal(sameRepeat('FREQ=MONTHLY;BYMONTHDAY=15', 'FREQ=MONTHLY;BYMONTHDAY=1'), false, 'a new day is a change');
   assert.equal(sameRepeat('FREQ=MONTHLY', null), false);
+});
+
+test('Every month… offers the task’s day, its weekday’s place, the 1st and the last day, with no two the same', () => {
+  const parts = (anchor: string, interval?: number) => monthlyChoices(anchor, interval).map((c) => c.rrule.replace('FREQ=MONTHLY;', ''));
+  assert.deepEqual(parts('2026-10-20'), ['BYMONTHDAY=20', 'BYDAY=3TU', 'BYMONTHDAY=1', 'BYMONTHDAY=-1']);
+  assert.deepEqual(parts('2026-11-26'), ['BYMONTHDAY=26', 'BYDAY=4TH', 'BYDAY=-1TH', 'BYMONTHDAY=1', 'BYMONTHDAY=-1'], 'the fourth Thursday, and the last');
+  assert.deepEqual(parts('2026-10-31'), ['BYDAY=-1SA', 'BYMONTHDAY=1', 'BYMONTHDAY=-1'], 'the 31st is the last day; no fifth Saturday');
+  assert.deepEqual(parts('2026-11-01'), ['BYMONTHDAY=1', 'BYDAY=1SU', 'BYMONTHDAY=-1']);
+  assert.deepEqual(parts('2026-10-15', 2)[0], 'INTERVAL=2;BYMONTHDAY=15', 'every other month keeps its months');
+  // Picking one lands on its first turn from the task's day.
+  const task = { scheduledOn: '2026-10-20', remindAt: null, dueOn: null, dueAt: null, rrule: null, declaredAt: null };
+  assert.equal(repeatPatch(task, 'FREQ=MONTHLY;BYMONTHDAY=1', '2026-10-20').scheduledOn, '2026-11-01');
+  assert.equal(repeatPatch(task, 'FREQ=MONTHLY;BYDAY=-1FR', '2026-10-20').scheduledOn, '2026-10-30');
+  // An old plain "every month" reads as its current day; other repeats aren't monthly.
+  assert.equal(monthlyOf('FREQ=MONTHLY', '2026-11-30'), 'FREQ=MONTHLY;BYMONTHDAY=30');
+  assert.equal(monthlyOf('FREQ=MONTHLY;BYMONTHDAY=31', '2026-11-30'), 'FREQ=MONTHLY;BYMONTHDAY=31');
+  assert.equal(monthlyOf('FREQ=WEEKLY;BYDAY=TU', '2026-10-20'), null);
 });

@@ -1,6 +1,6 @@
 # Plan: Start and Due, and monthly repeats
 
-**Status: approved by Alex on 2026-10-20, defaults included, with the name Start.** Alex picked the direction the same day, after the options page (When and Due: <https://claude.ai/artifact/FcgQGbVQcVHdydtLQxENxn>, private to Alex).
+**Status: shipped 2026-10-20** in three PRs: phase 1 (#38), phase 2 (#39) and phase 3 (this plan's last PR). Alex approved it on 2026-10-20, defaults included, with the name Start, after picking the direction the same day from the options page (When and Due: <https://claude.ai/artifact/FcgQGbVQcVHdydtLQxENxn>, private to Alex).
 
 ## Overview
 
@@ -142,6 +142,17 @@ Three pull requests, one after another: phases 1 and 2 share `quick-add.ts` and 
 - **App:** the Repeat sheet's monthly choices; an old plain monthly rule shows as its current day.
 - **Checked:** core tests for `monthlyChoices` (the 20th, the third and last Tuesday, the 1st, the last day, no duplicates). In the browser pane: the choices for a task on Tue 20 Oct, Sat 31 Oct and Sun 1 Nov, and where saving one lands (`repeatPatch`, the first matching day on or after the task's day). Read-only on staging unless a test task is made and deleted. The `code-reviewer` subagent.
 - **Needs Alex:** the iPhone look with the next TestFlight build.
+- **Built 2026-10-20 (`claude/monthly-choices`).**
+  - **Core:** `monthlyChoices`, `monthlyChoiceLabel` and `monthlyOf` in `when.ts`. The one-tap monthly chip is gone from `repeatChips`; Every month… holds the choices, with the repeat's own rule always among them, ticked ("On the 31st" while it sits on the 30th). The 31st is offered as the last day.
+  - **From review (the `code-reviewer` subagent), fixed:**
+    - Tapping the ticked choice of an old plain "every month" writes its day into the rule and leaves the task where it is, carried over or not (`repeatPatch`). It had moved a carried-over turn to next month.
+    - An every-other-month repeat keeps its months when its day changes (`monthsKeptLanding`): "On the 1st" for one on 15 December lands on 1 February.
+  - **Checked:**
+    - Core tests (103): the choices for Tue 20 Oct, Thu 26 Nov (the fourth and the last Thursday), Sat 31 Oct and Sun 1 Nov; every other month; where picking lands; an old plain rule writing its day without moving; months kept.
+    - `npm run app:check`.
+    - In the browser pane, on Alex's staging account, with a throwaway task on Tue 20 Oct: Every month… opened On the 20th, On the third Tuesday, On the 1st and On the last day. On the last day moved it to Sat 31 Oct, "Every month on the last day". Reopened, the list was open with that choice ticked. The task was then deleted. No console errors.
+  - **Known, left as is:** Every month… and Pick days… open a list but don't say aria-expanded (the parked web screen-reader work). An every-other-month repeat's choices stay every other month; going back to every month is Never, then Every month….
+  - **Not checked:** the iPhone (next build).
 
 **After shipping:** `DECISIONS.md` replaces "The + sheet asks for a due date with taps" with decisions 1–3 and adds decision 4; "Looks wrong, isn't" gets D9 and D10. `CHANGELOG.md` and `STATUS.md` say what shipped. This plan moves to `docs/plans/shipped/`.
 
