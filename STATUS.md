@@ -16,6 +16,7 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
 
 ## This week
 
+- Alex's feedback on Today: Show steps keeps a plan's finished steps, struck through, with when each was done, and counts what's left for today (PR #35).
 - The business plan and beta form brought up to date, with a launch checklist for the business and marketing to-dos (kept privately, `docs/external.md`). `supabase/v2/heard-from.sql` counts the Application's "Where did you hear about us?" answers for the funnel model.
 
 ## Open items for Alex

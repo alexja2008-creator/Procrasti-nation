@@ -89,6 +89,21 @@ test('Today groups each plan into one item: two plans of seven steps are two thi
   assert.deepEqual([a?.done, a?.total, a?.readyToFinish, a?.steps[0].stepIndex], [0, 7, false, 1]);
 });
 
+test('Show steps keeps every finished step, from any day, in plan order (Alex, 2026-10-20)', () => {
+  // p1 finished two days ago, p2 today, p5 today ahead of its day; p3 is today's, p4 a later day's.
+  const days = ['2026-10-01', '2026-10-02', TODAY, '2026-10-05', '2026-10-06'];
+  const tasks = plan('p', 5, {}, (i) => ({ scheduledOn: days[i - 1], ...(i === 1 ? done(1) : i === 2 || i === 5 ? done(3) : {}) }));
+  const listed = (all: Task[], keep?: Set<string>) => {
+    const item = groupAgenda(buildToday(all, TODAY), all, keep).items[0];
+    return item?.kind === 'plan' ? item.group.steps.map((e) => (e.done ? `${e.task.id}✓` : e.task.id)) : [];
+  };
+  assert.deepEqual(listed(tasks), ['p1✓', 'p2✓', 'p3', 'p5✓'], 'a later day’s open step stays off Today');
+  const due = tasks.map((t) => (t.id === 'p' ? { ...t, dueOn: TODAY } : t));
+  assert.deepEqual(listed(due), ['p1✓', 'p2✓', 'p3', 'p4', 'p5✓'], 'the plan itself due: every open step too');
+  const undone = tasks.map((t) => (t.id === 'p5' ? { ...t, status: 'in_progress' as const, completedAt: null } : t));
+  assert.deepEqual(listed(undone, new Set(['p5'])), ['p1✓', 'p2✓', 'p3', 'p5'], 'un-checked this visit, it stays where it was');
+});
+
 test('Start on a plan starts its next open step; a plan finishes only when asked', () => {
   const tasks = [...plan('p', 3, {}, (i) => (i === 1 ? done(2) : {})), task('solo')];
   assert.equal(startTarget(tasks, 'p'), 'p2', 'the first open step, in step order');

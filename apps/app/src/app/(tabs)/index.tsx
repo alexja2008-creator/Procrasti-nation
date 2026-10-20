@@ -4,6 +4,7 @@ import {
   formatTime,
   groupAgenda,
   isDeclared,
+  logicalDateString,
   names,
   offersPlan,
   parseLocalDate,
@@ -47,7 +48,14 @@ const dueLabel = (dueOn: string, today: string) => voice.today.due(relativeDayPh
  * territories and notes by id (a checklist line names its note). `inPlan`: a
  * step listed under its plan's row, so its meta leaves the plan's name out.
  */
-function rowFor(entry: AgendaEntry, today: string, planned: Set<string>, places: Map<string, string>, inPlan = false): TaskRowItem {
+function rowFor(
+  entry: AgendaEntry,
+  today: string,
+  rolloverHour: number,
+  planned: Set<string>,
+  places: Map<string, string>,
+  inPlan = false,
+): TaskRowItem {
   const t = entry.task;
   const meta: string[] = [];
   if (entry.parentTitle) meta.push(inPlan ? `step ${entry.stepIndex} of ${entry.stepCount}` : `${entry.parentTitle} · step ${entry.stepIndex} of ${entry.stepCount}`);
@@ -56,7 +64,12 @@ function rowFor(entry: AgendaEntry, today: string, planned: Set<string>, places:
     if (place) meta.push(place);
     if (t.dueOn) meta.push(dueLabel(t.dueOn, today));
   }
-  if (entry.done && t.completedAt) meta.push(formatTime(new Date(t.completedAt)));
+  if (entry.done && t.completedAt) {
+    // Finished today: the time. A plan's step finished on an earlier day: the day.
+    const finished = new Date(t.completedAt);
+    const day = logicalDateString(finished, rolloverHour);
+    meta.push(day === today ? formatTime(finished) : voice.today.doneOn(relativeDayPhrase(day, today)));
+  }
   const clock = timeOnItsDay(t);
   return {
     id: t.id,
@@ -96,9 +109,13 @@ export default function TodayScreen() {
       return next;
     });
 
+  // Finished steps un-checked under their plan: they stay listed while Today is open, even when
+  // their day is later, so the row doesn't vanish under the finger.
+  const [keep, setKeep] = useState<ReadonlySet<string>>(new Set());
+
   const view = buildToday(tasks, today, rolloverHour);
   // Each plan is one item, its steps behind it; a plan counts once.
-  const { items, openCount } = groupAgenda(view, tasks);
+  const { items, openCount } = groupAgenda(view, tasks, keep);
   const hasOpen = items.some((i) => (i.kind === 'task' ? !i.entry.done : !i.group.finished));
   const byId = new Map<string, Task>(tasks.map((t) => [t.id, t]));
   const planned = new Set(tasks.flatMap((t) => (t.parentId ? [t.parentId] : [])));
@@ -109,6 +126,10 @@ export default function TodayScreen() {
   const onToggle = (id: string) => {
     const task = byId.get(id);
     if (task) toggle(task);
+  };
+  const onStepToggle = (id: string) => {
+    if (byId.get(id)?.completedAt) setKeep((prev) => new Set(prev).add(id));
+    onToggle(id);
   };
   const onMenu = (id: string) => {
     const task = byId.get(id);
@@ -205,7 +226,7 @@ export default function TodayScreen() {
               {view.customs.map((t, i) => (
                 <TaskRow
                   key={t.id}
-                  item={rowFor({ task: t, done: false }, today, planned, places)}
+                  item={rowFor({ task: t, done: false }, today, rolloverHour, planned, places)}
                   last={i === view.customs.length - 1}
                   onToggle={onToggle}
                   onPlan={onPlan}
@@ -285,7 +306,7 @@ export default function TodayScreen() {
                 item.kind === 'task' ? (
                   <TaskRow
                     key={item.entry.task.id}
-                    item={rowFor(item.entry, today, planned, places)}
+                    item={rowFor(item.entry, today, rolloverHour, planned, places)}
                     last={i === items.length - 1}
                     onToggle={onToggle}
                     onPlan={onPlan}
@@ -296,7 +317,7 @@ export default function TodayScreen() {
                   <PlanRow
                     key={item.group.plan.id}
                     group={item.group}
-                    item={rowFor({ task: item.group.plan, done: item.group.finished }, today, planned, places)}
+                    item={rowFor({ task: item.group.plan, done: item.group.finished }, today, rolloverHour, planned, places)}
                     expanded={expanded.has(item.group.plan.id)}
                     onExpand={onExpand}
                     onFinish={onToggle}
@@ -306,9 +327,9 @@ export default function TodayScreen() {
                     {item.group.steps.map((step, j) => (
                       <TaskRow
                         key={step.task.id}
-                        item={rowFor(step, today, planned, places, true)}
+                        item={rowFor(step, today, rolloverHour, planned, places, true)}
                         last={j === item.group.steps.length - 1}
-                        onToggle={onToggle}
+                        onToggle={onStepToggle}
                         onMenu={onMenu}
                         onOpen={onOpen}
                       />
