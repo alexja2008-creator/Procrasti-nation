@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Platform, Pressable, StyleSheet, View } from 'react-native';
 
+import { DeclareInvite } from '@/components/declare/declare-invite';
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/text';
 import { useStyles, type Tokens } from '@/theme/tokens';
@@ -21,6 +22,8 @@ export interface TaskRowItem {
   suggestPlan?: boolean;
   /** A Declaration still to come: a small violet seal under its time. */
   declared?: boolean;
+  /** Open, declarable and not declared yet: "Declare a start time?" in the seal's place (with `onDeclare`). */
+  offerDeclare?: boolean;
   done?: boolean;
   /**
    * A repeat's later turn in Upcoming (Alex, 2026-10-16): a repeat mark instead of a checkbox,
@@ -35,6 +38,8 @@ type Props = {
   last?: boolean;
   onToggle: (id: string) => void;
   onPlan?: (id: string) => void;
+  /** Opens the Declare sheet, from the row's "Declare a start time?". */
+  onDeclare?: (id: string) => void;
   /** Opens the row's menu (Start, Plan it): press and hold, or right-click on web. */
   onMenu?: (id: string) => void;
   /** Opens the task's detail page (a tap). */
@@ -46,11 +51,12 @@ type Props = {
 /** How long a preview's line shows its notice after the mark is tapped. */
 const EXPLAIN_MS = 4000;
 
-export function TaskRow({ item, last, onToggle, onPlan, onMenu, onOpen, detail }: Props) {
+export function TaskRow({ item, last, onToggle, onPlan, onDeclare, onMenu, onOpen, detail }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   const done = !!item.done;
   const preview = item.preview;
+  const invite = onDeclare && item.offerDeclare && !done && !preview && !item.declared;
   // The notice shows in the row's own line, so nothing above it moves under the finger
   // (a second tap on a shifted list could land on the real turn's checkbox).
   const [explaining, setExplaining] = useState(false);
@@ -161,7 +167,7 @@ export function TaskRow({ item, last, onToggle, onPlan, onMenu, onOpen, detail }
             {voice.stamped.toUpperCase()}
           </Text>
         </View>
-      ) : item.minutes || item.time ? (
+      ) : item.minutes || item.time || invite ? (
         <View style={s.side}>
           {item.minutes ? (
             <Text variant="label" color={c.muted} style={s.duration}>
@@ -179,6 +185,8 @@ export function TaskRow({ item, last, onToggle, onPlan, onMenu, onOpen, detail }
                 {voice.declaration.mark.toUpperCase()}
               </Text>
             </View>
+          ) : invite ? (
+            <DeclareInvite title={item.title} onPress={() => onDeclare?.(item.id)} />
           ) : null}
         </View>
       ) : null}

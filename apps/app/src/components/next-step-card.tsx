@@ -2,6 +2,7 @@ import { actions, voice } from '@pn/core';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
 
+import { DeclareInvite } from '@/components/declare/declare-invite';
 import { Icon } from '@/components/icon';
 import { Text } from '@/components/text';
 import { useStyles, type Tokens } from '@/theme/tokens';
@@ -17,42 +18,52 @@ type Props = {
   onStart?: () => void;
   /** Opens the step's detail page. */
   onOpen?: () => void;
+  /** Opens the Declare sheet, from "Declare a start time?" under the meta. */
+  onDeclare?: () => void;
 };
 
 /** "Your next small step": a ticket with a perforated stub holding Start. */
-export function NextStepCard({ title, meta, label = voice.nextStepLabel, position, aiBuilt, onStart, onOpen }: Props) {
+export function NextStepCard({ title, meta, label = voice.nextStepLabel, position, aiBuilt, onStart, onOpen, onDeclare }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
   return (
     <View style={s.card} accessibilityLabel={label} accessibilityRole="summary">
-      <Pressable onPress={onOpen} disabled={!onOpen} accessibilityRole="button" accessibilityLabel={title} style={s.body}>
-        <View style={s.headRow}>
-          <Text variant="label" color={c.primaryText}>
-            {label.toUpperCase()}
-          </Text>
-          {position ? (
-            <View style={s.counter}>
-              <Text variant="labelSmall" color={c.primaryText}>
-                {position.index} OF {position.total}
+      <View style={s.body}>
+        <Pressable onPress={onOpen} disabled={!onOpen} accessibilityRole="button" accessibilityLabel={title} style={[s.open, onDeclare && s.openAbove]}>
+          <View style={s.headRow}>
+            <Text variant="label" color={c.primaryText}>
+              {label.toUpperCase()}
+            </Text>
+            {position ? (
+              <View style={s.counter}>
+                <Text variant="labelSmall" color={c.primaryText}>
+                  {position.index} OF {position.total}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+          <Text variant="step">{title}</Text>
+          {meta ? (
+            <Text variant="meta" color={c.next.meta} style={s.meta}>
+              {meta}
+            </Text>
+          ) : null}
+          {aiBuilt && (
+            <View style={s.tag}>
+              <Icon name="shrink" size={13} color={c.primaryText} strokeWidth={2} />
+              <Text variant="meta" color={c.primaryText} style={s.tagText}>
+                {voice.madeSmaller}
               </Text>
             </View>
-          ) : null}
-        </View>
-        <Text variant="step">{title}</Text>
-        {meta ? (
-          <Text variant="meta" color={c.next.meta} style={s.meta}>
-            {meta}
-          </Text>
-        ) : null}
-        {aiBuilt && (
-          <View style={s.tag}>
-            <Icon name="shrink" size={13} color={c.primaryText} strokeWidth={2} />
-            <Text variant="meta" color={c.primaryText} style={s.tagText}>
-              {voice.madeSmaller}
-            </Text>
+          )}
+        </Pressable>
+        {/* Beside the card's own button, not inside it: a button in a button is no button on the web. */}
+        {onDeclare ? (
+          <View style={s.declare}>
+            <DeclareInvite title={title} onPress={onDeclare} />
           </View>
-        )}
-      </Pressable>
+        ) : null}
+      </View>
 
       <View style={s.stub}>
         {/* Perforation: RN can't dash a single border side on iOS, so draw it. */}
@@ -84,7 +95,10 @@ const makeStyles = (t: Tokens) => ({
       borderRadius: t.radii.card,
       overflow: 'hidden',
     },
-    body: { flex: 1, padding: 16, gap: 9 },
+    body: { flex: 1 },
+    open: { padding: 16, gap: 9 },
+    openAbove: { paddingBottom: 4 },
+    declare: { alignSelf: 'flex-start', paddingHorizontal: 16, paddingBottom: 8 },
     headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
     counter: {
       borderWidth: 1,

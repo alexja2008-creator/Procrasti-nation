@@ -1,19 +1,4 @@
-import {
-  buildToday,
-  formatDayLabel,
-  formatTime,
-  groupAgenda,
-  isDeclared,
-  logicalDateString,
-  names,
-  offersPlan,
-  parseLocalDate,
-  relativeDayPhrase,
-  timeOnItsDay,
-  voice,
-  type AgendaEntry,
-  type Task,
-} from '@pn/core';
+import { buildToday, canDeclare, formatDayLabel, groupAgenda, isDeclared, names, parseLocalDate, voice, type Task } from '@pn/core';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text as RNText, View } from 'react-native';
@@ -23,6 +8,7 @@ import { personName } from '@/auth/person-name';
 import { MorningBriefing } from '@/components/briefing/morning-briefing';
 import { Button } from '@/components/button';
 import { useCapture } from '@/components/capture';
+import { DeclareSheet } from '@/components/declare/declare-sheet';
 import { HeaderButtons } from '@/components/header-buttons';
 import { Icon } from '@/components/icon';
 import { NextStepCard } from '@/components/next-step-card';
@@ -31,58 +17,15 @@ import { PassportSaveCard } from '@/components/passport-save-card';
 import { PlanRow } from '@/components/plan-row';
 import { RowMenu } from '@/components/row-menu';
 import { Screen } from '@/components/screen';
-import { TaskRow, type TaskRowItem } from '@/components/task-row';
+import { TaskRow } from '@/components/task-row';
 import { Text } from '@/components/text';
+import { dueLabel, rowFor } from '@/components/today/row-for';
 import { useLists } from '@/data/lists-store';
 import { noteTitles } from '@/data/note-titles';
 import { useNotes } from '@/data/notes-store';
 import { useTasks } from '@/data/tasks-store';
 import { useUserSettings } from '@/data/user-settings';
 import { useStyles, type Tokens } from '@/theme/tokens';
-
-/** "due today" / "due Fri" */
-const dueLabel = (dueOn: string, today: string) => voice.today.due(relativeDayPhrase(dueOn, today));
-
-/**
- * `planned` holds ids of tasks that already have plan steps; `places` names
- * territories and notes by id (a checklist line names its note). `inPlan`: a
- * step listed under its plan's row, so its meta leaves the plan's name out.
- */
-function rowFor(
-  entry: AgendaEntry,
-  today: string,
-  rolloverHour: number,
-  planned: Set<string>,
-  places: Map<string, string>,
-  inPlan = false,
-): TaskRowItem {
-  const t = entry.task;
-  const meta: string[] = [];
-  if (entry.parentTitle) meta.push(inPlan ? `step ${entry.stepIndex} of ${entry.stepCount}` : `${entry.parentTitle} · step ${entry.stepIndex} of ${entry.stepCount}`);
-  else {
-    const place = t.noteId ? places.get(t.noteId) : t.listId ? places.get(t.listId) : undefined;
-    if (place) meta.push(place);
-    if (t.dueOn) meta.push(dueLabel(t.dueOn, today));
-  }
-  if (entry.done && t.completedAt) {
-    // Finished today: the time. A plan's step finished on an earlier day: the day.
-    const finished = new Date(t.completedAt);
-    const day = logicalDateString(finished, rolloverHour);
-    meta.push(day === today ? formatTime(finished) : voice.today.doneOn(relativeDayPhrase(day, today)));
-  }
-  const clock = timeOnItsDay(t);
-  return {
-    id: t.id,
-    title: t.title,
-    meta: meta.join(' · ') || undefined,
-    rrule: t.rrule ?? undefined,
-    minutes: t.estimateMinutes ?? undefined,
-    time: clock && !entry.done ? formatTime(new Date(clock)) : undefined,
-    done: entry.done,
-    suggestPlan: !entry.done && offersPlan(t, planned.has(t.id)),
-    declared: !entry.done && isDeclared(t, today),
-  };
-}
 
 export default function TodayScreen() {
   const s = useStyles(makeStyles);
@@ -94,6 +37,7 @@ export default function TodayScreen() {
   const { open: capture } = useCapture();
   const [customsOpen, setCustomsOpen] = useState(false);
   const [menuFor, setMenuFor] = useState<Task | null>(null);
+  const [declaring, setDeclaring] = useState<string | null>(null);
   const { settings } = useUserSettings();
   // ?briefing=1: opened from the morning list notification.
   const { briefing } = useLocalSearchParams<{ briefing?: string }>();
@@ -118,11 +62,15 @@ export default function TodayScreen() {
   const { items, openCount } = groupAgenda(view, tasks, keep);
   const hasOpen = items.some((i) => (i.kind === 'task' ? !i.entry.done : !i.group.finished));
   const byId = new Map<string, Task>(tasks.map((t) => [t.id, t]));
-  const planned = new Set(tasks.flatMap((t) => (t.parentId ? [t.parentId] : [])));
-  const places = new Map([...lists.map((l) => [l.id, l.name] as const), ...noteTitles(notes, tasks)]);
+  const lookups = {
+    planned: new Set(tasks.flatMap((t) => (t.parentId ? [t.parentId] : []))),
+    stepDeclared: new Set(tasks.flatMap((t) => (t.parentId && !t.deletedAt && isDeclared(t, today) ? [t.parentId] : []))),
+    places: new Map([...lists.map((l) => [l.id, l.name] as const), ...noteTitles(notes, tasks)]),
+  };
   const onPlan = (id: string) => router.push({ pathname: '/plan/[id]', params: { id } });
   const onStart = (id: string) => router.push({ pathname: '/start/[id]', params: { id } });
   const onOpen = (id: string) => router.push({ pathname: '/task/[id]', params: { id } });
+  const declaringTask = declaring ? byId.get(declaring) : undefined;
   const onToggle = (id: string) => {
     const task = byId.get(id);
     if (task) toggle(task);
@@ -226,10 +174,11 @@ export default function TodayScreen() {
               {view.customs.map((t, i) => (
                 <TaskRow
                   key={t.id}
-                  item={rowFor({ task: t, done: false }, today, rolloverHour, planned, places)}
+                  item={rowFor({ task: t, done: false }, today, rolloverHour, lookups)}
                   last={i === view.customs.length - 1}
                   onToggle={onToggle}
                   onPlan={onPlan}
+                  onDeclare={setDeclaring}
                   onMenu={onMenu}
                   onOpen={onOpen}
                 />
@@ -254,6 +203,8 @@ export default function TodayScreen() {
           aiBuilt={next.task.source === 'ai'}
           onStart={() => onStart(next.task.id)}
           onOpen={() => onOpen(next.task.id)}
+          // Up next has no time, so no Declaration yet; a plan's next step leaves it to the plan's row.
+          onDeclare={!isStep && canDeclare(next.task) && !lookups.stepDeclared.has(next.task.id) ? () => setDeclaring(next.task.id) : undefined}
         />
       ) : null}
 
@@ -306,10 +257,11 @@ export default function TodayScreen() {
                 item.kind === 'task' ? (
                   <TaskRow
                     key={item.entry.task.id}
-                    item={rowFor(item.entry, today, rolloverHour, planned, places)}
+                    item={rowFor(item.entry, today, rolloverHour, lookups)}
                     last={i === items.length - 1}
                     onToggle={onToggle}
                     onPlan={onPlan}
+                    onDeclare={setDeclaring}
                     onMenu={onMenu}
                     onOpen={onOpen}
                   />
@@ -317,17 +269,18 @@ export default function TodayScreen() {
                   <PlanRow
                     key={item.group.plan.id}
                     group={item.group}
-                    item={rowFor({ task: item.group.plan, done: item.group.finished }, today, rolloverHour, planned, places)}
+                    item={rowFor({ task: item.group.plan, done: item.group.finished }, today, rolloverHour, lookups)}
                     expanded={expanded.has(item.group.plan.id)}
                     onExpand={onExpand}
                     onFinish={onToggle}
+                    onDeclare={setDeclaring}
                     onMenu={onMenu}
                     onOpen={onOpen}
                     last={i === items.length - 1}>
                     {item.group.steps.map((step, j) => (
                       <TaskRow
                         key={step.task.id}
-                        item={rowFor(step, today, rolloverHour, planned, places, true)}
+                        item={rowFor(step, today, rolloverHour, lookups, true)}
                         last={j === item.group.steps.length - 1}
                         onToggle={onStepToggle}
                         onMenu={onMenu}
@@ -343,6 +296,7 @@ export default function TodayScreen() {
       ) : null}
 
       <RowMenu task={menuFor} onClose={() => setMenuFor(null)} />
+      {declaringTask ? <DeclareSheet task={declaringTask} onClose={() => setDeclaring(null)} /> : null}
     </Screen>
   );
 }

@@ -4,6 +4,7 @@ What changed for people using PN, newest first, in their words. One entry per re
 
 ## Unreleased
 
+- Tasks and plans on Today without a Declaration ask "Declare a start time?", at the right of their row or in the Up next card. Tap it to pick when you'll start and sign it, with no press and hold first.
 - Repeat → Every month… offers what fits the task's day: on the 20th, on the third Tuesday, on the 1st or on the last day.
 - Monthly repeats understand the day you mean: "pay rent every 1st", "on the first of every month", "every 1st and 15th", "last day of every month", "book club every last friday", "every 3rd tue". A repeat on the 31st now rings on the last day of shorter months and comes back to the 31st, instead of sliding to the 28th for good. "Due the 28th" works for one-offs too.
 - A repeat moved to a day that isn't one of its days now rings on that day.
