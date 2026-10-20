@@ -1,11 +1,11 @@
 import {
-  defaultStartMinutes,
   effectiveListId,
   formatClock,
   keepsDeclaration,
   linesFor,
   relativeDayPhrase,
   stampKinds,
+  startMinutesFor,
   startTarget,
   stepContext,
   voice,
@@ -60,8 +60,9 @@ type Phase = 'running' | 'stuck' | 'breather' | 'stamped';
 
 /**
  * Start Mode: one step, a timer and the "just five minutes" contract. Every visit is a Start.
- * `minutes` overrides their default; `plan` is the plan it was opened for, when it started that
- * plan's next step (a Declaration on the plan is kept by starting it).
+ * The timer runs for a step's estimate, or their start length (`startMinutesFor`); `minutes`
+ * overrides both. `plan` is the plan it was opened for, when it started that plan's next step
+ * (a Declaration on the plan is kept by starting it).
  */
 function StartMode({ id, minutes, plan }: { id: string; minutes?: number; plan?: string }) {
   const s = useStyles(makeStyles);
@@ -79,7 +80,7 @@ function StartMode({ id, minutes, plan }: { id: string; minutes?: number; plan?:
   const step = task ? stepContext(tasks, task) : null;
   const [phase, setPhase] = useState<Phase>('running');
 
-  const run = useStartSession({ userId, taskId: live?.id, defaultMinutes: minutes ?? defaultStartMinutes(settings?.preferences) });
+  const run = useStartSession({ userId, taskId: live?.id, defaultMinutes: minutes ?? startMinutesFor(live, step, settings?.preferences) });
   const { timer, planned, tiny } = run;
   const lines = linesFor(settings?.preferences.nudgeTone);
 

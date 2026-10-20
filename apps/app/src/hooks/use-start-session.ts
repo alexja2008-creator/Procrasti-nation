@@ -15,10 +15,14 @@ type Outcome = NonNullable<StartSession['outcome']>;
  * the device's memory of it. Opening is the Start, unless it picks up a
  * session this device left running (the app was closed, or the page
  * reloaded). Waits for `taskId` when the screen was opened by URL.
+ * `defaultMinutes` is read when the session begins, so it can wait for the
+ * task (a step's estimate) to load.
  */
 export function useStartSession({ userId, taskId, defaultMinutes }: { userId: string; taskId?: string; defaultMinutes: number }) {
   const timer = useStartTimer();
-  const [planned, setPlanned] = useState(defaultMinutes);
+  // Settled when the session begins; until then, whatever the screen would start with now.
+  const [settled, setPlanned] = useState<number | null>(null);
+  const planned = settled ?? defaultMinutes;
   const [keptGoing, setKeptGoing] = useState(false);
   /** "First, just this": the two-minute action from "I'm stuck". */
   const [tiny, setTiny] = useState<string | null>(null);
@@ -48,6 +52,7 @@ export function useStartSession({ userId, taskId, defaultMinutes }: { userId: st
       outcome: null,
     };
     save(current.current);
+    setPlanned(minutes);
     timer.restart();
   };
 
@@ -132,7 +137,6 @@ export function useStartSession({ userId, taskId, defaultMinutes }: { userId: st
       if (!taskId) return;
       end('stuck');
       setTiny(action);
-      setPlanned(STUCK_MINUTES);
       setKeptGoing(false);
       begin(taskId, STUCK_MINUTES);
     },

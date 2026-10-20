@@ -44,7 +44,7 @@ export function TimerRing({ progress, clock, caption, accessibilityLabel }: Prop
         </Svg>
       </View>
       <View style={s.center} aria-hidden>
-        <Text variant="title" style={s.clock}>
+        <Text variant="title" style={[s.clock, clock.length > 5 && s.clockHours]}>
           {clock}
         </Text>
         <Text variant="label" color={c.muted} style={s.caption}>
@@ -62,6 +62,8 @@ const makeStyles = (t: Tokens) => ({
     rotated: { transform: [{ rotate: '-90deg' }] },
     center: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center', justifyContent: 'center', gap: 4 },
     clock: { fontSize: 58, lineHeight: 62, fontVariant: ['tabular-nums'] },
+    // An hour or more ("1:30:00", a long step's estimate) is a size down, or it runs into the ring.
+    clockHours: { fontSize: 44, lineHeight: 48 },
     caption: { letterSpacing: 1.5 },
   }),
 });

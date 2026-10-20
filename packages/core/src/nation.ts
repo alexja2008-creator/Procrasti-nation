@@ -93,8 +93,30 @@ const NUMBER_WORDS = ['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Sev
 
 const spell = (n: number) => NUMBER_WORDS[n] ?? String(n);
 const things = (n: number) => (n === 1 ? '1 thing' : `${n} things`);
-/** Start Mode timer lengths, spelled: "Just five minutes." */
-const minutesWord = (n: number) => ({ 2: 'two', 5: 'five', 10: 'ten', 25: 'twenty-five' })[n] ?? String(n);
+const TEENS = ['eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+const TENS = ['twenty', 'thirty', 'forty', 'fifty'];
+/** Start Mode timer lengths, spelled up to 59: "Just five minutes.", "Thirty-five minutes". */
+const minutesWord = (n: number): string => {
+  if (!Number.isInteger(n) || n < 0 || n > 59) return String(n);
+  if (n <= 10) return spell(n).toLowerCase();
+  if (n < 20) return TEENS[n - 11];
+  const ones = n % 10;
+  return TENS[Math.floor(n / 10) - 2] + (ones ? `-${spell(ones).toLowerCase()}` : '');
+};
+const hoursWord = (h: number) => (h === 1 ? 'an hour' : `${spell(h).toLowerCase()} hours`);
+/** A timer's length in words: "five minutes", "an hour and a half", "two hours and fifteen minutes". */
+const duration = (m: number): string => {
+  const h = Math.floor(m / 60);
+  const rest = m % 60;
+  if (h === 0) return `${minutesWord(m)} ${m === 1 ? 'minute' : 'minutes'}`;
+  if (rest === 0) return hoursWord(h);
+  if (rest === 30) return h === 1 ? 'an hour and a half' : `${spell(h).toLowerCase()} and a half hours`;
+  return `${hoursWord(h)} and ${duration(rest)}`;
+};
+/** The longest start timer (Settings' longest choice, `Preferences['startMinutes']`). */
+const LONGEST_START = 25;
+/** Longer than any start timer: a step's own estimate, with its own words. */
+const longTimer = (m: number) => m > LONGEST_START;
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export const voice = {
@@ -434,14 +456,17 @@ export const voice = {
     andCounting: 'and counting',
     paused: 'paused',
     lead: (minutes: number) =>
-      `Just ${minutesWord(minutes)} minutes. No pressure, just a beginning. Stop when the timer ends, or keep going.`,
+      longTimer(minutes)
+        ? `${capitalize(duration(minutes))} for this step. Settle in. Stop when the timer ends, or keep going.`
+        : `Just ${duration(minutes)}. No pressure, just a beginning. Stop when the timer ends, or keep going.`,
     done: 'Done. Stamp it.',
     stuck: 'I’m stuck',
     pause: 'Pause',
     resume: 'Resume',
     close: 'Leave Start Mode',
     firstStart: 'Your first start. That’s a stamp in your passport.',
-    contractTitle: (minutes: number) => `${capitalize(minutesWord(minutes))} minutes. You started.`,
+    contractTitle: (minutes: number) =>
+      longTimer(minutes) ? `${capitalize(duration(minutes))} in. You stayed with it.` : `${capitalize(duration(minutes))}. You started.`,
     contractBody: 'That was the hard part. Keep going, or stop here with a clear conscience.',
     keepGoing: 'Keep going',
     stopHere: 'Stop here',
@@ -837,7 +862,7 @@ export const voice = {
     notSet: 'Not set',
     startLabel: 'Start Mode',
     timer: 'Timer',
-    timerLead: 'How long Start Mode’s first stretch lasts. Automatic follows what stops you.',
+    timerLead: 'How long Start Mode runs for a task. A plan’s steps run for their estimate. Automatic follows what stops you.',
     automatic: (minutes: number) => `Automatic · ${minutes} min`,
     automaticChoice: 'Automatic',
     minutes: (n: number) => `${n} min`,
@@ -937,7 +962,7 @@ export const guide = {
     { term: 'Step', meaning: 'One piece of a plan. The first takes a few minutes; the rest, about one sitting each.' },
     { term: 'Note', meaning: voice.notes.lead },
     { term: actions.planIt, meaning: 'The AI button. It turns a big task into a plan.' },
-    { term: 'Start Mode', meaning: 'One step and a short timer. Starting is the win.' },
+    { term: 'Start Mode', meaning: 'One step and a timer. Starting is the win.' },
     { term: names.declaration, meaning: 'A start time you pick and sign. A reminder rings then.' },
     { term: names.morningBriefing, meaning: 'A minute to sort whatever carried over from before today.' },
     { term: names.passport, meaning: 'Your page: your stamps, your rank and the Declarations you kept. Settings open from it too.' },
@@ -976,8 +1001,8 @@ export const guide = {
       {
         title: `Start Mode and “${voice.start.stuck}”`,
         blocks: [
-          `${actions.start} opens Start Mode: one step and a short timer. Stop when it ends, or keep going. Every start counts, finished or not.`,
-          `Stuck? Choose ${voice.start.stuck}, pick what’s in the way, and you’ll get a two-minute way in. Or take a breather first. Settings → Start Mode sets how long the timer runs.`,
+          `${actions.start} opens Start Mode: one step and a timer that runs for the step’s estimate (a task on its own gets a short one). Stop when it ends, or keep going. Every start counts, finished or not.`,
+          `Stuck? Choose ${voice.start.stuck}, pick what’s in the way, and you’ll get a two-minute way in. Or take a breather first. Settings → Start Mode sets how long a task’s timer runs.`,
         ],
       },
       {
@@ -1087,8 +1112,8 @@ export const toneLines: Record<NudgeTone, ToneLines> = {
     declaredReminder: 'Your declared start. Five minutes is enough to begin.',
   },
   drill: {
-    startLead: (m) => `${capitalize(minutesWord(m))} minutes. One task. The timer’s running: begin.`,
-    contractTitle: (m) => `${capitalize(minutesWord(m))} minutes. Mission started.`,
+    startLead: (m) => `${capitalize(duration(m))}. One task. The timer’s running: begin.`,
+    contractTitle: (m) => `${capitalize(duration(m))}. ${longTimer(m) ? 'Position held.' : 'Mission started.'}`,
     contractBody: 'Hard part done. Keep going, or stand down with a clean record.',
     leftNotice: 'You started. Logged.',
     morningTitle: (n) => (n === 1 ? 'One order today' : `${spell(n)} orders today`),
@@ -1098,8 +1123,8 @@ export const toneLines: Record<NudgeTone, ToneLines> = {
     declaredReminder: 'Declared start. It’s time. Move.',
   },
   roast: {
-    startLead: (m) => `Just ${minutesWord(m)} minutes. The task is more scared of you than you are of it.`,
-    contractTitle: (m) => `${capitalize(minutesWord(m))} minutes. Who even are you?`,
+    startLead: (m) => `${longTimer(m) ? capitalize(duration(m)) : `Just ${duration(m)}`}. The task is more scared of you than you are of it.`,
+    contractTitle: (m) => `${capitalize(duration(m))}. Who even are you?`,
     contractBody: 'Look at you, doing things. Keep going, or quit while you’re legendary.',
     leftNotice: 'You started. Frame it.',
     morningTitle: (n) => (n === 1 ? 'One thing today. Just one. Easy.' : `${spell(n)} things today. Bold of them.`),

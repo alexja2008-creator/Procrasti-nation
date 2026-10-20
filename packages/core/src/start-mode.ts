@@ -1,9 +1,9 @@
-// Start Mode: one step, a timer, and the "just N minutes" contract. Pure and
-// shared so iOS, web and (later) the Live Activity agree. The clock is
-// wall-clock based, so a backgrounded app or a throttled browser tab can't
-// make it drift.
+// Start Mode: one step, a timer (the step's estimate, or a short start), and
+// the "just N minutes" contract. Pure and shared so iOS, web and (later) the
+// Live Activity agree. The clock is wall-clock based, so a backgrounded app or
+// a throttled browser tab can't make it drift.
 
-import type { Preferences, StartSession } from './types.ts';
+import type { Preferences, StartSession, Task } from './types.ts';
 
 export type StartMinutes = Preferences['startMinutes'];
 
@@ -20,6 +20,31 @@ export function defaultStartMinutes(prefs: Partial<Preferences> | null | undefin
     default:
       return 5;
   }
+}
+
+/** A plan's step after the first with no estimate (one added by hand): a proper timebox. */
+export const STEP_MINUTES = 25;
+
+/**
+ * The longest timer. `start_sessions.planned_minutes` takes 1–180, and a session row that
+ * can't be saved is a start that never counts (planner text like "2 hours (120 min)" reads as 240).
+ */
+export const MAX_TIMER_MINUTES = 180;
+
+/**
+ * How long Start Mode's timer runs (Alex, 2026-10-20): a plan's step counts down from its
+ * estimate, the first step included (the planner keeps that one to a few minutes). With no
+ * estimate, a first step gets the start timer and a later one STEP_MINUTES. A task that isn't a
+ * step gets the start timer, whatever its estimate. `step` is its 1-based place in its plan.
+ */
+export function startMinutesFor(
+  task: Pick<Task, 'estimateMinutes'> | null | undefined,
+  step: { index: number } | null,
+  prefs: Partial<Preferences> | null | undefined,
+): number {
+  if (!task || !step) return defaultStartMinutes(prefs);
+  if (task.estimateMinutes) return Math.min(task.estimateMinutes, MAX_TIMER_MINUTES);
+  return step.index > 1 ? STEP_MINUTES : defaultStartMinutes(prefs);
 }
 
 /** "I'm stuck" restarts the clock on a tiny first action. */

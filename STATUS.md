@@ -16,10 +16,12 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
 
 ## This week
 
+- Start Mode's timer runs for a step's estimate, from Alex's feedback (2026-10-20, `docs/plans/shipped/step-timers.md`).
 - The business plan and beta form brought up to date, with a launch checklist for the business and marketing to-dos (kept privately, `docs/external.md`). `supabase/v2/heard-from.sql` counts the Application's "Where did you hear about us?" answers for the funnel model.
 
 ## Open items for Alex
 
+- [ ] Start Mode on a plan (web, then the next TestFlight build): step 2 counts down from its estimate, and an hour-long step's clock ("1:00:00") fits inside the ring. The web check was skipped before merging (2026-10-20), so this is its first look.
 - [ ] Beta Pro ends at the close of November 15, 2026 (`BETA_PRO_UNTIL` in `packages/core/src/account.ts`): before then, move the date or let the free tier's 2 plans a month return.
 - [x] Production's Change Email Address template has our subject and body (Alex, 2026-10-15).
 - [ ] On build 8 (TestFlight), check what only the iPhone shows:
