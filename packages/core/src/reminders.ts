@@ -63,10 +63,17 @@ export interface ReminderOptions {
 
 const open = (t: Task) => !t.deletedAt && !t.completedAt;
 
-/** The days a timed task rings on within the window: its day, or each time a repeat comes round. */
+/**
+ * The days a timed task rings on within the window: its day, or each time a
+ * repeat comes round. A turn moved off the repeat's days (Move to… a Thursday
+ * for a Tuesday repeat, or the 22nd for one on the 20th) rings on the day it
+ * shows, as Today shows it; the series carries on after it.
+ */
 function ringDays(t: Task & { scheduledOn: LocalDate }, from: LocalDate, until: LocalDate): LocalDate[] {
   if (!t.rrule) return t.scheduledOn <= until ? [t.scheduledOn] : [];
-  return occurrencesBetween(t.rrule, t.scheduledOn, from, until);
+  const series = occurrencesBetween(t.rrule, t.scheduledOn, from, until);
+  const moved = t.scheduledOn >= from && t.scheduledOn <= until && !series.includes(t.scheduledOn);
+  return moved ? [t.scheduledOn, ...series] : series;
 }
 
 /** Everything that should ring in the next two weeks, soonest first, up to `limit`. */

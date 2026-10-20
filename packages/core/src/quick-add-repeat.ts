@@ -123,7 +123,9 @@ function takeDays(
 // friday", "every 3rd tue". Each needs a cue (every, each, monthly, "of every
 // month"), and a bare day of the month needs something after it that can't be a
 // noun, so "Review every 1st draft" and "Each 2nd grader" stay titles. The
-// word "second" isn't read: "every second Monday" can mean every other one.
+// word "second" isn't read, since "every second Monday" can mean every other
+// one; "every 2nd monday" is read as the month's second Monday, as Todoist does,
+// and its chip says so before Add.
 
 const ORDINAL_DAY = String.raw`(?:[12]\d|3[01]|0?[1-9])(?:st|nd|rd|th)`;
 const MONTH_DAYS = String.raw`${ORDINAL_DAY}(?:\s*(?:,\s*(?:and\s+)?|\s+and\s+|&\s*)${ORDINAL_DAY})*`;
@@ -131,6 +133,8 @@ const NTH = String.raw`(?:first|third|fourth|last|1st|2nd|3rd|4th)`;
 const WEEKDAY = String.raw`(?:sunday|monday|tuesday|wednesday|thursday|friday|saturday|sun|mon|tues?|weds?|thu(?:rs?)?|fri|sat)s?`;
 // The nth weekday first, so "3rd tue" isn't read as the 3rd.
 const WHICH = String.raw`(?:${NTH}\s+${WEEKDAY}|last\s+day|${MONTH_DAYS})`;
+// Beside "month", "the first" and "the first day" are the 1st too ("on the first of every month").
+const WHICH_MONTH = String.raw`(?:${NTH}\s+${WEEKDAY}|(?:first|last)\s+day|first|${MONTH_DAYS})`;
 // After a bare day of the month: the end, punctuation, a time, a part of the day or a hidden #word.
 const DAY_ENDS = String.raw`(?=\s*$|\s*[,.;:!?)]|\s*\u0000|${TIME_AHEAD}|\s+(?:morning|afternoon|evening|night)\b)`;
 const NTH_NUMBER: Record<string, number> = { first: 1, '1st': 1, '2nd': 2, third: 3, '3rd': 3, fourth: 4, '4th': 4, last: -1 };
@@ -140,6 +144,7 @@ const RRULE_DAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
 function monthlyPart(which: string): string | null {
   const w = which.toLowerCase().replace(/\s+/g, ' ');
   if (w === 'last day') return 'BYMONTHDAY=-1';
+  if (w === 'first' || w === 'first day') return 'BYMONTHDAY=1';
   const nth = new RegExp(`^(${NTH}) (${WEEKDAY})$`).exec(w);
   if (nth) return `BYDAY=${NTH_NUMBER[nth[1]]}${RRULE_DAYS[DAY_INDEX[nth[2].replace(/s$/, '')]]}`;
   const days = [...new Set([...w.matchAll(/(\d{1,2})(?:st|nd|rd|th)/g)].map((m) => Number(m[1])))].filter((d) => d >= 1 && d <= 31);
@@ -152,12 +157,13 @@ function takeMonthly(work: { text: string }): (Found & { rrule: string }) | null
   const attempts: [RegExp, (m: RegExpExecArray) => { which: string; interval: number } | null][] = [
     // "every month on the 15th", "every other month on the 1st", "monthly on the last day"
     [
-      new RegExp(String.raw`\b(?:(?:every|each)\s+(?:(other|\d{1,2})\s+)?months?|monthly)\s+on\s+(?:the\s+)?(${WHICH})(?=\s|$|[,.;:!?)\u0000])`, 'gi'),
+      new RegExp(String.raw`\b(?:(?:every|each)\s+(?:(other|\d{1,2})\s+)?months?|monthly)\s+on\s+(?:the\s+)?(${WHICH_MONTH})(?=\s|$|[,.;:!?)\u0000])`, 'gi'),
       (m) => ({ which: m[2], interval: !m[1] ? 1 : m[1].toLowerCase() === 'other' ? 2 : Math.max(1, Number(m[1])) }),
     ],
-    // "on the 1st of every month", "the last friday of each month", "last day of every month"
+    // "on the 1st of every month", "the first of each month", "the last friday of each month",
+    // "last day of every month", "due the 1st every month"
     [
-      new RegExp(String.raw`\b(?:on\s+)?(?:the\s+)?(${WHICH})\s+of\s+(?:every|each)\s+(other\s+)?month\b`, 'gi'),
+      new RegExp(String.raw`\b(?:(?:due\s+)?on\s+|due\s+)?(?:the\s+)?(${WHICH_MONTH})\s+(?:of\s+)?(?:every|each)\s+(other\s+)?month\b`, 'gi'),
       (m) => ({ which: m[1], interval: m[2] ? 2 : 1 }),
     ],
     // "every last friday", "every 3rd tue", "every 1st", "every 1st and 15th", "every last day (of the month)"

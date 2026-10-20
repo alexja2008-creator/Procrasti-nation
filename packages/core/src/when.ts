@@ -186,8 +186,8 @@ export function duePatch(day: LocalDate | null, time: ClockTime | null): Partial
   return { dueOn: day, dueAt: day && time ? atLocalTime(day, time.hour, time.minute) : null };
 }
 
-// A list of days starts on its first matching day: every second week counts from there.
-const firstDayRule = (rrule: string) => (rrule.includes('BYDAY=') ? rrule.replace(/;INTERVAL=\d+/, '') : rrule);
+// A list of days, or a day of the month, starts on its first matching day: every second week or month counts from there.
+const firstDayRule = (rrule: string) => (/BY(?:MONTH)?DAY=/.test(rrule) ? rrule.replace(/;INTERVAL=\d+/, '') : rrule);
 const sameDays = (a: number[], b: number[]) => a.length === b.length && a.every((d) => b.includes(d));
 
 /**
@@ -210,6 +210,19 @@ export function daysChangeLanding(task: Schedule, rrule: string, today: LocalDat
     return occurrenceOnOrAfter(rrule, anchor, from);
   }
   return occurrenceOnOrAfter(firstDayRule(rrule), from, from);
+}
+
+/**
+ * A repeat typed in the Start sheet that is the task's own: the same rule, or
+ * "every month" for a monthly repeat whose day is already written in, so
+ * retyping it to change its time keeps its day.
+ */
+export function sameRepeat(typed: string, current: string | null): boolean {
+  if (!current) return false;
+  if (typed === current) return true;
+  const a = parseRRule(typed);
+  const b = parseRRule(current);
+  return a.freq === 'MONTHLY' && b.freq === 'MONTHLY' && !a.monthDays && !a.nth && a.interval === b.interval;
 }
 
 /**

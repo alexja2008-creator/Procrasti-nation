@@ -276,6 +276,18 @@ test('a monthly repeat rings on its day each month, at its time after the clocks
   });
 });
 
+test('a repeat’s turn moved off its days rings on the day it shows, then the series carries on', () => {
+  // Rent on the 20th at 9 AM, moved to Thursday the 8th: it rings on the 8th, then on 20 October.
+  const rent = task('rent', { scheduledOn: '2026-10-08', remindAt: at(8, 9), rrule: 'FREQ=MONTHLY;BYMONTHDAY=20' });
+  assert.deepEqual(planReminders([rent], NOW).map((r) => r.day), ['2026-10-08', '2026-10-20']);
+  // A Tuesday repeat moved to Thursday rings Thursday, then Tuesdays.
+  const gym = task('gym', { scheduledOn: '2026-10-08', remindAt: at(8, 7), rrule: 'FREQ=WEEKLY;BYDAY=TU' });
+  assert.deepEqual(planReminders([gym], NOW).map((r) => r.day), ['2026-10-08', '2026-10-13', '2026-10-20']);
+  // A missed turn (moved to a day already gone) doesn't ring late.
+  const missed = task('missed', { scheduledOn: '2026-10-05', remindAt: at(5, 7), rrule: 'FREQ=WEEKLY;BYDAY=TU' });
+  assert.deepEqual(planReminders([missed], NOW).map((r) => r.day), ['2026-10-13', '2026-10-20'], 'today’s 7 AM is gone too');
+});
+
 test('the morning list speaks in their nudge tone', () => {
   const early = new Date(2026, 9, 6, 6, 0);
   const tasks = [

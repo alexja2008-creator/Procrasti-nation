@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { clockOf, logicalDateString } from '../src/dates.ts';
-import { parseQuickAdd, scheduleOf, withPicks } from '../src/quick-add.ts';
+import { parseQuickAdd, parseWhen, scheduleOf, withPicks } from '../src/quick-add.ts';
 import { fillStart } from '../src/when.ts';
 
 // Saturday 3 October 2026, 10:00 local time.
@@ -207,6 +207,23 @@ test('monthly repeats as people say them, starting on their first day (Alex’s 
     const r = parse(text, THU_10AM);
     assert.deepEqual([r.title, r.rrule, r.scheduledOn], [title, rrule, start], text);
   }
+  // "the first" beside "month", and "due the 1st every month".
+  for (const text of ['pay rent on the first of every month', 'pay rent every month on the first', 'pay rent on the first day of every month', 'pay rent due the 1st every month']) {
+    const r = parse(text, THU_10AM);
+    assert.deepEqual([r.title, r.rrule, r.scheduledOn, r.dueOn], ['pay rent', 'FREQ=MONTHLY;BYMONTHDAY=1', '2026-11-01', null], text);
+  }
+  // Every other month starts on the coming 1st, then counts from there.
+  const tue = new Date(2026, 9, 20, 10, 0);
+  for (const text of ['water the cactus every other month on the 1st', 'water the cactus on the 1st of every other month']) {
+    assert.deepEqual([parse(text, tue).rrule, parse(text, tue).scheduledOn], ['FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=1', '2026-11-01'], text);
+  }
+  // Typed at 10 AM on 31 January with 9 AM gone: the first turn is 28 February, but the repeat stays on the 31st.
+  const late = parse('pay rent every month 9am', new Date(2027, 0, 31, 10, 0));
+  assert.deepEqual([late.rrule, late.scheduledOn], ['FREQ=MONTHLY;BYMONTHDAY=31', '2027-02-28']);
+  // Just before midnight on the 31st, "every 1st" starts tomorrow.
+  assert.equal(parse('pay rent every 1st', new Date(2026, 9, 31, 23, 59)).scheduledOn, '2026-11-01');
+  // The Start sheet's typed "every month" stays plain, so retyping it keeps the repeat's own day.
+  assert.equal(parseWhen('every month 9am', THU_10AM).rrule, 'FREQ=MONTHLY');
   const rent = parse('pay rent every 1st 9am', THU_10AM);
   assert.deepEqual([rent.rrule, rent.time], ['FREQ=MONTHLY;BYMONTHDAY=1', { hour: 9, minute: 0 }]);
   assert.equal(parseQuickAdd('pay rent every 1st', THU_10AM, { repeats: 'cued' }).rrule, 'FREQ=MONTHLY;BYMONTHDAY=1', 'a checklist line too');
@@ -251,6 +268,10 @@ test('ordinals and "last" that aren’t schedules stay titles', () => {
     'Every first time is hard',
     'The 3rd wheel',
     'Chapter 1st half summary',
+    'Notes on the 2nd and 3rd chapters',
+    'Quiz on the 1st and 2nd laws',
+    'Essay on the 19th and 20th amendments',
+    'Report on the 1st, 2nd and 3rd amendments',
   ]) {
     const r = parse(text, THU_10AM);
     assert.deepEqual([r.title, r.scheduledOn, r.dueOn, r.rrule], [text, null, null, null], text);

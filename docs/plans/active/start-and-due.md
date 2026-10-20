@@ -120,6 +120,22 @@ Three pull requests, one after another: phases 1 and 2 share `quick-add.ts` and 
   - The + sheet's chips in the browser pane ("Every month on the 1st", "Starts Sun 1 Nov").
   - The `code-reviewer` subagent.
 - **Needs Alex:** nothing beyond the PR review.
+- **Built 2026-10-20 (`claude/monthly-repeats`).**
+  - **Core:** `parseRRule` reads `monthDays` and `nth`; `occurrenceOnOrAfter` counts months from the anchor's; `monthlyWhich`, `ordinal` and `pinMonthDay` in `dates.ts`; `takeMonthly` in `quick-add-repeat.ts`; the one-off day of the month in `quick-add.ts`; `sameRepeat` in `when.ts`. The Repeat sheet's monthly chip carries the task's day ("Every month on the 20th").
+  - **From review (the `code-reviewer` subagent), fixed:**
+    - A turn moved off a repeat's days now rings on the day it shows (`ringDays`). With the day written into monthly rules, a moved monthly turn had stopped ringing. Weekly repeats had the same gap, so this also answers half of "Found in passing" below: it rings there, and where Move to… should land is still open.
+    - "every month 9am" retyped in the Start sheet keeps the repeat's day (`sameRepeat`); the sheet's typed "every month" isn't pinned.
+    - The Repeat sheet shows a monthly repeat as itself, ticked (an old "Every month" too), until phase 3's choices.
+    - "every other month on the 1st" starts on the coming 1st.
+    - "the first of every month", "every month on the first", "the first day of every month" and "due the 1st every month" read as the 1st.
+    - "Notes on the 2nd and 3rd chapters" and other lists of ordinals stay titles.
+    - "every month 9am" typed late on the 31st keeps the 31st.
+  - **Changed from the plan:** "before the 28th" isn't read (D12 named it): "before" isn't a deadline word anywhere else in quick add, and making it one would change how "before fri" reads.
+  - **Checked:**
+    - Core tests (101): turns at month ends, the leap day and every other month; the 9 AM ring on 1 November 2026 (the clocks go back) and on 1 December; a 31st series checked off five times rings 30 Nov, 31 Dec, 31 Jan, 28 Feb and 31 Mar at 5 PM; moved turns; every phrase above; 34 titles with ordinals or "last" that stay titles; "every 1st" at 11:59 PM on the 31st.
+    - `npm run site:test` (the Web Push sender works out turns with core) and `npm run app:check`.
+    - The + sheet in the browser pane: "pay rent every month on the 1st" (Every month on the 1st · Starts Sun 1 Nov), "book club every last friday 7pm" (Every month on the last Friday · Starts Fri 30 Oct · 7:00 PM) and "lab report due the 28th" (Due Wed 28 Oct, Start today). Nothing saved. No console errors.
+  - **Not read yet (left for later):** "every first and third monday", and a bare "the 28th" in the Start sheet's type-it field.
 
 **Phase 3: Every month… in the Repeat sheet** (D8)
 

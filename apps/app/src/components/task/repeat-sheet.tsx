@@ -1,4 +1,4 @@
-import { describeRRule, parseLocalDate, pickerWeek, repeatChips, voice, weeklyInterval, weeklyOf, weeklyRule, type LocalDate } from '@pn/core';
+import { describeRRule, parseLocalDate, parseRRule, pickerWeek, repeatChips, voice, weeklyInterval, weeklyOf, weeklyRule, type LocalDate } from '@pn/core';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -25,7 +25,12 @@ type Props = {
 export function RepeatSheet({ rrule, anchor, onSave, onClose }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
-  const options = [{ id: 'never', label: voice.task.never, rrule: null as string | null }, ...repeatChips(anchor)];
+  // A monthly repeat shows as itself ("Every month on the 31st" while it sits on the 30th, or an
+  // old "Every month"), ticked, so tapping it changes nothing.
+  const chips = repeatChips(anchor).map((c) =>
+    c.id === 'monthly' && rrule && parseRRule(rrule).freq === 'MONTHLY' ? { ...c, rrule, label: describeRRule(rrule) } : c,
+  );
+  const options = [{ id: 'never', label: voice.task.never, rrule: null as string | null }, ...chips];
   const weekly = weeklyOf(rrule);
   // Any weekly repeat that isn't a one-tap choice ("Mon, Wed, Sat", "every 2 weeks") is its own days.
   const interval = weeklyInterval(rrule);

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { atLocalTime, clockOf } from '../src/dates.ts';
-import { duePatch, pickerWeek, repeatChips, repeatPatch, daysChangeLanding, weeklyInterval, weeklyOf, weeklyRule, whenPatch } from '../src/when.ts';
+import { duePatch, pickerWeek, repeatChips, repeatPatch, daysChangeLanding, sameRepeat, weeklyInterval, weeklyOf, weeklyRule, whenPatch } from '../src/when.ts';
 
 test('when and due patches', () => {
   assert.deepEqual(whenPatch(null, null), { scheduledOn: null, remindAt: null, rrule: null, declaredAt: null }, 'no day: no repeat either');
@@ -66,4 +66,12 @@ test('changing a repeat’s days lands on the first new day from today', () => {
     'a monthly repeat keeps its day, written into the rule',
   );
   assert.equal(repeatPatch({ ...oneOff, scheduledOn: '2026-10-07' }, 'FREQ=WEEKLY;BYDAY=TU', thu).scheduledOn, '2026-10-20', 'carried over: from today, not a past Tuesday');
+});
+
+test('"every month" retyped in the Start sheet is the same monthly repeat, so it keeps its day', () => {
+  assert.equal(sameRepeat('FREQ=MONTHLY', 'FREQ=MONTHLY;BYMONTHDAY=1'), true);
+  assert.equal(sameRepeat('FREQ=MONTHLY', 'FREQ=MONTHLY'), true);
+  assert.equal(sameRepeat('FREQ=MONTHLY', 'FREQ=MONTHLY;INTERVAL=2;BYMONTHDAY=1'), false, 'a different interval is a change');
+  assert.equal(sameRepeat('FREQ=MONTHLY;BYMONTHDAY=15', 'FREQ=MONTHLY;BYMONTHDAY=1'), false, 'a new day is a change');
+  assert.equal(sameRepeat('FREQ=MONTHLY', null), false);
 });
