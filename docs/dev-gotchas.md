@@ -11,6 +11,8 @@ Hard-won notes from building v2: simulator and browser quirks, Supabase limits, 
 
 **iOS development build** (reminders need it: Expo Go can't schedule local notifications on iOS 27): with Metro running, `sh apps/app/scripts/ios-dev-build.sh` (add `METRO_PORT=8083` to point it at another Metro). It builds a copy in `~/Library/Caches/procrastination-ios` (about 8.5 GB with build products; later builds are incremental) (originally because iCloud's file attributes broke code signing in the old Desktop location), and installs `dev.procrastination.local` on the booted Simulator. It's a separate app from Expo Go, so it needs its own sign-in (request the link from it, then open the link on the Simulator).
 
+**Two checkouts, one Simulator:** the development build only loads from the Metro port it was built with (8081 by default). Writing `RCT_jsLocation` into its preferences doesn't stick; it goes back to `localhost:8081`. When another session's Metro holds 8081, check your own checkout in Expo Go instead of rebuilding with `METRO_PORT` (that replaces the other session's app: same build folder, same bundle id) (start Metro on a free port, then `xcrun simctl openurl booted exp://127.0.0.1:<port>`), unless the check needs reminders.
+
 
 ## Notes
 
