@@ -1,4 +1,18 @@
-import { describeRRule, parseLocalDate, parseRRule, pickerWeek, repeatChips, voice, weeklyInterval, weeklyOf, weeklyRule, type LocalDate } from '@pn/core';
+import {
+  describeRRule,
+  monthlyChoiceLabel,
+  monthlyChoices,
+  monthlyOf,
+  parseLocalDate,
+  parseRRule,
+  pickerWeek,
+  repeatChips,
+  voice,
+  weeklyInterval,
+  weeklyOf,
+  weeklyRule,
+  type LocalDate,
+} from '@pn/core';
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
@@ -10,27 +24,32 @@ import { useStyles, type Tokens } from '@/theme/tokens';
 
 type Props = {
   rrule: string | null;
-  /** The day a "weekly" repeat follows. */
+  /** The day a "weekly" repeat follows, and Every month…'s choices are worked out from. */
   anchor: LocalDate;
   onSave: (rrule: string | null) => void;
   onClose: () => void;
 };
 
 /**
- * One tap: never, every day, every weekday, every week on this day, every month.
- * Or Pick days…: seven toggles, Monday first, for "Mon, Wed and Sat" and for
- * changing them later (family testing, 2026-10-15). A repeat on its own days
- * shows ticked there, so tapping a one-day choice never quietly drops days.
+ * One tap: never, every day, every weekday, every week on this day. Every
+ * month… opens choices worked out from the task's day: on the 20th, on the third
+ * Tuesday, on the 1st, on the last day (Alex's plan, 2026-10-20). Or Pick days…:
+ * seven toggles, Monday first, for "Mon, Wed and Sat" and for changing them
+ * later (family testing, 2026-10-15). A repeat on its own days shows ticked
+ * there, so tapping a one-day choice never quietly drops days.
  */
 export function RepeatSheet({ rrule, anchor, onSave, onClose }: Props) {
   const s = useStyles(makeStyles);
   const { c } = s.t;
-  // A monthly repeat shows as itself ("Every month on the 31st" while it sits on the 30th, or an
-  // old "Every month"), ticked, so tapping it changes nothing.
-  const chips = repeatChips(anchor).map((c) =>
-    c.id === 'monthly' && rrule && parseRRule(rrule).freq === 'MONTHLY' ? { ...c, rrule, label: describeRRule(rrule) } : c,
-  );
-  const options = [{ id: 'never', label: voice.task.never, rrule: null as string | null }, ...chips];
+  const options = [{ id: 'never', label: voice.task.never, rrule: null as string | null }, ...repeatChips(anchor)];
+  // The monthly repeat this is (an old plain "every month" reads as its current day), always among
+  // the choices ("On the 31st" while it sits on the 30th), ticked, so tapping it changes nothing.
+  const monthly = monthlyOf(rrule, anchor);
+  const monthChoices = monthlyChoices(anchor, monthly ? parseRRule(monthly).interval : 1);
+  if (monthly && !monthChoices.some((m) => m.rrule === monthly)) {
+    monthChoices.unshift({ id: monthly, rrule: monthly, label: monthlyChoiceLabel(monthly) });
+  }
+  const [choosingMonth, setChoosingMonth] = useState(!!monthly);
   const weekly = weeklyOf(rrule);
   // Any weekly repeat that isn't a one-tap choice ("Mon, Wed, Sat", "every 2 weeks") is its own days.
   const interval = weeklyInterval(rrule);
@@ -39,7 +58,7 @@ export function RepeatSheet({ rrule, anchor, onSave, onClose }: Props) {
   const [days, setDays] = useState<number[]>(weekly?.days ?? [parseLocalDate(anchor).getDay()]);
   const toggle = (day: number) => setDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]));
 
-  const row = (key: string, label: string, chosen: boolean, onPress: () => void, detail?: string) => (
+  const row = (key: string, label: string, chosen: boolean, onPress: () => void, detail?: string, inner?: boolean) => (
     <Pressable
       key={key}
       onPress={onPress}
@@ -47,7 +66,7 @@ export function RepeatSheet({ rrule, anchor, onSave, onClose }: Props) {
       accessibilityState={{ selected: chosen }}
       // React Native Web only exposes the current repeat through aria-selected.
       aria-selected={chosen}
-      style={({ pressed }) => [s.option, pressed && s.pressed]}>
+      style={({ pressed }) => [s.option, inner && s.inner, pressed && s.pressed]}>
       <View style={s.label}>
         <Text variant="item">{label}</Text>
         {detail ? (
@@ -63,6 +82,8 @@ export function RepeatSheet({ rrule, anchor, onSave, onClose }: Props) {
   return (
     <Sheet title={voice.task.repeat} onClose={onClose}>
       {options.map((o) => row(o.id, o.label, o.rrule === rrule, () => onSave(o.rrule)))}
+      {row('monthly', voice.task.everyMonth, !!monthly, () => setChoosingMonth((v) => !v), monthly ? describeRRule(monthly) : undefined)}
+      {choosingMonth ? monthChoices.map((m) => row(m.id, m.label, m.rrule === monthly, () => onSave(m.rrule), undefined, true)) : null}
       {row('days', voice.task.pickDays, own, () => setPicking((v) => !v), own && rrule ? describeRRule(rrule) : undefined)}
       {picking ? (
         <View style={s.picker}>
@@ -106,6 +127,8 @@ const makeStyles = (t: Tokens) => ({
       borderTopColor: t.c.rule,
     },
     label: { flex: 1, gap: 2, paddingVertical: 6 },
+    // Every month…'s choices sit under it.
+    inner: { paddingLeft: 20 },
     pressed: { opacity: 0.7 },
     picker: { gap: 12, paddingTop: 4, paddingBottom: 8 },
     week: { flexDirection: 'row', justifyContent: 'space-between', gap: 4 },

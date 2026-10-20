@@ -2,7 +2,7 @@
 // grid, and the task patches they produce. Pure, so iOS, web and (later)
 // Upcoming agree. Weeks start on Monday.
 
-import { addDays, atLocalTime, clockOf, describeRRule, occurrenceOnOrAfter, parseLocalDate, parseRRule, pinMonthDay } from './dates.ts';
+import { addDays, atLocalTime, clockOf, describeRRule, localDateString, monthlyWhich, occurrenceOnOrAfter, parseLocalDate, parseRRule, pinMonthDay } from './dates.ts';
 import { suggestsPlan } from './plan-offer.ts';
 import type { LocalDate, Task } from './types.ts';
 
@@ -98,15 +98,52 @@ export function weeklyRule(days: number[], interval = 1): string {
   return `FREQ=WEEKLY${interval > 1 ? `;INTERVAL=${interval}` : ''};BYDAY=${byDay.join(',')}`;
 }
 
-/** Common repeats; "weekly" and "monthly" follow the task's day ("Every month on the 20th"). */
+/** Common one-tap repeats; "weekly" follows the task's day. Monthly ones are `monthlyChoices` (Every month…). */
 export function repeatChips(anchor: LocalDate): { id: string; label: string; rrule: string }[] {
   const weekly = `FREQ=WEEKLY;BYDAY=${RRULE_DAYS[parseLocalDate(anchor).getDay()]}`;
   return [
     { id: 'daily', rrule: 'FREQ=DAILY' },
     { id: 'weekdays', rrule: 'FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR' },
     { id: 'weekly', rrule: weekly },
-    { id: 'monthly', rrule: pinMonthDay('FREQ=MONTHLY', anchor) },
   ].map((c) => ({ ...c, label: describeRRule(c.rrule) }));
+}
+
+/**
+ * The Repeat sheet's Every month… choices, worked out from the task's day (Alex's
+ * plan, D8): on its day of the month, on its weekday's place in the month (the
+ * third Tuesday; the last Tuesday too when it's in the month's last week), on the
+ * 1st and on the last day, with no two the same. The 31st is the last day (a day
+ * past a month's end lands there), and "the fifth Tuesday" isn't offered.
+ * `interval` keeps an every-other-month repeat's months.
+ */
+export function monthlyChoices(anchor: LocalDate, interval = 1): { id: string; label: string; rrule: string }[] {
+  const d = parseLocalDate(anchor);
+  const day = d.getDate();
+  const weekday = RRULE_DAYS[d.getDay()];
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  const nth = Math.ceil(day / 7);
+  const parts = [
+    day < 31 ? `BYMONTHDAY=${day}` : null,
+    nth <= 4 ? `BYDAY=${nth}${weekday}` : null,
+    day > lastDay - 7 ? `BYDAY=-1${weekday}` : null,
+    'BYMONTHDAY=1',
+    'BYMONTHDAY=-1',
+  ];
+  const rules = [...new Set(parts.filter((p): p is string => !!p))].map(
+    (part) => `FREQ=MONTHLY${interval > 1 ? `;INTERVAL=${interval}` : ''};${part}`,
+  );
+  return rules.map((rrule) => ({ id: rrule, rrule, label: monthlyChoiceLabel(rrule) }));
+}
+
+/** "On the 20th", "On the third Tuesday", "On the last day". */
+export function monthlyChoiceLabel(rrule: string): string {
+  const which = monthlyWhich(rrule);
+  return which ? `On ${which}` : describeRRule(rrule);
+}
+
+/** The monthly repeat a rule is, with an old plain "every month" read as its current day (`pinMonthDay`); null for any other repeat. */
+export function monthlyOf(rrule: string | null, anchor: LocalDate): string | null {
+  return rrule && parseRRule(rrule).freq === 'MONTHLY' ? pinMonthDay(rrule, anchor) : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -213,6 +250,19 @@ export function daysChangeLanding(task: Schedule, rrule: string, today: LocalDat
 }
 
 /**
+ * An every-other-month repeat whose day changes keeps its months: its turns
+ * count from the task's own month (Oct, Dec, Feb), so "On the 1st" for a repeat
+ * on 15 December lands on 1 February, not 1 January. Null otherwise.
+ */
+function monthsKeptLanding(task: Schedule, rrule: string, from: LocalDate): LocalDate | null {
+  const was = task.rrule ? parseRRule(task.rrule) : null;
+  const now = parseRRule(rrule);
+  if (!task.scheduledOn || was?.freq !== 'MONTHLY' || now.freq !== 'MONTHLY' || now.interval < 2 || was.interval !== now.interval) return null;
+  const day = parseLocalDate(task.scheduledOn);
+  return occurrenceOnOrAfter(rrule, localDateString(new Date(day.getFullYear(), day.getMonth(), 1)), from);
+}
+
+/**
  * A repeat typed in the Start sheet that is the task's own: the same rule, or
  * "every month" for a monthly repeat whose day is already written in, so
  * retyping it to change its time keeps its day.
@@ -233,8 +283,11 @@ export function sameRepeat(typed: string, current: string | null): boolean {
  */
 export function repeatPatch(task: Schedule, rrule: string | null, today: LocalDate): Partial<Schedule> {
   if (!rrule) return { rrule: null };
+  // An old plain "every month" given its own day (the Repeat sheet's ticked choice) is the same
+  // repeat: the day goes into the rule and the task stays put, carried over or not.
+  if (task.rrule && task.scheduledOn && rrule === pinMonthDay(task.rrule, task.scheduledOn) && rrule !== task.rrule) return { rrule };
   const from = task.scheduledOn && task.scheduledOn > today ? task.scheduledOn : today;
-  const first = daysChangeLanding(task, rrule, today) ?? occurrenceOnOrAfter(firstDayRule(rrule), from, from);
+  const first = daysChangeLanding(task, rrule, today) ?? monthsKeptLanding(task, rrule, from) ?? occurrenceOnOrAfter(firstDayRule(rrule), from, from);
   const time = task.remindAt ? clockOf(task.remindAt) : null;
   // A plain monthly repeat keeps the day it starts on, so it never slides from the 31st.
   return { rrule: pinMonthDay(rrule, first), ...whenPatch(first, time) };
