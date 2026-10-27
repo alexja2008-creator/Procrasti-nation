@@ -22,6 +22,7 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
 - The dates rethink, from Alex's feedback (2026-10-20, `docs/plans/shipped/start-and-due.md`): "When" is now Start and leads, Due is optional, the + sheet asks Start · Today · Tomorrow · Pick a date · Later, and a due date fills in a start day (PR #38). Monthly repeats understand the 1st, the last day and the third Tuesday, typed or from Repeat → Every month…, and the 31st no longer slides to the 28th (PR #39 and the plan's last PR). A repeat moved off its days rings on the day it shows.
 - Today's rows ask "Declare a start time?" until they have a Declaration, from Alex's feedback (2026-10-20): a dashed slot where STAMPED and DECLARED sit (and in the Up next card), opening the Declare sheet. Not on repeats or a plan's steps. Checked in the browser pane at 1024 and 375 px; on the iPhone in TestFlight build 11, not checked there yet.
 - The business plan and beta form brought up to date, with a launch checklist for the business and marketing to-dos (kept privately, `docs/external.md`). `supabase/v2/heard-from.sql` counts the Application's "Where did you hear about us?" answers for the funnel model.
+- The app icon is the PN mark (the flag P and the N on night navy), replacing Expo's placeholder, which is what TestFlight showed. The Android adaptive icon and the splash use it too. It reaches the iPhone with the next build; the web's favicon and notification icon are still Expo's.
 
 ## Open items for Alex
 
