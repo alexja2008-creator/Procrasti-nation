@@ -1,6 +1,6 @@
 # apps/site
 
-The marketing site (landing page, `/privacy`, `/terms`) and the API the app calls. v1's pages retired on 2026-10-12 and redirect to the app (`next.config.js`). File-by-file map: `docs/architecture.md`, "apps/site".
+The marketing site (landing page, `/privacy`, `/terms`) and the API the app calls. v1's pages retired on 2026-10-12 and redirect to the app, and `/beta` redirects to TestFlight's public link for the student beta (`next.config.js`). File-by-file map: `docs/architecture.md`, "apps/site".
 
 ## Stack
 

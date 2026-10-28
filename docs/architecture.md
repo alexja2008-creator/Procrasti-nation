@@ -26,7 +26,7 @@ app/
     push/action/route.js            # Snooze 10 min from a web notification (signed token, no session)
     unsubscribe/route.js            # Signed one-click unsubscribe (kept for State of the Union's email)
     parse-syllabus/route.js         # Syllabus file → JSON assignments; off (404, SYLLABUS_IMPORT_ON) until v2's syllabus import
-next.config.js                      # Security headers; v1's old paths redirect (307) to the app
+next.config.js                      # Security headers; v1's old paths redirect (307) to the app, /beta to TestFlight's public link
 middleware.js                       # CORS for /api/* (the app's origins)
 
 components/
