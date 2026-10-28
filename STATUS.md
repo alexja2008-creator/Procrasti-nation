@@ -23,6 +23,7 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
 - Today's rows ask "Declare a start time?" until they have a Declaration, from Alex's feedback (2026-10-20): a dashed slot where STAMPED and DECLARED sit (and in the Up next card), opening the Declare sheet. Not on repeats or a plan's steps. Checked in the browser pane at 1024 and 375 px; on the iPhone in TestFlight build 11, not checked there yet.
 - The business plan and beta form brought up to date, with a launch checklist for the business and marketing to-dos (kept privately, `docs/external.md`). `supabase/v2/heard-from.sql` counts the Application's "Where did you hear about us?" answers for the funnel model.
 - The app icon is the PN mark (the flag P and the N on night navy), replacing Expo's placeholder, which is what TestFlight showed. The Android adaptive icon and the splash use it too. It reaches the iPhone with the next build; the web's favicon and notification icon are still Expo's.
+- procrasti-nation.work/beta redirects to TestFlight's public link: a short address to say aloud in videos when asking students to join the beta, since TikTok has no clickable links.
 
 ## Open items for Alex
 
