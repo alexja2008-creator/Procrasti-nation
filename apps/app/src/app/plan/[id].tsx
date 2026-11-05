@@ -4,6 +4,7 @@ import { useEffect, useEffectEvent, useRef, useState, type Ref } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { useAuth } from '@/auth/auth-provider';
+import { AiConsent } from '@/components/ai-consent';
 import { Button } from '@/components/button';
 import { Icon } from '@/components/icon';
 import { Screen } from '@/components/screen';
@@ -56,8 +57,14 @@ export default function PlanScreen() {
   const { tasks, today, status, merge } = useTasks();
   const { session } = useAuth();
   const freeAgain = session ? relativeDayLabel(localDateString(planWindow(session.user.created_at).end), today) : '';
-  const { settings } = useUserSettings();
+  const { settings, status: settingsStatus, savePreferences } = useUserSettings();
+  // Nothing goes to the AI until they've allowed it (App Review 5.1.2(i)), asked once per account.
+  // Tapping Allow here counts even if saving it fails; they're asked again next time.
+  const [allowed, setAllowed] = useState(false);
+  const consented = allowed || !!settings?.preferences.aiConsentAt;
+  const settingsKnown = settingsStatus !== 'loading';
   const task = tasks.find((t) => t.id === id);
+  const asking = !!task && settingsKnown && !consented;
   const style = settings?.preferences.style;
   const isReplan = replan === '1';
   const steps = tasks.filter((t) => t.parentId === id && !t.deletedAt);
@@ -98,10 +105,15 @@ export default function PlanScreen() {
       .catch((e) => setPhase({ kind: 'failed', ...failure(e, freeAgain) }));
   });
   useEffect(() => {
-    if (!task || ranAttempt.current === attempt) return;
+    if (!task || !settingsKnown || !consented || ranAttempt.current === attempt) return;
     ranAttempt.current = attempt;
     start(task);
-  }, [task, attempt]);
+  }, [task, attempt, settingsKnown, consented]);
+
+  const allow = () => {
+    setAllowed(true);
+    savePreferences({ aiConsentAt: new Date().toISOString() }).catch(() => undefined);
+  };
 
   const build = async (withAnswers: boolean) => {
     if (!task) return;
@@ -168,6 +180,8 @@ export default function PlanScreen() {
           ) : (
             waiting(copy.reading)
           )
+        ) : asking ? (
+          <AiConsent onAllow={allow} onNotNow={close} />
         ) : (
           <>
             <Text variant="pageTitle" accessibilityRole="header">

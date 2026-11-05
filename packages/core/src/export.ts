@@ -61,6 +61,7 @@ export function buildExport(input: ExportInput) {
           applicationCompletedAt: input.settings.onboardingCompletedAt,
           startModeMinutes: prefs.startMinutes ?? null,
           morningList: prefs.reminders?.morningList ?? null,
+          aiAllowedAt: prefs.aiConsentAt ?? null,
         }
       : null,
     territories: live(input.lists)

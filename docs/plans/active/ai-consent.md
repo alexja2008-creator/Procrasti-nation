@@ -1,6 +1,6 @@
 # Plan: Ask before Plan it sends anything to the AI
 
-**Status: draft, 2026-11-05. Waiting on Alex's answers to the Decisions below.**
+**Status: approved 2026-11-05** (Alex took every recommendation below). Phase 1 in progress.
 
 ## Overview
 
@@ -18,9 +18,9 @@ No prompt, model or request body changes, so there's no eval to run.
 
 All of them go through `apps/site/lib/ai.js`. Every way into Plan it opens the same screen, so one check there covers the Oath too.
 
-## Decisions (Alex, open)
+## Decisions (Alex, 2026-11-05)
 
-Each has a recommendation. Change any of them before coding starts.
+All eight approved as recommended.
 
 1. **Ask once per account, not per device.** The answer goes in `user_settings.preferences` as `aiConsentAt` (when Allow was tapped; missing means not asked or turned off). `user_settings` is owner-only, and `preferences` is already written through `savePreferences`, so **there's no SQL to run on production**. *Recommended.* (A dedicated column only becomes worth it if the server ever enforces consent; see 3.)
 2. **Ask on the web too.** Apple only requires it on iPhone, but web parity is a house rule, and one answer covers both since it's stored on the account. *Recommended.*
@@ -56,6 +56,25 @@ Each has a recommendation. Change any of them before coding starts.
   - The iOS Simulator development build: the sheet inside the Plan it modal, with the keyboard down.
 - `npm run app:check`, `npm run core:test`.
 - **Needs Alex:** a new staging account through the Application, to see the Oath ask first (Claude doesn't create accounts).
+
+**Built 2026-11-05** (branch `docs/ai-consent-plan`).
+- **The copy changed from the draft** so it matches what the routes send: "What's sent" adds the plan's steps and today's date and time zone.
+- **The data export** gains `settings.aiAllowedAt`.
+- **Checked on staging with Alex's account in the browser pane:**
+  - At 1024 px in night and 375 px in day, Plan it on "Essay" showed the sheet with **no `/api/` request**, after a direct page load too.
+  - Not now went back to Today, still with no request.
+  - Allow sent `/api/generate-plan`, and the questions came back.
+  - `aiConsentAt` was saved on his `user_settings` row (read with psql), and the next Plan it went straight to "Reading the task…".
+  - Afterwards the test plan was closed unused, `aiConsentAt` was removed from his row, and the pane's theme was put back.
+- **The privacy policy** shows the new sentence and "Effective November 5, 2026".
+- `app:check` passes; `core:test` 103/103.
+- **Not checked:**
+  - **The iPhone.** The Simulator's development build is signed out, and signing in needs Alex's password.
+  - **The Oath on a new account.** Needs Alex.
+- **Don't merge before Phase 2.** The policy's new sentence promises the Settings switch and covers I'm stuck, which Phase 2 adds. On the day it merges, set `LEGAL_EFFECTIVE` (and the comment above it) to that date.
+- **Code review (2026-11-05):** approved. Plan it can't reach the AI before consent, and Allow can't send a paid request twice. Two findings:
+  - **The policy over-promised.** "Nothing is transmitted while it is withdrawn or before it is given" isn't true for TestFlight builds 10 and 11, or for a web tab still running the old code. It now says only what the code guarantees: the app asks first, and Settings can withdraw it.
+  - **Open, needs Alex before Phase 2:** keeping consent in the `preferences` JSON isn't safe once Off exists. `savePreferences` writes the whole object from that device's copy. So a web tab that loaded before someone turned AI Off on their iPhone writes `aiConsentAt` back the next time it saves any preference, and AI is quietly on again. Settings also load once per sign-in, so that tab keeps sending until it reloads. Recommended: a column, `user_settings.ai_consent_at`, written on its own (decision 1's alternative; SQL that Alex applies, and a `database-reviewer` pass), plus reloading settings when the app comes back into view. Phase 1's harmless direction (consent lost, so asked again) is fine as it is.
 
 **Phase 2: I'm stuck and Settings.** The check in the stuck panel and the Settings row.
 - Checked:

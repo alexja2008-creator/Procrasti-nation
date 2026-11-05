@@ -9,8 +9,9 @@ export const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'procrasti
 
 // When the privacy policy and terms take effect, or last changed: the launch (2026-10-13), then
 // 2026-10-14 for the policy's name and age-check paragraphs (Alex), then 2026-10-15 for saving the
-// passport before Today (policy 1.1, terms 3.1). Move it with each revision.
-export const LEGAL_EFFECTIVE = 'October 15, 2026';
+// passport before Today (policy 1.1, terms 3.1), then 2026-11-05 for asking before the AI features
+// send anything (policy 3). Move it with each revision.
+export const LEGAL_EFFECTIVE = 'November 5, 2026';
 
 // While this is true the privacy policy and terms say "Draft" at the top. Alex approved both on
 // 2026-10-13; set it back to true while a rewrite awaits review. Open questions show as [bracketed] marks (<Todo>).
