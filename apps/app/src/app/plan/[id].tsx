@@ -11,7 +11,7 @@ import { Screen } from '@/components/screen';
 import { Text } from '@/components/text';
 import { clarifyingQuestions, generatePlan, resolveStepDates, savePlan, type Plan } from '@/data/plans';
 import { useTasks } from '@/data/tasks-store';
-import { useUserSettings } from '@/data/user-settings';
+import { fetchAiConsent, saveAiConsent, useUserSettings } from '@/data/user-settings';
 import { useAutoHeight } from '@/hooks/use-auto-height';
 import { ApiError } from '@/lib/api';
 import { oneRowOnWeb, submitOnReturnWeb } from '@/lib/web-styles';
@@ -57,14 +57,14 @@ export default function PlanScreen() {
   const { tasks, today, status, merge } = useTasks();
   const { session } = useAuth();
   const freeAgain = session ? relativeDayLabel(localDateString(planWindow(session.user.created_at).end), today) : '';
-  const { settings, status: settingsStatus, savePreferences } = useUserSettings();
-  // Nothing goes to the AI until they've allowed it (App Review 5.1.2(i)), asked once per account.
-  // Tapping Allow here counts even if saving it fails; they're asked again next time.
-  const [allowed, setAllowed] = useState(false);
-  const consented = allowed || !!settings?.preferences.aiConsentAt;
-  const settingsKnown = settingsStatus !== 'loading';
+  const { settings, status: settingsStatus } = useUserSettings();
+  const userId = session?.user.id;
+  // Nothing goes to the AI until they've allowed it (App Review 5.1.2(i)), asked once per account
+  // and read fresh each time Plan it opens. Allow here counts even if saving it fails; they're
+  // asked again next time.
+  const [consent, setConsent] = useState<'checking' | 'ask' | 'allowed'>('checking');
   const task = tasks.find((t) => t.id === id);
-  const asking = !!task && settingsKnown && !consented;
+  const asking = !!task && consent === 'ask';
   const style = settings?.preferences.style;
   const isReplan = replan === '1';
   const steps = tasks.filter((t) => t.parentId === id && !t.deletedAt);
@@ -105,14 +105,27 @@ export default function PlanScreen() {
       .catch((e) => setPhase({ kind: 'failed', ...failure(e, freeAgain) }));
   });
   useEffect(() => {
-    if (!task || !settingsKnown || !consented || ranAttempt.current === attempt) return;
+    if (!userId) return;
+    let cancelled = false;
+    fetchAiConsent(userId).then((at) => {
+      if (!cancelled) setConsent((now) => (now === 'checking' ? (at ? 'allowed' : 'ask') : now));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  // Settings too, so the plan gets their style and day.
+  const settingsKnown = settingsStatus !== 'loading';
+  useEffect(() => {
+    if (!task || consent !== 'allowed' || !settingsKnown || ranAttempt.current === attempt) return;
     ranAttempt.current = attempt;
     start(task);
-  }, [task, attempt, settingsKnown, consented]);
+  }, [task, attempt, consent, settingsKnown]);
 
   const allow = () => {
-    setAllowed(true);
-    savePreferences({ aiConsentAt: new Date().toISOString() }).catch(() => undefined);
+    setConsent('allowed');
+    if (userId) saveAiConsent(userId, true).catch(() => undefined);
   };
 
   const build = async (withAnswers: boolean) => {
@@ -180,6 +193,11 @@ export default function PlanScreen() {
           ) : (
             waiting(copy.reading)
           )
+        ) : consent === 'checking' ? (
+          // No "Making it smaller…" before they've said yes: just the spinner until the answer is known.
+          <View style={s.waiting}>
+            <ActivityIndicator color={c.primary} />
+          </View>
         ) : asking ? (
           <AiConsent onAllow={allow} onNotNow={close} />
         ) : (

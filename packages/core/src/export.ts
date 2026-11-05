@@ -11,6 +11,8 @@ export type ExportInput = {
   exportedAt: string;
   account: { citizenNumber: number | null; name: string | null; email: string | null; phone: string | null; createdAt: string | null; username: string | null };
   settings: UserSettings | null;
+  /** When they allowed Plan it and I'm stuck to send to the AI (`user_settings.ai_consent_at`, read fresh), or null. */
+  aiConsentAt: string | null;
   lists: List[];
   tasks: Task[];
   notes: Note[];
@@ -61,7 +63,7 @@ export function buildExport(input: ExportInput) {
           applicationCompletedAt: input.settings.onboardingCompletedAt,
           startModeMinutes: prefs.startMinutes ?? null,
           morningList: prefs.reminders?.morningList ?? null,
-          aiAllowedAt: prefs.aiConsentAt ?? null,
+          aiAllowedAt: input.aiConsentAt,
         }
       : null,
     territories: live(input.lists)

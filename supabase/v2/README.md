@@ -11,6 +11,8 @@ Moves the shared Supabase database to the ProcrastiNation 2.0 data model without
 
 Run them in the Supabase SQL Editor, in order.
 
+**Changes after the cutover:** a new statement goes into `01_schema.sql` (so tests and a fresh staging get it), but production gets **only that statement**, pasted on its own. Never re-run the whole file there: on a live database it drops and recreates every policy and trigger, resets the citizen-number sequence, and gives a settings row to every account that hasn't opened the app. The plan for the change carries the exact SQL and a read-only check, and production's structure is re-dumped afterwards (`scripts/dump-prod-schema.sh`). First one: `user_settings.ai_consent_at` (2026-11-05, `docs/plans/active/ai-consent.md`).
+
 **Read-only production queries** (SELECT only, counts only, run in the production SQL Editor whenever useful): `prod-stats.sql`, the shape of v1's data (Staging, step 4); `planner-reminders.sql`, how often Plan it's steps send people to an alarm, the phone's Reminders or another to-do app, with the plan-quality eval's pattern (run it after the beta's first week, before deciding on the parked planner rule: `docs/plans/shipped/dates-and-repeats.md`, Phase 5); and `heard-from.sql`, what new passports answered to "Where did you hear about us?", for the funnel model (`docs/external.md`).
 
 **Cutover order (done; kept for the record):** `01_schema.sql` must be on production before the v2 site deploys, because v2's `/api/generate-plan` counts the free allowance in `plan_generations`. Then `04_fresh_start.sql` (v1 has one real user, Alex, so nothing is migrated: everyone starts over through the Citizenship Application).

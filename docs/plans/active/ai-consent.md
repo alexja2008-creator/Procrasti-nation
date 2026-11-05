@@ -22,7 +22,7 @@ All of them go through `apps/site/lib/ai.js`. Every way into Plan it opens the s
 
 All eight approved as recommended.
 
-1. **Ask once per account, not per device.** The answer goes in `user_settings.preferences` as `aiConsentAt` (when Allow was tapped; missing means not asked or turned off). `user_settings` is owner-only, and `preferences` is already written through `savePreferences`, so **there's no SQL to run on production**. *Recommended.* (A dedicated column only becomes worth it if the server ever enforces consent; see 3.)
+1. **Ask once per account, not per device.** The answer goes in its own column, `user_settings.ai_consent_at`: when Allow was tapped, or null meaning not asked or turned off. *Changed 2026-11-05 (Alex)* from a key in `preferences`, after code review: devices save `preferences` whole from their own copy, so one holding an old copy could turn the AI back on after Off. The column is written on its own, and Plan it reads it fresh every time it opens. **Alex adds the column on production before this merges.**
 2. **Ask on the web too.** Apple only requires it on iPhone, but web parity is a house rule, and one answer covers both since it's stored on the account. *Recommended.*
 3. **Check consent in the app only, not on the server.** A server check would make Plan it fail for testers still on TestFlight builds 10 and 11, which have no sheet. Apple reviews what the app shows. *Recommended for now.* Revisit if a web or API client ever calls the routes on its own.
 4. **One sheet covers both Plan it and I'm stuck.** One question, asked the first time either one is used. *Recommended.*
@@ -35,7 +35,9 @@ All eight approved as recommended.
 
 | File | Action | What changes |
 |---|---|---|
-| `packages/core/src/types.ts` | Modify | `Preferences.aiConsentAt: string \| null` (ISO time Allow was tapped) |
+| `supabase/v2/01_schema.sql`, `supabase/v2/test/migration.test.mjs` | Modify | `user_settings.ai_consent_at TIMESTAMPTZ` (nullable); the owner can set it, nobody else |
+| `apps/app/src/data/user-settings.tsx` | Modify | `fetchAiConsent(userId)`: a fresh read that returns null on failure. `saveAiConsent(userId, allowed)`: writes only that column. Neither is part of the settings load |
+| `packages/core/src/export.ts`, `apps/app/src/data/account.ts` | Modify | The export's `settings.aiAllowedAt`, read fresh |
 | `packages/core/src/nation.ts` | Modify | `voice.aiConsent`: the sheet's title, what goes, what doesn't, Allow, Not now, the Settings row |
 | `apps/app/src/components/ai-consent.tsx` | Create | The sheet's content: title, two short lists, a Privacy policy link (`openSitePage('/privacy')`), Allow and Not now. A2 tokens, the `Text` and `Button` components. Shared by both places |
 | `apps/app/src/app/plan/[id].tsx` | Modify | A `consent` phase before `reading` or `building` when `aiConsentAt` is missing. The effect that calls the API waits until settings have loaded and consent exists. Allow saves `aiConsentAt`, then starts; Not now closes |
@@ -74,7 +76,23 @@ All eight approved as recommended.
 - **Don't merge before Phase 2.** The policy's new sentence promises the Settings switch and covers I'm stuck, which Phase 2 adds. On the day it merges, set `LEGAL_EFFECTIVE` (and the comment above it) to that date.
 - **Code review (2026-11-05):** approved. Plan it can't reach the AI before consent, and Allow can't send a paid request twice. Two findings:
   - **The policy over-promised.** "Nothing is transmitted while it is withdrawn or before it is given" isn't true for TestFlight builds 10 and 11, or for a web tab still running the old code. It now says only what the code guarantees: the app asks first, and Settings can withdraw it.
-  - **Open, needs Alex before Phase 2:** keeping consent in the `preferences` JSON isn't safe once Off exists. `savePreferences` writes the whole object from that device's copy. So a web tab that loaded before someone turned AI Off on their iPhone writes `aiConsentAt` back the next time it saves any preference, and AI is quietly on again. Settings also load once per sign-in, so that tab keeps sending until it reloads. Recommended: a column, `user_settings.ai_consent_at`, written on its own (decision 1's alternative; SQL that Alex applies, and a `database-reviewer` pass), plus reloading settings when the app comes back into view. Phase 1's harmless direction (consent lost, so asked again) is fine as it is.
+  - **Fixed the same day (Alex chose a column):** keeping consent in the `preferences` JSON isn't safe once Off exists. `savePreferences` writes the whole object from that device's copy. So a web tab that loaded before someone turned AI Off on their iPhone writes `aiConsentAt` back the next time it saves any preference, and AI is quietly on again. Settings also load once per sign-in, so that tab keeps sending until it reloads. Recommended: a column, `user_settings.ai_consent_at`, written on its own (decision 1's alternative; SQL that Alex applies, and a `database-reviewer` pass), plus reloading settings when the app comes back into view. Phase 1's harmless direction (consent lost, so asked again) is fine as it is.
+- **The column, built 2026-11-05.** `ai_consent_at` is in `01_schema.sql` and on staging; `db:test` 22/22, including on production's structure.
+  - Plan it now asks the database each time it opens, rather than trusting the copy the device loaded, so an Off made elsewhere takes effect without a reload.
+  - **Checked on staging in the browser pane:**
+    - The sheet showed with no `/api/` request.
+    - Allow sent exactly one `/api/generate-plan` and wrote `ai_consent_at`, with nothing put in `preferences`.
+    - Then, with the tab still open, `ai_consent_at` was cleared in the database (as Off on another device would). Reopening Plan it showed the sheet again and sent nothing.
+    - Alex's row was left with `ai_consent_at` null.
+  - **Database review:** approved with notes. Adding the column alone is safe on production. The owner policy, the citizen-number and `updated_at` triggers, and the grants all cover it, checked on PGlite against a populated table. The SQL above follows its advice: one line, a lock timeout, and a read-only check.
+  - **Code review:** approved. Fixed the same day:
+    - **A "Making your task smaller" flash before the sheet** (it's on App Review's path). While consent is being read, Plan it shows only a spinner. Checked: right after the tap the page read just "PLAN IT".
+    - **Merging before production had the column would have broken settings for everyone.** Consent is no longer in the settings load (`COLUMNS`), only in `fetchAiConsent`.
+    - **A failed read used to fall back to the device's copy.** It now counts as not allowed.
+    - **Plan it waits for settings again,** so a cold load still sends their style.
+    - **The export reads consent fresh,** and its test checks `aiAllowedAt`.
+  - Rechecked on staging afterwards: a spinner, then the sheet, with no request; Allow sent one request and wrote the column; Alex's row was cleared again.
+  - **For Phase 2's Settings switch** (from the code review): disable the switch while its save is running, so a quick On then Off can't land in the wrong order. Read the switch's value with `fetchAiConsent` when Settings opens.
 
 **Phase 2: I'm stuck and Settings.** The check in the stuck panel and the Settings row.
 - Checked:
@@ -95,7 +113,25 @@ All eight approved as recommended.
 
 ## Data and copy
 
-**Data:** one new key, `preferences.aiConsentAt`, on `user_settings` (owner-only RLS, unchanged). No new table, column or policy, so no `database-reviewer` pass is needed unless decision 1 changes to a column. The data export already includes `preferences`. Private data stays off `profiles`.
+**Data:** one new nullable column, `user_settings.ai_consent_at`, under the table's existing owner-only RLS (no new policy). The data export includes it as `settings.aiAllowedAt`. Private data stays off `profiles`.
+
+**For Alex, in production's SQL Editor, before the PR merges.** Paste only this, never the whole `01_schema.sql`: re-running the file on a live database recreates policies and triggers, resets the citizen-number sequence and gives settings rows to accounts that haven't opened the app.
+
+The column is additive. Nothing on production reads it until this merges: not TestFlight builds 10 and 11, the live web app, the push cron or the SQL files. The lock lasts milliseconds.
+
+```sql
+BEGIN;
+SET LOCAL lock_timeout = '5s';   -- if it times out, run it again
+ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS ai_consent_at TIMESTAMPTZ;
+COMMIT;
+
+-- Check (read-only). Expect one row: timestamp with time zone, YES, NULL; then true.
+SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns
+WHERE table_schema = 'public' AND table_name = 'user_settings' AND column_name = 'ai_consent_at';
+SELECT has_column_privilege('authenticated', 'public.user_settings', 'ai_consent_at', 'UPDATE');
+```
+
+If merged too early, nothing breaks. The app never loads the column with settings, so Plan it would ask every time and Allow wouldn't save until the column exists. If a save fails with PGRST204 after adding it, run `NOTIFY pgrst, 'reload schema';`. Afterwards, re-dump production's structure (`supabase/v2/scripts/dump-prod-schema.sh`) and run `npm run db:test`. Today's dump is from before the cutover, so that run is the first on top of the real v2 tables. Staging got the same line on 2026-11-05 (Claude).
 
 **Copy (draft, for `voice.aiConsent`; plain verbs, no guilt):**
 
@@ -111,13 +147,15 @@ All eight approved as recommended.
 ## Risks
 
 - **A reviewer misses the sheet.** It's a sheet over Plan it, not part of a page, and the review notes say where it is, with a screenshot attached.
-- **Settings haven't loaded yet.** Plan it shows its waiting state and calls nothing until settings are ready, so the sheet never flashes for someone who already said yes and no request goes out before the answer is known.
+- **Consent hasn't been read yet.** Plan it shows only a spinner and calls nothing until the database answers. A failed read counts as not allowed, so the sheet asks again rather than sending. It also waits for settings, so the plan gets their style.
 - **Saving Allow fails.** They tapped Allow, so this one request goes ahead. The save is retried the next time; at worst they're asked once more.
 - **One more tap in the Application.** The sheet sits right before the Oath's plan, the funnel's best moment. If fewer people finish the Oath's plan once it ships (a count for the funnel queries in STATUS.md, Next 3), shorten the copy before anything else. Not now never blocks the Application.
 - **Testers on builds 10 and 11** see no sheet until they update. Nothing breaks for them, because the server doesn't check (decision 3).
 
 ## Done when
 
+- [ ] `ai_consent_at` is on production (Alex, SQL above) **before** the PR merges, and production's structure is re-dumped.
+- [ ] Off on one device makes the next Plan it on another, already-open device ask again (checked on staging by clearing the column, 2026-11-05).
 - [ ] On a new account, the Oath's Plan it shows the sheet before any request, checked on the network panel (web) and on the iPhone.
 - [ ] Not now on the Oath sends nothing, brings back its "try again" line, and the Oath's own Not now still moves the Application on.
 - [ ] Allow builds the plan; later Plan its and I'm stucks don't ask, on that device or another.

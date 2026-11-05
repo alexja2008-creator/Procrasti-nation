@@ -25,11 +25,6 @@ export interface Preferences {
   reminders: { morningList: MorningList };
   /** "Where did you hear about us?" in the Application (for marketing). */
   heardFrom: HeardFrom;
-  /**
-   * When they tapped Allow on "Plan it uses AI" (ISO time). Missing or null: not asked yet, or
-   * turned off in Settings, so nothing goes to the AI until they allow it (App Review 5.1.2(i)).
-   */
-  aiConsentAt: string | null;
 }
 
 export type HeardFrom = 'tiktok' | 'instagram' | 'youtube' | 'reddit' | 'friend' | 'appStore' | 'other';
