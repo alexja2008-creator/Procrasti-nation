@@ -152,6 +152,16 @@ export function freePlansCountFrom(createdAt: string, now: Date = new Date()): D
   return new Date(Math.max(planWindow(createdAt, now).start.getTime(), Date.parse(BETA_PRO_UNTIL)));
 }
 
+/** A Pro grant (`pro_grants`): Pro given without paying, for life unless it has an end. */
+export type ProGrant = { reason: string; granted_at: string; ends_at: string | null };
+
+/** Whether a grant counts at `now`: with no end, for life; with one, until that moment. */
+export function proGrantActive(grant: Pick<ProGrant, 'ends_at'> | null | undefined, now: Date = new Date()): boolean {
+  if (!grant) return false;
+  if (grant.ends_at == null) return true;
+  return Date.parse(grant.ends_at) > now.getTime();
+}
+
 /** The keys of `voice.authErrors`. */
 export type AuthErrorKind =
   | 'rateLimited'

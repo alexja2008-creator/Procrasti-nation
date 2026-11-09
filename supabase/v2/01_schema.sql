@@ -598,5 +598,35 @@ CREATE INDEX IF NOT EXISTS push_snoozes_user_idx ON push_snoozes (user_id);
 
 ALTER TABLE push_snoozes ENABLE ROW LEVEL SECURITY;
 
+-- ------------------------------------------------------------
+-- 13. pro_grants: Pro given without paying (the testers who finish the
+--     beta get it for life; docs/plans/active/pro-grants.md). Kept apart
+--     from billing on purpose, so a payments sync can never remove one.
+--     Alex writes rows in the SQL Editor (docs/runbooks/pro-grants.md).
+--     The owner reads theirs (the plan route, Download your data);
+--     nobody writes through the API. reason is a short code, never a
+--     name, an email or a note: who and why stays out of the database.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS pro_grants (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  reason TEXT NOT NULL CONSTRAINT pro_grants_reason_code CHECK (reason ~ '^[a-z_]{1,40}$'),
+  granted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  -- Empty for life; otherwise the grant stops counting at this moment (core `proGrantActive`).
+  ends_at TIMESTAMPTZ CONSTRAINT pro_grants_ends_after_granted CHECK (ends_at IS NULL OR ends_at > granted_at)
+);
+
+ALTER TABLE pro_grants ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners read their grant" ON pro_grants;
+CREATE POLICY "Owners read their grant" ON pro_grants FOR SELECT
+  USING (user_id = (SELECT auth.uid()));
+-- RLS already stops API writes (there's no write policy). The API roles
+-- also get exactly one privilege, so a stray policy later can't open
+-- writes and TRUNCATE (which RLS doesn't cover) stays closed. SELECT is
+-- granted outright rather than left to Supabase's default grants: without
+-- it the plan route can't read a grant, and a tester quietly meets the
+-- free tier.
+REVOKE ALL ON pro_grants FROM anon, authenticated;
+GRANT SELECT ON pro_grants TO authenticated;
+
 -- Not yet: `integrations` (LMS feed URLs, encrypted with Supabase Vault)
 -- lands with Phase 5.

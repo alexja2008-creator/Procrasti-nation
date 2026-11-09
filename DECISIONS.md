@@ -47,6 +47,9 @@ More detail: `CLAUDE.md` and each folder's own `CLAUDE.md` (rules and patterns),
 - **A repeat never gets a plan** (Alex, 2026-10-15): Plan it is held back for repeats everywhere, the + sheet included. A plan's steps are one-offs, so on a repeat they'd show "7/7 · Mark plan done" on every later occurrence. The Application's Oath always makes a plan, so a repeat typed there plans one go (its repeat words leave the title; a typed day or time stays).
 - The button always reads **"Plan it"** (Alex rejected "Make it smaller" and "Want a plan?").
 
+**Pro without paying**
+- **Testers who finish the beta get Pro for life** (Alex, 2026-11-09). A grant lives in `pro_grants`, apart from billing on purpose: the Stripe column, and later RevenueCat's `entitlements` sync, must never be able to remove one. Alex grants and revokes in the SQL Editor (`docs/runbooks/pro-grants.md`); nobody writes one through the API. A grant's `reason` is a short code, never a name or a note. When payments ship, an active grant counts everywhere Pro does, the iPhone's paywall included (`docs/plans/active/conversion.md`, Entitlement). The plan: `docs/plans/active/pro-grants.md`.
+
 **Voice: no guilt, ever**
 - Procrastination is mostly short-term mood repair, and shame feeds it (Pychyl and Sirois; Wohl, Pychyl & Bennett 2010). So nothing in the app says "you failed", "overdue" or "disappointed".
 - Missed things roll forward to today with no red and no overdue styling. That's deliberate, not a missing feature.

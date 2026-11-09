@@ -130,3 +130,15 @@ test('plans made during beta Pro don’t count against the free plans after it',
   assert.equal(freePlansCountFrom('2026-10-01T00:00:00Z', after).toISOString(), BETA_PRO_UNTIL_ISO, 'a window that began during the beta');
   assert.equal(freePlansCountFrom('2026-12-01T00:00:00Z', new Date('2026-12-05T00:00:00Z')).toISOString(), '2026-12-01T00:00:00.000Z', 'after the beta: its own window');
 });
+
+test('a Pro grant counts for life, or until its end', async () => {
+  const { proGrantActive } = await import('../src/account.ts');
+  const now = new Date('2026-11-20T00:00:00Z');
+  assert.equal(proGrantActive(null, now), false, 'no grant');
+  assert.equal(proGrantActive(undefined, now), false, 'no grant');
+  assert.equal(proGrantActive({ ends_at: null }, now), true, 'for life');
+  assert.equal(proGrantActive({ ends_at: '2026-12-20T00:00:00Z' }, now), true, 'ends later');
+  assert.equal(proGrantActive({ ends_at: '2026-11-20T00:00:00Z' }, now), false, 'ends at this moment: over');
+  assert.equal(proGrantActive({ ends_at: '2026-11-01T00:00:00Z' }, now), false, 'ended');
+  assert.equal(proGrantActive({ ends_at: '2026-12-20T00:00:00+00:00' }, now), true, "Postgres's offset form");
+});

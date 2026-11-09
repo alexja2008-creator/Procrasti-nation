@@ -36,7 +36,9 @@ export default function Privacy() {
         Citizenship Application, we collect a username and either (a) your email address and, if you choose one, a
         password, or (b) the email address and name made available to us by Apple or Google, if you sign in with that
         provider. At your election, Apple may provide a private relay address in place of your email address. Passwords are stored by our
-        database provider in salted and hashed form, and we do not have access to them in readable form.
+        database provider in salted and hashed form, and we do not have access to them in readable form. If we give
+        your account access to paid features without charge, for example for helping test the Services, we record that
+        grant, why it was given and when it ends.
       </p>
       <p>
         <strong>1.2 Content You Provide.</strong> We collect the content you create or submit through the Services

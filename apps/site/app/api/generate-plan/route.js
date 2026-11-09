@@ -4,7 +4,7 @@ import { requireAuth } from '../../../lib/authMiddleware';
 import { callClaude, AIError, MODELS, PLAN_EFFORT, resolveToday } from '../../../lib/ai';
 import { CLARIFY_SCHEMA, PLAN_SCHEMA, buildClarificationPrompt, buildPlanPrompt } from '../../../lib/prompts/plan';
 import { trialDaysRemaining } from '../../../lib/trial';
-import { FREE_PLANS_PER_WINDOW, freePlansCountFrom, inBetaPro } from '../../../lib/core';
+import { FREE_PLANS_PER_WINDOW, freePlansCountFrom, inBetaPro, proGrantActive } from '../../../lib/core';
 import { DAY_MS, logAndCount } from '../../../lib/limits';
 
 export const maxDuration = 60;
@@ -90,15 +90,21 @@ export async function POST(request) {
       planTaskId = owned ? owned.id : null;
     }
 
-    // The free tier's plans (not in trial, not subscribed, not during beta Pro). An anonymous passport
-    // costs nothing to make, so it never gets the no-card trial: its free plans are all it has until
-    // the real trial. Beta Pro (core `inBetaPro`, until 2026-11-15) lifts the monthly limit for
-    // everyone so testers can try everything; the daily cap above still holds.
+    // The free tier's plans (not in trial, not subscribed, no Pro grant, not during beta Pro). An
+    // anonymous passport costs nothing to make, so it never gets the no-card trial: its free plans are
+    // all it has until the real trial. Beta Pro (core `inBetaPro`, until 2026-11-15) lifts the monthly
+    // limit for everyone so testers can try everything; the daily cap above still holds.
     const inTrial = !user.is_anonymous && trialDaysRemaining(user) > 0;
     if (!inTrial && !inBetaPro()) {
-      const { data: subscriptionStatus, error: statusError } = await userSupabase.rpc('my_subscription_status');
+      // A Pro grant (pro_grants, written only in the SQL Editor) counts the same as a subscription.
+      // If either can't be read, it counts as no Pro: the person meets the free tier, never an error.
+      const [{ data: subscriptionStatus, error: statusError }, { data: grant, error: grantError }] = await Promise.all([
+        userSupabase.rpc('my_subscription_status'),
+        userSupabase.from('pro_grants').select('ends_at').eq('user_id', user.id).maybeSingle(),
+      ]);
       if (statusError) console.error('generate-plan: could not read subscription status', statusError.code);
-      const isPro = subscriptionStatus === 'active';
+      if (grantError) console.error('generate-plan: could not read the Pro grant', grantError.code);
+      const isPro = subscriptionStatus === 'active' || proGrantActive(grant);
 
       if (!isPro) {
         // Count plans actually built in the current 30.5-day window from the account's creation,

@@ -32,7 +32,15 @@ const task = (id: string, extra: object = {}) =>
 test('the export: everything kept, nothing deleted, answers in plain words', () => {
   const input: ExportInput = {
     exportedAt: '2026-10-07T20:00:00Z',
-    account: { citizenNumber: 42, name: 'Maya Reyes', email: 'maya@example.com', phone: null, createdAt: '2026-09-01T00:00:00Z', username: 'maya' },
+    account: {
+      citizenNumber: 42,
+      name: 'Maya Reyes',
+      email: 'maya@example.com',
+      phone: null,
+      createdAt: '2026-09-01T00:00:00Z',
+      username: 'maya',
+      proGrant: { reason: 'founding_tester', grantedAt: '2026-11-20T00:00:00Z', endsAt: null },
+    },
     settings: {
       userId: 'u',
       citizenNumber: 42,
@@ -74,5 +82,6 @@ test('the export: everything kept, nothing deleted, answers in plain words', () 
   assert.equal(out.stamps.length, 1);
   assert.equal(out.startModeSessions[0].outcome, 'done');
   assert.equal(out.aiPlans.length, 1);
+  assert.deepEqual(out.account.proGrant, { reason: 'founding_tester', grantedAt: '2026-11-20T00:00:00Z', endsAt: null }, 'a Pro grant is account information');
   assert.doesNotThrow(() => JSON.parse(JSON.stringify(out)));
 });
