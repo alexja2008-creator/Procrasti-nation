@@ -107,6 +107,8 @@ export default function Privacy() {
         its deadline; the steps of its plan; your responses to any clarifying questions; the reason you select for being
         stuck and any suggestions previously provided for the same step; the current date and your time zone; and the
         obstacle you reported in the Citizenship Application. No other information from your account is transmitted.
+        The app asks for your permission before it first sends such a request, and you can withdraw it at any time in
+        Settings.
         Under Anthropic’s commercial terms, Anthropic does not use information submitted to it through its application
         programming interface to train its models.
       </p>

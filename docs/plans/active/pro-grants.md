@@ -54,7 +54,7 @@ This plan adds that place: a `pro_grants` table that only the SQL Editor writes,
 - **Someone gives themselves Pro.** There's no write policy, and the tests prove an owner can't insert, update or delete their own row.
 - **A grant goes to the wrong account** (a typo in the email, an unconfirmed sign-up someone else made with the tester's address, a username that changed hands). The runbook looks the account up first and checks it (one row, a confirmed email, not anonymous, a sign-up date that fits), then grants by its id; no row back from the grant means the account already has one. Revoking is one `DELETE` (security review, 2026-11-09).
 - **The code deploys before the table exists.** The grant read fails, the route logs it and carries on as before; a subscriber is unaffected.
-- **The AI consent branch (`docs/ai-consent-plan`) also changes the privacy policy and `LEGAL_EFFECTIVE`.** Whichever merges second rebases and takes the later date.
+- **The AI consent branch (`docs/ai-consent-plan`) also changed the privacy policy and `LEGAL_EFFECTIVE`.** It merged first (PR #48, November 5), and this branch keeps the later date.
 
 ## Done when
 

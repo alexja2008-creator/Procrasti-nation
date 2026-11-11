@@ -3,6 +3,8 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 
 import { supabase } from '@/lib/supabase';
 
+// `ai_consent_at` stays out: it's read fresh on its own (fetchAiConsent), so settings still load
+// on a database that doesn't have the column yet.
 const COLUMNS = 'user_id,citizen_number,timezone,day_rollover_hour,preferences,onboarding_completed_at,created_at,updated_at';
 
 type Row = {
@@ -59,10 +61,34 @@ async function ensureUserSettings(userId: string): Promise<UserSettings> {
  * goes out signed out, and row security quietly matches nothing, which would
  * otherwise look like a successful save.
  */
-async function updateRow(userId: string, fields: Partial<Row>): Promise<{ error: Error | null }> {
+async function updateRow(userId: string, fields: Partial<Row> | { ai_consent_at: string | null }): Promise<{ error: Error | null }> {
   const { data, error } = await supabase.from('user_settings').update(fields).eq('user_id', userId).select('user_id');
   if (error) return { error };
   return { error: data?.length ? null : new Error('user_settings: nothing was saved') };
+}
+
+/**
+ * When they allowed Plan it and I'm stuck to send to the AI (App Review 5.1.2(i)), read fresh from
+ * the database every time: another device may have turned it off since this one loaded. Null when
+ * not allowed, and also when the read fails, so a failure asks again instead of sending.
+ */
+export async function fetchAiConsent(userId: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.from('user_settings').select('ai_consent_at').eq('user_id', userId).maybeSingle();
+    if (error) return null;
+    return (data as { ai_consent_at: string | null } | null)?.ai_consent_at ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Allow on "Plan it uses AI" (true) or Off in Settings (false). Writes only `ai_consent_at`, never
+ * `preferences`, which devices save whole from their own copy. Throws if nothing was saved.
+ */
+export async function saveAiConsent(userId: string, allowed: boolean): Promise<void> {
+  const { error } = await updateRow(userId, { ai_consent_at: allowed ? new Date().toISOString() : null });
+  if (error) throw error;
 }
 
 // One request per person at a time. React can run effects twice (development),

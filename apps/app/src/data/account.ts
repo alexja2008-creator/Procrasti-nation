@@ -10,6 +10,7 @@ import { fetchEveryNote } from '@/data/notes';
 import { fetchAllPages } from '@/data/paging';
 import { fetchUsername } from '@/data/profile';
 import { fetchEveryTask } from '@/data/tasks';
+import { fetchAiConsent } from '@/data/user-settings';
 import { apiPost } from '@/lib/api';
 import { saveFile } from '@/lib/save-file';
 import { supabase } from '@/lib/supabase';
@@ -37,7 +38,8 @@ async function fetchProGrant(userId: string) {
 
 /** Builds their export and hands it over: a download on the web, the share sheet on iPhone. */
 export async function downloadMyData(user: User, settings: UserSettings | null): Promise<void> {
-  const [lists, tasks, notes, username, proGrant, stamps, starts, plans] = await Promise.all([
+  const [aiConsentAt, lists, tasks, notes, username, proGrant, stamps, starts, plans] = await Promise.all([
+    fetchAiConsent(user.id),
     fetchLists(user.id),
     fetchEveryTask(user.id),
     fetchEveryNote(user.id),
@@ -60,6 +62,7 @@ export async function downloadMyData(user: User, settings: UserSettings | null):
       proGrant,
     },
     settings,
+    aiConsentAt,
     lists,
     tasks,
     notes,

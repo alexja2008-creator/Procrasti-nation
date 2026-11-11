@@ -648,6 +648,22 @@ export const voice = {
     /** Passed to the planner as context (not shown). */
     alreadyDone: 'Already finished:',
   },
+  /**
+   * Asked once per account before Plan it or I'm stuck sends anything to Anthropic (App Review
+   * 5.1.2(i)). Must match the privacy policy's section 3; `docs/plans/active/ai-consent.md`.
+   */
+  aiConsent: {
+    title: 'Plan it uses AI',
+    lead: 'To make a plan or shrink a step, PN sends what you’re asking about to Anthropic, the AI company behind Claude. Nothing is sent until you allow it.',
+    sentLabel: 'What’s sent',
+    sent: 'The task or step, with its plan, notes and due date. Your answers to its questions, or why you’re stuck. What usually stops you, from your Application. Today’s date and time zone.',
+    notSentLabel: 'What isn’t',
+    notSent: 'Your name, your email, your other tasks, and everything else in your passport.',
+    training: 'Anthropic doesn’t use any of it to train its AI.',
+    privacy: 'Privacy policy',
+    allow: 'Allow',
+    notNow: 'Not now',
+  },
   passport: {
     eyebrow: 'Passport · Passeport',
     cover: 'Citizen passport',

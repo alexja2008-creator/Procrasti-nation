@@ -69,6 +69,12 @@ CREATE TABLE IF NOT EXISTS user_settings (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- When they tapped Allow on "Plan it uses AI" (App Review 5.1.2(i)); NULL means not asked yet or
+-- turned off in Settings, and the app sends nothing to the AI. Its own column, written on its own,
+-- because devices save `preferences` whole: one holding an old copy would turn it back on
+-- (docs/plans/active/ai-consent.md). Added 2026-11-05.
+ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS ai_consent_at TIMESTAMPTZ;
+
 ALTER SEQUENCE citizen_number_seq OWNED BY user_settings.citizen_number;
 -- Where the table was made with the old default (staging, 2026-10): drop it.
 ALTER TABLE user_settings ALTER COLUMN citizen_number DROP DEFAULT;
