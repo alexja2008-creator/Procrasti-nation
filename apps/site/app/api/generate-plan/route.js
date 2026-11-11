@@ -92,7 +92,7 @@ export async function POST(request) {
 
     // The free tier's plans (not in trial, not subscribed, no Pro grant, not during beta Pro). An
     // anonymous passport costs nothing to make, so it never gets the no-card trial: its free plans are
-    // all it has until the real trial. Beta Pro (core `inBetaPro`, until 2026-11-15) lifts the monthly
+    // all it has until the real trial. Beta Pro (core `inBetaPro`, until 2026-12-31) lifts the monthly
     // limit for everyone so testers can try everything; the daily cap above still holds.
     const inTrial = !user.is_anonymous && trialDaysRemaining(user) > 0;
     if (!inTrial && !inBetaPro()) {

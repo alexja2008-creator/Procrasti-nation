@@ -108,27 +108,27 @@ test('an email in the username box moves whole, without what was there before it
   assert.equal(move('maya_reyes@', { text: 'maya_reyes', own: true }, empty, '').email, 'maya_reyes@');
 });
 
-const BETA_PRO_UNTIL = '2026-11-16T05:00:00Z';
-const BETA_PRO_UNTIL_ISO = '2026-11-16T05:00:00.000Z';
+const BETA_PRO_UNTIL = '2027-01-01T05:00:00Z';
+const BETA_PRO_UNTIL_ISO = '2027-01-01T05:00:00.000Z';
 
-test('beta Pro lifts the monthly limit until the close of November 15, 2026 in New York', async () => {
+test('beta Pro lifts the monthly limit until the close of December 31, 2026 in New York', async () => {
   const { inBetaPro, BETA_PRO_UNTIL: until } = await import('../src/account.ts');
   assert.equal(until, BETA_PRO_UNTIL);
   assert.equal(inBetaPro(new Date('2026-10-15T12:00:00Z')), true, 'during the beta');
-  assert.equal(inBetaPro(new Date('2026-11-15T23:59:00-05:00')), true, 'the last minute of November 15 in New York');
-  assert.equal(inBetaPro(new Date('2026-11-16T00:00:00-05:00')), false, 'midnight in New York: over');
-  assert.equal(inBetaPro(new Date('2026-12-01T00:00:00Z')), false);
-  // New York's own clock agrees (standard time from November 1).
+  assert.equal(inBetaPro(new Date('2026-12-31T23:59:00-05:00')), true, 'the last minute of December 31 in New York');
+  assert.equal(inBetaPro(new Date('2027-01-01T00:00:00-05:00')), false, 'midnight in New York: over');
+  assert.equal(inBetaPro(new Date('2027-02-01T00:00:00Z')), false);
+  // New York's own clock agrees (standard time in winter).
   const lastMoment = new Date(Date.parse(BETA_PRO_UNTIL) - 1).toLocaleString('en-US', { timeZone: 'America/New_York' });
-  assert.equal(lastMoment, '11/15/2026, 11:59:59 PM');
+  assert.equal(lastMoment, '12/31/2026, 11:59:59 PM');
 });
 
 test('plans made during beta Pro don’t count against the free plans after it', async () => {
   const { freePlansCountFrom } = await import('../src/account.ts');
-  const after = new Date('2026-11-20T00:00:00Z');
-  assert.equal(freePlansCountFrom('2026-11-14T00:00:00Z', after).toISOString(), BETA_PRO_UNTIL_ISO, 'made during the beta: counted from its end');
-  assert.equal(freePlansCountFrom('2026-10-01T00:00:00Z', after).toISOString(), BETA_PRO_UNTIL_ISO, 'a window that began during the beta');
-  assert.equal(freePlansCountFrom('2026-12-01T00:00:00Z', new Date('2026-12-05T00:00:00Z')).toISOString(), '2026-12-01T00:00:00.000Z', 'after the beta: its own window');
+  const after = new Date('2027-01-05T00:00:00Z');
+  assert.equal(freePlansCountFrom('2026-12-30T00:00:00Z', after).toISOString(), BETA_PRO_UNTIL_ISO, 'made during the beta: counted from its end');
+  assert.equal(freePlansCountFrom('2026-11-20T00:00:00Z', after).toISOString(), BETA_PRO_UNTIL_ISO, 'a window that began during the beta');
+  assert.equal(freePlansCountFrom('2027-01-10T00:00:00Z', new Date('2027-01-15T00:00:00Z')).toISOString(), '2027-01-10T00:00:00.000Z', 'after the beta: its own window');
 });
 
 test('a Pro grant counts for life, or until its end', async () => {

@@ -6,7 +6,7 @@
 
 Alex is giving Pro for life to the testers who finish the beta (2026-11-09). Today the only way to give one account Pro is to set `profiles.stripe_subscription_status` to `'active'` in the SQL Editor. That column belongs to billing: v1's Stripe wrote it, and `conversion.md` phase 2 replaces it with RevenueCat and an `entitlements` table synced by a webhook. A grant stored in billing's place can be overwritten by a sync, or stop counting when the plan route moves to `entitlements`. "For life" needs its own place.
 
-This plan adds that place: a `pro_grants` table that only the SQL Editor writes, and that the plan route reads alongside the subscription. It has to be on production before the first tester's form comes in, about November 16. Beta Pro ends at the close of November 15, and from then on the plan route's Pro check matters.
+This plan adds that place: a `pro_grants` table that only the SQL Editor writes, and that the plan route reads alongside the subscription. Testers' forms start coming in about November 16, and each is granted when its form is in. Beta Pro runs through the close of December 31 (moved from November 15 on 2026-11-11), so until then a grant changes nothing a tester sees: the table has to be on production, and every finished tester granted, before beta Pro ends. From then on the plan route's Pro check matters.
 
 ## Decisions (Alex, 2026-11-09)
 
@@ -42,7 +42,7 @@ This plan adds that place: a `pro_grants` table that only the SQL Editor writes,
 **Needs Alex:**
 - Approve the privacy sentence.
 - Apply section 13 to staging, then to production, in the SQL Editor. Then re-dump `v2/.local/prod-schema.sql`.
-- The live check, on November 16 on production (beta Pro has ended by then, and staging has no copy of the site API to run Plan it): a saved test passport past its 10-day trial is refused a third plan in its window; grant it Pro; the third plan goes through; revoke it; refused again.
+- The live check, on January 1, 2027 or later, on production (beta Pro has ended by then, and staging has no copy of the site API to run Plan it): a saved test passport past its 10-day trial is refused a third plan in its window; grant it Pro; the third plan goes through; revoke it; refused again.
 
 ## Data and copy
 
@@ -63,5 +63,5 @@ This plan adds that place: a `pro_grants` table that only the SQL Editor writes,
 - [ ] `db:test`, `core:test`, `app:check` and the site's build pass, with the new tests.
 - [ ] Download your data includes the grant, and `null` without one.
 - [ ] `pro_grants` is on staging and production, and `prod-schema.sql` is re-dumped.
-- [ ] The November 16 live check passed: refused, granted and allowed, revoked and refused.
+- [ ] The live check (January 1, 2027 or later) passed: refused, granted and allowed, revoked and refused.
 - [ ] `docs/runbooks/pro-grants.md` has the SQL, and `conversion.md` has decision 7.
