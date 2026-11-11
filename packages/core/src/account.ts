@@ -130,9 +130,10 @@ const PLAN_WINDOW_MS = 30.5 * 86_400_000;
 /**
  * Beta Pro (Alex, 2026-10-15): during the beta every account, unsaved passports included, plans
  * without the free tier's monthly limit, so testers can try everything. It ends at the close of
- * November 15, 2026 in New York (EST, UTC−5). The daily cap still holds for everyone.
+ * December 31, 2026 in New York (EST, UTC−5): moved from November 15 (Alex, 2026-11-11) so finals
+ * aren't on the free tier's 2 plans while nothing can be bought. The daily cap still holds for everyone.
  */
-export const BETA_PRO_UNTIL = '2026-11-16T05:00:00Z';
+export const BETA_PRO_UNTIL = '2027-01-01T05:00:00Z';
 
 export const inBetaPro = (now: Date = new Date()) => now.getTime() < Date.parse(BETA_PRO_UNTIL);
 

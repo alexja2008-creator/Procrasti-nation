@@ -29,7 +29,7 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
 
 - [x] Start Mode on a plan, checked on the web and the iOS Simulator (Claude, 2026-10-20): a first step counts down from its estimate (3:00), later steps too (60 and 90 min), and a 90-minute step's "1:29:59" fits inside the ring with "An hour and a half." under it.
 - [ ] On build 11 (TestFlight), Start Mode on a plan on a real iPhone, including a later step with no estimate (it should get 25 minutes; no step in Alex's staging plans lacks an estimate, so this hasn't been seen anywhere).
-- [ ] Beta Pro ends at the close of November 15, 2026 (`BETA_PRO_UNTIL` in `packages/core/src/account.ts`): before then, move the date or let the free tier's 2 plans a month return.
+- [ ] Beta Pro ends at the close of December 31, 2026 (`BETA_PRO_UNTIL` in `packages/core/src/account.ts`; moved from November 15 on 2026-11-11, to cover finals): before then, have payments ready, move the date again, or let the free tier's 2 plans a month return.
 - [x] Production's Change Email Address template has our subject and body (Alex, 2026-10-15).
 - [ ] On build 11 (TestFlight), check what only the iPhone shows:
   - the time wheel inside When, Due and a Declaration
