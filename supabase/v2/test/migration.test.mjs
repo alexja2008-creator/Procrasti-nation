@@ -300,10 +300,16 @@ for (const baseline of baselines) {
         );
         await assert.rejects(db.query(`UPDATE tasks SET parent_id = $1 WHERE id = $2`, [task.id, TASK_A]), /has subtasks/);
 
-        await db.query(`UPDATE user_settings SET citizen_number = 999, timezone = 'America/New_York' WHERE user_id = $1`, [U1]);
-        const mine = await one(db, `SELECT citizen_number, timezone FROM user_settings WHERE user_id = $1`, [U1]);
+        await db.query(
+          `UPDATE user_settings SET citizen_number = 999, timezone = 'America/New_York', ai_consent_at = now() WHERE user_id = $1`,
+          [U1],
+        );
+        const mine = await one(db, `SELECT citizen_number, timezone, ai_consent_at FROM user_settings WHERE user_id = $1`, [U1]);
         assert.equal(Number(mine.citizen_number), 1, 'citizen numbers never change');
         assert.equal(mine.timezone, 'America/New_York');
+        assert.ok(mine.ai_consent_at, 'they can allow the AI on their own row');
+        const theirs = await db.query(`UPDATE user_settings SET ai_consent_at = now() WHERE user_id <> $1`, [U1]);
+        assert.equal(theirs.affectedRows, 0, "nobody can allow the AI on someone else's row");
         assert.equal((await rows(db, `SELECT 1 FROM user_settings WHERE user_id <> $1`, [U1])).length, 0);
       });
 

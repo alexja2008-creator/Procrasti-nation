@@ -43,6 +43,7 @@ test('the export: everything kept, nothing deleted, answers in plain words', () 
       createdAt: '2026-09-01T00:00:00Z',
       updatedAt: '2026-09-01T00:00:00Z',
     },
+    aiConsentAt: '2026-09-01T00:06:00Z',
     lists: [
       { id: 'l2', userId: 'u', name: 'Work', kind: 'work', ink: 'violet', sortOrder: 2, createdAt: 'x', updatedAt: 'x', deletedAt: null },
       { id: 'l1', userId: 'u', name: 'Chem 201', kind: 'school', ink: 'forest', sortOrder: 1, createdAt: 'x', updatedAt: 'x', deletedAt: null },
@@ -67,6 +68,7 @@ test('the export: everything kept, nothing deleted, answers in plain words', () 
   assert.equal(out.version, 1);
   assert.deepEqual(out.settings?.application, { purposeOfVisit: 'school', hours: 'night', whatStopsYou: 'overwhelmed', nudgeTone: 'roast', heardFrom: 'friend' });
   assert.equal(out.settings?.dayEndsAtHour, 3);
+  assert.equal(out.settings?.aiAllowedAt, '2026-09-01T00:06:00Z', 'when they allowed the AI');
   assert.deepEqual(out.territories.map((t) => t.name), ['Chem 201', 'Work'], 'in their order, deleted ones left out');
   assert.deepEqual(out.tasks.map((t) => t.id), ['plan', 'step', '00000000-0000-4000-8000-0000000000c1'], 'oldest first, deleted ones left out');
   assert.equal(out.tasks[1].planId, 'plan');
