@@ -2,6 +2,10 @@
 
 What changed for people using PN, newest first, in their words. One entry per release (a web deploy or a TestFlight build). It feeds TestFlight's "What to Test" notes and release posts. Git has the technical detail.
 
+## 2026-11-11: The beta runs through finals
+
+- Plan it keeps having no monthly limit through December 31, not November 15 (up to 20 plans a day still applies). Plans made before then don't use up your free plans after it.
+
 ## 2026-10-20: The wider beta (TestFlight build 11)
 
 - Tasks and plans on Today without a Declaration ask "Declare a start time?", at the right of their row or in the Up next card. Tap it to pick when you'll start and sign it, with no press and hold first.
