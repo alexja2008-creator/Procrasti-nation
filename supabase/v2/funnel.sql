@@ -15,6 +15,8 @@
 --   (someone can start a task before they save). Most are "ever"; four are "as
 --   things stand now": `kept_a_plan` (a deleted plan no longer counts), `saved`,
 --   `signed_up` and `reminders_on` (signing out removes a device's reminders).
+--   - `reminders_on` counts browsers only: the iPhone schedules its reminders
+--     on the phone and leaves no row, so iPhone users never count here.
 --   - `built_a_plan`: the planner made one (`plan_generations`, the Oath's included).
 --   - `kept_a_plan`: its steps were saved as tasks.
 --   - `signed_up`: saved, or a save link is out (as in heard-from.sql).

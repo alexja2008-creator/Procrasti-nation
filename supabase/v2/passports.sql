@@ -19,7 +19,8 @@
 --   UTC day, so a first row can read the evening before).
 -- - `heard_from` and `stops_them` are the Application's answers; a value the
 --   app doesn't offer reads 'unrecognized'.
--- - `reminders`: where reminders are on now (ios, web), blank if nowhere.
+-- - `reminders`: 'web' when a browser has reminders on now. The iPhone schedules
+--   its reminders on the phone and leaves no row, so blank doesn't mean off there.
 -- - `plans_built`: the planner made one. `plans_kept`: plans still there.
 --   `steps_done` / `steps`: those plans' steps.
 -- - `starts`: Start Mode sessions, and `starts_done` those that ended in Done.
