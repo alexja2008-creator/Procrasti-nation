@@ -4,7 +4,7 @@
 -- Restores the v1 schema exactly. v1 data is never modified by the v2
 -- scripts, so nothing v1 depends on is lost. What IS lost: anything only
 -- v2 knows about (subtasks/steps as rows, lists, notes, stamps, start
--- sessions, push tokens, settings, citizen numbers). Top-level tasks
+-- sessions, push tokens, settings, citizen numbers, Pro grants). Top-level tasks
 -- created in v2 are kept and stay visible to v1.
 -- ============================================================
 
@@ -15,6 +15,7 @@ DELETE FROM tasks WHERE parent_id IS NOT NULL;
 DROP FUNCTION IF EXISTS search_items(TEXT, TEXT, UUID, INT, INT);
 DROP FUNCTION IF EXISTS save_web_push(TEXT, TEXT, TEXT);
 
+DROP TABLE IF EXISTS pro_grants;
 DROP TABLE IF EXISTS push_snoozes;
 DROP TABLE IF EXISTS push_sends;
 DROP TABLE IF EXISTS ai_requests;

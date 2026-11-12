@@ -109,6 +109,7 @@ Existing accounts that haven't done the Application start at 1 already signed in
 - `/api/generate-plan` checks it; otherwise the free tier's count: `plan_generations` since the start of the current 30.5-day window from `auth.users.created_at`.
 - The 10-day no-card trial (counted from `created_at` since the free-tier fix) ends for new accounts; the required trial replaces it.
 - The app reads entitlement through RevenueCat's SDK (and the row, for the web).
+- **An active Pro grant (`pro_grants`) counts as Pro everywhere this does** (Alex, 2026-11-09; `docs/plans/active/pro-grants.md`): the server's "Pro right now", the plan route, and the paywall gate on iPhone and the web. RevenueCat's SDK alone won't know about a grant, so either the app reads `pro_grants` too or each grant is mirrored into RevenueCat as a promotional lifetime entitlement. Decide which here before the paywall ships, or a tester with Pro for life meets the paywall. The webhook never writes `pro_grants`.
 
 **Paywall gate.** A new account (anonymous or saved) without an entitlement that has finished the Application sees page 14 until the trial starts. It's a client gate (the server only meters AI plans), which is how paywalled apps work.
 

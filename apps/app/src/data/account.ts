@@ -1,6 +1,6 @@
 // The account as a whole: Download your data (built here, on the device, from the rows the
 // person can already read), and Delete your passport (the site's route does the deleting).
-import { buildExport, exportFileName, localDateString, type UserSettings } from '@pn/core';
+import { buildExport, exportFileName, localDateString, type ProGrant, type UserSettings } from '@pn/core';
 import type { User } from '@supabase/supabase-js';
 
 import { personName } from '@/auth/person-name';
@@ -25,14 +25,26 @@ const everyRow = <R>(table: string, columns: string, orderBy: string, userId: st
     supabase.from(table).select(columns).eq('user_id', userId).order(orderBy).order('id').range(from, to).returns<R[]>(),
   );
 
+/** Their Pro grant, if they have one (`pro_grants`: they can read it, only the SQL Editor writes it). */
+async function fetchProGrant(userId: string) {
+  const { data, error } = await supabase
+    .from('pro_grants')
+    .select('reason,granted_at,ends_at')
+    .eq('user_id', userId)
+    .maybeSingle<ProGrant>();
+  if (error) throw error;
+  return data ? { reason: data.reason, grantedAt: data.granted_at, endsAt: data.ends_at } : null;
+}
+
 /** Builds their export and hands it over: a download on the web, the share sheet on iPhone. */
 export async function downloadMyData(user: User, settings: UserSettings | null): Promise<void> {
-  const [aiConsentAt, lists, tasks, notes, username, stamps, starts, plans] = await Promise.all([
+  const [aiConsentAt, lists, tasks, notes, username, proGrant, stamps, starts, plans] = await Promise.all([
     fetchAiConsent(user.id),
     fetchLists(user.id),
     fetchEveryTask(user.id),
     fetchEveryNote(user.id),
     fetchUsername(user.id).catch(() => null),
+    fetchProGrant(user.id).catch(() => null),
     everyRow<StampRow>('stamps', 'id,kind,earned_at,task_id,list_id', 'earned_at', user.id),
     everyRow<StartRow>('start_sessions', 'id,task_id,started_at,ended_at,planned_minutes,outcome', 'started_at', user.id),
     everyRow<PlanRow>('plan_generations', 'id,task_id,created_at', 'created_at', user.id),
@@ -47,6 +59,7 @@ export async function downloadMyData(user: User, settings: UserSettings | null):
       phone: user.phone ? `+${user.phone.replace(/^\+/, '')}` : null,
       createdAt: user.created_at ?? null,
       username,
+      proGrant,
     },
     settings,
     aiConsentAt,

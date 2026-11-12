@@ -9,7 +9,16 @@ export const EXPORT_VERSION = 1;
 
 export type ExportInput = {
   exportedAt: string;
-  account: { citizenNumber: number | null; name: string | null; email: string | null; phone: string | null; createdAt: string | null; username: string | null };
+  account: {
+    citizenNumber: number | null;
+    name: string | null;
+    email: string | null;
+    phone: string | null;
+    createdAt: string | null;
+    username: string | null;
+    /** Pro given without paying (`pro_grants`); `endsAt` is null for life. */
+    proGrant: { reason: string; grantedAt: string; endsAt: string | null } | null;
+  };
   settings: UserSettings | null;
   /** When they allowed Plan it and I'm stuck to send to the AI (`user_settings.ai_consent_at`, read fresh), or null. */
   aiConsentAt: string | null;

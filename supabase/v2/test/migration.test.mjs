@@ -452,6 +452,45 @@ for (const baseline of baselines) {
       await db.query(`INSERT INTO push_snoozes (user_id, task_id, ring_at, day, title) VALUES ($1, $2, now(), '2026-10-07', 'History paper')`, [U1, TASK_A]);
     });
 
+    await t.test('Pro grants: written only in the SQL Editor, read only by their owner', async () => {
+      // The SQL Editor (here the table owner) grants U1 Pro for life.
+      await db.query(`INSERT INTO pro_grants (user_id, reason) VALUES ($1, 'founding_tester')`, [U1]);
+      await assert.rejects(
+        db.query(`INSERT INTO pro_grants (user_id, reason) VALUES ($1, 'Maya, from TikTok')`, [U2]),
+        /pro_grants_reason_code/,
+        'a reason is a short code, never a name or a note',
+      );
+      await assert.rejects(
+        db.query(`INSERT INTO pro_grants (user_id, reason, granted_at, ends_at) VALUES ($1, 'gift', now(), now() - interval '1 day')`, [U2]),
+        /pro_grants_ends_after_granted/,
+      );
+
+      await as(db, U1, async () => {
+        const mine = await rows(db, `SELECT reason, ends_at FROM pro_grants`);
+        assert.deepEqual(mine, [{ reason: 'founding_tester', ends_at: null }], 'the owner reads their grant');
+        for (const write of [
+          () => db.query(`INSERT INTO pro_grants (user_id, reason) VALUES ($1, 'founding_tester')`, [U1]),
+          () => db.query(`UPDATE pro_grants SET ends_at = now() + interval '1 day' WHERE user_id = $1`, [U1]),
+          () => db.query(`DELETE FROM pro_grants WHERE user_id = $1`, [U1]),
+          () => db.query(`TRUNCATE pro_grants`),
+        ]) {
+          await assert.rejects(write(), /permission denied/, 'nobody writes a grant through the API, their own included');
+        }
+      });
+      await as(db, U2, async () => {
+        await assert.rejects(
+          db.query(`INSERT INTO pro_grants (user_id, reason) VALUES ($1, 'founding_tester')`, [U2]),
+          /permission denied/,
+          "nobody grants themselves Pro",
+        );
+        assert.equal((await one(db, `SELECT count(*)::int AS n FROM pro_grants`)).n, 0, "others' grants are invisible");
+      });
+      await as(db, '', async () => {
+        await assert.rejects(db.query(`SELECT * FROM pro_grants`), /permission denied/, 'signed out: nothing');
+      }, 'anon');
+      assert.equal((await one(db, `SELECT count(*)::int AS n FROM pro_grants WHERE user_id = $1`, [U1])).n, 1, "U1's grant is untouched");
+    });
+
     await t.test("search finds the signed-in user's own tasks and notes, nothing else", async () => {
       const chem = (await one(db, `INSERT INTO lists (user_id, name) VALUES ($1, 'Chem 201') RETURNING id`, [U1])).id;
       const add = async ({ user = U1, title, notes = null, list = null, parent = null, done = false, deleted = false }) =>
@@ -560,6 +599,7 @@ for (const baseline of baselines) {
       await db.query(`INSERT INTO ai_requests (user_id, kind) VALUES ($1, 'plan')`, [U9]);
       await db.query(`INSERT INTO push_tokens (user_id, platform, token) VALUES ($1, 'ios', 'leaving-device')`, [U9]);
       await db.query(`INSERT INTO profiles (user_id, username) VALUES ($1, 'leaving')`, [U9]);
+      await db.query(`INSERT INTO pro_grants (user_id, reason) VALUES ($1, 'founding_tester')`, [U9]);
 
       // Every (table, column) with a foreign key to auth.users, so tables added later are covered too.
       const refs = await rows(

@@ -2,6 +2,12 @@
 
 What changed for people using PN, newest first, in their words. One entry per release (a web deploy or a TestFlight build). It feeds TestFlight's "What to Test" notes and release posts. Git has the technical detail.
 
+## Next web deploy: Pro for the beta's testers
+
+- Testers who finish the beta keep Pro for life: plans with no monthly limit, on the web and the iPhone, with the same account.
+- Download your data includes it, if your account has Pro without paying.
+- The privacy policy says so (section 1.1), effective November 9, 2026.
+
 ## 2026-11-11: The beta runs through finals
 
 - Plan it keeps having no monthly limit through December 31, not November 15 (up to 20 plans a day still applies). Plans made before then don't use up your free plans after it.
