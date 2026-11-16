@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import LegalPage from '../../components/legal/LegalPage';
-import { CONTACT_EMAIL, LEGAL_EFFECTIVE } from '../../lib/site';
+import { CONTACT_EMAIL, LEGAL_EFFECTIVE, SITE_URL } from '../../lib/site';
 
-export const metadata = { title: 'Terms of Use · ProcrastiNation' };
+export const metadata = { title: 'Terms of Use · ProcrastiNation', alternates: { canonical: `${SITE_URL}/terms` } };
 
 // Formal rewrite, approved by Alex on 2026-10-13: disputes go to the New York County courts, no
 // arbitration. Section 9 carries Apple's minimum terms for an app's license.

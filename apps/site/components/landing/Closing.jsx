@@ -1,12 +1,6 @@
 import RoundStamp from './RoundStamp';
+import { site } from '../../lib/core';
 import { APP_URL } from '../../lib/site';
-
-const FREE = [
-  'Unlimited tasks, notes and reminders',
-  'Two AI plans a month',
-  '“I’m stuck” whenever you need it',
-  'Start Mode, the Morning Briefing, Declarations and the Passport',
-];
 
 export default function Closing() {
   return (
@@ -29,7 +23,7 @@ export default function Closing() {
           and watch it become a first step you can take today.
         </p>
         <ul className="mt-8 grid max-w-2xl gap-3 sm:grid-cols-2">
-          {FREE.map((item) => (
+          {site.free.map((item) => (
             <li key={item} className="flex gap-3 leading-snug">
               <span aria-hidden="true" style={{ color: 'var(--primary-text)' }}>✓</span>
               <span>{item}</span>

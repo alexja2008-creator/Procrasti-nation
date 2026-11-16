@@ -24,8 +24,11 @@ As of 2026-10-19. Rewrite this file every Monday (replace, don't append); histor
 - The business plan and beta form brought up to date, with a launch checklist for the business and marketing to-dos (kept privately, `docs/external.md`). `supabase/v2/heard-from.sql` counts the Application's "Where did you hear about us?" answers for the funnel model.
 - The app icon is the PN mark (the flag P and the N on night navy), replacing Expo's placeholder, which is what TestFlight showed. The Android adaptive icon and the splash use it too. It reaches the iPhone with the next build; the web's favicon and notification icon are still Expo's.
 - procrasti-nation.work/beta redirects to TestFlight's public link: a short address to say aloud in videos when asking students to join the beta, since TikTok has no clickable links.
+- The site is readable by AI answer engines (2026-11-16, `docs/plans/shipped/ai-discovery.md`, from an outside audit's nine recommendations): `/robots.txt`, `/sitemap.xml`, `/llms.txt`, JSON-LD (who makes PN, the app, free to join), canonical URLs, and a Questions section on the landing page with FAQ markup. Checked locally at 1024 and 375 px.
 
 ## Open items for Alex
+
+- [ ] After the AI discovery PR is live: add procrasti-nation.work to Google Search Console and Bing Webmaster Tools (Bing's index feeds ChatGPT's search) and submit `https://procrasti-nation.work/sitemap.xml`; run the audit again and note the score here. Read the eight answers on the landing page's Questions section once more; they're in `packages/core/src/nation.ts` (`site.faq`).
 
 - [x] Start Mode on a plan, checked on the web and the iOS Simulator (Claude, 2026-10-20): a first step counts down from its estimate (3:00), later steps too (60 and 90 min), and a 90-minute step's "1:29:59" fits inside the ring with "An hour and a half." under it.
 - [ ] On build 11 (TestFlight), Start Mode on a plan on a real iPhone, including a later step with no estimate (it should get 25 minutes; no step in Alex's staging plans lacks an estimate, so this hasn't been seen anywhere).

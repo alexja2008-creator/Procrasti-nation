@@ -1,5 +1,8 @@
 import './globals.css';
 import { Analytics } from '@vercel/analytics/next';
+import JsonLd from '../components/JsonLd';
+import { site } from '../lib/core';
+import { siteGraph } from '../lib/structuredData';
 import { Fraunces, IBM_Plex_Mono, Instrument_Sans, Space_Grotesk } from 'next/font/google';
 
 // The A2 fonts, downloaded at build time and served from the site's own domain, so a visitor's
@@ -12,25 +15,23 @@ const instrumentSans = Instrument_Sans({ subsets: ['latin'], weight: ['400', '60
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight: '700', display: 'swap', variable: '--font-space-grotesk' });
 const fontVariables = [fraunces, plexMono, instrumentSans, spaceGrotesk].map((font) => font.variable).join(' ');
 
-const description = 'The AI planner that breaks down the task you\'re avoiding into steps small enough to start today.';
-
 // Safari's toolbar and the phone's status bar area match the night page.
 export const viewport = { themeColor: '#161B2E' };
 
 export const metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://procrasti-nation.work'),
-  title: 'ProcrastiNation: Stop Waiting, Start Doing',
-  description,
+  title: site.title,
+  description: site.description,
   openGraph: {
-    title: 'ProcrastiNation',
-    description,
-    siteName: 'ProcrastiNation',
+    title: site.title,
+    description: site.description,
+    siteName: site.name,
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ProcrastiNation',
-    description,
+    title: site.title,
+    description: site.description,
   },
 };
 
@@ -40,6 +41,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className={fontVariables}>
       <body>
         {children}
+        <JsonLd data={siteGraph()} />
         <Analytics />
       </body>
     </html>

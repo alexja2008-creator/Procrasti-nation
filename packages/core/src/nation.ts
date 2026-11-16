@@ -1203,3 +1203,61 @@ export function mrzNameLine(firstName: string, lastName: string, width = 30): st
 export function mrzMottoLine(citizenNumber: number, year: number): string {
   return `${formatCitizenNumber(citizenNumber)}<${year}<ONE<STEP<AT<A<TIME`;
 }
+
+// ---------------------------------------------------------------------------
+// The marketing site, in the words a search or answer engine reads: the page's description, what
+// joining free includes, and the Questions section. One source for the page, its structured data
+// (JSON-LD) and /llms.txt, so the three can't disagree (docs/plans/shipped/ai-discovery.md). The
+// payments PR changes `free`, `availability` and the cost answer together.
+export const site = {
+  name: 'ProcrastiNation',
+  title: 'ProcrastiNation: Stop Waiting, Start Doing',
+  description: "The AI planner that breaks down the task you're avoiding into steps small enough to start today.",
+  /** /llms.txt's longer account of it. */
+  about: 'ProcrastiNation is for people who put things off, students first. You name the task you’re avoiding and tap Plan it; the planner asks a question or two, then breaks the task into steps a few minutes long, spread out up to your deadline. Start Mode gives you one step and one short timer. Nothing is ever marked overdue or failed: starting is the win.',
+  availability: 'It is free to join, and works in a web browser on a phone or a laptop. The iPhone app is on its way.',
+  free: [
+    'Unlimited tasks, notes and reminders',
+    'Two AI plans a month',
+    '“I’m stuck” whenever you need it',
+    'Start Mode, the Morning Briefing, Declarations and the Passport',
+  ],
+  faqEyebrow: 'QUESTIONS',
+  faqTitle: 'Before you apply.',
+  /** Each answer leads with the answer: engines quote the first sentence. */
+  faq: [
+    {
+      q: 'What is ProcrastiNation?',
+      a: 'An AI planner for the task you’re avoiding. You name what you’ve been putting off, tap Plan it, and it breaks the task into steps small enough to start today.',
+    },
+    {
+      q: 'How does Plan it work?',
+      a: 'You name the task and when it’s due. The planner asks a question or two, then breaks it into steps a few minutes long, spread out up to your deadline. You can edit any of them.',
+    },
+    {
+      q: 'Who is it for?',
+      a: 'Students first: essays, lab reports, problem sets, applications, studying for exams. It works for anything you keep meaning to start.',
+    },
+    {
+      q: 'How much does it cost?',
+      a: 'It’s free to join. That includes unlimited tasks, notes and reminders, two AI plans a month, Start Mode and the Passport.',
+    },
+    {
+      q: 'Is there an iPhone app?',
+      a: 'ProcrastiNation works in your browser today, on a phone or a laptop. The iPhone app is on its way.',
+    },
+    {
+      q: 'How is it different from a to-do list or a reminders app?',
+      a: 'A list holds the task; ProcrastiNation helps you begin it. It makes the first step small, nudges you at the time you chose, and Start Mode gives you one step and one short timer.',
+    },
+    {
+      q: 'Will it make me feel bad about what I haven’t done?',
+      a: 'No. Nothing is ever marked overdue or failed. Starting is the win, so every start counts, whether or not you finish, and you choose the voice your nudges come in.',
+    },
+    {
+      q: 'What happens to what I type?',
+      a: 'When you use an AI feature such as Plan it, only what that request needs is sent to the AI provider, Anthropic. Your information isn’t sold and isn’t used to train AI models. The privacy policy says exactly what’s stored and who processes it.',
+      link: { href: '/privacy', label: 'Read the privacy policy' },
+    },
+  ] as { q: string; a: string; link?: { href: string; label: string } }[],
+};
