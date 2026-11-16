@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import LegalPage from '../../components/legal/LegalPage';
-import { CONTACT_EMAIL, LEGAL_EFFECTIVE } from '../../lib/site';
+import { CONTACT_EMAIL, LEGAL_EFFECTIVE, SITE_URL } from '../../lib/site';
 
-export const metadata = { title: 'Privacy Policy · ProcrastiNation' };
+export const metadata = { title: 'Privacy Policy · ProcrastiNation', alternates: { canonical: `${SITE_URL}/privacy` } };
 
 // Written from what the code does (2026-10-12; formal rewrite, Alex 2026-10-13). When a feature changes
 // what's collected or who processes it, change this page in the same commit. Approved by Alex on

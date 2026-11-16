@@ -2,6 +2,11 @@
 
 What changed for people using PN, newest first, in their words. One entry per release (a web deploy or a TestFlight build). It feeds TestFlight's "What to Test" notes and release posts. Git has the technical detail.
 
+## Next web deploy: questions, answered on the home page
+
+- procrasti-nation.work has a Questions section: what PN is, how Plan it works, who it's for, what it costs, the iPhone app, and what happens to what you type. procrasti-nation.work/faq goes there.
+- AI assistants and search engines can now read what PN is and what it costs, so they can describe it accurately when someone asks.
+
 ## Next web deploy: Pro for the beta's testers
 
 - Testers who finish the beta keep Pro for life: plans with no monthly limit, on the web and the iPhone, with the same account.

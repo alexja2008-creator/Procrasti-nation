@@ -9,6 +9,7 @@ export default function SiteFooter() {
         <Logo size="sm" color="var(--ink)" accent="var(--primary-text)" />
         <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm" style={{ color: 'var(--ink-soft)' }}>
           <a href={APP_URL} className="hover:underline">Open the app</a>
+          <Link href="/#questions" className="hover:underline">Questions</Link>
           <Link href="/privacy" className="hover:underline">Privacy</Link>
           <Link href="/terms" className="hover:underline">Terms</Link>
           {CONTACT_EMAIL ? (

@@ -17,3 +17,7 @@ export const LEGAL_EFFECTIVE = 'November 9, 2026';
 // While this is true the privacy policy and terms say "Draft" at the top. Alex approved both on
 // 2026-10-13; set it back to true while a rewrite awaits review. Open questions show as [bracketed] marks (<Todo>).
 export const LEGAL_DRAFT = false;
+
+// The site's public address, for what crawlers read (canonical URLs, the sitemap, robots.txt, JSON-LD,
+// llms.txt). Always production's, even on a preview deploy, so a preview never claims to be the original.
+export const SITE_URL = 'https://procrasti-nation.work';
