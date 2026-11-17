@@ -36,6 +36,97 @@ export function suggestUsername(email: string): string {
   return isValidUsername(name) ? name : '';
 }
 
+/**
+ * Email providers a typo is corrected to, most used first (a tie goes to the earlier one).
+ * `googlemail.com` and the rest are real; they're here so a near miss of them isn't "fixed".
+ */
+const EMAIL_PROVIDERS = [
+  'gmail.com', 'yahoo.com', 'icloud.com', 'hotmail.com', 'outlook.com', 'aol.com', 'live.com', 'msn.com',
+  'me.com', 'mac.com', 'comcast.net', 'verizon.net', 'att.net', 'sbcglobal.net', 'ymail.com',
+  'protonmail.com', 'proton.me', 'googlemail.com',
+];
+/** Real domains, some with real mailboxes, close to a provider: never corrected, never suggested. */
+const EMAIL_LOOKALIKES = new Set([
+  'mail.com', 'email.com', 'cloud.com', 'gmx.com', 'gmx.net', 'aim.com', 'aon.com', 'hey.com', 'pm.me', 'duck.com',
+  'zoho.com', 'protonmail.ch', 'proton.ch', 'ms.com', 'mi.com', 'love.com', 'line.com', 'life.com', 'mic.com', 'max.com',
+]);
+/** Providers this long can be two edits off; shorter ones sit near too many real domains (aon.com, ms.com). */
+const LONG_PROVIDER = 9;
+const LONG_PROVIDER_EDITS = 2;
+/** Providers with country domains (hotmail.ca, yahoo.fr): their name with a 2-letter ending is left alone. */
+const REGIONAL_PROVIDERS = new Set(['yahoo', 'hotmail', 'outlook', 'live', 'msn']);
+/** Endings that aren't real and sit one key from a common one. None of these is a real top-level domain. */
+const TLD_TYPOS: Record<string, string> = {
+  con: 'com', cpm: 'com', cmo: 'com', ocm: 'com', vom: 'com', xom: 'com', cim: 'com', clm: 'com', ckm: 'com', cok: 'com', comm: 'com', coom: 'com',
+  nte: 'net', ner: 'net', nrt: 'net', nwt: 'net',
+  ogr: 'org', orh: 'org', prg: 'org', irg: 'org', rog: 'org',
+  edi: 'edu', eud: 'edu', wdu: 'edu', rdu: 'edu',
+};
+
+/** Whether `a` is `b` with two neighbors swapped ("mns" for "msn"). */
+function isSwap(a: string, b: string): boolean {
+  if (a.length !== b.length || a === b) return false;
+  const i = [...a].findIndex((ch, k) => ch !== b[k]);
+  return a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2);
+}
+
+/** Edits from `a` to `b`, a swap of two neighbors counting as one ("hotmial" → "hotmail" is 1). */
+function editDistance(a: string, b: string): number {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array<number>(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+    }
+  }
+  return d[a.length][b.length];
+}
+
+/**
+ * The address they probably meant when the domain looks mistyped ("maya@gmail.con" →
+ * "maya@gmail.com"), or null. A typo there sends the save link nowhere, and nobody finds out
+ * (a sign-up from a campus flyer, 2026-11). Only suggests: they can keep what they typed.
+ */
+export function suggestEmail(typed: string): string | null {
+  const address = typed.trim();
+  const at = address.lastIndexOf('@');
+  if (at < 1) return null;
+  const local = address.slice(0, at);
+  const typedDomain = address.slice(at + 1).toLowerCase();
+  // A dot left at the end ("gmail.com.") is a typo too.
+  const domain = typedDomain.replace(/\.+$/, '');
+  if (!domain.includes('.')) return null;
+  // Capitals in a domain don't matter, so "Gmail.com" gets no suggestion.
+  const fixed = (to: string) => (to === typedDomain ? null : `${local}@${to}`);
+  if (EMAIL_PROVIDERS.includes(domain) || EMAIL_LOOKALIKES.has(domain)) return fixed(domain);
+
+  const dot = domain.indexOf('.');
+  const [name, ending] = [domain.slice(0, dot), domain.slice(dot + 1)];
+  let best: { to: string; distance: number } | null = null;
+  for (const provider of EMAIL_PROVIDERS) {
+    const distance = editDistance(domain, provider);
+    if (best && distance >= best.distance) continue;
+    if (provider.length >= LONG_PROVIDER) {
+      if (distance > LONG_PROVIDER_EDITS) continue;
+    } else {
+      // A short one: only its name with two letters swapped (mns.com), or its ending one edit off (aol.co).
+      const p = provider.indexOf('.');
+      const [pName, pEnding] = [provider.slice(0, p), provider.slice(p + 1)];
+      if (!(ending === pEnding && isSwap(name, pName)) && !(name === pName && editDistance(ending, pEnding) === 1)) continue;
+    }
+    // hotmail.ca and yahoo.co.uk are real; gmail.co isn't.
+    if (provider.startsWith(`${name}.`) && REGIONAL_PROVIDERS.has(name) && /^(?:[a-z]{2}|(?:co|com)\.[a-z]{2})$/.test(ending)) continue;
+    best = { to: provider, distance };
+  }
+  if (best) return fixed(best.to);
+
+  const last = domain.lastIndexOf('.');
+  const tld = TLD_TYPOS[domain.slice(last + 1)];
+  return fixed(tld ? `${domain.slice(0, last)}.${tld}` : domain);
+}
+
 /** Save your passport's username box: its text, and whether that's a username of their own (typed, or waiting from before). */
 export interface UsernameBox {
   text: string;
