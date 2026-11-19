@@ -1,4 +1,4 @@
-import { authErrorKind, cleanUsername, formatPhone, isServerFailure, isValidUsername, moveEmailFromUsername, normalizePhone, suggestUsername, voice } from '@pn/core';
+import { authErrorKind, cleanUsername, formatPhone, isServerFailure, isValidUsername, moveEmailFromUsername, normalizePhone, suggestEmail, suggestUsername, voice } from '@pn/core';
 import { useRef, useState } from 'react';
 import { AccessibilityInfo, Platform, StyleSheet, TextInput, View } from 'react-native';
 
@@ -7,7 +7,7 @@ import { confirmSaveCode, pendingEmail, sendSaveCode, sendSaveLink } from '@/aut
 import { enabledMethods, friendlyAuthError, isValidEmail } from '@/auth/sign-in';
 import { signOut } from '@/auth/sign-out';
 import { Button } from '@/components/button';
-import { CodeStep, LeaveForOtherPassport, SaveOutcome } from '@/components/save-passport-steps';
+import { CodeStep, LeaveForOtherPassport, SaveOutcome, TypoNote } from '@/components/save-passport-steps';
 import { SentPanel } from '@/components/sign-in/sent-panel';
 import { Text } from '@/components/text';
 import { UsernameField } from '@/components/username-field';
@@ -77,6 +77,11 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
   const [error, setError] = useState<string | null>(null);
   // The email already has a passport: offer to sign in to it instead.
   const [emailTaken, setEmailTaken] = useState(false);
+  // The address a "Did you mean" was shown for. A mistyped domain sends the link nowhere, so the
+  // first Send stops to ask, and a second goes as typed. Shown from Send only, not on leaving the
+  // box: on the web that blur comes mid-click, and the note pushing Send down swallows the click.
+  const [typoAsked, setTypoAsked] = useState<string | null>(null);
+  const suggestion = method === 'email' ? suggestEmail(email) : null;
   // The username box shows what's typed (so an email typed there moves whole); this is the username.
   const name = cleanUsername(username);
   const usernameStatus = useUsernameCheck(step.kind === 'form' ? name : '');
@@ -145,6 +150,7 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
     const address = email.trim();
     if (!isValidEmail(address)) return setError(signIn.invalidEmail);
     setEmailTaken(false);
+    if (suggestion && typoAsked !== address) return askAboutTypo(address, suggestion);
     return run(async () => {
       if (!userId || !(await usernameReady())) return;
       if (!(await sendOrDefer(() => sendSaveLink(userId, address, name)))) return;
@@ -153,6 +159,15 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
       setEmailTaken(authErrorKind(e instanceof Error ? e : null) === 'accountExists');
       return friendlyAuthError(e, copy.saveFailed);
     });
+  };
+
+  /** Shows "Did you mean …" under the email box, and says it (focus doesn't move to it). */
+  const askAboutTypo = (address: string, meant: string) => {
+    setError(null);
+    if (typoAsked === address) return;
+    setTypoAsked(address);
+    // The note's live region speaks on Android and the web; iOS needs telling.
+    if (Platform.OS === 'ios') AccessibilityInfo.announceForAccessibilityWithOptions(copy.didYouMean(meant), { queue: true });
   };
 
   /** The email box; the username follows it until they choose their own. */
@@ -292,24 +307,37 @@ export function SavePassport({ onDone, changeEmail = false }: Props) {
       ) : (
         <>
           {label(signIn.emailLabel)}
-          <TextInput
-            ref={emailRef}
-            value={email}
-            onChangeText={typeEmail}
-            placeholder={signIn.emailPlaceholder}
-            placeholderTextColor={c.muted}
-            keyboardType="email-address"
-            textContentType="emailAddress"
-            autoComplete="email"
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!busy}
-            accessibilityLabel={signIn.emailLabelSpoken}
-            returnKeyType="next"
-            submitBehavior="submit"
-            onSubmitEditing={() => usernameRef.current?.focus()}
-            style={s.input}
-          />
+          <View>
+            <TextInput
+              ref={emailRef}
+              value={email}
+              onChangeText={typeEmail}
+              placeholder={signIn.emailPlaceholder}
+              placeholderTextColor={c.muted}
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!busy}
+              accessibilityLabel={signIn.emailLabelSpoken}
+              returnKeyType="next"
+              submitBehavior="submit"
+              onSubmitEditing={() => usernameRef.current?.focus()}
+              style={s.input}
+            />
+            <TypoNote
+              suggestion={suggestion && typoAsked === email.trim() ? suggestion : null}
+              busy={busy}
+              onUse={() => {
+                if (!suggestion) return;
+                typeEmail(suggestion);
+                setTypoAsked(null);
+                // The button goes with the note: focus goes to the box, which reads the new address.
+                setTimeout(() => emailRef.current?.focus(), 0);
+              }}
+            />
+          </View>
         </>
       )}
       {/* Second: an email typed here moves up to the email box, and the username comes from it. */}

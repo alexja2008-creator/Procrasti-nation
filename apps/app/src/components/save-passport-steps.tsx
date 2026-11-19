@@ -21,6 +21,28 @@ export function SaveOutcome({ text, onDone }: { text: string; onDone: () => void
   );
 }
 
+/**
+ * Under the email box when its domain looks mistyped ("gmail.con"). Its live region is always
+ * there (empty, no height), so a screen reader on the web hears the note when it appears.
+ */
+export function TypoNote({ suggestion, busy, onUse }: { suggestion: string | null; busy: boolean; onUse: () => void }) {
+  const s = useStyles(makeStyles);
+  return (
+    <View accessibilityLiveRegion="polite">
+      {suggestion ? (
+        <View style={s.typo}>
+          <Text variant="meta" color={s.t.c.ink}>
+            {copy.didYouMean(suggestion)}
+          </Text>
+          <View style={s.quiet}>
+            <Button variant="quiet" label={copy.useSuggestedEmail(suggestion)} disabled={busy} onPress={onUse} />
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
 type LeaveProps = { busy: boolean; error: ReactNode; onLeave: () => void; onKeep: () => void };
 
 /** Their email already has a passport: leave this unsaved one (it's lost) to sign in to that one. */
@@ -91,6 +113,7 @@ const makeStyles = (t: Tokens) => ({
   ...StyleSheet.create({
     column: { gap: 10 },
     label: { marginTop: 4 },
+    typo: { gap: 2, marginTop: 6 },
     // The same field as Save your passport's.
     input: {
       minHeight: 50,

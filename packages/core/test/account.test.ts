@@ -142,3 +142,24 @@ test('a Pro grant counts for life, or until its end', async () => {
   assert.equal(proGrantActive({ ends_at: '2026-11-01T00:00:00Z' }, now), false, 'ended');
   assert.equal(proGrantActive({ ends_at: '2026-12-20T00:00:00+00:00' }, now), true, "Postgres's offset form");
 });
+
+// Kept for reason (6): a sign-up from a campus flyer typed "@gmail.con" and its save link went nowhere (2026-11).
+test('a mistyped email domain gets a suggestion, and real domains are left alone', async () => {
+  const { suggestEmail } = await import('../src/account.ts');
+  assert.equal(suggestEmail('maya@gmail.con'), 'maya@gmail.com');
+  assert.equal(suggestEmail('maya@gmial.com'), 'maya@gmail.com');
+  assert.equal(suggestEmail('Maya.Reyes@hotmial.com'), 'Maya.Reyes@hotmail.com', 'keeps the name as typed');
+  assert.equal(suggestEmail(' maya@yahooo.com '), 'maya@yahoo.com');
+  assert.equal(suggestEmail('maya@icloud.co'), 'maya@icloud.com');
+  assert.equal(suggestEmail('maya@gmail.com.'), 'maya@gmail.com');
+  assert.equal(suggestEmail('maya@my.liu.eud'), 'maya@my.liu.edu', 'school addresses');
+  assert.equal(suggestEmail('maya@school.con'), 'maya@school.com');
+  assert.equal(suggestEmail('maya@mns.com'), 'maya@msn.com', 'a short provider, two letters swapped');
+  assert.equal(suggestEmail('maya@aol.co'), 'maya@aol.com');
+  for (const real of ['maya@gmail.com', 'maya@Gmail.COM', 'maya@my.liu.edu', 'maya@hotmail.ca', 'maya@yahoo.co.uk', 'maya@live.com.au', 'maya@mail.com', 'maya@protonmail.ch', 'maya@company.co', 'maya@me.org', 'maya@gmx.de', 'maya@email.com', 'maya@cloud.com', 'maya@aon.com', 'maya@ms.com', 'maya@mi.com', 'maya@proton.ch', 'maya@sol.com', 'maya@ao.com']) {
+    assert.equal(suggestEmail(real), null, real);
+  }
+  assert.equal(suggestEmail('maya'), null);
+  assert.equal(suggestEmail('maya@gmail'), null);
+  assert.equal(suggestEmail(''), null);
+});

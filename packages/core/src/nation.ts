@@ -848,6 +848,9 @@ export const voice = {
     /** An email typed into the username box moves to the email box, and the username comes from it. */
     emailMoved: 'That’s an email, so it went in the email box.',
     usernameFromEmail: 'The username comes from it; change it if you like.',
+    /** The email's domain looks mistyped ("gmail.con"): the first Send stops to ask, a second sends it as typed. */
+    didYouMean: (email: string) => `Did you mean ${email}? If not, send it as it is.`,
+    useSuggestedEmail: (email: string) => `Use ${email}`,
     /** Supabase sends one save link a minute: the form's button waits out the rest. */
     sendIn: (seconds: number) => `Send in ${seconds}s`,
     emailSent: (email: string) =>
